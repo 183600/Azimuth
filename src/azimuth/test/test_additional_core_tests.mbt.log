@@ -1,57 +1,57 @@
-clean_test_test/additional_core_tests.mbt:7:13-7:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:7:25-7:28 [E4021] The value identifier add is unbound.
-clean_test_test/additional_core_tests.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/additional_core_tests.mbt:15:15-15:23 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:16:15-16:23 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:17:15-17:23 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:18:13-18:16 [E4021] The value identifier add is unbound.
-clean_test_test/additional_core_tests.mbt:18:17-18:20 [E4021] The value identifier add is unbound.
-clean_test_test/additional_core_tests.mbt:18:21-18:24 [E4021] The value identifier add is unbound.
-clean_test_test/additional_core_tests.mbt:19:3-19:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/additional_core_tests.mbt:25:16-25:24 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:25:28-25:36 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:25:44-25:52 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:25:60-25:68 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/additional_core_tests.mbt:7:13-7:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:7:34-7:46 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:8:3-8:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:15:15-15:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:16:15-16:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:17:15-17:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:18:13-18:25 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:18:26-18:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:18:39-18:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:19:3-19:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:25:16-25:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:25:37-25:54 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:25:62-25:79 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:25:87-25:104 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:26:3-26:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/additional_core_tests.mbt:32:7-32:15 [E0002] Warning (unused_value): Unused variable 'exponent'
-clean_test_test/additional_core_tests.mbt:33:16-33:24 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:33:25-33:33 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:33:47-33:55 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:34:3-34:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/additional_core_tests.mbt:40:20-40:23 [E4021] The value identifier add is unbound.
-clean_test_test/additional_core_tests.mbt:40:24-40:32 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:41:3-41:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/additional_core_tests.mbt:49:18-49:26 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:49:38-49:46 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:50:15-50:18 [E4021] The value identifier add is unbound.
-clean_test_test/additional_core_tests.mbt:51:3-51:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/additional_core_tests.mbt:60:14-60:22 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:61:3-61:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/additional_core_tests.mbt:64:19-64:22 [E4021] The value identifier add is unbound.
-clean_test_test/additional_core_tests.mbt:64:23-64:31 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:64:44-64:52 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:65:3-65:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/additional_core_tests.mbt:71:3-71:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/additional_core_tests.mbt:71:32-71:37 [E4021] The value identifier greet is unbound.
-clean_test_test/additional_core_tests.mbt:74:3-74:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/additional_core_tests.mbt:74:33-74:38 [E4021] The value identifier greet is unbound.
-clean_test_test/additional_core_tests.mbt:77:3-77:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/additional_core_tests.mbt:77:39-77:44 [E4021] The value identifier greet is unbound.
-clean_test_test/additional_core_tests.mbt:80:3-80:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/additional_core_tests.mbt:80:40-80:45 [E4021] The value identifier greet is unbound.
-clean_test_test/additional_core_tests.mbt:89:3-89:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/additional_core_tests.mbt:89:22-89:25 [E4021] The value identifier add is unbound.
-clean_test_test/additional_core_tests.mbt:90:3-90:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/additional_core_tests.mbt:90:22-90:30 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:93:3-93:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/additional_core_tests.mbt:93:22-93:25 [E4021] The value identifier add is unbound.
-clean_test_test/additional_core_tests.mbt:94:3-94:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/additional_core_tests.mbt:94:22-94:30 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:97:3-97:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/additional_core_tests.mbt:97:17-97:20 [E4021] The value identifier add is unbound.
-clean_test_test/additional_core_tests.mbt:109:16-109:19 [E4021] The value identifier add is unbound.
-clean_test_test/additional_core_tests.mbt:110:17-110:20 [E4021] The value identifier add is unbound.
-clean_test_test/additional_core_tests.mbt:111:20-111:28 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:113:16-113:19 [E4021] The value identifier add is unbound.
-clean_test_test/additional_core_tests.mbt:113:20-113:28 [E4021] The value identifier multiply is unbound.
-clean_test_test/additional_core_tests.mbt:114:3-114:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/additional_core_tests.mbt:33:16-33:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:33:34-33:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:33:65-33:82 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:34:3-34:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:40:20-40:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:40:33-40:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:41:3-41:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:49:18-49:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:49:47-49:64 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:50:15-50:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:51:3-51:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:60:14-60:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:61:3-61:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:64:19-64:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:64:32-64:49 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:64:62-64:79 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:65:3-65:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:71:3-71:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:71:41-71:55 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:74:3-74:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:74:42-74:56 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:77:3-77:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:77:48-77:62 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:80:3-80:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:80:49-80:63 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:89:3-89:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:89:31-89:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:90:3-90:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:90:31-90:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:93:3-93:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:93:31-93:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:94:3-94:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:94:31-94:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:97:3-97:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:97:26-97:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:109:16-109:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:110:17-110:29 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:111:20-111:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:113:16-113:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:113:29-113:46 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_core_tests.mbt:114:3-114:21 [E4020] Package "azimuth" not found in the loaded packages.

@@ -1,75 +1,75 @@
-clean_test_test/simple_azimuth_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:6:13-6:16 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:7:13-7:16 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:8:13-8:16 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:9:13-9:16 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:14:13-14:16 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:15:13-15:16 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:16:13-16:16 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:17:13-17:16 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:22:13-22:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/simple_azimuth_tests.mbt:23:3-23:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:23:13-23:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/simple_azimuth_tests.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:24:13-24:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/simple_azimuth_tests.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:25:13-25:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/simple_azimuth_tests.mbt:32:3-32:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:32:13-32:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/simple_azimuth_tests.mbt:33:3-33:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:33:13-33:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/simple_azimuth_tests.mbt:34:3-34:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:34:13-34:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/simple_azimuth_tests.mbt:35:3-35:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:35:13-35:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/simple_azimuth_tests.mbt:36:3-36:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:36:13-36:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/simple_azimuth_tests.mbt:41:3-41:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/simple_azimuth_tests.mbt:41:20-41:25 [E4021] The value identifier greet is unbound.
-clean_test_test/simple_azimuth_tests.mbt:42:3-42:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/simple_azimuth_tests.mbt:42:20-42:25 [E4021] The value identifier greet is unbound.
-clean_test_test/simple_azimuth_tests.mbt:43:3-43:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/simple_azimuth_tests.mbt:43:20-43:25 [E4021] The value identifier greet is unbound.
-clean_test_test/simple_azimuth_tests.mbt:44:3-44:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/simple_azimuth_tests.mbt:44:20-44:25 [E4021] The value identifier greet is unbound.
-clean_test_test/simple_azimuth_tests.mbt:51:19-51:22 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:51:23-51:31 [E4021] The value identifier multiply is unbound.
-clean_test_test/simple_azimuth_tests.mbt:51:44-51:52 [E4021] The value identifier multiply is unbound.
-clean_test_test/simple_azimuth_tests.mbt:52:3-52:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:57:3-57:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:57:13-57:29 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/simple_azimuth_tests.mbt:58:3-58:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:58:13-58:29 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/simple_azimuth_tests.mbt:59:3-59:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:59:13-59:29 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/simple_azimuth_tests.mbt:60:3-60:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:60:13-60:29 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/simple_azimuth_tests.mbt:61:3-61:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:61:13-61:29 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/simple_azimuth_tests.mbt:68:21-68:24 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:68:25-68:28 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:68:29-68:32 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:68:33-68:36 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:69:3-69:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:72:20-72:23 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:72:24-72:27 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:72:28-72:31 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:73:3-73:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:79:20-79:23 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:79:24-79:32 [E4021] The value identifier multiply is unbound.
-clean_test_test/simple_azimuth_tests.mbt:80:3-80:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:83:21-83:24 [E4021] The value identifier add is unbound.
-clean_test_test/simple_azimuth_tests.mbt:83:25-83:33 [E4021] The value identifier multiply is unbound.
-clean_test_test/simple_azimuth_tests.mbt:84:3-84:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:89:3-89:14 [E4021] The value identifier assert_true is unbound.
-clean_test_test/simple_azimuth_tests.mbt:90:3-90:15 [E4021] The value identifier assert_false is unbound.
-clean_test_test/simple_azimuth_tests.mbt:91:3-91:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_azimuth_tests.mbt:92:3-92:19 [E4021] The value identifier assert_eq_string is unbound.
+clean_test_test/simple_azimuth_tests.mbt:6:3-6:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:6:22-6:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:7:22-7:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:8:3-8:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:8:22-8:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:9:3-9:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:9:22-9:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:14:3-14:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:14:22-14:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:15:3-15:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:15:22-15:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:16:3-16:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:16:22-16:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:17:3-17:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:17:22-17:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:22:3-22:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:22:22-22:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:23:3-23:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:23:22-23:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:24:3-24:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:24:22-24:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:25:3-25:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:25:22-25:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:32:3-32:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:32:22-32:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:33:3-33:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:33:22-33:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:34:3-34:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:34:22-34:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:35:3-35:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:35:22-35:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:36:3-36:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:36:22-36:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:41:3-41:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:41:29-41:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:42:3-42:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:42:29-42:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:43:3-43:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:43:29-43:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:44:3-44:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:44:29-44:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:51:19-51:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:51:32-51:49 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:51:62-51:79 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:52:3-52:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:57:3-57:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:57:22-57:47 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:58:3-58:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:58:22-58:47 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:59:3-59:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:59:22-59:47 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:60:3-60:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:60:22-60:47 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:61:3-61:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:61:22-61:47 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:68:21-68:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:68:34-68:46 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:68:47-68:59 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:68:60-68:72 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:69:3-69:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:72:20-72:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:72:33-72:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:72:46-72:58 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:73:3-73:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:79:20-79:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:79:33-79:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:80:3-80:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:83:21-83:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:83:34-83:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:84:3-84:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:89:3-89:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:90:3-90:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:91:3-91:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_azimuth_tests.mbt:92:3-92:28 [E4020] Package "azimuth" not found in the loaded packages.

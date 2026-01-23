@@ -34,10 +34,10 @@ clean_test_test/unique_science_tests.mbt:101:7-101:17 [E0002] Warning (unused_va
 clean_test_test/unique_science_tests.mbt:106:3-106:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/unique_science_tests.mbt:114:7-114:11 [E0002] Warning (unused_value): Unused variable 'rem3'
 clean_test_test/unique_science_tests.mbt:117:3-117:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/unique_science_tests.mbt:132:3-132:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/unique_science_tests.mbt:137:3-137:24 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/unique_science_tests.mbt:142:3-142:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/unique_science_tests.mbt:147:3-147:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/unique_science_tests.mbt:132:3-132:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/unique_science_tests.mbt:137:3-137:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/unique_science_tests.mbt:142:3-142:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/unique_science_tests.mbt:147:3-147:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/unique_science_tests.mbt:155:7-155:17 [E0002] Warning (unused_value): Unused variable 'queue_size'
 clean_test_test/unique_science_tests.mbt:161:7-161:15 [E0002] Warning (unused_value): Unused variable 'element1'
 clean_test_test/unique_science_tests.mbt:162:3-162:13 [E4087] The variable rear_index is not mutable.
@@ -99,7 +99,7 @@ clean_test_test/unique_science_tests.mbt:298:44-298:61 [E4020] Package "azimuth"
 clean_test_test/unique_science_tests.mbt:298:80-298:97 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/unique_science_tests.mbt:298:117-298:134 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/unique_science_tests.mbt:299:3-299:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/unique_science_tests.mbt:302:3-302:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/unique_science_tests.mbt:302:3-302:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/unique_science_tests.mbt:315:3-315:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/unique_science_tests.mbt:319:3-319:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/unique_science_tests.mbt:327:29-327:46 [E4020] Package "azimuth" not found in the loaded packages.

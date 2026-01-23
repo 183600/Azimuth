@@ -1,18 +1,28 @@
-clean_test_test/simple_new_test_cases.mbt:4:11-4:12 [E3001] Lexing error: missing identifier after `.`
-clean_test_test/simple_new_test_cases.mbt:4:12-4:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
-clean_test_test/simple_new_test_cases.mbt:4:42-4:43 [E3001] Lexing error: missing identifier after `.`
-clean_test_test/simple_new_test_cases.mbt:5:11-5:12 [E3001] Lexing error: missing identifier after `.`
-clean_test_test/simple_new_test_cases.mbt:5:12-5:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
-clean_test_test/simple_new_test_cases.mbt:5:42-5:43 [E3001] Lexing error: missing identifier after `.`
-clean_test_test/simple_new_test_cases.mbt:8:11-8:12 [E3001] Lexing error: missing identifier after `.`
-clean_test_test/simple_new_test_cases.mbt:8:12-8:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
-clean_test_test/simple_new_test_cases.mbt:8:42-8:43 [E3001] Lexing error: missing identifier after `.`
-clean_test_test/simple_new_test_cases.mbt:9:11-9:12 [E3001] Lexing error: missing identifier after `.`
-clean_test_test/simple_new_test_cases.mbt:9:12-9:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
-clean_test_test/simple_new_test_cases.mbt:9:43-9:44 [E3001] Lexing error: missing identifier after `.`
-clean_test_test/simple_new_test_cases.mbt:12:11-12:12 [E3001] Lexing error: missing identifier after `.`
-clean_test_test/simple_new_test_cases.mbt:12:12-12:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
-clean_test_test/simple_new_test_cases.mbt:12:63-12:64 [E3001] Lexing error: missing identifier after `.`
-clean_test_test/simple_new_test_cases.mbt:13:11-13:12 [E3001] Lexing error: missing identifier after `.`
-clean_test_test/simple_new_test_cases.mbt:13:12-13:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
-clean_test_test/simple_new_test_cases.mbt:13:58-13:59 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/simple_new_test_cases.mbt:4:3-4:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:4:26-4:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:5:3-5:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:5:25-5:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:6:3-6:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:6:26-6:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:10:3-10:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:10:26-10:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:11:3-11:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:11:25-11:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:12:3-12:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:12:26-12:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:16:3-16:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:16:46-16:60 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:17:3-17:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:17:48-17:62 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:18:3-18:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:18:41-18:55 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:22:3-22:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:22:25-22:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:23:3-23:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:23:25-23:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:24:3-24:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:24:25-24:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:28:16-28:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:28:29-28:46 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:28:54-28:71 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_new_test_cases.mbt:29:3-29:21 [E4020] Package "azimuth" not found in the loaded packages.

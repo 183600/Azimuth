@@ -1,83 +1,195 @@
-clean_test_test/my_standard_tests.mbt:5:1-5:4 [E0035] Warning (reserved_keyword): The word `use` is reserved for possible future use. Please consider using another name.
-clean_test_test/my_standard_tests.mbt:5:1-5:4 [E3002] Parse error, unexpected token id (lowercase start), you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.
-clean_test_test/my_standard_tests.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:9:17-9:24 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:10:16-10:23 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:11:17-11:24 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:20:3-20:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:20:16-20:23 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:21:3-21:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:21:16-21:23 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:22:16-22:23 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:25:22-25:29 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:26:22-26:29 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:31:3-31:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:31:17-31:24 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:32:3-32:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:32:18-32:25 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:33:3-33:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:33:17-33:24 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:42:3-42:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:42:16-42:23 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:43:3-43:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:43:16-43:23 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:44:3-44:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:44:17-44:24 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:47:22-47:29 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:48:3-48:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:48:22-48:29 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:53:3-53:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/my_standard_tests.mbt:53:37-53:44 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:54:3-54:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/my_standard_tests.mbt:54:32-54:39 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:55:3-55:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/my_standard_tests.mbt:55:39-55:46 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:56:3-56:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/my_standard_tests.mbt:56:34-56:41 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:9:3-9:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:9:26-9:33 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:9:33-9:34 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:9:34-9:42 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:9:52-9:53 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:10:3-10:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:10:25-10:32 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:10:32-10:33 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:10:33-10:41 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:10:52-10:53 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:11:3-11:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:11:26-11:33 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:11:33-11:34 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:11:34-11:42 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:11:53-11:54 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:20:3-20:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:20:25-20:32 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:20:32-20:33 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:20:33-20:41 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:20:51-20:52 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:21:3-21:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:21:25-21:32 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:21:32-21:33 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:21:33-21:41 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:21:51-21:52 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:22:3-22:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:22:25-22:32 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:22:32-22:33 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:22:33-22:41 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:22:51-22:52 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:25:3-25:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:25:31-25:38 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:25:38-25:39 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:25:39-25:47 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:25:63-25:64 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:26:3-26:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:26:31-26:38 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:26:38-26:39 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:26:39-26:47 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:26:64-26:65 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:31:3-31:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:31:26-31:33 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:31:33-31:34 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:31:34-31:42 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:31:57-31:58 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:32:3-32:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:32:27-32:34 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:32:34-32:35 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:32:35-32:43 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:32:59-32:60 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:33:3-33:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:33:26-33:33 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:33:33-33:34 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:33:34-33:42 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:33:59-33:60 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:42:3-42:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:42:25-42:32 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:42:32-42:33 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:42:33-42:41 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:42:56-42:57 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:43:3-43:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:43:25-43:32 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:43:32-43:33 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:43:33-43:41 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:43:56-43:57 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:44:3-44:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:44:26-44:33 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:44:33-44:34 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:44:34-44:42 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:44:58-44:59 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:47:3-47:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:47:31-47:38 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:47:38-47:39 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:47:39-47:47 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:47:70-47:71 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:48:3-48:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:48:31-48:38 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:48:38-48:39 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:48:39-48:47 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:48:69-48:70 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:53:3-53:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:53:46-53:53 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:53:53-53:54 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:53:54-53:62 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:53:77-53:78 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:54:3-54:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:54:41-54:48 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:54:48-54:49 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:54:49-54:57 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:54:67-54:68 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:55:3-55:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:55:48-55:55 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:55:55-55:56 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:55:56-55:64 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:55:81-55:82 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:56:3-56:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:56:43-56:50 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:56:50-56:51 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:56:51-56:59 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:56:71-56:72 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:62:7-62:13 [E0002] Warning (unused_value): Unused variable 'length'
+clean_test_test/my_standard_tests.mbt:63:7-63:12 [E0002] Warning (unused_value): Unused variable 'width'
 clean_test_test/my_standard_tests.mbt:65:14-65:21 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:65:21-65:22 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:65:22-65:30 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
 clean_test_test/my_standard_tests.mbt:66:19-66:26 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:66:31-66:38 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:66:60-66:67 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:68:3-68:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:69:3-69:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:78:3-78:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:78:13-78:20 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:78:32-78:39 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:81:3-81:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:81:13-81:20 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:81:37-81:44 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:85:3-85:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/my_standard_tests.mbt:66:26-66:27 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:66:27-66:35 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:66:47-66:48 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:66:85-66:86 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:68:3-68:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:69:3-69:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:74:7-74:8 [E0002] Warning (unused_value): Unused variable 'a'
+clean_test_test/my_standard_tests.mbt:78:3-78:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:78:22-78:29 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:78:29-78:30 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:78:30-78:38 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:78:48-78:49 [E3002] Parse error, unexpected token `,`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:78:57-78:58 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:81:3-81:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:81:22-81:29 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:81:29-81:30 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:81:30-81:38 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:81:53-81:54 [E3002] Parse error, unexpected token `,`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:81:62-81:63 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:85:3-85:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/my_standard_tests.mbt:86:5-86:12 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:86:25-86:32 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:87:5-87:12 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:87:17-87:24 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:87:41-87:48 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:86:12-86:13 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:86:13-86:21 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:86:34-86:41 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:86:41-86:42 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:86:42-86:50 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:86:60-86:61 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:87:12-87:13 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:87:33-87:34 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:87:66-87:67 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:93:7-93:17 [E0002] Warning (unused_value): Unused variable 'item_price'
+clean_test_test/my_standard_tests.mbt:94:7-94:15 [E0002] Warning (unused_value): Unused variable 'quantity'
+clean_test_test/my_standard_tests.mbt:95:7-95:15 [E0002] Warning (unused_value): Unused variable 'shipping'
+clean_test_test/my_standard_tests.mbt:96:7-96:15 [E0002] Warning (unused_value): Unused variable 'tax_rate'
+clean_test_test/my_standard_tests.mbt:99:7-99:15 [E0002] Warning (unused_value): Unused variable 'subtotal'
 clean_test_test/my_standard_tests.mbt:99:18-99:25 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:99:25-99:26 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:99:26-99:34 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:101:7-101:10 [E0002] Warning (unused_value): Unused variable 'tax'
 clean_test_test/my_standard_tests.mbt:101:13-101:20 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:101:20-101:21 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:101:21-101:29 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
 clean_test_test/my_standard_tests.mbt:103:15-103:22 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:103:27-103:34 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:105:3-105:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:114:3-114:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:114:17-114:24 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:115:3-115:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:115:16-115:23 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:116:3-116:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:116:22-116:29 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:103:22-103:23 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:103:23-103:31 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:103:43-103:44 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:105:3-105:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:110:7-110:14 [E0002] Warning (unused_value): Unused variable 'max_val'
+clean_test_test/my_standard_tests.mbt:114:3-114:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:114:26-114:33 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:114:33-114:34 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:114:34-114:42 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:114:64-114:65 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:115:3-115:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:115:25-115:32 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:115:32-115:33 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:115:33-115:41 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:115:62-115:63 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:116:3-116:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:116:31-116:38 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:116:38-116:39 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:116:39-116:47 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:116:68-116:69 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
 clean_test_test/my_standard_tests.mbt:119:16-119:23 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:120:5-120:12 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:121:5-121:12 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:123:3-123:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/my_standard_tests.mbt:129:3-129:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/my_standard_tests.mbt:129:36-129:43 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:130:3-130:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/my_standard_tests.mbt:130:37-130:44 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:131:3-131:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/my_standard_tests.mbt:131:41-131:48 [E4021] The value identifier azimuth is unbound.
-clean_test_test/my_standard_tests.mbt:135:3-135:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/my_standard_tests.mbt:135:51-135:58 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:119:23-119:24 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:119:24-119:32 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:120:12-120:13 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:121:12-121:13 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:123:3-123:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:129:3-129:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:129:45-129:52 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:129:52-129:53 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:129:53-129:61 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:129:75-129:76 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:130:3-130:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:130:46-130:53 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:130:53-130:54 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:130:54-130:62 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:130:77-130:78 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:131:3-131:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:131:50-131:57 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:131:57-131:58 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:131:58-131:66 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:131:84-131:85 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.
+clean_test_test/my_standard_tests.mbt:135:3-135:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/my_standard_tests.mbt:135:60-135:67 [E4021] The value identifier azimuth is unbound.
+clean_test_test/my_standard_tests.mbt:135:67-135:68 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/my_standard_tests.mbt:135:68-135:76 [E3002] Parse error, unexpected token package name, you may expect `,` or `)`.
+clean_test_test/my_standard_tests.mbt:135:95-135:96 [E3002] Parse error, unexpected token `)`, you may expect `;` or `}`.

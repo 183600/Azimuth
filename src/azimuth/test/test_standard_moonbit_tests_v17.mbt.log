@@ -46,8 +46,8 @@ clean_test_test/standard_moonbit_tests_v17.mbt:68:16-68:28 [E4020] Package "azim
 clean_test_test/standard_moonbit_tests_v17.mbt:69:17-69:34 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standard_moonbit_tests_v17.mbt:70:16-70:28 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standard_moonbit_tests_v17.mbt:72:3-72:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_v17.mbt:77:3-77:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_v17.mbt:78:3-78:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_moonbit_tests_v17.mbt:77:3-77:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_moonbit_tests_v17.mbt:78:3-78:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standard_moonbit_tests_v17.mbt:79:3-79:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standard_moonbit_tests_v17.mbt:80:3-80:28 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standard_moonbit_tests_v17.mbt:90:18-90:35 [E4020] Package "azimuth" not found in the loaded packages.

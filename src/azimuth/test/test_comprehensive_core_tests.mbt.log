@@ -71,7 +71,7 @@ clean_test_test/comprehensive_core_tests.mbt:103:3-103:21 [E4020] Package "azimu
 clean_test_test/comprehensive_core_tests.mbt:103:31-103:48 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/comprehensive_core_tests.mbt:104:3-104:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/comprehensive_core_tests.mbt:104:31-104:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/comprehensive_core_tests.mbt:109:3-109:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/comprehensive_core_tests.mbt:110:3-110:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/comprehensive_core_tests.mbt:109:3-109:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/comprehensive_core_tests.mbt:110:3-110:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/comprehensive_core_tests.mbt:111:3-111:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/comprehensive_core_tests.mbt:112:3-112:28 [E4020] Package "azimuth" not found in the loaded packages.

@@ -44,7 +44,7 @@ clean_test_test/simple_additional_tests.mbt:76:3-76:21 [E4020] Package "azimuth"
 clean_test_test/simple_additional_tests.mbt:76:31-76:43 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/simple_additional_tests.mbt:77:3-77:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/simple_additional_tests.mbt:77:31-77:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/simple_additional_tests.mbt:82:3-82:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/simple_additional_tests.mbt:83:3-83:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_additional_tests.mbt:82:3-82:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_additional_tests.mbt:83:3-83:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/simple_additional_tests.mbt:84:3-84:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/simple_additional_tests.mbt:85:3-85:28 [E4020] Package "azimuth" not found in the loaded packages.

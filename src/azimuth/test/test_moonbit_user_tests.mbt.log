@@ -16,8 +16,8 @@ clean_test_test/moonbit_user_tests.mbt:30:3-30:21 [E4020] Package "azimuth" not 
 clean_test_test/moonbit_user_tests.mbt:45:7-45:17 [E0002] Warning (unused_value): Unused variable 'remainder3'
 clean_test_test/moonbit_user_tests.mbt:48:3-48:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moonbit_user_tests.mbt:55:7-55:15 [E0002] Warning (unused_value): Unused variable 'is_prime'
-clean_test_test/moonbit_user_tests.mbt:63:3-63:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/moonbit_user_tests.mbt:71:3-71:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moonbit_user_tests.mbt:63:3-63:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moonbit_user_tests.mbt:71:3-71:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moonbit_user_tests.mbt:83:17-83:34 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moonbit_user_tests.mbt:84:17-84:34 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moonbit_user_tests.mbt:85:17-85:34 [E4020] Package "azimuth" not found in the loaded packages.

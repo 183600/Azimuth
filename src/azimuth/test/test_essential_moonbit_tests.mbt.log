@@ -60,12 +60,12 @@ clean_test_test/essential_moonbit_tests.mbt:83:3-83:21 [E4020] Package "azimuth"
 clean_test_test/essential_moonbit_tests.mbt:83:31-83:48 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/essential_moonbit_tests.mbt:84:3-84:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/essential_moonbit_tests.mbt:84:31-84:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/essential_moonbit_tests.mbt:89:3-89:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/essential_moonbit_tests.mbt:90:3-90:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/essential_moonbit_tests.mbt:89:3-89:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/essential_moonbit_tests.mbt:90:3-90:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/essential_moonbit_tests.mbt:91:3-91:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/essential_moonbit_tests.mbt:92:3-92:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/essential_moonbit_tests.mbt:96:3-96:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/essential_moonbit_tests.mbt:99:3-99:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/essential_moonbit_tests.mbt:96:3-96:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/essential_moonbit_tests.mbt:99:3-99:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/essential_moonbit_tests.mbt:104:3-104:28 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/essential_moonbit_tests.mbt:104:41-104:55 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/essential_moonbit_tests.mbt:105:3-105:28 [E4020] Package "azimuth" not found in the loaded packages.

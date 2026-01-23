@@ -37,7 +37,8 @@ clean_test_test/advanced_test_cases.mbt:59:3-59:21 [E4020] Package "azimuth" not
 clean_test_test/advanced_test_cases.mbt:60:17-60:34 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/advanced_test_cases.mbt:61:3-61:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/advanced_test_cases.mbt:68:16-68:30 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/advanced_test_cases.mbt:69:3-69:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_test_cases.mbt:69:3-69:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_test_cases.mbt:69:22-69:50 [E4080] This function has type (String) -> Int, which requires 1 arguments, but is given 2 arguments.
 clean_test_test/advanced_test_cases.mbt:73:17-73:31 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/advanced_test_cases.mbt:74:3-74:28 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/advanced_test_cases.mbt:79:7-79:18 [E0002] Warning (unused_value): Unused variable 'test_values'
@@ -57,8 +58,8 @@ clean_test_test/advanced_test_cases.mbt:103:3-103:21 [E4020] Package "azimuth" n
 clean_test_test/advanced_test_cases.mbt:103:25-103:42 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/advanced_test_cases.mbt:104:3-104:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/advanced_test_cases.mbt:104:25-104:42 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/advanced_test_cases.mbt:110:3-110:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/advanced_test_cases.mbt:111:3-111:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_test_cases.mbt:110:3-110:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_test_cases.mbt:111:3-111:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/advanced_test_cases.mbt:117:3-117:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/advanced_test_cases.mbt:118:3-118:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/advanced_test_cases.mbt:119:3-119:21 [E4020] Package "azimuth" not found in the loaded packages.

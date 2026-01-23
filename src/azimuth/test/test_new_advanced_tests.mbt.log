@@ -1,6 +1,6 @@
-clean_test_test/new_advanced_tests.mbt:9:3-9:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/new_advanced_tests.mbt:11:3-11:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/new_advanced_tests.mbt:13:3-13:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:9:3-9:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:11:3-11:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:13:3-13:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_advanced_tests.mbt:16:3-16:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_advanced_tests.mbt:17:3-17:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_advanced_tests.mbt:22:7-22:12 [E0002] Warning (unused_value): Unused variable 'fib_0'
@@ -104,7 +104,7 @@ clean_test_test/new_advanced_tests.mbt:182:32-182:40 [E3002] Parse error, unexpe
 clean_test_test/new_advanced_tests.mbt:185:3-185:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_advanced_tests.mbt:186:3-186:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_advanced_tests.mbt:187:3-187:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/new_advanced_tests.mbt:188:3-188:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_tests.mbt:188:3-188:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_advanced_tests.mbt:193:7-193:20 [E0002] Warning (unused_value): Unused variable 'customer_name'
 clean_test_test/new_advanced_tests.mbt:196:7-196:15 [E0002] Warning (unused_value): Unused variable 'quantity'
 clean_test_test/new_advanced_tests.mbt:197:7-197:17 [E0002] Warning (unused_value): Unused variable 'unit_price'

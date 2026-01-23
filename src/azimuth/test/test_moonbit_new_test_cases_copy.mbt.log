@@ -43,8 +43,8 @@ clean_test_test/moonbit_new_test_cases_copy.mbt:78:7-78:11 [E0002] Warning (unus
 clean_test_test/moonbit_new_test_cases_copy.mbt:79:7-79:10 [E0002] Warning (unused_value): Unused variable 'mid'
 clean_test_test/moonbit_new_test_cases_copy.mbt:79:13-79:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
 clean_test_test/moonbit_new_test_cases_copy.mbt:79:22-79:30 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-clean_test_test/moonbit_new_test_cases_copy.mbt:82:3-82:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/moonbit_new_test_cases_copy.mbt:83:3-83:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moonbit_new_test_cases_copy.mbt:82:3-82:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moonbit_new_test_cases_copy.mbt:83:3-83:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moonbit_new_test_cases_copy.mbt:84:3-84:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moonbit_new_test_cases_copy.mbt:89:7-89:16 [E0002] Warning (unused_value): Unused variable 'stack_top'
 clean_test_test/moonbit_new_test_cases_copy.mbt:94:3-94:21 [E4020] Package "azimuth" not found in the loaded packages.
@@ -60,7 +60,7 @@ clean_test_test/moonbit_new_test_cases_copy.mbt:110:7-110:12 [E0002] Warning (un
 clean_test_test/moonbit_new_test_cases_copy.mbt:113:15-113:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
 clean_test_test/moonbit_new_test_cases_copy.mbt:113:24-113:32 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/moonbit_new_test_cases_copy.mbt:114:3-114:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/moonbit_new_test_cases_copy.mbt:118:3-118:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moonbit_new_test_cases_copy.mbt:118:3-118:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moonbit_new_test_cases_copy.mbt:121:15-121:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
 clean_test_test/moonbit_new_test_cases_copy.mbt:121:24-121:32 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/moonbit_new_test_cases_copy.mbt:122:3-122:21 [E4020] Package "azimuth" not found in the loaded packages.

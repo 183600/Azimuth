@@ -107,10 +107,10 @@ clean_test_test/enhanced_moonbit_test_suite.mbt:276:23-276:40 [E4020] Package "a
 clean_test_test/enhanced_moonbit_test_suite.mbt:277:3-277:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/enhanced_moonbit_test_suite.mbt:279:23-279:35 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/enhanced_moonbit_test_suite.mbt:280:3-280:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/enhanced_moonbit_test_suite.mbt:283:3-283:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/enhanced_moonbit_test_suite.mbt:283:24-283:36 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/enhanced_moonbit_test_suite.mbt:284:3-284:24 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/enhanced_moonbit_test_suite.mbt:284:25-284:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/enhanced_moonbit_test_suite.mbt:283:3-283:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/enhanced_moonbit_test_suite.mbt:283:22-283:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/enhanced_moonbit_test_suite.mbt:284:3-284:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/enhanced_moonbit_test_suite.mbt:284:28-284:40 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/enhanced_moonbit_test_suite.mbt:285:3-285:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/enhanced_moonbit_test_suite.mbt:285:25-285:37 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/enhanced_moonbit_test_suite.mbt:286:3-286:28 [E4020] Package "azimuth" not found in the loaded packages.

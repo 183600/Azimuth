@@ -73,9 +73,9 @@ clean_test_test/moonbit_comprehensive_tests.mbt:192:3-192:21 [E4020] Package "az
 clean_test_test/moonbit_comprehensive_tests.mbt:194:16-194:33 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moonbit_comprehensive_tests.mbt:194:34-194:46 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moonbit_comprehensive_tests.mbt:195:3-195:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/moonbit_comprehensive_tests.mbt:198:3-198:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/moonbit_comprehensive_tests.mbt:198:24-198:36 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/moonbit_comprehensive_tests.mbt:199:3-199:24 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/moonbit_comprehensive_tests.mbt:199:25-199:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moonbit_comprehensive_tests.mbt:198:3-198:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moonbit_comprehensive_tests.mbt:198:22-198:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moonbit_comprehensive_tests.mbt:199:3-199:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moonbit_comprehensive_tests.mbt:199:28-199:40 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moonbit_comprehensive_tests.mbt:200:3-200:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moonbit_comprehensive_tests.mbt:200:31-200:43 [E4020] Package "azimuth" not found in the loaded packages.

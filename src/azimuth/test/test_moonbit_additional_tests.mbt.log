@@ -51,11 +51,11 @@ clean_test_test/moonbit_additional_tests.mbt:95:24-95:41 [E4020] Package "azimut
 clean_test_test/moonbit_additional_tests.mbt:96:19-96:36 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moonbit_additional_tests.mbt:96:55-96:56 [E4018] Type Unit does not implement trait Div: no `impl` is defined
 clean_test_test/moonbit_additional_tests.mbt:98:3-98:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/moonbit_additional_tests.mbt:104:3-104:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/moonbit_additional_tests.mbt:105:3-105:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moonbit_additional_tests.mbt:104:3-104:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moonbit_additional_tests.mbt:105:3-105:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moonbit_additional_tests.mbt:106:3-106:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moonbit_additional_tests.mbt:107:3-107:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/moonbit_additional_tests.mbt:111:3-111:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/moonbit_additional_tests.mbt:111:24-111:36 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/moonbit_additional_tests.mbt:112:3-112:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/moonbit_additional_tests.mbt:112:24-112:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moonbit_additional_tests.mbt:111:3-111:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moonbit_additional_tests.mbt:111:22-111:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moonbit_additional_tests.mbt:112:3-112:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moonbit_additional_tests.mbt:112:22-112:39 [E4020] Package "azimuth" not found in the loaded packages.

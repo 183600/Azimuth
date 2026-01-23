@@ -16,7 +16,7 @@ clean_test_test/new_enhanced_test_cases.mbt:33:3-33:21 [E4020] Package "azimuth"
 clean_test_test/new_enhanced_test_cases.mbt:34:3-34:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_enhanced_test_cases.mbt:48:24-48:41 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_enhanced_test_cases.mbt:52:3-52:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/new_enhanced_test_cases.mbt:61:3-61:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_enhanced_test_cases.mbt:61:3-61:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_enhanced_test_cases.mbt:67:15-67:27 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_enhanced_test_cases.mbt:68:15-68:27 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_enhanced_test_cases.mbt:69:15-69:27 [E4020] Package "azimuth" not found in the loaded packages.

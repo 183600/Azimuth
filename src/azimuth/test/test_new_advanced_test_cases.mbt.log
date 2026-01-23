@@ -109,19 +109,19 @@ clean_test_test/new_advanced_test_cases.mbt:94:7-94:14 [E0002] Warning (unused_v
 clean_test_test/new_advanced_test_cases.mbt:95:7-95:14 [E0002] Warning (unused_value): Unused variable 'min_val'
 clean_test_test/new_advanced_test_cases.mbt:98:11-98:12 [E3001] Lexing error: missing identifier after `.`
 clean_test_test/new_advanced_test_cases.mbt:98:12-98:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
-clean_test_test/new_advanced_test_cases.mbt:98:41-98:42 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/new_advanced_test_cases.mbt:98:39-98:40 [E3001] Lexing error: missing identifier after `.`
 clean_test_test/new_advanced_test_cases.mbt:99:11-99:12 [E3001] Lexing error: missing identifier after `.`
 clean_test_test/new_advanced_test_cases.mbt:99:12-99:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
-clean_test_test/new_advanced_test_cases.mbt:99:41-99:42 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/new_advanced_test_cases.mbt:99:39-99:40 [E3001] Lexing error: missing identifier after `.`
 clean_test_test/new_advanced_test_cases.mbt:100:11-100:12 [E3001] Lexing error: missing identifier after `.`
 clean_test_test/new_advanced_test_cases.mbt:100:12-100:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
-clean_test_test/new_advanced_test_cases.mbt:100:41-100:42 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/new_advanced_test_cases.mbt:100:39-100:40 [E3001] Lexing error: missing identifier after `.`
 clean_test_test/new_advanced_test_cases.mbt:101:11-101:12 [E3001] Lexing error: missing identifier after `.`
 clean_test_test/new_advanced_test_cases.mbt:101:12-101:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
-clean_test_test/new_advanced_test_cases.mbt:101:41-101:42 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/new_advanced_test_cases.mbt:101:39-101:40 [E3001] Lexing error: missing identifier after `.`
 clean_test_test/new_advanced_test_cases.mbt:104:11-104:12 [E3001] Lexing error: missing identifier after `.`
 clean_test_test/new_advanced_test_cases.mbt:104:12-104:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
-clean_test_test/new_advanced_test_cases.mbt:104:41-104:42 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/new_advanced_test_cases.mbt:104:39-104:40 [E3001] Lexing error: missing identifier after `.`
 clean_test_test/new_advanced_test_cases.mbt:105:11-105:12 [E3001] Lexing error: missing identifier after `.`
 clean_test_test/new_advanced_test_cases.mbt:105:12-105:20 [E3002] Parse error, unexpected token package name, you may expect `;` or `}`.
-clean_test_test/new_advanced_test_cases.mbt:105:41-105:42 [E3001] Lexing error: missing identifier after `.`
+clean_test_test/new_advanced_test_cases.mbt:105:39-105:40 [E3001] Lexing error: missing identifier after `.`

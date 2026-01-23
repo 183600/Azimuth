@@ -38,7 +38,7 @@ clean_test_test/moon_test_comprehensive.mbt:106:3-106:21 [E4020] Package "azimut
 clean_test_test/moon_test_comprehensive.mbt:107:3-107:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moon_test_comprehensive.mbt:108:3-108:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moon_test_comprehensive.mbt:109:3-109:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/moon_test_comprehensive.mbt:110:3-110:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/moon_test_comprehensive.mbt:110:3-110:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moon_test_comprehensive.mbt:122:13-122:25 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moon_test_comprehensive.mbt:122:26-122:38 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/moon_test_comprehensive.mbt:122:39-122:51 [E4020] Package "azimuth" not found in the loaded packages.

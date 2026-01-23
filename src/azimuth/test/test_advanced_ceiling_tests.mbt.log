@@ -28,7 +28,7 @@ clean_test_test/advanced_ceiling_tests.mbt:62:3-62:21 [E4020] Package "azimuth" 
 clean_test_test/advanced_ceiling_tests.mbt:71:25-71:50 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/advanced_ceiling_tests.mbt:72:3-72:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/advanced_ceiling_tests.mbt:75:24-75:41 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/advanced_ceiling_tests.mbt:76:3-76:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/advanced_ceiling_tests.mbt:76:3-76:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/advanced_ceiling_tests.mbt:85:22-85:47 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/advanced_ceiling_tests.mbt:86:3-86:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/advanced_ceiling_tests.mbt:89:40-89:57 [E4020] Package "azimuth" not found in the loaded packages.

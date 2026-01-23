@@ -46,11 +46,11 @@ clean_test_test/standard_moonbit_tests_v3.mbt:87:3-87:28 [E4020] Package "azimut
 clean_test_test/standard_moonbit_tests_v3.mbt:87:56-87:70 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standard_moonbit_tests_v3.mbt:88:3-88:28 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standard_moonbit_tests_v3.mbt:88:43-88:57 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_v3.mbt:93:3-93:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_v3.mbt:94:3-94:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_moonbit_tests_v3.mbt:93:3-93:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_moonbit_tests_v3.mbt:94:3-94:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standard_moonbit_tests_v3.mbt:95:3-95:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standard_moonbit_tests_v3.mbt:96:3-96:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_v3.mbt:100:3-100:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_v3.mbt:100:24-100:36 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_v3.mbt:101:3-101:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standard_moonbit_tests_v3.mbt:101:24-101:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_moonbit_tests_v3.mbt:100:3-100:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_moonbit_tests_v3.mbt:100:22-100:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_moonbit_tests_v3.mbt:101:3-101:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_moonbit_tests_v3.mbt:101:22-101:39 [E4020] Package "azimuth" not found in the loaded packages.

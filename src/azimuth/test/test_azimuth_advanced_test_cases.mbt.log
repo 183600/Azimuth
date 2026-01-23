@@ -1,0 +1,90 @@
+clean_test_test/azimuth_advanced_test_cases.mbt:10:26-10:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:12:24-12:49 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:12:50-12:67 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:14:3-14:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:21:7-21:12 [E0002] Warning (unused_value): Unused variable 'years'
+clean_test_test/azimuth_advanced_test_cases.mbt:24:24-24:49 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:24:50-24:67 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:25:21-25:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:28:24-28:49 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:28:50-28:67 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:29:21-29:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:32:24-32:49 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:32:50-32:67 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:33:22-33:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:35:3-35:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:45:3-45:12 [E4087] The variable stack_top is not mutable.
+clean_test_test/azimuth_advanced_test_cases.mbt:45:15-45:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:46:3-46:13 [E4087] The variable stack_size is not mutable.
+clean_test_test/azimuth_advanced_test_cases.mbt:46:16-46:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:48:3-48:12 [E4087] The variable stack_top is not mutable.
+clean_test_test/azimuth_advanced_test_cases.mbt:48:15-48:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:49:3-49:13 [E4087] The variable stack_size is not mutable.
+clean_test_test/azimuth_advanced_test_cases.mbt:49:16-49:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:51:3-51:12 [E4087] The variable stack_top is not mutable.
+clean_test_test/azimuth_advanced_test_cases.mbt:51:15-51:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:52:3-52:13 [E4087] The variable stack_size is not mutable.
+clean_test_test/azimuth_advanced_test_cases.mbt:52:16-52:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:55:3-55:12 [E4087] The variable stack_top is not mutable.
+clean_test_test/azimuth_advanced_test_cases.mbt:55:15-55:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:56:3-56:13 [E4087] The variable stack_size is not mutable.
+clean_test_test/azimuth_advanced_test_cases.mbt:56:16-56:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:58:3-58:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:59:3-59:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:68:21-68:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:71:24-71:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:74:26-74:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:76:3-76:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:77:3-77:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:78:3-78:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:89:23-89:40 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:92:24-92:49 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:92:50-92:67 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:93:22-93:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:96:25-96:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:98:3-98:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:99:3-99:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:108:18-108:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:112:5-112:17 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:117:3-117:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:122:7-122:13 [E0002] Warning (unused_value): Unused variable 'values'
+clean_test_test/azimuth_advanced_test_cases.mbt:126:13-126:25 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:126:26-126:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:126:39-126:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:126:52-126:64 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:127:14-127:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:130:15-130:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:130:32-130:37 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/azimuth_advanced_test_cases.mbt:131:15-131:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:131:32-131:37 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
+clean_test_test/azimuth_advanced_test_cases.mbt:132:26-132:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:132:39-132:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:132:52-132:69 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:132:85-132:102 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:133:18-133:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:135:3-135:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:136:3-136:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:147:24-147:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:150:23-150:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:150:49-150:66 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:153:20-153:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:155:3-155:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:156:3-156:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:157:3-157:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:165:20-165:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:165:33-165:58 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:165:59-165:76 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:168:25-168:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:168:51-168:68 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:168:69-168:81 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:170:3-170:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:171:3-171:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:181:19-181:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:181:32-181:49 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:185:30-185:55 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:185:56-185:68 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:186:30-186:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:186:43-186:68 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:188:3-188:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:189:3-189:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_advanced_test_cases.mbt:190:3-190:21 [E4020] Package "azimuth" not found in the loaded packages.

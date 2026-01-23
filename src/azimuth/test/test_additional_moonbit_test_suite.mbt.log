@@ -100,14 +100,14 @@ clean_test_test/additional_moonbit_test_suite.mbt:148:3-148:21 [E4020] Package "
 clean_test_test/additional_moonbit_test_suite.mbt:149:3-149:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/additional_moonbit_test_suite.mbt:152:15-152:27 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/additional_moonbit_test_suite.mbt:153:3-153:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/additional_moonbit_test_suite.mbt:162:3-162:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/additional_moonbit_test_suite.mbt:162:24-162:36 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/additional_moonbit_test_suite.mbt:163:3-163:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/additional_moonbit_test_suite.mbt:163:24-163:36 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/additional_moonbit_test_suite.mbt:164:3-164:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/additional_moonbit_test_suite.mbt:164:24-164:41 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/additional_moonbit_test_suite.mbt:165:3-165:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/additional_moonbit_test_suite.mbt:165:24-165:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:162:3-162:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:162:22-162:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:163:3-163:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:163:22-163:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:164:3-164:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:164:22-164:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:165:3-165:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:165:22-165:39 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/additional_moonbit_test_suite.mbt:168:3-168:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
 clean_test_test/additional_moonbit_test_suite.mbt:168:12-168:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/additional_moonbit_test_suite.mbt:169:3-169:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
@@ -116,10 +116,10 @@ clean_test_test/additional_moonbit_test_suite.mbt:170:3-170:10 [E3002] Expected 
 clean_test_test/additional_moonbit_test_suite.mbt:170:12-170:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/additional_moonbit_test_suite.mbt:171:3-171:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
 clean_test_test/additional_moonbit_test_suite.mbt:171:12-171:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
-clean_test_test/additional_moonbit_test_suite.mbt:174:3-174:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/additional_moonbit_test_suite.mbt:174:24-174:41 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/additional_moonbit_test_suite.mbt:175:3-175:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/additional_moonbit_test_suite.mbt:175:24-175:36 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:174:3-174:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:174:22-174:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:175:3-175:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_moonbit_test_suite.mbt:175:22-175:34 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/additional_moonbit_test_suite.mbt:185:16-185:33 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/additional_moonbit_test_suite.mbt:186:16-186:33 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/additional_moonbit_test_suite.mbt:187:16-187:33 [E4020] Package "azimuth" not found in the loaded packages.

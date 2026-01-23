@@ -1,115 +1,20 @@
-clean_test_test/user_new_test_cases.mbt:6:3-6:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:6:26-6:38 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:7:26-7:38 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:8:3-8:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:8:25-8:37 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:9:3-9:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:9:34-9:46 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:10:3-10:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:10:35-10:47 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:15:3-15:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:15:26-15:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:16:3-16:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:16:27-16:44 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:17:3-17:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:17:25-17:42 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:18:3-18:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:18:27-18:44 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:19:3-19:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:19:34-19:51 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:24:3-24:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:24:48-24:62 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:25:3-25:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:25:46-25:60 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:26:3-26:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:26:41-26:55 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:27:3-27:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:27:42-27:56 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:28:3-28:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:28:51-28:65 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:33:3-33:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:33:25-33:50 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:34:3-34:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:34:25-34:50 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:35:3-35:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:35:26-35:51 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:36:3-36:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:36:26-36:51 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:37:3-37:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:37:25-37:50 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:47:17-47:34 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:47:35-47:47 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:48:3-48:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:51:17-51:29 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:51:30-51:47 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:52:3-52:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:55:17-55:42 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:55:43-55:55 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:55:56-55:68 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:56:3-56:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:65:3-65:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:65:31-65:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:66:3-66:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:66:31-66:43 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:67:3-67:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:67:26-67:38 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:70:3-70:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:70:25-70:42 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:71:3-71:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:71:31-71:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:72:3-72:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:72:31-72:48 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:78:3-78:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:78:41-78:55 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:81:3-81:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:81:42-81:56 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:85:3-85:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:85:60-85:74 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:88:3-88:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:88:50-88:64 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:91:3-91:28 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:91:45-91:59 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:100:3-100:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:100:22-100:34 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:100:42-100:54 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:101:3-101:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:101:22-101:39 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:101:47-101:64 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:105:3-105:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:105:22-105:34 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:105:35-105:47 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:105:59-105:71 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:105:75-105:87 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:106:3-106:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:106:22-106:39 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:106:40-106:57 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:106:69-106:86 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:106:90-106:107 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:109:3-109:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:109:22-109:39 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:109:43-109:55 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:109:64-109:76 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:109:77-109:94 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:109:102-109:119 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:118:18-118:35 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:119:15-119:27 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:120:3-120:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:124:20-124:32 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:124:33-124:50 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:125:3-125:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:130:21-130:33 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:130:34-130:51 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:131:3-131:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:140:3-140:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:140:24-140:36 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:141:3-141:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:141:24-141:36 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:142:3-142:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:142:24-142:41 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:143:3-143:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:143:24-143:41 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:146:3-146:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:147:3-147:24 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:148:3-148:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/user_new_test_cases.mbt:149:3-149:28 [E4020] Package "azimuth" not found in the loaded packages.
+azimuth_test/user_new_test_cases.mbt:140:22-140:52 [E4080] This function has type (Int, Int) -> Int, which requires 2 arguments, but is given 3 arguments.
+azimuth_test/user_new_test_cases.mbt:140:22-140:63 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/user_new_test_cases.mbt:140:3-140:64 [E4080] This function has type (Int, Int) -> Unit, which requires 2 arguments, but is given 1 arguments.
+azimuth_test/user_new_test_cases.mbt:141:22-141:53 [E4080] This function has type (Int, Int) -> Int, which requires 2 arguments, but is given 3 arguments.
+azimuth_test/user_new_test_cases.mbt:141:22-141:64 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/user_new_test_cases.mbt:141:3-141:65 [E4080] This function has type (Int, Int) -> Unit, which requires 2 arguments, but is given 1 arguments.
+azimuth_test/user_new_test_cases.mbt:142:22-142:57 [E4080] This function has type (Int, Int) -> Int, which requires 2 arguments, but is given 3 arguments.
+azimuth_test/user_new_test_cases.mbt:142:22-142:68 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/user_new_test_cases.mbt:142:3-142:69 [E4080] This function has type (Int, Int) -> Unit, which requires 2 arguments, but is given 1 arguments.
+azimuth_test/user_new_test_cases.mbt:143:22-143:58 [E4080] This function has type (Int, Int) -> Int, which requires 2 arguments, but is given 3 arguments.
+azimuth_test/user_new_test_cases.mbt:143:22-143:69 [E4014] Expr Type Mismatch
+        has type : Bool
+        wanted   : Int
+azimuth_test/user_new_test_cases.mbt:143:3-143:70 [E4080] This function has type (Int, Int) -> Unit, which requires 2 arguments, but is given 1 arguments.

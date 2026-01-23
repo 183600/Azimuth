@@ -1,66 +1,66 @@
-clean_test_test/extra_moonbit_test_cases.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:6:17-6:20 [E4021] The value identifier add is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:7:16-7:19 [E4021] The value identifier add is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:17:22-17:25 [E4021] The value identifier add is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:18:3-18:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:18:22-18:25 [E4021] The value identifier add is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:19:3-19:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:19:17-19:20 [E4021] The value identifier add is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:24:17-24:25 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:25:18-25:26 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:26:16-26:24 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:35:3-35:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:35:22-35:30 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:36:3-36:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:36:22-36:30 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:37:3-37:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:37:16-37:24 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:42:3-42:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:42:39-42:44 [E4021] The value identifier greet is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:43:3-43:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:43:32-43:37 [E4021] The value identifier greet is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:44:3-44:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:44:37-44:42 [E4021] The value identifier greet is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:55:13-55:16 [E4021] The value identifier add is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:56:17-56:25 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:57:16-57:19 [E4021] The value identifier add is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:59:3-59:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:68:3-68:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:68:13-68:16 [E4021] The value identifier add is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:68:24-68:27 [E4021] The value identifier add is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:71:3-71:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:71:13-71:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:71:29-71:37 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:74:3-74:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:74:13-74:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:74:25-74:28 [E4021] The value identifier add is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:74:37-74:40 [E4021] The value identifier add is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:74:41-74:49 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:74:57-74:65 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:84:16-84:24 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:85:16-85:24 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:86:20-86:23 [E4021] The value identifier add is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:88:3-88:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:93:3-93:14 [E4021] The value identifier assert_true is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:94:3-94:15 [E4021] The value identifier assert_false is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:95:3-95:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:96:3-96:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:106:3-106:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:106:22-106:25 [E4021] The value identifier add is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:107:3-107:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:107:22-107:25 [E4021] The value identifier add is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:108:3-108:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:108:19-108:27 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:109:3-109:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:109:19-109:27 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:110:3-110:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:110:22-110:30 [E4021] The value identifier multiply is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:111:3-111:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/extra_moonbit_test_cases.mbt:111:22-111:30 [E4021] The value identifier multiply is unbound.
+clean_test_test/extra_moonbit_test_cases.mbt:6:3-6:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:6:26-6:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:7:25-7:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:8:3-8:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:8:26-8:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:17:3-17:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:17:31-17:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:18:3-18:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:18:31-18:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:19:3-19:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:19:26-19:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:24:3-24:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:24:26-24:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:25:3-25:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:25:27-25:44 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:26:3-26:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:26:25-26:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:35:3-35:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:35:31-35:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:36:3-36:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:36:31-36:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:37:3-37:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:37:25-37:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:42:3-42:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:42:48-42:62 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:43:3-43:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:43:41-43:55 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:44:3-44:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:44:46-44:60 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:55:13-55:25 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:56:17-56:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:57:16-57:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:59:3-59:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:68:3-68:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:68:22-68:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:68:42-68:54 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:71:3-71:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:71:22-71:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:71:47-71:64 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:74:3-74:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:74:22-74:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:74:43-74:55 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:74:64-74:76 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:74:77-74:94 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:74:102-74:119 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:84:16-84:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:85:16-85:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:86:20-86:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:88:3-88:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:93:3-93:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:94:3-94:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:95:3-95:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:96:3-96:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:106:3-106:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:106:31-106:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:107:3-107:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:107:31-107:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:108:3-108:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:108:28-108:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:109:3-109:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:109:28-109:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:110:3-110:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:110:31-110:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:111:3-111:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/extra_moonbit_test_cases.mbt:111:31-111:48 [E4020] Package "azimuth" not found in the loaded packages.

@@ -38,9 +38,9 @@ clean_test_test/additional_tests.mbt:71:19-71:31 [E4020] Package "azimuth" not f
 clean_test_test/additional_tests.mbt:71:32-71:44 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/additional_tests.mbt:72:3-72:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/additional_tests.mbt:78:7-78:15 [E0002] Warning (unused_value): Unused variable 'is_prime'
-clean_test_test/additional_tests.mbt:86:3-86:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/additional_tests.mbt:87:3-87:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/additional_tests.mbt:88:3-88:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_tests.mbt:86:3-86:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_tests.mbt:87:3-87:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/additional_tests.mbt:88:3-88:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/additional_tests.mbt:93:3-93:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/additional_tests.mbt:101:18-101:35 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/additional_tests.mbt:102:3-102:21 [E4020] Package "azimuth" not found in the loaded packages.

@@ -97,8 +97,8 @@ clean_test_test/new_advanced_moon_tests.mbt:263:3-263:21 [E4020] Package "azimut
 clean_test_test/new_advanced_moon_tests.mbt:277:20-277:32 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_advanced_moon_tests.mbt:277:33-277:45 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_advanced_moon_tests.mbt:278:3-278:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/new_advanced_moon_tests.mbt:289:3-289:23 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/new_advanced_moon_tests.mbt:295:3-295:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_moon_tests.mbt:289:3-289:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_advanced_moon_tests.mbt:295:3-295:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_advanced_moon_tests.mbt:302:17-302:29 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_advanced_moon_tests.mbt:304:15-304:27 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_advanced_moon_tests.mbt:306:15-306:27 [E4020] Package "azimuth" not found in the loaded packages.
