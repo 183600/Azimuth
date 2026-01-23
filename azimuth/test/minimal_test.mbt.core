@@ -1,0 +1,17 @@
+((Ctop_fn
+  ((binder __test_6d696e696d616c5f746573742e6d6274_0)
+   (func
+    ((params ())
+     (body
+      (Cexpr_apply $builtin.assert_eq
+       (2 2
+        (Cexpr_constr (Constr_tag_regular None) ()
+         (Option String (generic_ false)))
+        @:minimal_test.mbt:4:3-4:31)
+       (Normal
+        ((Int Int (Option String (generic_ false))
+          (T_constr SourceLoc () (generic_ false)))
+         -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))
+       ((Int (Eq Show)))))))
+   (ty_params_ ()) (is_pub_ false))))

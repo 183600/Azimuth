@@ -1,5 +1,5 @@
-pub fn assert_eq (lhs/238 : Int, rhs/239 : Int) -> Unit {
-  if lhs/238 != rhs/239 {
+pub fn assert_eq (lhs/488 : Int, rhs/489 : Int) -> Unit {
+  if lhs/488 != rhs/489 {
     "Assertion failed"
     ()
   } else {
@@ -8,8 +8,8 @@ pub fn assert_eq (lhs/238 : Int, rhs/239 : Int) -> Unit {
   ()
 }
 
-pub fn assert_eq_string (lhs/236 : String, rhs/237 : String) -> Unit {
-  if Eq::not_equal|$default_impl|(lhs/236, rhs/237) {
+pub fn assert_eq_string (lhs/486 : String, rhs/487 : String) -> Unit {
+  if Eq::not_equal|$default_impl|(lhs/486, rhs/487) {
     "String assertion failed"
     ()
   } else {
@@ -18,27 +18,27 @@ pub fn assert_eq_string (lhs/236 : String, rhs/237 : String) -> Unit {
   ()
 }
 
-pub fn add (a/234 : Int, b/235 : Int) -> Int { a/234 + b/235 }
+pub fn add (a/484 : Int, b/485 : Int) -> Int { a/484 + b/485 }
 
-pub fn multiply (a/232 : Int, b/233 : Int) -> Int { a/232 * b/233 }
+pub fn multiply (a/482 : Int, b/483 : Int) -> Int { a/482 * b/483 }
 
-pub fn greet (name/231 : String) -> String {
-  @ccall add_string(@ccall add_string("Hello, ", name/231), "!")
+pub fn greet (name/481 : String) -> String {
+  @ccall add_string(@ccall add_string("Hello, ", name/481), "!")
 }
 
-pub fn divide_with_ceil (a/227 : Int, b/228 : Int) -> Int {
-  if b/228 == 0 {
+pub fn divide_with_ceil (a/477 : Int, b/478 : Int) -> Int {
+  if b/478 == 0 {
     0
   } else {
-    let quotient/229 : Int = a/227 / b/228
-    let remainder/230 : Int = a/227 % b/228
-    if remainder/230 == 0 {
-      quotient/229
+    let quotient/479 : Int = a/477 / b/478
+    let remainder/480 : Int = a/477 % b/478
+    if remainder/480 == 0 {
+      quotient/479
     } else {
-      if a/227 > 0 && b/228 > 0 {
-        quotient/229 + 1
+      if a/477 > 0 && b/478 > 0 {
+        quotient/479 + 1
       } else {
-        if a/227 < 0 && b/228 < 0 { quotient/229 + 1 } else { quotient/229 }
+        if a/477 < 0 && b/478 < 0 { quotient/479 + 1 } else { quotient/479 }
       }
     }
   }

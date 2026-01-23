@@ -1,0 +1,25 @@
+((Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder __test_6d696e696d616c5f746573742e6d6274_0)
+   (fn
+    ((params ())
+     (body
+      (Texpr_apply
+       (Texpr_ident $builtin.assert_eq ((Int (Eq Show)))
+        ((_ _ msg? (auto loc))) Normal
+        ((Int Int (Option String (generic_ false))
+          (T_constr SourceLoc () (generic_ false)))
+         -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))
+       ((Texpr_constant 2 Int)
+        (Texpr_apply
+         (Texpr_ident Add::add|Int| () (Prim (Parith I32 Add))
+          ((Int Int) -> Int (generic_ false)))
+         ((Texpr_constant 1 Int) (Texpr_constant 1 Int)) Int Infix))
+       Rethrow Unit Normal))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ()))))

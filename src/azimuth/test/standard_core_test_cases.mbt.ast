@@ -190,11 +190,7 @@
    (is_test_ true))
   (Decl_body
    (Pexpr_sequence
-    ((Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_true)))
-      ((Pexpr_constant true)))
-     (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_false)))
-      ((Pexpr_constant false)))
-     (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+    ((Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
       ((Pexpr_constant 42) (Pexpr_constant 42))))
     (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq_string)))
      ((Pexpr_constant test) (Pexpr_constant test))))))

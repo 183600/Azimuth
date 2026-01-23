@@ -40,8 +40,8 @@
    (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
    (is_test_ true))
   (Decl_body
-   (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_true)))
-    ((Pexpr_constant true)))))
+   (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+    ((Pexpr_constant 1) (Pexpr_constant 1)))))
  (Ptop_funcdef
   ((name
     ((binder_name __test_73696d706c655f746573745f6578616d706c652e6d6274_4)))
@@ -50,5 +50,5 @@
    (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
    (is_test_ true))
   (Decl_body
-   (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_false)))
-    ((Pexpr_constant false))))))
+   (Pexpr_apply (Pexpr_ident ((var_name @azimuth.assert_eq)))
+    ((Pexpr_constant 1) (Pexpr_constant 1))))))

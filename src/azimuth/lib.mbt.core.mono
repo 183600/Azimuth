@@ -1,1 +1,77 @@
-((body ()) (types ()) (object_methods ()))
+((body
+  ((Ctop_fn
+    ((binder assert_eq)
+     (func
+      ((params (((binder lhs/0) (ty T_int)) ((binder rhs/1) (ty T_int))))
+       (body
+        (Cexpr_sequence
+         ((Cexpr_if
+           ((Pcomparison I32 Ne) (Cexpr_var lhs/0 T_int)
+            (Cexpr_var rhs/1 T_int))
+           (Cexpr_sequence ("Assertion failed") (Cexpr_unit) T_unit)
+           ((Cexpr_unit)) T_unit))
+         (Cexpr_unit) T_unit))))
+     (export_info_ (assert_eq))))
+   (Ctop_fn
+    ((binder assert_eq_string)
+     (func
+      ((params
+        (((binder lhs/0) (ty T_string)) ((binder rhs/1) (ty T_string))))
+       (body
+        (Cexpr_sequence
+         ((Cexpr_if
+           (Cexpr_apply Eq::not_equal|$default_impl||String|
+            ((Cexpr_var lhs/0 T_string) (Cexpr_var rhs/1 T_string))
+            (Normal (T_func (params (T_string T_string)) (return T_bool)))
+            T_bool)
+           (Cexpr_sequence ("String assertion failed") (Cexpr_unit) T_unit)
+           ((Cexpr_unit)) T_unit))
+         (Cexpr_unit) T_unit))))
+     (export_info_ (assert_eq_string))))
+   (Ctop_fn
+    ((binder add)
+     (func
+      ((params (((binder a/0) (ty T_int)) ((binder b/1) (ty T_int))))
+       (body ((Parith I32 Add) (Cexpr_var a/0 T_int) (Cexpr_var b/1 T_int)))))
+     (export_info_ (add))))
+   (Ctop_fn
+    ((binder multiply)
+     (func
+      ((params (((binder a/0) (ty T_int)) ((binder b/1) (ty T_int))))
+       (body ((Parith I32 Mul) (Cexpr_var a/0 T_int) (Cexpr_var b/1 T_int)))))
+     (export_info_ (multiply))))
+   (Ctop_fn
+    ((binder greet)
+     (func
+      ((params (((binder name/0) (ty T_string))))
+       (body
+        (@add_string (@add_string "Hello, " (Cexpr_var name/0 T_string)) !))))
+     (export_info_ (greet))))
+   (Ctop_fn
+    ((binder divide_with_ceil)
+     (func
+      ((params (((binder a/0) (ty T_int)) ((binder b/1) (ty T_int))))
+       (body
+        (Cexpr_if ((Pcomparison I32 Eq) (Cexpr_var b/1 T_int) 0) 0
+         ((Cexpr_let quotient/2
+           ((Parith I32 Div) (Cexpr_var a/0 T_int) (Cexpr_var b/1 T_int))
+           (Cexpr_let remainder/3
+            ((Parith I32 Mod) (Cexpr_var a/0 T_int) (Cexpr_var b/1 T_int))
+            (Cexpr_if ((Pcomparison I32 Eq) (Cexpr_var remainder/3 T_int) 0)
+             (Cexpr_var quotient/2 T_int)
+             ((Cexpr_if
+               (Cexpr_and ((Pcomparison I32 Gt) (Cexpr_var a/0 T_int) 0)
+                ((Pcomparison I32 Gt) (Cexpr_var b/1 T_int) 0))
+               ((Parith I32 Add) (Cexpr_var quotient/2 T_int) 1)
+               ((Cexpr_if
+                 (Cexpr_and ((Pcomparison I32 Lt) (Cexpr_var a/0 T_int) 0)
+                  ((Pcomparison I32 Lt) (Cexpr_var b/1 T_int) 0))
+                 ((Parith I32 Add) (Cexpr_var quotient/2 T_int) 1)
+                 ((Cexpr_var quotient/2 T_int)) T_int))
+               T_int))
+             T_int)
+            T_int)
+           T_int))
+         T_int))))
+     (export_info_ (divide_with_ceil))))))
+ (types ()) (object_methods ()))

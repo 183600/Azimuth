@@ -402,13 +402,13 @@
      (body
       (Texpr_sequence
        ((Texpr_apply
-         (Texpr_ident $azimuth.assert_true () Normal
-          ((Bool) -> Unit (generic_ false)))
-         ((Texpr_constant true Bool)) Unit Normal)
+         (Texpr_ident $azimuth.assert_eq () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_constant 1 Int) (Texpr_constant 1 Int)) Unit Normal)
         (Texpr_apply
-         (Texpr_ident $azimuth.assert_false () Normal
-          ((Bool) -> Unit (generic_ false)))
-         ((Texpr_constant false Bool)) Unit Normal)
+         (Texpr_ident $azimuth.assert_eq () Normal
+          ((Int Int) -> Unit (generic_ false)))
+         ((Texpr_constant 1 Int) (Texpr_constant 1 Int)) Unit Normal)
         (Texpr_apply
          (Texpr_ident $azimuth.assert_eq () Normal
           ((Int Int) -> Unit (generic_ false)))

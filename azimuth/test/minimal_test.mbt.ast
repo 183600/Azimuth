@@ -1,0 +1,10 @@
+((Ptop_funcdef
+  ((name ((binder_name __test_6d696e696d616c5f746573742e6d6274_0)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_apply (Pexpr_ident ((var_name @builtin.assert_eq)))
+    ((Pexpr_constant 2)
+     (Pexpr_infix ((var_name +)) (Pexpr_constant 1) (Pexpr_constant 1)))))))

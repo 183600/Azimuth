@@ -1,163 +1,64 @@
 ((fns
-  (((binder divide_with_ceil) (fn_kind_ (Top_pub divide_with_ceil))
+  (((binder assert_false) (fn_kind_ (Top_pub assert_false))
     (fn
-     ((params ((dividend/16 : I32_Int) (divisor/17 : I32_Int)))
-      (body
-       (Llet
-        (((quotient/15 : I32_Int)
-          ((Parith I32 Div) (dividend/16 : I32_Int) (divisor/17 : I32_Int)))
-         ((remainder/18 : I32_Int)
-          ((Parith I32 Mod) (dividend/16 : I32_Int) (divisor/17 : I32_Int))))
-        (Lif ((Pcomparison I32 Gt) (remainder/18 : I32_Int) 0)
-         (Lapply (StaticFn add) ((quotient/15 : I32_Int) 1))
-         (quotient/15 : I32_Int) I32_Int)))
-      (return_type_ I32_Int)))
-    (tid ()))
-   ((binder assert_false) (fn_kind_ (Top_pub assert_false))
-    (fn
-     ((params ((condition/14 : I32_Bool)))
-      (body
-       (Lif (condition/14 : I32_Bool) (Lsequence ((Parith I32 Div) 1 0) 0) 0
-        I32_Unit))
-      (return_type_ I32_Unit)))
+     ((params ((condition/15 : I32_Bool))) (body 0) (return_type_ I32_Unit)))
     (tid ()))
    ((binder assert_true) (fn_kind_ (Top_pub assert_true))
     (fn
-     ((params ((condition/13 : I32_Bool)))
-      (body
-       (Lif (condition/13 : I32_Bool) 0 (Lsequence ((Parith I32 Div) 1 0) 0)
-        I32_Unit))
-      (return_type_ I32_Unit)))
+     ((params ((condition/14 : I32_Bool))) (body 0) (return_type_ I32_Unit)))
     (tid ()))
    ((binder assert_eq_string) (fn_kind_ (Top_pub assert_eq_string))
     (fn
-     ((params ((expected/11 : Ref_string) (actual/12 : Ref_string)))
-      (body
-       (Lif
-        (Pstringequal (expected/11 : Ref_string) (actual/12 : Ref_string)) 0
-        (Lsequence ((Parith I32 Div) 1 0) 0) I32_Unit))
-      (return_type_ I32_Unit)))
+     ((params ((expected/12 : Ref_string) (actual/13 : Ref_string))) 
+      (body 0) (return_type_ I32_Unit)))
     (tid ()))
    ((binder assert_eq) (fn_kind_ (Top_pub assert_eq))
     (fn
-     ((params ((expected/9 : I32_Int) (actual/10 : I32_Int)))
-      (body
-       (Lif
-        ((Pcomparison I32 Eq) (expected/9 : I32_Int) (actual/10 : I32_Int)) 0
-        (Lsequence ((Parith I32 Div) 1 0) 0) I32_Unit))
+     ((params ((expected/10 : I32_Int) (actual/11 : I32_Int))) (body 0)
       (return_type_ I32_Unit)))
+    (tid ()))
+   ((binder divide_with_ceil) (fn_kind_ (Top_pub divide_with_ceil))
+    (fn
+     ((params ((a/8 : I32_Int) (b/6 : I32_Int)))
+      (body
+       (Lif ((Pcomparison I32 Eq) (b/6 : I32_Int) 0) 0
+        (Llet
+         (((quotient/7 : I32_Int)
+           ((Parith I32 Div) (a/8 : I32_Int) (b/6 : I32_Int)))
+          ((remainder/9 : I32_Int)
+           ((Parith I32 Mod) (a/8 : I32_Int) (b/6 : I32_Int))))
+         (Lif ((Pcomparison I32 Eq) (remainder/9 : I32_Int) 0)
+          (quotient/7 : I32_Int)
+          (Lif
+           (Lif ((Pcomparison I32 Gt) (a/8 : I32_Int) 0)
+            ((Pcomparison I32 Gt) (b/6 : I32_Int) 0) false I32_Bool)
+           ((Parith I32 Add) (quotient/7 : I32_Int) 1)
+           (Lif
+            (Lif ((Pcomparison I32 Lt) (a/8 : I32_Int) 0)
+             ((Pcomparison I32 Lt) (b/6 : I32_Int) 0) false I32_Bool)
+            ((Parith I32 Add) (quotient/7 : I32_Int) 1)
+            (quotient/7 : I32_Int) I32_Int)
+           I32_Int)
+          I32_Int))
+        I32_Int))
+      (return_type_ I32_Int)))
     (tid ()))
    ((binder greet) (fn_kind_ (Top_pub greet))
     (fn
-     ((params ((name/8 : Ref_string)))
-      (body (@add_string (@add_string "Hello, " (name/8 : Ref_string)) !))
+     ((params ((name/5 : Ref_string)))
+      (body (@add_string (@add_string "Hello, " (name/5 : Ref_string)) !))
       (return_type_ Ref_string)))
     (tid ()))
    ((binder multiply) (fn_kind_ (Top_pub multiply))
     (fn
      ((params ((a/3 : I32_Int) (b/4 : I32_Int)))
-      (body
-       (Lsequence
-        (Lif
-         (Lif ((Pcomparison I32 Eq) (a/3 : I32_Int) 0) true
-          ((Pcomparison I32 Eq) (b/4 : I32_Int) 0) I32_Bool)
-         (Lreturn 0) 0 I32_Unit)
-        (Lif ((Pcomparison I32 Eq) (a/3 : I32_Int) 1)
-         (Lreturn (b/4 : I32_Int)) 0 I32_Unit)
-        (Lif ((Pcomparison I32 Eq) (b/4 : I32_Int) 1)
-         (Lreturn (a/3 : I32_Int)) 0 I32_Unit)
-        (Lif ((Pcomparison I32 Eq) (a/3 : I32_Int) -1)
-         (Lreturn
-          (Lif ((Pcomparison I32 Eq) (b/4 : I32_Int) -2147483648) -2147483648
-           ((Parith I32 Neg) (b/4 : I32_Int)) I32_Int))
-         0 I32_Unit)
-        (Lif ((Pcomparison I32 Eq) (b/4 : I32_Int) -1)
-         (Lreturn
-          (Lif ((Pcomparison I32 Eq) (a/3 : I32_Int) -2147483648) -2147483648
-           ((Parith I32 Neg) (a/3 : I32_Int)) I32_Int))
-         0 I32_Unit)
-        (Lif ((Pcomparison I32 Eq) (a/3 : I32_Int) -2147483648)
-         (Lreturn
-          (Lif
-           (Lif ((Pcomparison I32 Gt) (b/4 : I32_Int) 1) true
-            ((Pcomparison I32 Lt) (b/4 : I32_Int) -1) I32_Bool)
-           -2147483648 ((Parith I32 Mul) (a/3 : I32_Int) (b/4 : I32_Int))
-           I32_Int))
-         0 I32_Unit)
-        (Lif ((Pcomparison I32 Eq) (b/4 : I32_Int) -2147483648)
-         (Lreturn
-          (Lif
-           (Lif ((Pcomparison I32 Gt) (a/3 : I32_Int) 1) true
-            ((Pcomparison I32 Lt) (a/3 : I32_Int) -1) I32_Bool)
-           -2147483648 ((Parith I32 Mul) (a/3 : I32_Int) (b/4 : I32_Int))
-           I32_Int))
-         0 I32_Unit)
-        (Llet
-         (((sign/5 : I32_Int)
-           (Lif
-            (Lif
-             (Lif ((Pcomparison I32 Gt) (a/3 : I32_Int) 0)
-              ((Pcomparison I32 Gt) (b/4 : I32_Int) 0) false I32_Bool)
-             true
-             (Lif ((Pcomparison I32 Lt) (a/3 : I32_Int) 0)
-              ((Pcomparison I32 Lt) (b/4 : I32_Int) 0) false I32_Bool)
-             I32_Bool)
-            1 -1 I32_Int))
-          ((abs_a/6 : I32_Int)
-           (Lif ((Pcomparison I32 Lt) (a/3 : I32_Int) 0)
-            ((Parith I32 Neg) (a/3 : I32_Int)) (a/3 : I32_Int) I32_Int))
-          ((abs_b/7 : I32_Int)
-           (Lif ((Pcomparison I32 Lt) (b/4 : I32_Int) 0)
-            ((Parith I32 Neg) (b/4 : I32_Int)) (b/4 : I32_Int) I32_Int)))
-         (Lsequence
-          (Lif
-           ((Pcomparison I32 Gt) (abs_a/6 : I32_Int)
-            ((Parith I32 Div) 2147483647 (abs_b/7 : I32_Int)))
-           (Lreturn
-            (Lif ((Pcomparison I32 Gt) (sign/5 : I32_Int) 0) 2147483647
-             -2147483648 I32_Int))
-           0 I32_Unit)
-          ((Parith I32 Mul) (a/3 : I32_Int) (b/4 : I32_Int))))))
+      (body ((Parith I32 Mul) (a/3 : I32_Int) (b/4 : I32_Int)))
       (return_type_ I32_Int)))
     (tid ()))
    ((binder add) (fn_kind_ (Top_pub add))
     (fn
      ((params ((a/1 : I32_Int) (b/2 : I32_Int)))
-      (body
-       (Lsequence
-        (Lif ((Pcomparison I32 Eq) (a/1 : I32_Int) 0)
-         (Lreturn (b/2 : I32_Int)) 0 I32_Unit)
-        (Lif ((Pcomparison I32 Eq) (b/2 : I32_Int) 0)
-         (Lreturn (a/1 : I32_Int)) 0 I32_Unit)
-        (Lif ((Pcomparison I32 Eq) (a/1 : I32_Int) -2147483648)
-         (Lsequence
-          (Lif ((Pcomparison I32 Lt) (b/2 : I32_Int) 0) (Lreturn -2147483648)
-           0 I32_Unit)
-          (Lreturn ((Parith I32 Add) (a/1 : I32_Int) (b/2 : I32_Int))))
-         0 I32_Unit)
-        (Lif ((Pcomparison I32 Eq) (b/2 : I32_Int) -2147483648)
-         (Lsequence
-          (Lif ((Pcomparison I32 Lt) (a/1 : I32_Int) 0) (Lreturn -2147483648)
-           0 I32_Unit)
-          (Lreturn ((Parith I32 Add) (a/1 : I32_Int) (b/2 : I32_Int))))
-         0 I32_Unit)
-        (Lif
-         (Lif ((Pcomparison I32 Gt) (a/1 : I32_Int) 0)
-          ((Pcomparison I32 Gt) (b/2 : I32_Int) 0) false I32_Bool)
-         (Lif
-          ((Pcomparison I32 Gt) (a/1 : I32_Int)
-           ((Parith I32 Sub) 2147483647 (b/2 : I32_Int)))
-          (Lreturn 2147483647) 0 I32_Unit)
-         0 I32_Unit)
-        (Lif
-         (Lif ((Pcomparison I32 Lt) (a/1 : I32_Int) 0)
-          ((Pcomparison I32 Lt) (b/2 : I32_Int) 0) false I32_Bool)
-         (Lif
-          ((Pcomparison I32 Lt) (a/1 : I32_Int)
-           ((Parith I32 Sub) -2147483648 (b/2 : I32_Int)))
-          (Lreturn -2147483648) 0 I32_Unit)
-         0 I32_Unit)
-        ((Parith I32 Add) (a/1 : I32_Int) (b/2 : I32_Int))))
+      (body ((Parith I32 Add) (a/1 : I32_Int) (b/2 : I32_Int)))
       (return_type_ I32_Int)))
     (tid ()))))
  (main ()) (globals ())
