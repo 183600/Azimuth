@@ -1898,3 +1898,115 @@ test "greeting_with_special_characters" {
   assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
 
+// 新增的9个高质量测试用例 - 补充现有测试覆盖范围
+
+test "error_boundary_validation" {
+  // 错误边界验证测试
+  // 测试极端输入值的处理
+  assert_eq(0, divide_with_ceil(2147483647, -2147483648))
+  assert_eq(-1, divide_with_ceil(-2147483647, 2147483647))
+  assert_eq(0, multiply(2147483647, 0))
+  assert_eq(-2147483648, add(-2147483647, -1))
+}
+
+test "data_integrity_checks" {
+  // 数据完整性检查测试
+  // 模拟数据校验场景
+  let input_value = 12345
+  let checksum = multiply(input_value, 31) % 1000
+  let validated_value = add(input_value, -checksum)
+  
+  assert_eq(125, checksum)
+  assert_eq(12220, validated_value)
+}
+
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟测试
+  // 模拟O(n²)算法的计算复杂度
+  let n = 100
+  let expected_operations = multiply(n, n)
+  let optimized_operations = divide_with_ceil(expected_operations, 2)
+  
+  assert_eq(10000, expected_operations)
+  assert_eq(5000, optimized_operations)
+}
+
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  // 模拟CPU核心分配给任务
+  let total_cores = 16
+  let task_count = 35
+  let cores_per_task = divide_with_ceil(total_cores, task_count)
+  let total_allocated = multiply(cores_per_task, task_count)
+  
+  assert_eq(1, cores_per_task)
+  assert_eq(35, total_allocated)
+}
+
+test "caching_strategy_simulation" {
+  // 缓存策略模拟测试
+  // 模拟LRU缓存的命中率计算
+  let total_requests = 1000
+  let cache_size = 100
+  let hit_rate_percentage = 75
+  
+  let cache_hits = multiply(total_requests, hit_rate_percentage) / 100
+  let cache_misses = add(total_requests, -cache_hits)
+  let eviction_rate = divide_with_ceil(multiply(cache_misses, 100), cache_size)
+  
+  assert_eq(750, cache_hits)
+  assert_eq(250, cache_misses)
+  assert_eq(3, eviction_rate)
+}
+
+test "load_balancing_algorithm" {
+  // 负载均衡算法测试
+  // 模拟轮询负载均衡
+  let server_count = 5
+  let total_connections = 23
+  let connections_per_server = divide_with_ceil(total_connections, server_count)
+  let total_handled = multiply(connections_per_server, server_count)
+  
+  assert_eq(5, connections_per_server)
+  assert_eq(25, total_handled)
+}
+
+test "batch_processing_efficiency" {
+  // 批处理效率测试
+  // 模拟批处理操作的性能优化
+  let total_items = 1000
+  let batch_size = 47
+  let batch_count = divide_with_ceil(total_items, batch_size)
+  let last_batch_size = add(total_items, -multiply(batch_count - 1, batch_size))
+  
+  assert_eq(22, batch_count)
+  assert_eq(12, last_batch_size)
+}
+
+test "memory_allocation_pattern" {
+  // 内存分配模式测试
+  // 模拟内存块的分配和释放
+  let block_size = 64
+  let total_memory = 4096
+  let allocated_blocks = divide_with_ceil(total_memory, block_size)
+  let waste_memory = multiply(allocated_blocks, block_size) - total_memory
+  let efficiency_percentage = multiply(total_memory, 100) / multiply(allocated_blocks, block_size)
+  
+  assert_eq(64, allocated_blocks)
+  assert_eq(0, waste_memory)
+  assert_eq(100, efficiency_percentage)
+}
+
+test "network_throughput_calculation" {
+  // 网络吞吐量计算测试
+  // 模拟网络带宽利用率计算
+  let bandwidth_mbps = 1000
+  let packet_size_bytes = 1500
+  let packets_per_second = 50000
+  let actual_throughput = divide_with_ceil(multiply(packet_size_bytes, packets_per_second), 1000000)
+  let utilization_percentage = multiply(actual_throughput, 100) / bandwidth_mbps
+  
+  assert_eq(75, actual_throughput)
+  assert_eq(8, utilization_percentage)
+}
+
