@@ -1,143 +1,122 @@
-// Azimuth 综合测试套件
-// 包含10个高质量的MoonBit测试用例，覆盖新的测试场景
+// 新增的高质量 MoonBit 测试用例
+// 针对 azimuth 库的综合测试，包含基础功能、边界情况和实际应用场景
 
-test "fibonacci_sequence_calculation" {
-  // 测试斐波那契数列计算
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = add(fib1, fib2)
-  let fib4 = add(fib2, fib3)
-  let fib5 = add(fib3, fib4)
-  let fib6 = add(fib4, fib5)
-  let fib7 = add(fib5, fib6)
-  let fib8 = add(fib6, fib7)
-  
-  assert_eq(2, fib3)
-  assert_eq(3, fib4)
-  assert_eq(5, fib5)
-  assert_eq(8, fib6)
-  assert_eq(13, fib7)
-  assert_eq(21, fib8)
+test "add_function_edge_cases" {
+  // 测试加法函数的边界情况
+  assert_eq(0, add(2147483647, -2147483647))  // 最大值与最小值相加
+  assert_eq(1, add(2147483646, 1))            // 接近最大值
+  assert_eq(-1, add(-2147483647, 1))           // 接近最小值
+  assert_eq(0, add(1000, -1000))               // 相反数相加
 }
 
-test "factorial_calculation" {
-  // 测试阶乘计算
-  let fact1 = 1
-  let fact2 = multiply(fact1, 2)
-  let fact3 = multiply(fact2, 3)
-  let fact4 = multiply(fact3, 4)
-  let fact5 = multiply(fact4, 5)
-  
-  assert_eq(120, fact5)
+test "multiply_function_edge_cases" {
+  // 测试乘法函数的边界情况
+  assert_eq(0, multiply(2147483647, 0))        // 最大值乘零
+  assert_eq(-2147483647, multiply(-1, 2147483647))  // 负一乘最大值
+  assert_eq(1, multiply(-1, -1))               // 负数相乘得正
+  assert_eq(1000000, multiply(1000, 1000))     // 大数相乘
 }
 
-test "stack_operations_simulation" {
-  // 模拟栈操作（push和pop）
-  let mut stack_size = 0
-  let mut stack_sum = 0
-  
-  // push操作
-  stack_size = add(stack_size, 1)
-  stack_sum = add(stack_sum, 10)
-  stack_size = add(stack_size, 1)
-  stack_sum = add(stack_sum, 20)
-  stack_size = add(stack_size, 1)
-  stack_sum = add(stack_sum, 30)
-  
-  assert_eq(3, stack_size)
-  assert_eq(60, stack_sum)
-  
-  // pop操作（模拟）
-  stack_size = add(stack_size, -1)
-  stack_sum = add(stack_sum, -30)
-  
-  assert_eq(2, stack_size)
-  assert_eq(30, stack_sum)
+test "divide_with_ceil_comprehensive" {
+  // 全面测试向上取整除法
+  assert_eq(1, divide_with_ceil(1, 100))       // 被除数小于除数
+  assert_eq(100, divide_with_ceil(9999, 100))  // 接近整除
+  assert_eq(-3, divide_with_ceil(-10, 3))      // 负数除法
+  assert_eq(4, divide_with_ceil(-11, -3))      // 负数除负数
+  assert_eq(0, divide_with_ceil(0, 100))       // 零除法
 }
 
-test "binary_search_efficiency" {
-  // 模拟二分搜索的比较次数
-  let sorted_array_size = 64
-  let mut binary_comparisons = divide_with_ceil(sorted_array_size, 2)
-  binary_comparisons = divide_with_ceil(binary_comparisons, 2)
-  binary_comparisons = divide_with_ceil(binary_comparisons, 2)
-  binary_comparisons = divide_with_ceil(binary_comparisons, 2)
-  binary_comparisons = divide_with_ceil(binary_comparisons, 2)
-  
-  assert_eq(1, binary_comparisons)
+test "greet_function_unicode_support" {
+  // 测试问候函数的 Unicode 支持
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, αβγδε!", greet("αβγδε"))
+  assert_eq_string("Hello, ñáéíóú!", greet("ñáéíóú"))
+  assert_eq_string("Hello, 🌍🌎🌏!", greet("🌍🌎🌏"))
 }
 
-test "boundary_value_calculations" {
-  // 测试除法的各种边界情况
-  assert_eq(0, divide_with_ceil(0, 1))
-  assert_eq(0, divide_with_ceil(0, -1))
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(1, 0))
-  assert_eq(0, divide_with_ceil(-1, 0))
+test "mathematical_properties_verification" {
+  // 验证数学性质
+  let a = 12
+  let b = 8
+  let c = 5
   
-  // 测试极值运算
-  let very_large = 1000000
-  let negative_large = -1000000
-  
-  assert_eq(0, add(very_large, negative_large))
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  // 分配律
+  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
 }
 
-test "multilingual_greetings" {
-  // 测试多语言问候功能
-  assert_eq_string("Hello, English!", greet("English"))
-  assert_eq_string("Hello, 中文!", greet("中文"))
-  assert_eq_string("Hello, 日本語!", greet("日本語"))
-  assert_eq_string("Hello, 한국어!", greet("한국어"))
-  assert_eq_string("Hello, العربية!", greet("العربية"))
-  assert_eq_string("Hello, русский!", greet("русский"))
-  assert_eq_string("Hello, español!", greet("español"))
-  assert_eq_string("Hello, français!", greet("français"))
+test "real_world_shopping_cart" {
+  // 真实购物车计算场景
+  let item1_price = 29
+  let item1_quantity = 2
+  let item2_price = 15
+  let item2_quantity = 3
+  let shipping_fee = 12
+  let discount = 20
+  
+  let subtotal = add(multiply(item1_price, item1_quantity), multiply(item2_price, item2_quantity))
+  let total_before_discount = add(subtotal, shipping_fee)
+  let final_total = add(total_before_discount, -discount)
+  
+  assert_eq(115, final_total)  // 29*2 + 15*3 + 12 - 20 = 58 + 45 + 12 - 20 = 95
 }
 
-test "physics_distance_calculation" {
-  // 计算自由落体距离：s = 0.5 * g * t^2（简化为整数计算）
-  let gravity = 10  // 简化的重力加速度
-  let time = 3
-  let distance = multiply(gravity, multiply(time, time)) / 2
+test "inventory_packaging_optimization" {
+  // 库存包装优化计算
+  let total_products = 127
+  let box_capacity = 15
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
   
-  assert_eq(45, distance)
+  // 计算剩余空间
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  let unused_space = add(total_capacity, -total_products)
+  
+  assert_eq(9, boxes_needed)      // ceil(127/15) = 9
+  assert_eq(8, unused_space)      // 9*15 - 127 = 135 - 127 = 8
 }
 
-test "kinetic_energy_calculation" {
-  // 计算动能：KE = 0.5 * m * v^2
-  let mass = 10
-  let velocity = 8
-  let kinetic_energy = multiply(mass, multiply(velocity, velocity)) / 2
+test "time_management_calculation" {
+  // 时间管理计算
+  let daily_tasks = 6
+  let total_tasks = 47
+  let work_days_needed = divide_with_ceil(total_tasks, daily_tasks)
   
-  assert_eq(320, kinetic_energy)
+  // 计算总工作小时数（每天8小时）
+  let total_work_hours = multiply(work_days_needed, 8)
+  
+  assert_eq(8, work_days_needed)    // ceil(47/6) = 8
+  assert_eq(64, total_work_hours)   // 8 * 8 = 64
 }
 
-test "circle_geometry_calculations" {
-  // 计算圆的周长和面积
-  let radius = 7
-  let pi_approx = 22  // π的近似值
-  let circumference = multiply(2, multiply(radius, pi_approx)) / 7
-  let area = multiply(radius, multiply(radius, pi_approx)) / 7
+test "financial_compound_interest" {
+  // 金融复利计算
+  let principal = 1000
+  let interest_rate = 5
   
-  assert_eq(44, circumference)
-  assert_eq(154, area)
+  // 简化的年复利计算
+  let year1 = add(principal, divide_with_ceil(multiply(principal, interest_rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, interest_rate), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, interest_rate), 100))
+  
+  assert_eq(1050, year1)   // 1000 + ceil(1000*5/100) = 1000 + 50 = 1050
+  assert_eq(1103, year2)   // 1050 + ceil(1050*5/100) = 1050 + 53 = 1103
+  assert_eq(1158, year3)   // 1103 + ceil(1103*5/100) = 1103 + 55 = 1158
 }
 
-test "combinatorial_calculations" {
-  // 计算组合数：C(n,k) = n! / (k! * (n-k)!)
-  // 简化计算：C(5,2) = 5*4/(2*1) = 10
-  let n = 5
-  let k = 2
-  let numerator = multiply(n, add(n, -1))
-  let denominator = multiply(k, 1)
-  let combination = numerator / denominator
+test "data_processing_pipeline" {
+  // 数据处理管道模拟
+  let input_data = 1000
+  let error_rate = 2  // 2% 错误率
   
-  assert_eq(10, combination)
+  // 模拟处理步骤
+  let step1_result = add(input_data, -divide_with_ceil(multiply(input_data, error_rate), 100))
+  let step2_result = add(step1_result, -divide_with_ceil(multiply(step1_result, error_rate), 100))
+  let final_result = add(step2_result, -divide_with_ceil(multiply(step2_result, error_rate), 100))
   
-  // 计算排列数：P(n,k) = n! / (n-k)!
-  // 简化计算：P(5,3) = 5*4*3 = 60
-  let perm_n = 5
-  let permutation = multiply(perm_n, multiply(add(perm_n, -1), add(perm_n, -2)))
-  
-  assert_eq(60, permutation)
+  assert_eq(980, step1_result)     // 1000 - ceil(1000*2/100) = 1000 - 20 = 980
+  assert_eq(960, step2_result)     // 980 - ceil(980*2/100) = 980 - 20 = 960
+  assert_eq(941, final_result)     // 960 - ceil(960*2/100) = 960 - 19 = 941
 }
