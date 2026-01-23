@@ -1,148 +1,151 @@
-// Enhanced practical test cases for azimuth library
-// These tests focus on real-world scenarios and edge cases
+// 增强 MoonBit 测试用例
+// 覆盖 azimuth 库的高级功能
 
-test "practical_discount_calculation" {
-  // 实际折扣计算：商品价格、数量、折扣率
-  let unit_price = 199
-  let quantity = 3
-  let discount_rate = 15  // 15% 折扣
+test "add_advanced_functionality" {
+  // 测试高级加法功能
+  assert_eq(100, add(50, 50))
+  assert_eq(1000, add(500, 500))
+  assert_eq(-100, add(-50, -50))
+  assert_eq(0, add(100, -100))
+}
+
+test "multiply_advanced_functionality" {
+  // 测试高级乘法功能
+  assert_eq(100, multiply(10, 10))
+  assert_eq(1000, multiply(100, 10))
+  assert_eq(-100, multiply(-10, 10))
+  assert_eq(100, multiply(-10, -10))
+}
+
+test "greet_advanced_functionality" {
+  // 测试高级问候功能
+  assert_eq_string("Hello, Advanced MoonBit!", greet("Advanced MoonBit"))
+  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
+  assert_eq_string("Hello, 12345!", greet("12345"))
+}
+
+test "divide_with_ceil_advanced_functionality" {
+  // 测试高级向上取整除法功能
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+  assert_eq(0, divide_with_ceil(5, 0))
+}
+
+test "complex_business_calculation" {
+  // 复杂业务计算测试
+  let product_price = 120
+  let quantity = 8
+  let tax_rate = 8
+  let shipping = 15
+  let discount = 20
   
-  // 计算原价
-  let original_total = multiply(unit_price, quantity)
-  // 计算折扣金额
-  let discount_amount = multiply(original_total, discount_rate) / 100
+  // 计算小计
+  let subtotal = multiply(product_price, quantity)
+  // 计算税费
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  // 计算总价
+  let total_before_discount = add(subtotal, add(shipping, tax))
   // 计算最终价格
-  let final_price = add(original_total, -discount_amount)
+  let final_total = add(total_before_discount, -discount)
   
-  assert_eq(507, final_price)  // 199*3 - 199*3*15/100 = 597 - 89 = 508 (整数除法)
+  assert_eq(960, subtotal)
+  assert_eq(77, tax)
+  assert_eq(1052, total_before_discount)
+  assert_eq(1032, final_total)
 }
 
-test "practical_speed_conversion" {
-  // 实际速度转换：km/h 转 m/s
-  let km_per_hour = 72
+test "financial_calculation_scenario" {
+  // 金融计算场景测试
+  let principal = 10000
+  let rate_percent = 5
+  let years = 3
   
-  // 转换公式：m/s = km/h × 1000 / 3600 ≈ km/h × 5 / 18
-  let meters_per_second = multiply(km_per_hour, 5) / 18
+  // 第一年
+  let year1_interest = divide_with_ceil(multiply(principal, rate_percent), 100)
+  let year1_total = add(principal, year1_interest)
   
-  assert_eq(20, meters_per_second)  // 72 × 5 / 18 = 20
+  // 第二年
+  let year2_interest = divide_with_ceil(multiply(year1_total, rate_percent), 100)
+  let year2_total = add(year1_total, year2_interest)
   
-  // 反向转换：m/s 转 km/h
-  let back_to_kmh = multiply(meters_per_second, 18) / 5
-  assert_eq(72, back_to_kmh)
+  // 第三年
+  let year3_interest = divide_with_ceil(multiply(year2_total, rate_percent), 100)
+  let year3_total = add(year2_total, year3_interest)
+  
+  assert_eq(500, year1_interest)
+  assert_eq(10500, year1_total)
+  assert_eq(525, year2_interest)
+  assert_eq(11025, year2_total)
+  assert_eq(552, year3_interest)
+  assert_eq(11577, year3_total)
 }
 
-test "practical_bmi_calculation" {
-  // 实际BMI计算：体重(kg) / 身高(m)²
-  // 使用整数计算避免浮点数
-  let weight_kg = 70
-  let height_cm = 175
+test "inventory_management_calculation" {
+  // 库存管理计算测试
+  let initial_stock = 500
+  let daily_sales = 25
+  let days = 7
+  let safety_stock = 100
+  let reorder_point = add(multiply(daily_sales, days), safety_stock)
   
-  // 转换为厘米：BMI = weight(kg) × 10000 / height(cm)²
-  let height_squared = multiply(height_cm, height_cm)
-  let bmi_times_100 = multiply(weight_kg, 10000) / height_squared
+  // 计算一周后的库存
+  let weekly_sales = multiply(daily_sales, days)
+  let remaining_stock = add(initial_stock, -weekly_sales)
   
-  assert_eq(22, bmi_times_100)  // 70 × 10000 / 30625 ≈ 22.85，整数部分为22
+  // 计算需要的补货数量
+  let reorder_quantity = multiply(2, initial_stock)
+  
+  assert_eq(175, weekly_sales)
+  assert_eq(325, remaining_stock)
+  assert_eq(275, reorder_point)
+  assert_eq(1000, reorder_quantity)
 }
 
-test "practical_loan_calculation" {
-  // 实际贷款计算：月供 = [本金 × 月利率 × (1+月利率)^月数] / [(1+月利率)^月数 - 1]
-  // 简化为整数计算
-  let principal = 100000  // 10万本金
-  let annual_rate = 6     // 6%年利率
-  let months = 12         // 1年12期
+test "packaging_optimization_calculation" {
+  // 包装优化计算测试
+  let total_items = 250
+  let box_capacity = 24
+  let boxes_needed = divide_with_ceil(total_items, box_capacity)
   
-  let monthly_rate = annual_rate / 12  // 月利率 0.5%
-  let total_interest = multiply(principal, monthly_rate) * months / 100
-  let total_payment = add(principal, total_interest)
-  let monthly_payment = total_payment / months
+  // 计算剩余空间
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  let wasted_space = add(total_capacity, -total_items)
   
-  assert_eq(8833, monthly_payment)  // 简化计算的月供
+  assert_eq(11, boxes_needed)  // ceil(250/24) = 11
+  assert_eq(264, total_capacity)  // 11 * 24 = 264
+  assert_eq(14, wasted_space)  // 264 - 250 = 14
 }
 
-test "practical_temperature_conversion" {
-  // 实际温度转换：摄氏度转华氏度 F = C × 9/5 + 32
-  // 使用整数近似：F ≈ C × 2 + 30
-  let celsius = 25
+test "data_transfer_calculation" {
+  // 数据传输计算测试
+  let file_size_mb = 850
+  let network_speed_mbps = 50
+  let compression_ratio = 70
   
-  let fahrenheit_approx = add(multiply(celsius, 2), 30)
-  assert_eq(80, fahrenheit_approx)  // 25 × 2 + 30 = 80
+  // 计算压缩后大小
+  let compressed_size = divide_with_ceil(multiply(file_size_mb, compression_ratio), 100)
+  // 计算传输时间
+  let transfer_time = divide_with_ceil(compressed_size, network_speed_mbps)
   
-  // 更精确的整数计算：F = C × 9 / 5 + 32
-  let fahrenheit_precise = add(multiply(celsius, 9) / 5, 32)
-  assert_eq(77, fahrenheit_precise)  // 25 × 9 / 5 + 32 = 77
+  assert_eq(595, compressed_size)  // ceil(850 * 70 / 100) = 595
+  assert_eq(12, transfer_time)  // ceil(595/50) = 12
 }
 
-test "practical_time_zone_conversion" {
-  // 实际时区转换
-  let local_hour = 15  // 下午3点
-  let time_zone_diff = -8  // 与目标时区相差8小时
+test "error_boundary_test" {
+  // 错误边界测试
+  let normal_value = 100
+  let extreme_value = 2147483647
   
-  // 计算目标时间
-  let target_hour = add(local_hour, time_zone_diff)
-  // 处理负数时间（前一天）
-  let adjusted_hour = if (target_hour < 0) { add(target_hour, 24) } else { target_hour }
+  // 测试正常值
+  assert_eq(200, add(normal_value, normal_value))
+  assert_eq(10000, multiply(normal_value, normal_value))
   
-  assert_eq(7, adjusted_hour)  // 15 - 8 = 7 (早上7点)
-}
-
-test "practical_calorie_calculation" {
-  // 实际卡路里计算：基础代谢率 BMR
-  // 男性简化公式：BMR = 88.362 + (13.397 × 体重kg) + (4.799 × 身高cm) - (5.677 × 年龄)
-  // 使用整数近似
-  let weight_kg = 70
-  let height_cm = 175
-  let age = 30
+  // 测试除零安全性
+  assert_eq(0, divide_with_ceil(normal_value, 0))
+  assert_eq(0, divide_with_ceil(extreme_value, 0))
   
-  let bmr_approx = add(add(add(88, multiply(13, weight_kg) / 10), multiply(4, height_cm) / 10), multiply(-5, age))
-  assert_eq(1658, bmr_approx)  // 简化计算的基础代谢率
-}
-
-test "practical_fuel_consumption" {
-  // 实际油耗计算：百公里油耗
-  let distance_km = 500
-  let fuel_liters = 40
-  
-  // 计算百公里油耗
-  let consumption_per_100km = multiply(fuel_liters, 100) / distance_km
-  assert_eq(8, consumption_per_100km)  // 40 × 100 / 500 = 8
-  
-  // 计算总费用
-  let price_per_liter = 8
-  let total_cost = multiply(fuel_liters, price_per_liter)
-  assert_eq(320, total_cost)
-}
-
-test "practical_data_storage" {
-  // 实际数据存储计算
-  let file_size_mb = 25
-  let number_of_files = 100
-  
-  // 计算总存储需求（MB）
-  let total_storage_mb = multiply(file_size_mb, number_of_files)
-  assert_eq(2500, total_storage_mb)
-  
-  // 转换为GB
-  let total_storage_gb = total_storage_mb / 1024
-  assert_eq(2, total_storage_gb)  // 2500 / 1024 ≈ 2.44，整数部分为2
-  
-  // 计算备份所需空间（双倍）
-  let backup_space = multiply(total_storage_mb, 2)
-  assert_eq(5000, backup_space)
-}
-
-test "practical_phone_number_validation" {
-  // 实际手机号验证（简化）
-  let phone_number = "13812345678"
-  
-  // 检查长度
-  let length_check = phone_number.length() == 11
-  assert_true(length_check)
-  
-  // 检查是否以特定前缀开头
-  let starts_with_138 = phone_number.starts_with("138")
-  assert_true(starts_with_138)
-  
-  // 测试greet函数与电话号码
-  let phone_greeting = greet(phone_number)
-  assert_eq_string("Hello, 13812345678!", phone_greeting)
+  // 测试空字符串问候
+  assert_eq_string("Hello, !", greet(""))
 }

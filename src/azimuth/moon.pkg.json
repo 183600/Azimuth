@@ -140,5 +140,6 @@
             "quality_enhanced_test_suite.mbt",
             "standard_moonbit_test_suite_new.mbt",
             "standard_azimuth_core_tests.mbt",
-            "simple_test_verify.mbt"
+            "simple_test_verify.mbt",
+            "enhanced_practical_tests.mbt"
                         ]}
