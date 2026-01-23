@@ -25,6 +25,7 @@
     "enhanced_coverage_tests.mbt",
     "standard_moonbit_test_cases.mbt",
     "standard_moonbit_test_cases_new.mbt",
+    "standard_moonbit_tests_new.mbt",
     "standard_test_cases.mbt",
     "additional_standard_tests.mbt",
     "quality_test_suite.mbt",
