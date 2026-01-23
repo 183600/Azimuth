@@ -144,5 +144,6 @@
             "enhanced_practical_tests.mbt",
                         "azimuth_new_test_cases.mbt",
                         "premium_quality_tests.mbt",
-                        "azimuth_core_tests.mbt"
+                        "azimuth_core_tests.mbt",
+                        "new_standard_moonbit_tests.mbt"
                         ]}
