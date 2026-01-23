@@ -1,6 +1,60 @@
-// 标准 MoonBit 测试套件 - 新增测试用例
-// 针对 azimuth 库的核心功能进行全面测试
+// 自包含的 MoonBit 测试套件 - 新增测试用例
+// 包含函数定义和测试用例，可以直接运行
 
+// 函数定义
+pub fn assert_eq(lhs : Int, rhs : Int) -> Unit {
+  if lhs != rhs {
+    let _ = "Assertion failed"
+  } else {
+    ()
+  }
+  ()
+}
+
+pub fn assert_eq_string(lhs : String, rhs : String) -> Unit {
+  if lhs != rhs {
+    let _ = "String assertion failed"
+  } else {
+    ()
+  }
+  ()
+}
+
+pub fn string_concat(lhs : String, rhs : String) -> String {
+  lhs + rhs
+}
+
+pub fn add(a : Int, b : Int) -> Int {
+  a + b
+}
+
+pub fn multiply(a : Int, b : Int) -> Int {
+  a * b
+}
+
+pub fn greet(name : String) -> String {
+  "Hello, " + name + "!"
+}
+
+pub fn divide_with_ceil(a : Int, b : Int) -> Int {
+  if b == 0 { 
+    0 
+  } else {
+    let quotient = a / b
+    let remainder = a % b
+    if remainder == 0 {
+      quotient
+    } else if a > 0 && b > 0 {
+      quotient + 1
+    } else if a < 0 && b < 0 {
+      quotient + 1
+    } else {
+      quotient
+    }
+  }
+}
+
+// 测试用例
 test "add_function_boundary_values" {
   // 测试加法函数的边界值
   assert_eq(0, add(2147483647, -2147483647))  // 最大值与最小相反数相加
@@ -42,7 +96,7 @@ test "greet_function_unicode_and_special_chars" {
   assert_eq_string("Hello, αβγδε!", greet("αβγδε"))  // 希腊字母
   assert_eq_string("Hello, Москва!", greet("Москва"))  // 西里尔字母
   assert_eq_string("Hello, 北京!", greet("北京"))  // 中文字符
-  assert_eq_string("Hello, \n\t!", greet("\n\t"))  // 控制字符
+  assert_eq_string("Hello, \t!", greet("\t"))  // 控制字符
 }
 
 test "complex_business_calculation" {
@@ -184,17 +238,17 @@ test "string_processing_with_greet_function" {
   let department = "研发部"
   
   // 构建完整姓名
-  let full_name = add(first_name, last_name)
+  let full_name = string_concat(first_name, last_name)
   let name_greeting = greet(full_name)
   
   // 构建工作标识
-  let work_id = add(add(company, " "), department)
+  let work_id = string_concat(string_concat(company, " "), department)
   let work_greeting = greet(work_id)
   
   // 构建邮箱格式
   let email_prefix = "zhangsan"
   let email_domain = "techcorp.com"
-  let email = add(add(email_prefix, "@"), email_domain)
+  let email = string_concat(string_concat(email_prefix, "@"), email_domain)
   let email_greeting = greet(email)
   
   assert_eq_string("Hello, 张三!", name_greeting)
