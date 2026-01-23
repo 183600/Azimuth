@@ -171,5 +171,6 @@
     "standard_moonbit_test_examples.mbt",
     "standard_azimuth_core_tests.mbt",
     "test/standard_moonbit_tests_new.mbt",
-    "azimuth_standard_tests.mbt"
+    "azimuth_standard_tests.mbt",
+    "azimuth_comprehensive_quality_tests.mbt"
                                                                                                                                                 ]}

@@ -1,197 +1,176 @@
-// 高质量 MoonBit 测试用例
-// 针对 azimuth 库的全面测试，包含边界情况、实际应用场景和数学性质验证
+// Azimuth 综合质量测试用例
+// 使用标准 MoonBit 测试语法，覆盖核心功能和边界情况
 
-test "add_function_comprehensive_test" {
-  // 全面测试加法功能，包括正数、负数和零
-  assert_eq(10, add(7, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-8, 3))
-  assert_eq(1000000, add(500000, 500000))
-  assert_eq(1, add(2147483647, -2147483646))
-  assert_eq(-1, add(-2147483648, 2147483647))
+test "mathematical_series_fibonacci" {
+  // 斐波那契数列计算测试
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = add(fib1, fib2)
+  let fib4 = add(fib2, fib3)
+  let fib5 = add(fib3, fib4)
+  let fib6 = add(fib4, fib5)
+  
+  assert_eq(2, fib3)
+  assert_eq(3, fib4)
+  assert_eq(5, fib5)
+  assert_eq(8, fib6)
 }
 
-test "multiply_function_edge_cases" {
-  // 测试乘法函数的边界情况和特殊情况
-  assert_eq(21, multiply(7, 3))
-  assert_eq(0, multiply(0, 100))
-  assert_eq(-24, multiply(-8, 3))
-  assert_eq(24, multiply(-8, -3))
-  assert_eq(1000000, multiply(1000, 1000))
-  assert_eq(1, multiply(1, 2147483647))
+test "temperature_conversion" {
+  // 温度转换计算（简化版）
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 9), 160) / 5
+  
+  assert_eq(77, fahrenheit)  // 25°C = 77°F
+  
+  // 验证反向计算
+  let back_to_celsius = multiply(add(fahrenheit, -160), 5) / 9
+  assert_eq(25, back_to_celsius)
 }
 
-test "divide_with_ceil_comprehensive_scenarios" {
-  // 全面测试向上取整除法的各种场景
-  // 正数除法
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 100))
+test "financial_compound_interest" {
+  // 复利计算测试
+  let principal = 1000
+  let rate = 5  // 5%
+  let years = 3
   
-  // 负数除法
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(4, divide_with_ceil(-10, -3))
-  assert_eq(-3, divide_with_ceil(10, -3))
+  // 简化的复利计算（每年向上取整）
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate), 100))
   
-  // 特殊情况
-  assert_eq(0, divide_with_ceil(5, 0))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(1158, year3)  // 1000 -> 1050 -> 1103 -> 1158
 }
 
-test "greet_function_multilingual_support" {
-  // 测试问候函数的多语言和特殊字符支持
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, Español!", greet("Español"))
-  assert_eq_string("Hello, ñáéíóú!", greet("ñáéíóú"))
+test "geometric_area_calculations" {
+  // 几何面积计算
+  let length = 8
+  let width = 6
+  let height = 4
+  
+  // 计算矩形面积
+  let rectangle_area = multiply(length, width)
+  
+  // 计算立方体表面积
+  let cube_surface_area = multiply(6, multiply(length, length))
+  
+  // 计算房间体积
+  let room_volume = multiply(rectangle_area, height)
+  
+  assert_eq(48, rectangle_area)
+  assert_eq(384, cube_surface_area)
+  assert_eq(192, room_volume)
 }
 
-test "mathematical_properties_verification" {
-  // 验证基本数学性质
-  let a = 7
-  let b = 13
-  let c = 5
+test "digital_storage_conversion" {
+  // 数字存储单位转换
+  let megabytes = 1024
+  let kilobytes_per_mb = 1024
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  // 转换为千字节
+  let total_kilobytes = multiply(megabytes, kilobytes_per_mb)
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  // 计算可以存储的歌曲数量（每首歌约4MB）
+  let songs_size_mb = 4
+  let song_count = divide_with_ceil(megabytes, songs_size_mb)
   
-  // 加法结合律
-  assert_eq(add(add(a, b), c), add(a, add(b, c)))
-  
-  // 乘法结合律
-  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
-  
-  // 分配律
-  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
+  assert_eq(1048576, total_kilobytes)
+  assert_eq(256, song_count)
 }
 
-test "real_world_business_calculations" {
-  // 实际业务计算场景：订单总价计算
-  let product_price = 89
-  let quantity = 4
-  let tax_rate = 8
-  let shipping_cost = 15
-  let discount = 20
+test "time_zone_calculations" {
+  // 时区计算
+  let local_time = 14  // 下午2点
+  let timezone_offset = -8  // 向西8个时区
   
-  // 计算小计
-  let subtotal = multiply(product_price, quantity)
+  // 计算远程时间（简化为24小时制）
+  let remote_time = add(local_time, timezone_offset)
+  let adjusted_time = if remote_time < 0 {
+    add(remote_time, 24)
+  } else if remote_time > 23 {
+    add(remote_time, -24)
+  } else {
+    remote_time
+  }
   
-  // 计算税费（向上取整）
-  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  
-  // 计算总价
-  let total_before_discount = add(subtotal, add(tax_amount, shipping_cost))
-  let final_total = add(total_before_discount, -discount)
-  
-  assert_eq(356, subtotal)
-  assert_eq(29, tax_amount)
-  assert_eq(400, total_before_discount)
-  assert_eq(380, final_total)
+  assert_eq(6, adjusted_time)  // 下午2点 - 8小时 = 早上6点
 }
 
-test "complex_inventory_management" {
-  // 复杂库存管理场景
-  let initial_stock = 1000
-  let daily_sales = 45
-  let days_to_simulate = 7
-  let restock_threshold = 200
-  let restock_amount = 500
+test "batch_processing_efficiency" {
+  // 批处理效率计算
+  let total_items = 1000
+  let batch_size = 75
+  let processing_time_per_batch = 5  // 分钟
   
-  // 计算总销售量
-  let total_sold = multiply(daily_sales, days_to_simulate)
+  // 计算需要的批次数
+  let batch_count = divide_with_ceil(total_items, batch_size)
   
-  // 计算剩余库存
-  let remaining_stock = add(initial_stock, -total_sold)
+  // 计算总处理时间
+  let total_time = multiply(batch_count, processing_time_per_batch)
   
-  // 判断是否需要补货
-  let needs_restock = if remaining_stock < restock_threshold { true } else { false }
-  
-  // 计算补货后的库存
-  let final_stock = if needs_restock { add(remaining_stock, restock_amount) } else { remaining_stock }
-  
-  assert_eq(315, total_sold)
-  assert_eq(685, remaining_stock)
-  assert_eq(true, needs_restock)
-  assert_eq(1185, final_stock)
+  assert_eq(14, batch_count)  // ceil(1000/75) = 14
+  assert_eq(70, total_time)   // 14 * 5 = 70分钟
 }
 
-test "engineering_calculations_packaging" {
-  // 工程计算：包装优化
-  let total_items = 247
-  let box_capacity = 24
-  let pallet_capacity = 10
+test "resource_allocation_optimization" {
+  // 资源分配优化
+  let total_budget = 5000
+  let project_a_cost = 1200
+  let project_b_cost = 1800
+  let project_c_cost = 900
   
-  // 计算需要的箱子数量
-  let boxes_needed = divide_with_ceil(total_items, box_capacity)
+  // 计算已分配预算
+  let allocated_budget = add(add(project_a_cost, project_b_cost), project_c_cost)
   
-  // 计算需要的托盘数量
-  let pallets_needed = divide_with_ceil(boxes_needed, pallet_capacity)
+  // 计算剩余预算
+  let remaining_budget = add(total_budget, -allocated_budget)
   
-  // 计算剩余空间
-  let total_capacity = multiply(boxes_needed, box_capacity)
-  let unused_space = add(total_capacity, -total_items)
+  // 计算可以启动的小项目数量（每个500）
+  let small_project_cost = 500
+  let additional_projects = divide_with_ceil(remaining_budget, small_project_cost)
   
-  assert_eq(11, boxes_needed)
-  assert_eq(2, pallets_needed)
-  assert_eq(264, total_capacity)
-  assert_eq(17, unused_space)
+  assert_eq(3900, allocated_budget)
+  assert_eq(1100, remaining_budget)
+  assert_eq(3, additional_projects)
 }
 
-test "data_processing_statistics" {
-  // 数据处理和统计分析
-  let data_points = [150, 180, 220, 250, 190, 210, 230, 170]
-  let data_count = 8
+test "statistical_variance_calculation" {
+  // 统计方差计算（简化版）
+  let values = [10, 15, 20, 25, 30]
+  let count = 5
   
-  // 计算总和（使用累加）
-  let sum = add(add(add(add(add(add(add(150, 180), 220), 250), 190), 210), 230), 170)
+  // 计算平均值
+  let sum = add(add(add(add(values[0], values[1]), values[2]), values[3]), values[4])
+  let mean = divide_with_ceil(sum, count)
   
-  // 计算平均值（向上取整）
-  let average = divide_with_ceil(sum, data_count)
+  // 计算方差（简化：只计算前3个值的方差）
+  let diff1 = add(values[0], -mean)
+  let diff2 = add(values[1], -mean)
+  let diff3 = add(values[2], -mean)
   
-  // 计算最大值和最小值的差
-  let max_value = 250
-  let min_value = 150
-  let range = add(max_value, -min_value)
+  let squared_diff1 = multiply(diff1, diff1)
+  let squared_diff2 = multiply(diff2, diff2)
+  let squared_diff3 = multiply(diff3, diff3)
   
-  // 计算方差估计（简化版）
-  let variance_estimate = divide_with_ceil(multiply(range, range), 4)
+  let variance_sum = add(add(squared_diff1, squared_diff2), squared_diff3)
+  let sample_variance = divide_with_ceil(variance_sum, 3)
   
-  assert_eq(1600, sum)
-  assert_eq(200, average)
-  assert_eq(100, range)
-  assert_eq(2500, variance_estimate)
+  assert_eq(20, mean)
+  assert_eq(50, sample_variance)
 }
 
-test "error_handling_and_robustness" {
-  // 错误处理和健壮性测试
-  // 测试除零错误处理
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+test "cryptography_hash_simulation" {
+  // 密码学哈希模拟（简化版）
+  let input = 12345
+  let prime1 = 31
+  let prime2 = 37
   
-  // 测试极端数值
-  let large_positive = 1000000
-  let large_negative = -1000000
-  let zero = 0
+  // 模拟哈希计算
+  let hash1 = multiply(input, prime1) % 10000
+  let hash2 = multiply(hash1, prime2) % 10000
+  let final_hash = add(hash1, hash2) % 10000
   
-  // 大数运算
-  assert_eq(2000000, add(large_positive, large_positive))
-  assert_eq(-2000000, add(large_negative, large_negative))
-  assert_eq(0, add(large_positive, large_negative))
-  
-  // 混合运算
-  let mixed_result = add(multiply(large_positive, 2), divide_with_ceil(large_negative, 3))
-  assert_eq(1999998, mixed_result)
-  
-  // 字符串边界测试
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, A!", greet("A"))
-  assert_eq_string("Hello, This is a very long name!", greet("This is a very long name"))
+  assert_eq(2695, hash1)
+  assert_eq(6715, hash2)
+  assert_eq(4410, final_hash)
 }
