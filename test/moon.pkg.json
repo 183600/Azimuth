@@ -104,5 +104,7 @@
             "simple_test_new.mbt",
             "standard_moonbit_test_suite.mbt",
             "standard_moonbit_quality_tests.mbt",
-            "quality_test_new.mbt"
+            "quality_test_new.mbt",
+            "standard_azimuth_comprehensive_tests.mbt",
+            "new_azimuth_standard_tests.mbt"
             ]}
