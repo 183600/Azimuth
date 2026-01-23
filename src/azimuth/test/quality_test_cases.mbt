@@ -1,9 +1,6 @@
 // 质量增强测试用例 - 针对 azimuth 库的综合测试
 // 包含实际应用场景、边界情况和性能相关测试
 
-// 导入必要的包
-derive_eq ""
-
 test "mathematical_identity_properties" {
   // 测试数学恒等性质
   // 加法恒等元

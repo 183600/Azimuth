@@ -7,6 +7,9 @@
   "test-import": [
     "azimuth"
   ],
+  "test": [
+    "quality_test_cases.mbt"
+  ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [
     "high_quality_azimuth_tests.mbt",
