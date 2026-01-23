@@ -4,6 +4,8 @@
   ],
   "export": [],
   "test": [
+    "simple_quality_tests.mbt",
+    "quality_enhanced_test_cases.mbt",
     "standard_core_tests.mbt",
     "standard_core_test_cases.mbt",
     "standard_azimuth_test_suite.mbt",
