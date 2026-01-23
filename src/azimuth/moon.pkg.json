@@ -175,5 +175,6 @@
     "azimuth_comprehensive_quality_tests.mbt",
     "new_comprehensive_moonbit_tests.mbt",
     "standard_moonbit_test_cases.mbt",
-    "azimuth_enhanced_unit_tests.mbt"
+    "azimuth_enhanced_unit_tests.mbt",
+    "additional_comprehensive_tests.mbt"
                                                                                                                                                 ]}
