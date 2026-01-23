@@ -142,7 +142,6 @@ test "time_and_scheduling_calculations" {
 
 test "data_analysis_and_statistics" {
   // 数据分析和统计计算
-  let data_points = [125, 150, 175, 200, 225]  // 模拟数据点
   let data_count = 5
   
   // 计算总和（手动计算）
