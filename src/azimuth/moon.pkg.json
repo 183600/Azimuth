@@ -161,5 +161,6 @@
                                                                             "focused_comprehensive_tests.mbt",
                                                                             "standard_azimuth_tests.mbt",
                                                                             "high_quality_test_suite.mbt",
-                                                                            "quality_test_examples.mbt"
+                                                                            "quality_test_examples.mbt",
+    "../azimuth_new_standard_tests.mbt"
                                                                                                                                                 ]}

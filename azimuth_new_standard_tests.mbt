@@ -1,103 +1,132 @@
-// 新增的标准 MoonBit 测试用例
-// 测试 azimuth 库的核心功能
+// Azimuth 项目新增测试用例
+// 使用标准 MoonBit 测试语法，覆盖核心功能和实际应用场景
 
-test "add_commutative_property" {
-  // 测试加法交换律: a + b = b + a
-  let a = 15
-  let b = 27
-  assert_eq(add(a, b), add(b, a))
+test "statistical_analysis_mean" {
+  // 测试统计分析：计算平均值
+  let numbers = [10, 20, 30, 40, 50]
+  let sum = add(add(add(add(numbers[0], numbers[1]), numbers[2]), numbers[3]), numbers[4])
+  let count = 5
+  let mean = divide_with_ceil(sum, count)
+  assert_eq(30, mean)
+}
+
+test "resource_allocation_optimization" {
+  // 测试资源分配优化
+  let total_budget = 5000
+  let project_a_cost = 1200
+  let project_b_cost = 800
+  let project_c_cost = 1500
   
-  let x = -10
-  let y = 25
-  assert_eq(add(x, y), add(y, x))
-}
-
-test "multiply_distributive_property" {
-  // 测试乘法分配律: a * (b + c) = a * b + a * c
-  let a = 4
-  let b = 6
-  let c = 3
-  let left = multiply(a, add(b, c))
-  let right = add(multiply(a, b), multiply(a, c))
-  assert_eq(left, right)
-}
-
-test "divide_with_ceil_fractional_cases" {
-  // 测试向上取整除法的小数情况
-  assert_eq(3, divide_with_ceil(8, 3))    // 8/3 = 2.666... -> 3
-  assert_eq(7, divide_with_ceil(20, 3))   // 20/3 = 6.666... -> 7
-  assert_eq(2, divide_with_ceil(4, 2))    // 4/2 = 2 -> 2
-  assert_eq(1, divide_with_ceil(2, 3))    // 2/3 = 0.666... -> 1
-}
-
-test "greet_function_whitespace_handling" {
-  // 测试问候函数的空白字符处理
-  assert_eq_string("Hello,   World   !", greet("   World   "))
-  assert_eq_string("Hello, 	\n!", greet("\t\n"))
-  assert_eq_string("Hello, a b c!", greet("a b c"))
-}
-
-test "complex_calculation_pipeline" {
-  // 测试复杂计算流水线
-  let initial_value = 100
-  let step1 = add(initial_value, multiply(5, 4))     // 100 + 20 = 120
-  let step2 = multiply(step1, divide_with_ceil(25, 5)) // 120 * 5 = 600
-  let final_result = add(step2, -multiply(10, 6))     // 600 - 60 = 540
-  assert_eq(540, final_result)
-}
-
-test "edge_case_zero_division" {
-  // 测试零除法的边界情况
-  assert_eq(0, divide_with_ceil(0, 1))
-  assert_eq(0, divide_with_ceil(0, -1))
-  assert_eq(0, divide_with_ceil(0, 100))
-  assert_eq(0, divide_with_ceil(5, 0))
-  assert_eq(0, divide_with_ceil(-5, 0))
-}
-
-test "negative_multiply_patterns" {
-  // 测试负数乘法模式
-  assert_eq(50, multiply(-5, -10))     // 负负得正
-  assert_eq(-30, multiply(5, -6))      // 正负得负
-  assert_eq(-42, multiply(-7, 6))      // 负正得负
-  assert_eq(0, multiply(-8, 0))        // 零元素性质
-}
-
-test "string_concatenation_with_greet" {
-  // 测试字符串连接与问候函数的组合
-  let prefix = "Dear"
-  let name = "MoonBit"
-  let suffix = "Community"
-  let full_name = prefix + " " + name + " " + suffix
-  let formal_greeting = greet(full_name)
-  assert_eq_string("Hello, Dear MoonBit Community!", formal_greeting)
-}
-
-test "mathematical_sequence_sum" {
-  // 测试数学序列求和
-  // 计算 1 + 2 + 3 + ... + 10 的和
-  let n = 10
-  let sum = divide_with_ceil(multiply(n, add(n, 1)), 2)  // n*(n+1)/2 公式
-  assert_eq(55, sum)
+  let allocated_budget = add(add(project_a_cost, project_b_cost), project_c_cost)
+  let remaining_budget = add(total_budget, -allocated_budget)
+  let additional_projects = divide_with_ceil(remaining_budget, 600)
   
-  // 验证通过循环方式（使用函数组合）
-  let manual_sum = add(add(add(add(add(1, 2), add(3, 4)), add(5, 6)), add(7, 8)), add(9, 10))
-  assert_eq(sum, manual_sum)
+  assert_eq(3500, allocated_budget)
+  assert_eq(1500, remaining_budget)
+  assert_eq(3, additional_projects)
 }
 
-test "business_inventory_calculation" {
-  // 测试业务库存计算
-  let boxes_per_pallet = 12
-  let items_per_box = 24
-  let total_items = 350
+test "time_management_calculation" {
+  // 测试时间管理计算
+  let daily_tasks = 8
+  let weekly_target = 45
+  let work_days_needed = divide_with_ceil(weekly_target, daily_tasks)
   
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  let pallets_needed = divide_with_ceil(boxes_needed, boxes_per_pallet)
+  let overtime_hours = add(multiply(work_days_needed, daily_tasks), -weekly_target)
   
-  assert_eq(15, boxes_needed)     // ceil(350/24) = 15
-  assert_eq(2, pallets_needed)    // ceil(15/12) = 2
+  assert_eq(6, work_days_needed)
+  assert_eq(3, overtime_hours)
+}
+
+test "financial_compound_interest" {
+  // 测试金融复利计算
+  let principal = 10000
+  let rate_percent = 5
+  let years = 3
   
-  // 计算总容量
-  let total_capacity = multiply(pallets_needed, multiply(boxes_per_pallet, items_per_box))
-  assert_eq(576, total_capacity)  // 2 * 12 * 24 = 576
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, rate_percent), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, rate_percent), 100))
+  
+  assert_eq(10500, year1_amount)
+  assert_eq(11025, year2_amount)
+  assert_eq(11576, year3_amount)
+}
+
+test "inventory_turnover_ratio" {
+  // 测试库存周转率计算
+  let annual_sales = 120000
+  let average_inventory = 30000
+  let turnover_ratio = divide_with_ceil(annual_sales, average_inventory)
+  
+  assert_eq(4, turnover_ratio)
+}
+
+test "data_structure_operations" {
+  // 测试数据结构操作模拟
+  let array_size = 10
+  let element_size = 4
+  let total_memory = multiply(array_size, element_size)
+  
+  let pages_needed = divide_with_ceil(total_memory, 32)
+  let remaining_space = add(multiply(pages_needed, 32), -total_memory)
+  
+  assert_eq(40, total_memory)
+  assert_eq(2, pages_needed)
+  assert_eq(24, remaining_space)
+}
+
+test "network_latency_calculation" {
+  // 测试网络延迟计算
+  let base_latency = 50
+  let hop_count = 5
+  let per_hop_delay = 10
+  
+  let total_latency = add(base_latency, multiply(hop_count, per_hop_delay))
+  let timeout_threshold = multiply(total_latency, 3)
+  
+  assert_eq(100, total_latency)
+  assert_eq(300, timeout_threshold)
+}
+
+test "cryptography_hash_simulation" {
+  // 测试密码学哈希模拟
+  let input_value = 12345
+  let prime_multiplier = 31
+  let hash_modulus = 1000000
+  
+  let hash_value = multiply(input_value, prime_multiplier) % hash_modulus
+  let collision_bucket = divide_with_ceil(hash_value, 1000)
+  
+  assert_eq(382695, hash_value)
+  assert_eq(383, collision_bucket)
+}
+
+test "geometric_area_calculations" {
+  // 测试几何面积计算
+  let radius = 7
+  let pi_approximation = 22
+  let circle_area = divide_with_ceil(multiply(multiply(radius, radius), pi_approximation), 7)
+  
+  let side_length = 10
+  let square_area = multiply(side_length, side_length)
+  
+  let total_area = add(circle_area, square_area)
+  
+  assert_eq(154, circle_area)
+  assert_eq(100, square_area)
+  assert_eq(254, total_area)
+}
+
+test "multi_language_greeting_system" {
+  // 测试多语言问候系统
+  let english_greeting = greet("World")
+  let chinese_greeting = greet("世界")
+  let spanish_greeting = greet("Mundo")
+  let emoji_greeting = greet("🌍")
+  
+  assert_eq_string("Hello, World!", english_greeting)
+  assert_eq_string("Hello, 世界!", chinese_greeting)
+  assert_eq_string("Hello, Mundo!", spanish_greeting)
+  assert_eq_string("Hello, 🌍!", emoji_greeting)
 }
