@@ -4,6 +4,7 @@
   ],
   "export": [],
   "test": [
+    "essential_core_tests.mbt",
     "simple_quality_tests.mbt",
     "quality_enhanced_test_cases.mbt",
     "standard_core_tests.mbt",
