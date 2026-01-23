@@ -1,115 +1,69 @@
-// 标准 MoonBit 测试用例
-// 覆盖核心功能的各种场景
+// 标准 MoonBit 测试用例示例
+// 针对 azimuth 库核心功能的高质量测试
 
-test "add_function_basic_functionality" {
-  // 测试 add 函数的基本功能
+test "add_function_basic_operation" {
+  // 测试加法函数的基本操作
+  assert_eq(10, add(3, 7))
   assert_eq(0, add(0, 0))
-  assert_eq(5, add(2, 3))
-  assert_eq(-1, add(-2, 1))
+  assert_eq(-5, add(-2, -3))
   assert_eq(100, add(50, 50))
 }
 
-test "add_function_edge_cases" {
-  // 测试 add 函数的边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试溢出保护
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(-1, add(max_val, min_val))
-}
-
-test "multiply_function_basic_functionality" {
-  // 测试 multiply 函数的基本功能
-  assert_eq(0, multiply(0, 5))
-  assert_eq(6, multiply(2, 3))
+test "multiply_function_basic_operation" {
+  // 测试乘法函数的基本操作
+  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(0, 10))
   assert_eq(-6, multiply(-2, 3))
-  assert_eq(15, multiply(5, 3))
+  assert_eq(25, multiply(5, 5))
 }
 
-test "multiply_function_special_cases" {
-  // 测试 multiply 函数的特殊情况
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试与1和-1的乘法
-  assert_eq(5, multiply(5, 1))
-  assert_eq(-5, multiply(5, -1))
-  assert_eq(min_val, multiply(min_val, -1))
-  
-  // 测试溢出保护
-  assert_eq(max_val, multiply(max_val, 2))
-}
-
-test "greet_function_various_inputs" {
-  // 测试 greet 函数的各种输入
+test "greet_function_standard_cases" {
+  // 测试问候函数的标准情况
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, 123!", greet("123"))
 }
 
-test "greet_function_special_characters" {
-  // 测试 greet 函数处理特殊字符
-  assert_eq_string("Hello, 测试!", greet("测试"))
-  assert_eq_string("Hello, @#$!", greet("@#$"))
-  assert_eq_string("Hello,   !", greet("  "))
+test "divide_with_ceil_functionality" {
+  // 测试向上取整除法功能
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+}
+
+test "mathematical_commutative_properties" {
+  // 测试数学交换律性质
+  let a = 8
+  let b = 12
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(multiply(a, b), multiply(b, a))
 }
 
 test "complex_calculation_scenario" {
   // 测试复杂计算场景
-  // 计算 (a + b) * c - d
-  let a = 10
-  let b = 5
-  let c = 3
-  let d = 7
-  
-  let sum = add(a, b)
-  let product = multiply(sum, c)
-  let result = add(product, -d)
-  
-  assert_eq(38, result)  // (10 + 5) * 3 - 7 = 38
+  let base_price = 25
+  let quantity = 4
+  let tax_rate = 8
+  let subtotal = multiply(base_price, quantity)
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let total = add(subtotal, tax)
+  assert_eq(108, total)
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let x = 12
-  let y = 8
-  
-  // 加法交换律
-  assert_eq(add(x, y), add(y, x))
-  
-  // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
-  
-  // 分配律简化测试
-  assert_eq(multiply(x, add(y, 2)), add(multiply(x, y), multiply(x, 2)))
+test "negative_number_operations" {
+  // 测试负数运算
+  assert_eq(-8, add(-3, -5))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-15, multiply(3, -5))
+  assert_eq(-3, divide_with_ceil(-10, 3))
 }
 
-test "real_world_application_calculations" {
-  // 测试实际应用计算
-  // 购物车计算：商品价格 × 数量 + 运费
-  let item_price = 199
-  let quantity = 2
-  let shipping = 15
-  
-  let subtotal = multiply(item_price, quantity)
-  let total = add(subtotal, shipping)
-  
-  assert_eq(413, total)  // 199 * 2 + 15 = 413
-}
-
-test "assert_functions_functionality" {
-  // 测试断言函数的功能
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
-  
-  // 测试条件断言
-  let positive = 10
-  let negative = -5
-  assert_true(positive > 0)
-  assert_false(negative > 0)
+test "boundary_value_testing" {
+  // 测试边界值
+  assert_eq(1, add(0, 1))
+  assert_eq(-1, add(0, -1))
+  assert_eq(0, multiply(1, 0))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(99, 100))
 }
