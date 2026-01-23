@@ -223,5 +223,6 @@
             "quality_focused_tests.mbt",
             "standard_moonbit_tests_v20.mbt",
             "standard_moonbit_tests_v21.mbt",
-    "azimuth_new_quality_tests.mbt"
+    "azimuth_new_quality_tests.mbt",
+                "azimuth_standard_test_suite.mbt"
                 ]}
