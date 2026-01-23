@@ -90,5 +90,6 @@
               "new_comprehensive_quality_tests.mbt",
               "azimuth_advanced_test_suite.mbt",
               "azimuth_concise_test_suite.mbt",
-              "standard_moonbit_test_cases.mbt"
+              "standard_moonbit_test_cases.mbt",
+            "quality_enhanced_unit_tests.mbt"
             ]}
