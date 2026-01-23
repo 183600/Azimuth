@@ -1,138 +1,140 @@
-// 高质量增强测试套件 - 针对 azimuth 库的全面测试
-// 包含边界情况、错误处理和实际应用场景
+// 高质量增强测试套件
+// 针对 azimuth 包的深度测试，包含边界条件和实际应用场景
 
-test "mathematical_sequence_fibonacci" {
-  // 斐波那契数列计算测试
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = add(fib1, fib2)
-  let fib4 = add(fib2, fib3)
-  let fib5 = add(fib3, fib4)
-  let fib6 = add(fib4, fib5)
-  
-  assert_eq(2, fib3)
-  assert_eq(3, fib4)
-  assert_eq(5, fib5)
-  assert_eq(8, fib6)
+test "mathematical_identity_properties" {
+  // 测试数学单位元性质
+  assert_eq(7, add(7, 0))  // 加法单位元
+  assert_eq(-3, add(-3, 0))
+  assert_eq(5, multiply(5, 1))  // 乘法单位元
+  assert_eq(-8, multiply(-8, 1))
+  assert_eq(0, multiply(0, 123))  // 零元素性质
 }
 
-test "financial_compound_interest" {
-  // 复利计算测试
-  let principal = 1000
-  let rate_percent = 5
+test "complex_business_calculation" {
+  // 复杂业务计算：订单总价计算
+  let unit_price = 45
+  let quantity = 12
+  let tax_rate = 8
+  let shipping = 15
   
-  // 第一年
-  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  // 第二年
-  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
-  // 第三年
-  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
+  let subtotal = multiply(unit_price, quantity)
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let total = add(add(subtotal, tax_amount), shipping)
   
-  assert_eq(1050, year1)
-  assert_eq(1103, year2)
-  assert_eq(1158, year3)
+  assert_eq(540, subtotal)
+  assert_eq(44, tax_amount)
+  assert_eq(599, total)
 }
 
-test "inventory_batch_processing" {
-  // 库存批量处理测试
-  let items_per_batch = 24
-  let total_orders = 85
+test "resource_allocation_optimization" {
+  // 资源分配优化问题
+  let total_resources = 89
+  let team_size = 8
+  let minimum_per_team = 5
   
-  let full_batches = divide_with_ceil(total_orders, items_per_batch)
-  let used_items = multiply(full_batches - 1, items_per_batch)
-  let remaining_items = add(total_orders, -used_items)
+  let teams_needed = divide_with_ceil(total_resources, minimum_per_team)
+  let resources_per_team = divide_with_ceil(total_resources, teams_needed)
+  let leftover_resources = add(total_resources, -multiply(teams_needed, resources_per_team))
   
-  assert_eq(4, full_batches)
-  assert_eq(13, remaining_items)
+  assert_eq(18, teams_needed)
+  assert_eq(5, resources_per_team)
+  assert_eq(-1, leftover_resources)  // 由于向上取整可能会产生负数余数
 }
 
-test "temperature_conversion" {
-  // 温度转换模拟测试（简化的摄氏度到华氏度）
-  let celsius = 25
-  let numerator = add(multiply(celsius, 9), 160)
-  let fahrenheit = divide_with_ceil(numerator, 5)
-  
-  assert_eq(77, fahrenheit)
+test "string_processing_internationalization" {
+  // 字符串处理国际化测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
+  assert_eq_string("Hello, 🌍!", greet("🌍"))
+  assert_eq_string("Hello, Münchner!", greet("Münchner"))
 }
 
-test "digital_storage_calculation" {
-  // 数字存储计算测试
-  let file_size_mb = 850
-  let drive_size_gb = 4
-  let drive_size_mb = multiply(drive_size_gb, 1024)
-  
-  let files_fit = divide_with_ceil(drive_size_mb, file_size_mb)
-  let used_space = multiply(files_fit, file_size_mb)
-  let remaining_space = add(drive_size_mb, -used_space)
-  
-  assert_eq(5, files_fit)
-  assert_eq(290, remaining_space)
+test "negative_number_operations_comprehensive" {
+  // 负数运算综合测试
+  assert_eq(-15, add(-8, -7))
+  assert_eq(3, add(-10, 13))
+  assert_eq(24, multiply(-6, -4))
+  assert_eq(-18, multiply(6, -3))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(3, divide_with_ceil(-10, -3))
+  assert_eq(-2, divide_with_ceil(7, -3))
 }
 
-test "project_resource_allocation" {
-  // 项目资源分配测试
-  let total_budget = 10000
-  let team_members = 8
-  let project_duration_weeks = 12
-  
-  let total_person_weeks = multiply(team_members, project_duration_weeks)
-  let weekly_budget_per_person = divide_with_ceil(total_budget, total_person_weeks)
-  let total_allocated = multiply(weekly_budget_per_person, total_person_weeks)
-  
-  assert_eq(105, weekly_budget_per_person)
-  assert_eq(10080, total_allocated)
+test "extreme_boundary_conditions" {
+  // 极端边界条件测试
+  assert_eq(2147483647, add(2147483646, 1))  // 接近Int最大值
+  assert_eq(-2147483648, add(-2147483647, -1))  // 接近Int最小值
+  assert_eq(1, divide_with_ceil(2147483647, 2147483647))  // 大数相等除法
+  assert_eq(2147483647, multiply(46340, 46341))  // 接近溢出边界
 }
 
-test "geometric_area_calculation" {
-  // 几何面积计算测试
-  let rectangle_length = 15
-  let rectangle_width = 8
-  let circle_radius = 5
+test "real_world_inventory_management" {
+  // 真实世界库存管理场景
+  let initial_stock = 250
+  let daily_sales = 18
+  let days_simulated = 7
+  let restock_threshold = 100
+  let restock_amount = 500
   
-  let rectangle_area = multiply(rectangle_length, rectangle_width)
-  let circle_area_approx = multiply(multiply(circle_radius, circle_radius), 3)  // 简化的π≈3
-  let total_area = add(rectangle_area, circle_area_approx)
+  let total_sold = multiply(daily_sales, days_simulated)
+  let current_stock = add(initial_stock, -total_sold)
+  let needs_restock = current_stock < restock_threshold
+  let final_stock = if needs_restock { add(current_stock, restock_amount) } else { current_stock }
   
-  assert_eq(120, rectangle_area)
-  assert_eq(75, circle_area_approx)
-  assert_eq(195, total_area)
+  assert_eq(126, total_sold)
+  assert_eq(124, current_stock)
+  assert_eq(624, final_stock)
 }
 
-test "time_zone_conversion" {
-  // 时区转换模拟测试
-  let local_time = 14  // 下午2点
-  let time_difference = 8  // 8小时时差
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟测试
+  let base_operations = 1000
+  let growth_factor = 2
+  let iterations = 10
   
-  let remote_time = add(local_time, time_difference)
-  let adjusted_time = if remote_time > 20 { add(remote_time, -24) } else { remote_time }
+  // 模拟 O(n²) 算法的操作数
+  let total_operations = multiply(base_operations, multiply(growth_factor, iterations))
+  let operations_per_second = 50000
+  let execution_time = divide_with_ceil(total_operations, operations_per_second)
   
-  assert_eq(22, adjusted_time)
+  assert_eq(20000, total_operations)
+  assert_eq(1, execution_time)
 }
 
-test "statistical_analysis" {
-  // 统计分析测试
-  let data1 = 12
-  let data2 = 15
-  let data3 = 18
-  let data4 = 21
-  let data5 = 24
+test "financial_calculation_precision" {
+  // 金融计算精度测试
+  let principal = 10000
+  let interest_rate = 7
+  let years = 3
   
-  let sum = add(add(add(add(data1, data2), data3), data4), data5)
-  let mean = divide_with_ceil(sum, 5)
+  // 复利计算（简化版，使用向上取整）
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, interest_rate), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, interest_rate), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, interest_rate), 100))
   
-  assert_eq(90, sum)
-  assert_eq(18, mean)
+  assert_eq(10700, year1_amount)
+  assert_eq(11449, year2_amount)
+  assert_eq(12251, year3_amount)
 }
 
-test "cryptography_simulation" {
-  // 密码学模拟测试（简化的凯撒密码）
-  let shift = 3
+test "data_structure_operations_simulation" {
+  // 数据结构操作模拟
+  let array_size = 25
+  let page_size = 8
+  let hash_table_size = 16
   
-  // 简化的加密模拟（只处理字母H）
-  let h_ascii = 72  // H的ASCII码
-  let encrypted_h = add(h_ascii, shift)
-  let decrypted_h = add(encrypted_h, -shift)
+  // 计算分页数量
+  let pages_needed = divide_with_ceil(array_size, page_size)
   
-  assert_eq(75, encrypted_h)
-  assert_eq(72, decrypted_h)
+  // 计算哈希表负载
+  let load_factor = divide_with_ceil(multiply(array_size, 100), hash_table_size)
+  
+  // 模拟扩容决策
+  let needs_resize = load_factor > 75
+  let new_size = if needs_resize { multiply(hash_table_size, 2) } else { hash_table_size }
+  
+  assert_eq(4, pages_needed)
+  assert_eq(157, load_factor)
+  assert_eq(32, new_size)
 }
