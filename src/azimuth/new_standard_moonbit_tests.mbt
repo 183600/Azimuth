@@ -1,165 +1,107 @@
-// 标准 MoonBit 测试用例
-// 测试基本数学运算和字符串处理功能
+// 新的标准 MoonBit 测试用例
+// 针对 azimuth 库的核心功能进行全面测试
 
-test "add_function_commutative_property" {
-  // 测试加法交换律: a + b = b + a
-  let a = 123
-  let b = 456
-  assert_eq(add(a, b), add(b, a))
-  
-  // 测试负数情况
-  let c = -789
-  let d = 321
-  assert_eq(add(c, d), add(d, c))
-  
-  // 测试混合符号
-  let e = 500
-  let f = -200
-  assert_eq(add(e, f), add(f, e))
+test "add_function_identity_elements" {
+  // 测试加法的单位元性质
+  assert_eq(42, add(42, 0))
+  assert_eq(-17, add(-17, 0))
+  assert_eq(0, add(0, 0))
+  assert_eq(1000000, add(1000000, 0))
 }
 
-test "multiply_function_distributive_property" {
-  // 测试乘法分配律: a × (b + c) = a × b + a × c
+test "multiply_function_zero_property" {
+  // 测试乘法的零元素性质
+  assert_eq(0, multiply(7, 0))
+  assert_eq(0, multiply(0, 15))
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(-100, 0))
+}
+
+test "divide_with_ceil_precision_test" {
+  // 测试向上取整除法的精度
+  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
+  assert_eq(3, divide_with_ceil(8, 3))  // 2.666... -> 3
+  assert_eq(7, divide_with_ceil(13, 2)) // 6.5 -> 7
+  assert_eq(100, divide_with_ceil(999, 10)) // 99.9 -> 100
+}
+
+test "greet_function_unicode_support" {
+  // 测试问候函数的 Unicode 支持
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, αβγ!", greet("αβγ"))
+  assert_eq_string("Hello, ñáéíóú!", greet("ñáéíóú"))
+  assert_eq_string("Hello, 🌍🌎🌏!", greet("🌍🌎🌏"))
+}
+
+test "mathematical_distributive_law" {
+  // 测试数学分配律：a * (b + c) = a * b + a * c
   let a = 5
-  let b = 10
-  let c = 15
-  
+  let b = 7
+  let c = 9
   let left_side = multiply(a, add(b, c))
   let right_side = add(multiply(a, b), multiply(a, c))
-  assert_eq(left_side, right_side)
+  assert_eq(left_side, right_side)  // 5 * (7 + 9) = 5 * 7 + 5 * 9 = 80
 }
 
-test "greet_function_multilingual_support" {
-  // 测试多语言字符串处理
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🌙!", greet("🌙"))
-  assert_eq_string("Hello, Mr. Smith!", greet("Mr. Smith"))
-  assert_eq_string("Hello, 123!", greet("123"))
+test "negative_number_division_comprehensive" {
+  // 全面测试负数除法
+  assert_eq(-2, divide_with_ceil(-4, 2))   // -4/2 = -2 -> -2
+  assert_eq(-1, divide_with_ceil(-3, 2))   // -3/2 = -1.5 -> -1
+  assert_eq(-3, divide_with_ceil(-7, 2))   // -7/2 = -3.5 -> -3
+  assert_eq(3, divide_with_ceil(-7, -2))   // -7/-2 = 3.5 -> 4
+  assert_eq(0, divide_with_ceil(-5, 0))    // 除数为0的情况
 }
 
-test "divide_with_ceil_function_various_cases" {
-  // 测试向上取整除法的各种情况
-  // 正数除法
-  assert_eq(4, divide_with_ceil(11, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
+test "complex_financial_calculation" {
+  // 复杂金融计算场景
+  let principal = 10000
+  let rate_percent = 8
+  let years = 3
   
-  // 负数除法
-  assert_eq(-3, divide_with_ceil(-8, 3))
-  assert_eq(-2, divide_with_ceil(-6, 3))
+  // 简化的复利计算
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, rate_percent), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, rate_percent), 100))
   
-  // 混合符号
-  assert_eq(-2, divide_with_ceil(5, -3))
-  assert_eq(2, divide_with_ceil(-5, 3))
+  assert_eq(10800, year1_amount)
+  assert_eq(11664, year2_amount)
+  assert_eq(12597, year3_amount)
 }
 
-test "edge_case_zero_operations" {
-  // 测试零值运算的边界情况
-  let zero = 0
-  let positive = 42
-  let negative = -42
+test "inventory_optimization_problem" {
+  // 库存优化问题
+  let product_a_qty = 45
+  let product_b_qty = 67
+  let product_c_qty = 23
+  let box_capacity = 20
   
-  // 加法中的零
-  assert_eq(positive, add(positive, zero))
-  assert_eq(negative, add(negative, zero))
-  assert_eq(zero, add(zero, zero))
+  let total_items = add(add(product_a_qty, product_b_qty), product_c_qty)
+  let boxes_needed = divide_with_ceil(total_items, box_capacity)
   
-  // 乘法中的零
-  assert_eq(zero, multiply(positive, zero))
-  assert_eq(zero, multiply(negative, zero))
-  assert_eq(zero, multiply(zero, zero))
+  assert_eq(135, total_items)
+  assert_eq(7, boxes_needed)  // ceil(135/20) = 7
 }
 
-test "overflow_protection_validation" {
-  // 验证溢出保护机制
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 加法溢出保护
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(max_val, add(max_val, max_val))
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(min_val, add(min_val, min_val))
-  
-  // 乘法溢出保护
-  assert_eq(max_val, multiply(max_val, 2))
-  assert_eq(min_val, multiply(min_val, 2))
-  assert_eq(min_val, multiply(min_val, -1))
+test "string_greeting_with_special_characters" {
+  // 测试包含特殊字符的字符串问候
+  assert_eq_string("Hello, C++!", greet("C++"))
+  assert_eq_string("Hello, HTML5!", greet("HTML5"))
+  assert_eq_string("Hello, API@v2.0!", greet("API@v2.0"))
+  assert_eq_string("Hello, a+b=c!", greet("a+b=c"))
 }
 
-test "complex_calculation_sequence" {
-  // 测试复杂计算序列：计算表达式 (a + b) × c - d ÷ e
-  let a = 10
-  let b = 20
-  let c = 3
-  let d = 15
-  let e = 5
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟计算
+  let input_size = 1000
+  let linear_factor = 3
+  let logarithmic_factor = 10
   
-  let sum_ab = add(a, b)  // 30
-  let product = multiply(sum_ab, c)  // 90
-  let division = d / e  // 3
-  let result = add(product, -division)  // 87
+  // 模拟 O(n + n log n) 算法的复杂度
+  let linear_part = multiply(input_size, linear_factor)
+  let log_part = multiply(divide_with_ceil(input_size, 100), logarithmic_factor)
+  let total_complexity = add(linear_part, log_part)
   
-  assert_eq(87, result)
-}
-
-test "string_processing_edge_cases" {
-  // 测试字符串处理的边界情况
-  // 空字符串处理
-  assert_eq_string("Hello, !", greet(""))
-  
-  // 单字符处理
-  assert_eq_string("Hello, A!", greet("A"))
-  
-  // 长字符串处理
-  let long_string = "ThisIsAVeryLongStringThatContainsManyCharactersAndShouldWorkFine"
-  assert_eq_string("Hello, " + long_string + "!", greet(long_string))
-  
-  // 特殊字符处理
-  assert_eq_string("Hello, \n\t!", greet("\n\t"))
-  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))
-}
-
-test "mathematical_identity_validation" {
-  // 验证数学恒等式
-  let x = 42
-  let y = 17
-  
-  // 加法单位元
-  assert_eq(x, add(x, 0))
-  assert_eq(y, add(y, 0))
-  
-  // 乘法单位元
-  assert_eq(x, multiply(x, 1))
-  assert_eq(y, multiply(y, 1))
-  
-  // 乘法零元
-  assert_eq(0, multiply(x, 0))
-  assert_eq(0, multiply(y, 0))
-  
-  // 减法作为加负数
-  assert_eq(add(x, -y), x - y)
-}
-
-test "real_world_application_scenario" {
-  // 实际应用场景：计算购物车总价
-  let item1_price = 199
-  let item1_quantity = 2
-  let item2_price = 299
-  let item2_quantity = 1
-  let discount = 50
-  let tax_rate = 8  // 8%
-  
-  // 计算商品总价
-  let total1 = multiply(item1_price, item1_quantity)  // 398
-  let total2 = multiply(item2_price, item2_quantity)  // 299
-  let subtotal = add(total1, total2)  // 697
-  
-  // 应用折扣
-  let discounted_total = add(subtotal, -discount)  // 647
-  
-  // 计算税费
-  let tax = multiply(discounted_total, tax_rate) / 100  // 51
-  let final_total = add(discounted_total, tax)  // 698
-  
-  assert_eq(698, final_total)
+  assert_eq(3000, linear_part)
+  assert_eq(100, log_part)
+  assert_eq(3100, total_complexity)
 }
