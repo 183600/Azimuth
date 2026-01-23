@@ -1,247 +1,202 @@
-// 高级MoonBit测试用例
-// 专注于复杂算法、性能测试和实际应用场景
+// 高级 MoonBit 测试用例
+// 针对 azimuth 库的高级功能和边界情况进行深度测试
 
-test "fibonacci_sequence_calculation" {
-  // 使用add函数计算斐波那契数列的第10项
-  // F(0)=0, F(1)=1, F(2)=1, F(3)=2, F(4)=3, F(5)=5, F(6)=8, F(7)=13, F(8)=21, F(9)=34, F(10)=55
-  let f0 = 0
-  let f1 = 1
-  let f2 = @azimuth.add(f0, f1)  // 1
-  let f3 = @azimuth.add(f1, f2)  // 2
-  let f4 = @azimuth.add(f2, f3)  // 3
-  let f5 = @azimuth.add(f3, f4)  // 5
-  let f6 = @azimuth.add(f4, f5)  // 8
-  let f7 = @azimuth.add(f5, f6)  // 13
-  let f8 = @azimuth.add(f6, f7)  // 21
-  let f9 = @azimuth.add(f7, f8)  // 34
-  let f10 = @azimuth.add(f8, f9) // 55
+test "chained_function_operations" {
+  // 测试函数链式调用和复杂表达式
+  let x = 10
+  let y = 15
+  let z = 20
   
-  @azimuth.assert_eq(55, f10)
+  // 测试嵌套函数调用：(x + y) * (z - x) + y / z
+  let complex_result = @azimuth.add(
+    @azimuth.multiply(@azimuth.add(x, y), z - x),
+    @azimuth.divide_with_ceil(y, z)
+  )
+  @azimuth.assert_eq(251, complex_result)  // (10 + 15) * (20 - 10) + ceil(15/20) = 25 * 10 + 1 = 251
 }
 
-test "prime_number_verification" {
-  // 使用基本运算验证质数性质
-  // 验证17是质数：不能被2,3,4,5整除
-  let number = 17
-  let is_divisible_by_2 = @azimuth.multiply(number / 2, 2) == number
-  let is_divisible_by_3 = @azimuth.multiply(number / 3, 3) == number
-  let is_divisible_by_4 = @azimuth.multiply(number / 4, 4) == number
-  let is_divisible_by_5 = @azimuth.multiply(number / 5, 5) == number
-  
-  // 17不应该被2,3,4,5整除
-  @azimuth.assert_eq(0, 1)(is_divisible_by_2)
-  @azimuth.assert_eq(0, 1)(is_divisible_by_3)
-  @azimuth.assert_eq(0, 1)(is_divisible_by_4)
-  @azimuth.assert_eq(0, 1)(is_divisible_by_5)
-  
-  // 验证12不是质数：能被2,3,4整除
-  let composite = 12
-  let is_divisible_by_2_12 = @azimuth.multiply(composite / 2, 2) == composite
-  let is_divisible_by_3_12 = @azimuth.multiply(composite / 3, 3) == composite
-  let is_divisible_by_4_12 = @azimuth.multiply(composite / 4, 4) == composite
-  
-  @azimuth.assert_eq(is_divisible_by_2_12, true)
-  @azimuth.assert_eq(is_divisible_by_3_12, true)
-  @azimuth.assert_eq(is_divisible_by_4_12, true)
-}
-
-test "bank_interest_compound_calculation" {
-  // 银行复利计算：本金 × (1 + 利率)^年数
-  // 简化计算：10000 × (1 + 5%)^3 ≈ 10000 × 116 = 1160000
-  let principal = 10000
+test "financial_compound_interest" {
+  // 测试复利计算的精确场景
+  let principal = 1000
   let rate_percent = 5
-  let years = 3
+  let years = 3  // 未使用的变量
   
-  // 第一年：10000 × 105 = 1050000
-  let year1_end = @azimuth.multiply(principal, @azimuth.add(100, rate_percent))
+  // year 1: 1000 + ceil(1000*5/100) = 1050
+  let year1 = @azimuth.add(principal, @azimuth.divide_with_ceil(@azimuth.multiply(principal, rate_percent), 100))
   
-  // 第二年：10500 × 105 = 1102500
-  let year2_end = @azimuth.multiply(year1_end / 100, @azimuth.add(100, rate_percent))
+  // year 2: 1050 + ceil(1050*5/100) = 1103
+  let year2 = @azimuth.add(year1, @azimuth.divide_with_ceil(@azimuth.multiply(year1, rate_percent), 100))
   
-  // 第三年：11025 × 105 = 1157625
-  let year3_end = @azimuth.multiply(year2_end / 100, @azimuth.add(100, rate_percent))
+  // year 3: 1103 + ceil(1103*5/100) = 1158
+  let year3 = @azimuth.add(year2, @azimuth.divide_with_ceil(@azimuth.multiply(year2, rate_percent), 100))
   
-  @azimuth.assert_eq(1157625, year3_end)
+  @azimuth.assert_eq(1050, year1)
+  @azimuth.assert_eq(1103, year2)
+  @azimuth.assert_eq(1158, year3)
 }
 
-test "inventory_management_system" {
-  // 库存管理系统测试
-  let initial_stock = 100
-  let sold_items = 25
-  let restocked_items = 50
-  let damaged_items = 5
+test "resource_allocation_optimization" {
+  // 测试资源分配优化算法
+  let total_budget = 10000
+  let project_costs = [1500, 2000, 1200, 1800, 2500]
   
-  // 计算当前库存：初始库存 - 售出 + 补货 - 损坏
-  let current_stock = @azimuth.add(
-    @azimuth.add(
-      @azimuth.add(initial_stock, -sold_items), 
-      restocked_items
-    ), 
-    -damaged_items
-  )
+  // 计算总成本
+  let total_cost = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(project_costs[0], project_costs[1]), project_costs[2]), project_costs[3]), project_costs[4])
   
-  @azimuth.assert_eq(120, current_stock)
+  // 计算剩余预算
+  let remaining = total_budget - total_cost
   
-  // 计算库存价值：当前库存 × 单价
-  let unit_price = 50
-  let inventory_value = @azimuth.multiply(current_stock, unit_price)
+  // 计算可以支持的额外小项目数量（每个800成本）
+  let additional_projects = @azimuth.divide_with_ceil(remaining, 800)
   
-  @azimuth.assert_eq(6000, inventory_value)
+  @azimuth.assert_eq(10000, total_budget)
+  @azimuth.assert_eq(9000, total_cost)
+  @azimuth.assert_eq(1000, remaining)
+  @azimuth.assert_eq(2, additional_projects)
 }
 
-test "data_compression_simulation" {
-  // 数据压缩模拟：计算压缩率和存储空间
-  let original_size = 1000000  // 1MB
-  let compression_ratio = 75   // 75%压缩率
+test "unicode_string_processing" {
+  // 测试 Unicode 字符串的复杂处理
+  let unicode_names = ["张三", "José", "Владимир", "Muhammad", "田中太郎"]
   
-  // 计算压缩后大小
-  let compressed_size = @azimuth.multiply(original_size, compression_ratio) / 100
-  
-  @azimuth.assert_eq(750000, compressed_size)
-  
-  // 计算节省空间
-  let saved_space = @azimuth.add(original_size, -compressed_size)
-  
-  @azimuth.assert_eq(250000, saved_space)
-  
-  // 如果有10个这样的文件，计算总节省空间
-  let file_count = 10
-  let total_saved = @azimuth.multiply(saved_space, file_count)
-  
-  @azimuth.assert_eq(2500000, total_saved)
-}
-
-test "network_throughput_calculation" {
-  // 网络吞吐量计算
-  let file_size_mb = 100
-  let network_speed_mbps = 20
-  let overhead_percent = 10
-  
-  // 计算理论传输时间（秒）
-  let theoretical_time = @azimuth.multiply(file_size_mb, 8) / network_speed_mbps
-  
-  @azimuth.assert_eq(40, theoretical_time)
-  
-  // 考虑开销的实际时间
-  let actual_time = @azimuth.multiply(theoretical_time, @azimuth.add(100, overhead_percent)) / 100
-  
-  @azimuth.assert_eq(44, actual_time)
-}
-
-test "geometric_progression_sum" {
-  // 等比数列求和：1 + 2 + 4 + 8 + 16 + 32 = 63
-  // 使用公式：a × (r^n - 1) / (r - 1)，其中a=1, r=2, n=6
-  let first_term = 1
-  let ratio = 2
-  let terms = 6
-  
-  // 计算2^6 - 1 = 64 - 1 = 63
-  let power_of_2 = @azimuth.multiply(@azimuth.multiply(@azimuth.multiply(2, 2), 2), 2)  // 2^4 = 16
-  let power_of_6 = @azimuth.multiply(power_of_2, @azimuth.multiply(2, 2))  // 16 * 4 = 64
-  let numerator = @azimuth.add(power_of_6, -1)  // 64 - 1 = 63
-  let denominator = @azimuth.add(ratio, -1)     // 2 - 1 = 1
-  let sum = @azimuth.multiply(first_term, numerator) / denominator
-  
-  @azimuth.assert_eq(63, sum)
-  
-  // 手动验证
-  let term1 = 1
-  let term2 = @azimuth.multiply(term1, ratio)     // 2
-  let term3 = @azimuth.multiply(term2, ratio)     // 4
-  let term4 = @azimuth.multiply(term3, ratio)     // 8
-  let term5 = @azimuth.multiply(term4, ratio)     // 16
-  let term6 = @azimuth.multiply(term5, ratio)     // 32
-  let manual_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(term1, term2), term3), term4), term5), term6)
-  
-  @azimuth.assert_eq(63, manual_sum)
-}
-
-test "cpu_scheduling_simulation" {
-  // CPU调度模拟：时间片轮转算法
-  let process1_time = 15
-  let process2_time = 20
-  let process3_time = 10
-  let time_slice = 5
-  
-  // 计算每个进程需要的时间片数
-  let process1_slices = @azimuth.add(process1_time / time_slice, 
-    if (process1_time % time_slice > 0) { 1 } else { 0 })
-  let process2_slices = @azimuth.add(process2_time / time_slice, 
-    if (process2_time % time_slice > 0) { 1 } else { 0 })
-  let process3_slices = @azimuth.add(process3_time / time_slice, 
-    if (process3_time % time_slice > 0) { 1 } else { 0 })
-  
-  @azimuth.assert_eq(3, process1_slices)
-  @azimuth.assert_eq(4, process2_slices)
-  @azimuth.assert_eq(2, process3_slices)
-  
-  // 计算总时间片数
-  let total_slices = @azimuth.add(@azimuth.add(process1_slices, process2_slices), process3_slices)
-  
-  @azimuth.assert_eq(9, total_slices)
-  
-  // 计算总执行时间（包括上下文切换开销）
-  let context_switch_overhead = 1
-  let total_time = @azimuth.add(
-    @azimuth.add(@azimuth.add(process1_time, process2_time), process3_time),
-    @azimuth.multiply(total_slices, context_switch_overhead)
-  )
-  
-  @azimuth.assert_eq(55, total_time)
-}
-
-test "string_processing_efficiency" {
-  // 字符串处理效率测试
-  let base_string = "Hello"
-  let append_count = 100
-  
-  // 模拟字符串拼接操作（通过greet函数）
-  let result1 = @azimuth.greet(base_string)
-  let result2 = @azimuth.greet(base_string + base_string)
-  let result3 = @azimuth.greet(base_string + base_string + base_string)
-  
-  @azimuth.assert_eq_string("Hello, Hello!", result1)
-  @azimuth.assert_eq_string("Hello, HelloHello!", result2)
-  @azimuth.assert_eq_string("Hello, HelloHelloHello!", result3)
-  
-  // 测试不同长度字符串的处理
-  let short_name = "A"
-  let medium_name = "Alexander"
-  let long_name = "ThisIsAVeryLongNameForTestingStringProcessingEfficiency"
-  
-  let short_result = @azimuth.greet(short_name)
-  let medium_result = @azimuth.greet(medium_name)
-  let long_result = @azimuth.greet(long_name)
-  
-  // 验证结果正确性
-  @azimuth.assert_eq_string("Hello, A!", short_result)
-  @azimuth.assert_eq_string("Hello, Alexander!", medium_result)
-  @azimuth.assert_eq_string("Hello, ThisIsAVeryLongNameForTestingStringProcessingEfficiency!", long_result)
+  // 测试各种 Unicode 字符的问候
+  @azimuth.assert_eq_string("Hello, 张三!", @azimuth.greet(unicode_names[0]))
+  @azimuth.assert_eq_string("Hello, José!", @azimuth.greet(unicode_names[1]))
+  @azimuth.assert_eq_string("Hello, Владимир!", @azimuth.greet(unicode_names[2]))
+  @azimuth.assert_eq_string("Hello, Muhammad!", @azimuth.greet(unicode_names[3]))
+  @azimuth.assert_eq_string("Hello, 田中太郎!", @azimuth.greet(unicode_names[4]))
 }
 
 test "algorithm_complexity_simulation" {
-  // 算法复杂度模拟：比较O(n)和O(n²)的运算次数
-  let dataset_size = 100
+  // 模拟算法复杂度计算
+  let input_size = 100
+  let constant_factor = 3
+  let logarithmic_factor = 7
   
-  // O(n)算法的运算次数
-  let linear_operations = dataset_size
+  // 模拟 O(n log n) 算法的操作次数
+  let log_approximation = @azimuth.divide_with_ceil(input_size, 10)  // 简化的对数计算
+  let total_operations = @azimuth.multiply(input_size, @azimuth.multiply(log_approximation, constant_factor))
   
-  // O(n²)算法的运算次数
-  let quadratic_operations = @azimuth.multiply(dataset_size, dataset_size)
+  // 添加额外的常数时间操作
+  let final_operations = @azimuth.add(total_operations, @azimuth.multiply(logarithmic_factor, 100))
   
-  @azimuth.assert_eq(100, linear_operations)
-  @azimuth.assert_eq(10000, quadratic_operations)
+  @azimuth.assert_eq(10, log_approximation)  // ceil(100/10) = 10
+  @azimuth.assert_eq(3000, total_operations)  // 100 * 10 * 3 = 3000
+  @azimuth.assert_eq(3700, final_operations)  // 3000 + 700 = 3700
+}
+
+test "extreme_numerical_stability" {
+  // 测试极端数值的稳定性
+  let large_positive = 1000000
+  let large_negative = -1000000
+  let small_positive = 1
+  let small_negative = -1
   
-  // 计算性能差异倍数
-  let performance_difference = quadratic_operations / linear_operations
+  // 测试大数运算的稳定性
+  let large_sum = @azimuth.add(large_positive, large_negative)
+  let large_product = @azimuth.multiply(large_positive, small_positive)
+  let large_division = @azimuth.divide_with_ceil(large_positive, small_positive)
   
-  @azimuth.assert_eq(100, performance_difference)
+  // 测试混合符号运算
+  let mixed_add_1 = @azimuth.add(large_positive, small_negative)
+  let mixed_add_2 = @azimuth.add(large_negative, small_positive)
+  let mixed_multiply = @azimuth.multiply(large_positive, small_negative)
   
-  // 对于更大的数据集
-  let large_dataset = 1000
-  let large_linear = large_dataset
-  let large_quadratic = @azimuth.multiply(large_dataset, large_dataset)
-  let large_performance_diff = large_quadratic / large_linear
+  @azimuth.assert_eq(0, large_sum)
+  @azimuth.assert_eq(1000000, large_product)
+  @azimuth.assert_eq(1000000, large_division)
+  @azimuth.assert_eq(999999, mixed_add_1)
+  @azimuth.assert_eq(-999999, mixed_add_2)
+  @azimuth.assert_eq(-1000000, mixed_multiply)
+}
+
+test "batch_processing_simulation" {
+  // 模拟批处理系统的计算
+  let batch_size = 50
+  let total_items = 375
+  let processing_time_per_batch = 8
+  let overhead_per_batch = 2
   
-  @azimuth.assert_eq(1000, large_performance_diff)
+  // 计算需要的批次数
+  let batches_needed = @azimuth.divide_with_ceil(total_items, batch_size)
+  
+  // 计算总处理时间（包括开销）
+  let total_processing_time = @azimuth.multiply(batches_needed, @azimuth.add(processing_time_per_batch, overhead_per_batch))
+  
+  // 计算平均每项处理时间
+  let avg_time_per_item = @azimuth.divide_with_ceil(total_processing_time, total_items)
+  
+  @azimuth.assert_eq(8, batches_needed)  // ceil(375/50) = 8
+  @azimuth.assert_eq(80, total_processing_time)  // 8 * (8 + 2) = 80
+  @azimuth.assert_eq(1, avg_time_per_item)  // ceil(80/375) = 1
+}
+
+test "error_boundary_conditions" {
+  // 测试错误边界条件和异常处理
+  let normal_cases = [(10, 3), (15, 5), (100, 10)]
+  let edge_cases = [(0, 5), (5, 0), (0, 0)]
+  let negative_cases = [(-10, 3), (10, -3), (-10, -3)]
+  
+  // 测试正常情况
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(normal_cases[0].0, normal_cases[0].1))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(normal_cases[1].0, normal_cases[1].1))
+  @azimuth.assert_eq(10, @azimuth.divide_with_ceil(normal_cases[2].0, normal_cases[2].1))
+  
+  // 测试边界情况
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(edge_cases[0].0, edge_cases[0].1))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(edge_cases[1].0, edge_cases[1].1))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(edge_cases[2].0, edge_cases[2].1))
+  
+  // 测试负数情况
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(negative_cases[0].0, negative_cases[0].1))
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(negative_cases[1].0, negative_cases[1].1))
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(negative_cases[2].0, negative_cases[2].1))
+}
+
+test "performance_benchmark_calculation" {
+  // 性能基准测试计算
+  let baseline_operations = 1000
+  let optimization_factor = 2.5  // 模拟浮点数优化
+  let optimization_int = @azimuth.divide_with_ceil(@azimuth.multiply(baseline_operations, 25), 10)  // 2.5 * 1000 = 2500
+  
+  // 计算优化前后的性能差异
+  let performance_gain = optimization_int - baseline_operations
+  
+  // 计算性能提升百分比
+  let improvement_percentage = @azimuth.divide_with_ceil(@azimuth.multiply(performance_gain, 100), baseline_operations)
+  
+  @azimuth.assert_eq(2500, optimization_int)
+  @azimuth.assert_eq(1500, performance_gain)
+  @azimuth.assert_eq(150, improvement_percentage)
+}
+
+test "data_structure_simulation" {
+  // 模拟数据结构操作的计算开销
+  let array_size = 100  // 未使用的变量
+  let hash_table_size = 150
+  let linked_list_size = 75
+  
+  // 模拟不同数据结构的操作复杂度
+  // 数组访问：O(1)
+  let array_access_cost = 1
+  
+  // 哈希表访问：平均 O(1)，最坏 O(n)
+  let hash_avg_cost = 1
+  let hash_worst_cost = @azimuth.divide_with_ceil(hash_table_size, 10)  // 简化计算
+  
+  // 链表访问：O(n)
+  let linked_list_cost = @azimuth.divide_with_ceil(linked_list_size, 10)  // 简化计算
+  
+  // 计算总操作成本
+  let total_cost = @azimuth.add(@azimuth.add(array_access_cost, hash_avg_cost), linked_list_cost)
+  
+  // 计算平均成本
+  let avg_cost = @azimuth.divide_with_ceil(total_cost, 3)
+  
+  @azimuth.assert_eq(1, array_access_cost)
+  @azimuth.assert_eq(1, hash_avg_cost)
+  @azimuth.assert_eq(15, hash_worst_cost)
+  @azimuth.assert_eq(8, linked_list_cost)
+  @azimuth.assert_eq(10, total_cost)
+  @azimuth.assert_eq(4, avg_cost)
 }
