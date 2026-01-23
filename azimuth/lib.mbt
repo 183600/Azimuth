@@ -568,3 +568,5 @@ test "real_world_calculation_scenario" {
   // 验证总座位数正确
   assert_eq(88, total_seats)
 }
+
+
