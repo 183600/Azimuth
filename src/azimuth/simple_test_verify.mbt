@@ -1,4 +1,12 @@
-// 简单的测试文件，用于验证基本功能
+// 简单的验证测试
 test "simple_add_test" {
-  assert_eq(5, add(2, 3))
+  azimuth::assert_eq(5, azimuth::add(2, 3))
+}
+
+test "simple_multiply_test" {
+  azimuth::assert_eq(6, azimuth::multiply(2, 3))
+}
+
+test "simple_greet_test" {
+  azimuth::assert_eq_string("Hello, Test!", azimuth::greet("Test"))
 }

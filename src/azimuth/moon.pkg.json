@@ -81,7 +81,6 @@
     "azimuth_additional_standard_tests.mbt",
     "../azimuth_additional_standard_tests.mbt",
     "azimuth_enhanced_test_suite.mbt",
-    "standard_azimuth_core_tests.mbt",
     "simple_verification_tests.mbt",
     "minimal_test.mbt",
     "concise_quality_test_suite.mbt",
@@ -139,5 +138,7 @@
             "azimuth_premium_tests.mbt",
             "azimuth_standard_test_suite.mbt",
             "quality_enhanced_test_suite.mbt",
-            "standard_moonbit_test_suite_new.mbt"
+            "standard_moonbit_test_suite_new.mbt",
+            "standard_azimuth_core_tests.mbt",
+            "simple_test_verify.mbt"
                         ]}
