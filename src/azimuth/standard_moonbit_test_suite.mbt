@@ -1,41 +1,43 @@
-// 标准 MoonBit 测试用例
-// 针对 azimuth 库的核心功能进行测试
+// 标准 MoonBit 测试套件
+// 包含针对 azimuth 库核心功能的高质量测试用例
 
-test "add_basic_functionality" {
-  // 测试基本的加法功能
+test "add_function_basic_functionality" {
+  // 测试加法函数的基本功能
   assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(10, add(7, 3))
+  assert_eq(-1, add(-2, 1))
+  assert_eq(1000, add(500, 500))
 }
 
-test "multiply_basic_functionality" {
-  // 测试基本的乘法功能
+test "multiply_function_comprehensive" {
+  // 全面测试乘法函数
   assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(0, 10))
+  assert_eq(-15, multiply(-3, 5))
+  assert_eq(16, multiply(-4, -4))
 }
 
-test "greet_basic_functionality" {
-  // 测试基本的问候功能
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-}
-
-test "divide_with_ceil_basic" {
-  // 测试基本的向上取整除法
+test "divide_with_ceil_edge_cases" {
+  // 测试向上取整除法的边界情况
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(0, divide_with_ceil(5, 0))
   assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(1, divide_with_ceil(1, 100))
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 5
-  let b = 7
+test "greet_function_various_inputs" {
+  // 测试问候函数的各种输入
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+}
+
+test "mathematical_properties_verification" {
+  // 验证数学性质
+  let a = 7
+  let b = 13
   
   // 加法交换律
   assert_eq(add(a, b), add(b, a))
@@ -43,56 +45,43 @@ test "mathematical_properties" {
   // 乘法交换律
   assert_eq(multiply(a, b), multiply(b, a))
   
-  // 零元素性质
-  assert_eq(0, multiply(a, 0))
-  assert_eq(a, add(a, 0))
+  // 分配律 a * (b + c) = a * b + a * c
+  let c = 5
+  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
 }
 
-test "practical_business_calculation" {
-  // 实际业务计算：购物车总价
-  let item1_price = 25
-  let item1_qty = 3
-  let item2_price = 15
-  let item2_qty = 2
-  
-  let total = add(multiply(item1_price, item1_qty), multiply(item2_price, item2_qty))
-  assert_eq(105, total)  // 25*3 + 15*2 = 75 + 30 = 105
-}
-
-test "packaging_calculation" {
-  // 包装计算：需要的箱子数量
-  let total_items = 23
-  let items_per_box = 5
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  
-  assert_eq(5, boxes_needed)  // ceil(23/5) = 5
-}
-
-test "negative_number_operations" {
-  // 负数运算测试
-  assert_eq(-8, add(-3, -5))
-  assert_eq(12, multiply(-3, -4))
-  assert_eq(-12, multiply(3, -4))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-}
-
-test "string_greeting_unicode" {
-  // Unicode 字符串问候测试
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, María!", greet("María"))
-}
-
-test "complex_calculation_scenario" {
-  // 复杂计算场景
-  let base_price = 100
-  let quantity = 4
+test "real_world_business_scenario" {
+  // 实际业务场景：计算订单总价
+  let product_price = 25
+  let quantity = 8
   let tax_rate = 8
   let shipping = 15
   
-  let subtotal = multiply(base_price, quantity)
+  let subtotal = multiply(product_price, quantity)
   let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
   let total = add(add(subtotal, tax), shipping)
   
-  assert_eq(447, total)  // 100*4 + ceil(400*8/100) + 15 = 400 + 32 + 15 = 447
+  assert_eq(200, subtotal)
+  assert_eq(16, tax)
+  assert_eq(231, total)
+}
+
+test "complex_calculations_nested" {
+  // 复杂嵌套计算
+  let result = add(
+    multiply(10, divide_with_ceil(25, 4)),
+    multiply(5, divide_with_ceil(17, 3))
+  )
+  assert_eq(85, result)
+}
+
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 大数运算测试
+  let big_num = 1000000
+  assert_eq(2000000, add(big_num, big_num))
 }
