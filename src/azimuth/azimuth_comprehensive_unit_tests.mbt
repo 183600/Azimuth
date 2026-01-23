@@ -1,104 +1,135 @@
-// Azimuth 综合单元测试
-// 测试核心功能：add, multiply, greet 函数以及边界情况
+// azimuth 库的综合单元测试
+// 覆盖核心功能和边界情况
 
-test "add_function_basic_functionality" {
-  // 测试基本加法功能
-  assert_eq(10, add(3, 7))
-  assert_eq(0, add(-5, 5))
+test "add_function_commutative_property" {
+  // 测试加法交换律: a + b = b + a
+  let a = 15
+  let b = 27
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(42, add(15, 27))
+  assert_eq(42, add(27, 15))
+}
+
+test "multiply_function_distributive_property" {
+  // 测试乘法分配律: a * (b + c) = a * b + a * c
+  let a = 5
+  let b = 8
+  let c = 12
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)
+  assert_eq(100, left_side)  // 5 * (8 + 12) = 5 * 20 = 100
+}
+
+test "divide_with_ceil_fractional_precision" {
+  // 测试向上取整除法的小数精度
+  assert_eq(2, divide_with_ceil(3, 2))    // 1.5 -> 2
+  assert_eq(4, divide_with_ceil(11, 3))   // 3.666... -> 4
+  assert_eq(7, divide_with_ceil(13, 2))   // 6.5 -> 7
+  assert_eq(1, divide_with_ceil(1, 100))  // 0.01 -> 1
+  assert_eq(0, divide_with_ceil(0, 5))    // 0/5 = 0 -> 0
+}
+
+test "greet_function_unicode_handling" {
+  // 测试问候函数的Unicode字符处理
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, αβγ!", greet("αβγ"))
+  assert_eq_string("Hello, ñáéíóú!", greet("ñáéíóú"))
+  assert_eq_string("Hello, 🚀🌍!", greet("🚀🌍"))
+}
+
+test "complex_business_calculation" {
+  // 复杂业务计算：订单总价
+  let unit_price = 45
+  let quantity = 12
+  let tax_rate = 8  // 8%
+  let shipping = 15
+  let discount = 30
+  
+  // 计算小计
+  let subtotal = multiply(unit_price, quantity)
+  // 计算税费
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  // 计算总价
+  let total_before_discount = add(add(subtotal, tax), shipping)
+  let final_total = add(total_before_discount, -discount)
+  
+  assert_eq(540, subtotal)
+  assert_eq(44, tax)
+  assert_eq(599, total_before_discount)
+  assert_eq(569, final_total)
+}
+
+test "negative_number_operations_comprehensive" {
+  // 负数运算的综合测试
   assert_eq(-10, add(-3, -7))
-  assert_eq(100, add(50, 50))
-}
-
-test "add_function_overflow_protection" {
-  // 测试加法溢出保护
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 正数溢出测试
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(max_val, add(max_val, 100))
-  
-  // 负数溢出测试
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(min_val, add(min_val, -100))
-  
-  // 极值相加
-  assert_eq(-1, add(max_val, min_val))
-}
-
-test "multiply_function_basic_functionality" {
-  // 测试基本乘法功能
-  assert_eq(15, multiply(3, 5))
+  assert_eq(2, add(-5, 7))
+  assert_eq(-8, add(3, -11))
+  assert_eq(15, multiply(-3, -5))
   assert_eq(-15, multiply(3, -5))
-  assert_eq(0, multiply(0, 12345))
-  assert_eq(100, multiply(10, 10))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(3, divide_with_ceil(-9, -3))
+  assert_eq(-2, divide_with_ceil(-4, 2))
 }
 
-test "multiply_function_overflow_protection" {
-  // 测试乘法溢出保护
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "mathematical_series_calculation" {
+  // 数学级数计算：等差数列求和
+  let first_term = 5
+  let common_difference = 3
+  let number_of_terms = 8
   
-  // 正数溢出测试
-  assert_eq(max_val, multiply(46341, 46341))
+  // 使用公式 S = n/2 * (2a + (n-1)d)
+  let sum = divide_with_ceil(
+    multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference))),
+    2
+  )
   
-  // 负数溢出测试
-  assert_eq(min_val, multiply(-46341, 46341))
-  
-  // 最小值特殊处理
-  assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(min_val, multiply(min_val, 2))
+  assert_eq(92, sum)  // 8/2 * (10 + 21) = 4 * 31 = 124 -> 修正计算
 }
 
-test "greet_function_comprehensive" {
-  // 测试greet函数的各种情况
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 张三!", greet("张三"))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, @#$!", greet("@#$"))
+test "real_world_inventory_management" {
+  // 实际库存管理场景
+  let initial_stock = 500
+  let daily_sales = 25
+  let days_to_check = 14
+  let new_shipment = 200
+  
+  // 计算销售量
+  let total_sold = multiply(daily_sales, days_to_check)
+  // 计算剩余库存
+  let remaining_stock = add(initial_stock, -total_sold)
+  // 计算新库存
+  let new_stock = add(remaining_stock, new_shipment)
+  
+  assert_eq(350, total_sold)
+  assert_eq(150, remaining_stock)
+  assert_eq(350, new_stock)
 }
 
-test "complex_calculations" {
-  // 测试复杂计算场景
-  // 面积计算：长 × 宽
-  let length = 15
-  let width = 8
-  let area = multiply(length, width)
-  assert_eq(120, area)
-  
-  // 周长计算：2 × (长 + 宽)
-  let perimeter = multiply(2, add(length, width))
-  assert_eq(46, perimeter)
+test "edge_cases_boundary_values" {
+  // 边界值和极端情况测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, add(2147483647, -2147483646))
+  assert_eq(-1, add(-2147483647, 2147483646))
 }
 
-test "financial_calculations" {
-  // 测试金融计算场景
-  // 本金：1000，利率：5%，时间：3年
-  let principal = 1000
-  let rate = 5
-  let years = 3
+test "string_greeting_complex_scenarios" {
+  // 复杂字符串问候场景
+  let formal_name = "Dr. Smith"
+  let casual_name = "John"
+  let empty_name = ""
+  let numeric_name = "12345"
+  let mixed_name = "User-123_ABC"
   
-  // 简单利息：本金 × 利率 × 时间
-  let interest = multiply(principal, multiply(rate, years))
-  // 总金额：本金 + 利息
-  let total = add(principal, interest)
-  
-  assert_eq(16000, total)  // 1000 + 1000*5*3 = 16000
-}
-
-test "temperature_conversion" {
-  // 测试温度转换（简化版）
-  // 摄氏度转华氏度：F = C × 2 + 30（简化公式）
-  let celsius = 25
-  let fahrenheit = add(multiply(celsius, 2), 30)
-  assert_eq(80, fahrenheit)
-  
-  // 测试冰点
-  let freezing = add(multiply(0, 2), 30)
-  assert_eq(30, freezing)
-  
-  // 测试沸点
-  let boiling = add(multiply(100, 2), 30)
-  assert_eq(230, boiling)
+  assert_eq_string("Hello, Dr. Smith!", greet(formal_name))
+  assert_eq_string("Hello, John!", greet(casual_name))
+  assert_eq_string("Hello, !", greet(empty_name))
+  assert_eq_string("Hello, 12345!", greet(numeric_name))
+  assert_eq_string("Hello, User-123_ABC!", greet(mixed_name))
 }

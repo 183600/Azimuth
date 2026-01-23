@@ -163,5 +163,6 @@
                                                                             "high_quality_test_suite.mbt",
                                                                             "quality_test_examples.mbt",
     "../azimuth_new_standard_tests.mbt",
-    "test/user_requested_tests.mbt"
+    "test/user_requested_tests.mbt",
+    "azimuth_comprehensive_unit_tests.mbt"
                                                                                                                                                 ]}
