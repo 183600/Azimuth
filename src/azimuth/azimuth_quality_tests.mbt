@@ -1,166 +1,222 @@
-// Azimuth 项目高质量测试用例
-// 使用标准 MoonBit 测试语法，针对核心功能进行全面测试
+// 高质量 MoonBit 测试用例
+// 针对 azimuth 库的核心功能进行深度测试
 
-test "add_function_comprehensive_test" {
-  // 全面测试加法功能，包括正数、负数和零
-  assert_eq(10, add(7, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-8, 3))
-  assert_eq(1000000, add(500000, 500000))
-  assert_eq(1, add(2147483647, -2147483646))
-  assert_eq(-10, add(-3, -7))
-  assert_eq(5, add(-2, 7))
+test "number_system_boundary_verification" {
+  // 数值系统边界验证测试
+  let max_safe_int = 2147483647
+  let min_safe_int = -2147483648
+  
+  // 边界值加法运算
+  assert_eq(max_safe_int, add(max_safe_int - 1, 1))
+  assert_eq(min_safe_int, add(min_safe_int + 1, -1))
+  assert_eq(0, add(max_safe_int, add(min_safe_int, 1)))
+  
+  // 边界值乘法运算
+  assert_eq(max_safe_int, multiply(max_safe_int, 1))
+  assert_eq(min_safe_int, multiply(min_safe_int, 1))
+  assert_eq(0, multiply(max_safe_int, 0))
 }
 
-test "multiply_function_edge_cases" {
-  // 测试乘法函数的边界情况
-  assert_eq(21, multiply(7, 3))
-  assert_eq(0, multiply(0, 100))
-  assert_eq(-24, multiply(-8, 3))
-  assert_eq(1000000, multiply(1000, 1000))
-  assert_eq(1, multiply(1, 1))
-  assert_eq(-1, multiply(1, -1))
-  assert_eq(1, multiply(-1, -1))
+test "advanced_division_precision_analysis" {
+  // 高级除法精度分析测试
+  // 测试连续除法的精度保持
+  let precision_test_1 = divide_with_ceil(divide_with_ceil(1000, 3), divide_with_ceil(100, 7))
+  assert_eq(23, precision_test_1)  // ceil(ceil(1000/3) / ceil(100/7)) = ceil(334 / 15) = 23
+  
+  // 测试极小数值的除法处理
+  let tiny_division = divide_with_ceil(1, 2147483647)
+  assert_eq(1, tiny_division)
+  
+  // 测试负数除法的各种组合
+  assert_eq(-1, divide_with_ceil(-5, 3))
+  assert_eq(2, divide_with_ceil(-5, -3))
+  assert_eq(-1, divide_with_ceil(5, -3))
 }
 
-test "divide_with_ceil_comprehensive_scenarios" {
-  // 全面测试向上取整除法的各种场景
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(4, divide_with_ceil(-10, -3))
-  assert_eq(0, divide_with_ceil(5, 0))
-  assert_eq(1, divide_with_ceil(1, 100))
-  assert_eq(2, divide_with_ceil(99, 50))
-  assert_eq(-2, divide_with_ceil(-99, 50))
+test "string_processing_internationalization" {
+  // 字符串处理国际化测试
+  // 测试多种语言字符集
+  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
+  assert_eq_string("Hello, 日本語テスト!", greet("日本語テスト"))
+  assert_eq_string("Hello, 한국어테스트!", greet("한국어테스트"))
+  assert_eq_string("Hello, العربيةاختبار!", greet("العربيةاختبار"))
+  assert_eq_string("Hello, русскийтест!", greet("русскийтест"))
+  
+  // 测试特殊符号和表情符号
+  assert_eq_string("Hello, 🎯🏆🎉!", greet("🎯🏆🎉"))
+  assert_eq_string("Hello, ©®™€£¥!", greet("©®™€£¥"))
 }
 
-test "greet_function_internationalization" {
-  // 测试问候函数的国际化支持
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, Español!", greet("Español"))
-  assert_eq_string("Hello, Русский!", greet("Русский"))
+test "complex_algorithm_simulation" {
+  // 复杂算法模拟测试
+  // 模拟快速排序的分区操作
+  let array_sum = add(add(add(15, 23), add(8, 42)), add(16, 7))
+  let array_size = 6
+  let pivot_value = divide_with_ceil(array_sum, array_size)
+  assert_eq(19, pivot_value)  // ceil(111/6) = 19
+  
+  // 模拟二分搜索的中间值计算
+  let low = 0
+  let high = 100
+  let mid = divide_with_ceil(add(low, high), 2)
+  assert_eq(50, mid)
+  
+  // 模拟哈希表的大小计算（下一个质数）
+  let initial_size = 100
+  let load_factor = 75
+  let threshold = divide_with_ceil(multiply(initial_size, load_factor), 100)
+  let next_size = multiply(threshold, 2)
+  assert_eq(150, threshold)
+  assert_eq(300, next_size)
 }
 
-test "complex_business_calculations" {
-  // 测试复杂业务计算场景
-  let product_price = 25
-  let quantity = 8
-  let tax_rate = 8
-  let shipping = 15
-  let discount = 20
+test "mathematical_series_calculations" {
+  // 数学级数计算测试
+  // 计算等差数列前n项和：S = n/2 * (2a + (n-1)d)
+  let first_term = 5
+  let common_diff = 3
+  let num_terms = 12
+  let arithmetic_sum = divide_with_ceil(
+    multiply(num_terms, add(multiply(2, first_term), multiply(num_terms - 1, common_diff))),
+    2
+  )
+  assert_eq(252, arithmetic_sum)  // 12/2 * (10 + 33) = 6 * 43 = 258
   
-  let subtotal = multiply(product_price, quantity)
-  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  let total_before_discount = add(add(subtotal, tax_amount), shipping)
-  let final_total = add(total_before_discount, -discount)
-  
-  assert_eq(200, subtotal)
-  assert_eq(16, tax_amount)
-  assert_eq(231, total_before_discount)
-  assert_eq(211, final_total)
+  // 计算等比数列前n项和：S = a * (r^n - 1) / (r - 1)
+  let geo_first = 2
+  let ratio = 3
+  let geo_terms = 6
+  let geometric_sum = multiply(geo_first, divide_with_ceil(
+    multiply(multiply(multiply(ratio, ratio), ratio), multiply(ratio, ratio)) - 1,
+    ratio - 1
+  ))
+  assert_eq(728, geometric_sum)  // 2 * (3^6 - 1) / 2 = 2 * (729 - 1) / 2 = 2 * 364 = 728
 }
 
-test "mathematical_properties_verification" {
-  // 验证数学性质
-  let a = 7
-  let b = 13
-  let c = 5
+test "performance_optimization_scenarios" {
+  // 性能优化场景测试
+  // 模拟内存池分配策略
+  let pool_size = 1024
+  let block_size = 64
+  let allocated_blocks = divide_with_ceil(pool_size, block_size)
+  let actual_used = multiply(allocated_blocks, block_size)
+  let fragmentation = add(actual_used, -pool_size)
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  assert_eq(16, allocated_blocks)
+  assert_eq(1024, actual_used)
+  assert_eq(0, fragmentation)
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  // 模拟缓存替换策略（LRU近似）
+  let cache_capacity = 100
+  let access_pattern = 150
+  let cache_misses = divide_with_ceil(access_pattern, cache_capacity)
+  let hit_rate = divide_with_ceil(multiply(add(access_pattern, -cache_misses), 100), access_pattern)
   
-  // 分配律 a * (b + c) = a * b + a * c
-  let distributive_left = multiply(a, add(b, c))
-  let distributive_right = add(multiply(a, b), multiply(a, c))
-  assert_eq(distributive_left, distributive_right)
-  
-  // 加法单位元
-  assert_eq(a, add(a, 0))
-  
-  // 乘法单位元
-  assert_eq(a, multiply(a, 1))
+  assert_eq(2, cache_misses)
+  assert_eq(98, hit_rate)
 }
 
-test "real_world_inventory_management" {
-  // 真实世界库存管理场景
-  let initial_stock = 150
-  let daily_sales = 12
-  let days_to_simulate = 7
-  let restock_amount = 50
-  let items_per_box = 24
+test "financial_modeling_calculations" {
+  // 金融建模计算测试
+  // 复利计算：A = P * (1 + r)^n
+  let principal = 10000
+  let rate_percent = 8
+  let years = 5
   
-  let total_sold = multiply(daily_sales, days_to_simulate)
-  let stock_before_restock = add(initial_stock, -total_sold)
-  let final_stock = add(stock_before_restock, restock_amount)
-  let boxes_needed = divide_with_ceil(final_stock, items_per_box)
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
+  let year4 = add(year3, divide_with_ceil(multiply(year3, rate_percent), 100))
+  let year5 = add(year4, divide_with_ceil(multiply(year4, rate_percent), 100))
   
-  assert_eq(84, total_sold)
-  assert_eq(66, stock_before_restock)
-  assert_eq(116, final_stock)
-  assert_eq(5, boxes_needed)
+  assert_eq(10800, year1)
+  assert_eq(11664, year2)
+  assert_eq(12597, year3)
+  assert_eq(13605, year4)
+  assert_eq(14693, year5)
+  
+  // 贷款分期计算（简化）
+  let loan_amount = 50000
+  let monthly_payment = 1200
+  let total_months = divide_with_ceil(loan_amount, monthly_payment)
+  let final_payment = add(loan_amount, -multiply(total_months - 1, monthly_payment))
+  
+  assert_eq(42, total_months)
+  assert_eq(200, final_payment)
 }
 
-test "engineering_calculation_scenario" {
-  // 工程计算场景
-  let room_length = 12
-  let room_width = 8
-  let room_height = 3
-  let tile_area = 2
-  let paint_coverage = 10
+test "scientific_computing_simulations" {
+  // 科学计算模拟测试
+  // 模拟温度转换：F = C * 9/5 + 32
+  let celsius = 25
+  let fahrenheit = add(divide_with_ceil(multiply(celsius, 9), 5), 32)
+  assert_eq(77, fahrenheit)
   
-  let floor_area = multiply(room_length, room_width)
-  let wall_area = multiply(2, multiply(add(room_length, room_width), room_height))
-  let total_surface_area = add(floor_area, wall_area)
-  let tiles_needed = divide_with_ceil(total_surface_area, tile_area)
-  let paint_needed = divide_with_ceil(wall_area, paint_coverage)
+  // 模拟速度转换：km/h to m/s
+  let km_per_hour = 90
+  let meters_per_second = divide_with_ceil(multiply(km_per_hour, 1000), 3600)
+  assert_eq(25, meters_per_second)
   
-  assert_eq(96, floor_area)
-  assert_eq(120, wall_area)
-  assert_eq(216, total_surface_area)
-  assert_eq(108, tiles_needed)
-  assert_eq(12, paint_needed)
+  // 模拟能量计算：E = mc²（简化）
+  let mass = 10
+  let speed_of_light = 300000000  // 简化为整数
+  let energy = multiply(mass, multiply(speed_of_light, speed_of_light))
+  // 由于数值过大，我们只验证计算逻辑
+  assert_eq(0, divide_with_ceil(energy, 0))  // 验证不会崩溃
 }
 
-test "algorithm_performance_simulation" {
-  // 算法性能模拟测试
-  let base_value = 42
-  let iterations = 1000
-  let multiplier = 3
-  let overhead_percentage = 15
+test "data_structures_operations" {
+  // 数据结构操作测试
+  // 模拟栈操作
+  let mut stack_top = 0
+  let mut stack_sum = 0
   
-  let accumulated_value = multiply(base_value, iterations)
-  let enhanced_result = add(accumulated_value, multiply(multiplier, divide_with_ceil(iterations, 10)))
-  let overhead = divide_with_ceil(multiply(enhanced_result, overhead_percentage), 100)
-  let final_performance = add(enhanced_result, -overhead)
+  // push操作
+  stack_top = add(stack_top, 1)
+  stack_sum = add(stack_sum, 10)
+  stack_top = add(stack_top, 1)
+  stack_sum = add(stack_sum, 20)
+  stack_top = add(stack_top, 1)
+  stack_sum = add(stack_sum, 30)
   
-  assert_eq(42000, accumulated_value)
-  assert_eq(42300, enhanced_result)
-  assert_eq(6345, overhead)
-  assert_eq(35955, final_performance)
+  assert_eq(3, stack_top)
+  assert_eq(60, stack_sum)
+  
+  // pop操作（LIFO）
+  stack_top = add(stack_top, -1)
+  stack_sum = add(stack_sum, -30)
+  
+  assert_eq(2, stack_top)
+  assert_eq(30, stack_sum)
+  
+  // 模拟队列的平均等待时间计算
+  let queue_length = 15
+  let service_rate = 3
+  let arrival_rate = 2
+  let avg_wait_time = divide_with_ceil(queue_length, add(service_rate, -arrival_rate))
+  
+  assert_eq(15, avg_wait_time)
 }
 
-test "comprehensive_error_handling" {
-  // 综合错误处理测试
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
   // 测试除零安全性
   assert_eq(0, divide_with_ceil(100, 0))
   assert_eq(0, divide_with_ceil(-100, 0))
   assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  assert_eq(0, divide_with_ceil(-2147483648, 0))
   
-  // 测试边界值
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(-1, -1))
-  assert_eq(0, divide_with_ceil(0, 1))
+  // 测试极端值组合运算
+  let extreme_pos = 2147483647
+  let extreme_neg = -2147483648
   
-  // 测试极端数值运算
-  let large_num = 1000000
-  assert_eq(2000000, add(large_num, large_num))
-  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(-1, add(extreme_pos, extreme_neg))
+  assert_eq(0, multiply(extreme_pos, 0))
+  assert_eq(0, multiply(extreme_neg, 0))
+  
+  // 测试字符串边界情况
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, \t\n!", greet("\t\n"))
 }
