@@ -147,3 +147,83 @@ test "divide_with_ceil_fractional" {
   assert_eq(3, divide_with_ceil(5, 2))
   assert_eq(4, divide_with_ceil(7, 2))
 }
+
+// 额外的增强测试用例 - 包含边界情况、错误处理和更复杂的场景测试
+test "divide_with_ceil_boundary_cases" {
+  // 测试除法的边界情况
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, -1))
+  assert_eq(0, divide_with_ceil(0, 100))
+  assert_eq(1, divide_with_ceil(-1, 1))
+  assert_eq(-1, divide_with_ceil(1, -1))
+}
+
+test "mathematical_identity_properties" {
+  // 测试数学恒等式
+  let x = 42
+  assert_eq(x, add(x, 0))
+  assert_eq(0, multiply(x, 0))
+  assert_eq(x, multiply(x, 1))
+  assert_eq(-x, multiply(x, -1))
+}
+
+test "divide_with_ceil_mixed_signs" {
+  // 测试混合符号的除法
+  assert_eq(0, divide_with_ceil(-5, 10))
+  assert_eq(-1, divide_with_ceil(-15, 10))
+  assert_eq(2, divide_with_ceil(15, -10))
+  assert_eq(1, divide_with_ceil(5, -10))
+}
+
+test "add_edge_cases" {
+  // 测试加法的边缘情况
+  assert_eq(100, add(99, 1))
+  assert_eq(-100, add(-99, -1))
+  assert_eq(0, add(100, -100))
+}
+
+test "multiply_edge_cases" {
+  // 测试乘法的边缘情况
+  assert_eq(100, multiply(100, 1))
+  assert_eq(-100, multiply(-100, 1))
+  assert_eq(0, multiply(100, 0))
+  assert_eq(0, multiply(-100, 0))
+}
+
+test "greet_with_various_inputs" {
+  // 测试各种输入的问候函数
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, a!", greet("a"))
+  assert_eq_string("Hello, ABC123!", greet("ABC123"))
+}
+
+test "complex_business_logic" {
+  // 测试复杂的业务逻辑场景
+  // 假设我们需要计算装盒问题：有n个物品，每盒最多装m个，需要多少盒
+  let items = 47
+  let box_capacity = 12
+  let boxes_needed = divide_with_ceil(items, box_capacity)
+  
+  // 验证计算结果 - 使用断言而不是布尔函数
+  assert_eq(5, boxes_needed)
+}
+
+test "divide_with_ceil_precision" {
+  // 测试除法向上取整的精度
+  assert_eq(1000, divide_with_ceil(9999, 10))
+  assert_eq(100, divide_with_ceil(991, 10))
+  assert_eq(10, divide_with_ceil(91, 10))
+  assert_eq(2, divide_with_ceil(11, 10))
+}
+
+test "sequential_operations" {
+  // 测试连续操作的组合
+  let initial = 10
+  let step1 = add(initial, 5)        // 15
+  let step2 = multiply(step1, 2)     // 30
+  let step3 = divide_with_ceil(step2, 8)  // 4
+  let step4 = add(step3, 1)          // 5
+  
+  assert_eq(5, step4)
+}
