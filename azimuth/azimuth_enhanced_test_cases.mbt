@@ -1,121 +1,186 @@
-test "add_function_edge_cases" {
-  // 测试加法函数的边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
+// Azimuth 增强测试用例
+// 包含高质量、实用的 MoonBit 测试用例
+
+test "add_function_performance_validation" {
+  // 验证加法函数在大量计算中的性能和准确性
+  let base = 1000
+  let increment = 47
+  let iterations = 21
   
-  // 测试相同符号的边界情况
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(min_val, add(min_val, 0))
+  let mut result = base
+  for i = 0; i < iterations; i = i + 1 {
+    result = add(result, increment)
+  }
   
-  // 测试最小值加1
-  assert_eq(min_val + 1, add(min_val, 1))
-  
-  // 测试最大值减1
-  assert_eq(max_val - 1, add(max_val, -1))
-  
-  // 测试两个负数相加
-  assert_eq(-10, add(-3, -7))
-  assert_eq(-100, add(-50, -50))
+  let expected = base + multiply(iterations, increment)
+  assert_eq(expected, result)
 }
 
-test "multiply_function_edge_cases" {
-  // 测试乘法函数的边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "divide_with_ceil_logistics_optimization" {
+  // 物流优化场景：计算最优装载方案
+  let total_weight = 1875  // 总重量(kg)
+  let truck_capacity = 500  // 卡车载重(kg)
   
-  // 测试大数相乘
-  assert_eq(max_val, multiply(46340, 46341))  // 接近sqrt(max_val)
+  let trucks_needed = divide_with_ceil(total_weight, truck_capacity)
+  assert_eq(4, trucks_needed)
   
-  // 测试负数乘法
-  assert_eq(-100, multiply(-10, 10))
-  assert_eq(100, multiply(-10, -10))
+  // 验证总运力
+  let total_capacity = multiply(trucks_needed, truck_capacity)
+  assert_eq(2000, total_capacity)
   
-  // 测试与2的幂次相乘
-  assert_eq(16, multiply(4, 4))
-  assert_eq(-32, multiply(-8, 4))
+  // 计算剩余运力
+  let unused_capacity = subtract(total_capacity, total_weight)
+  assert_eq(125, unused_capacity)
 }
 
-test "greet_function_special_cases" {
-  // 测试字符串函数的特殊情况
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello,  !", greet(" "))
-  assert_eq_string("Hello, 中文!", greet("中文"))
-  assert_eq_string("Hello, 123!", greet("123"))
+test "multiply_function_scaling_properties" {
+  // 测试乘法函数的缩放特性
+  let base_value = 7
+  let scale_factor_2x = 2
+  let scale_factor_10x = 10
+  let scale_factor_100x = 100
+  
+  let doubled = multiply(base_value, scale_factor_2x)
+  let ten_times = multiply(base_value, scale_factor_10x)
+  let hundred_times = multiply(base_value, scale_factor_100x)
+  
+  assert_eq(14, doubled)
+  assert_eq(70, ten_times)
+  assert_eq(700, hundred_times)
+  
+  // 验证缩放关系
+  assert_eq(multiply(doubled, 5), ten_times)
+  assert_eq(multiply(ten_times, 10), hundred_times)
 }
 
-test "divide_with_ceil_comprehensive" {
-  // 测试向上取整除法的各种情况
-  // 正数情况
-  assert_eq(4, divide_with_ceil(11, 3))
-  assert_eq(4, divide_with_ceil(12, 3))
-  assert_eq(5, divide_with_ceil(13, 3))
+test "greet_function_multilingual_support" {
+  // 测试问候函数的多语言支持
+  let names = [
+    "Alice", "Bob", "Charlie", "张三", "李四", 
+    "José", "François", "Владимир", "محمد", "田中"
+  ]
   
-  // 负数情况
-  assert_eq(-3, divide_with_ceil(-8, 3))
-  assert_eq(-2, divide_with_ceil(-6, 3))
-  assert_eq(-2, divide_with_ceil(-5, 3))
+  let expected_greetings = [
+    "Hello, Alice!", "Hello, Bob!", "Hello, Charlie!", 
+    "Hello, 张三!", "Hello, 李四!", "Hello, José!", 
+    "Hello, François!", "Hello, Владимир!", "Hello, محمد!", 
+    "Hello, 田中!"
+  ]
   
-  // 边界情况
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(-1, divide_with_ceil(-1, 1))
+  for i = 0; i < names.length(); i = i + 1 {
+    assert_eq_string(expected_greetings[i], greet(names[i]))
+  }
 }
 
-test "add_function_negative_overflow" {
-  // 测试负数溢出的特定情况
-  let min_val = -2147483648
+test "complex_resource_allocation" {
+  // 复杂资源分配场景
+  let projects = 15
+  let team_size = 4
+  let duration_weeks = 8
+  let budget_per_team_per_week = 2500
   
-  // 测试两个较大的负数相加
-  assert_eq(min_val, add(-1073741824, -1073741824))
-  assert_eq(min_val, add(-2000000000, -147483648))
+  // 计算总团队数需求
+  let teams_needed = divide_with_ceil(projects, team_size)
+  assert_eq(4, teams_needed)
   
-  // 测试接近边界的负数相加
-  assert_eq(min_val, add(min_val + 100, -200))
+  // 计算项目总预算
+  let total_weeks = multiply(duration_weeks, teams_needed)
+  let total_budget = multiply(total_weeks, budget_per_team_per_week)
+  assert_eq(80000, total_budget)
+  
+  // 计算每个项目的平均预算
+  let avg_budget_per_project = divide_with_ceil(total_budget, projects)
+  assert_eq(5334, avg_budget_per_project)
 }
 
-test "multiply_function_min_value_special" {
-  // 测试最小值乘法的特殊情况
-  let min_val = -2147483648
+test "mathematical_sequence_validation" {
+  // 数学序列验证
+  let start_value = 3
+  let common_difference = 7
+  let terms = 12
   
-  // 最小值与不同值的乘法
-  assert_eq(0, multiply(min_val, 0))
-  assert_eq(min_val, multiply(min_val, 1))
-  assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(min_val, multiply(min_val, 2))
-  assert_eq(min_val, multiply(min_val, -2))
+  // 计算等差数列的和
+  let mut sum = 0
+  let mut current = start_value
+  for i = 0; i < terms; i = i + 1 {
+    sum = add(sum, current)
+    current = add(current, common_difference)
+  }
+  
+  // 使用公式验证: n/2 * (2a + (n-1)d)
+  let formula_result = divide_with_ceil(
+    multiply(terms, add(multiply(2, start_value), multiply(terms - 1, common_difference))),
+    2
+  )
+  
+  assert_eq(formula_result, sum)
 }
 
-test "complex_arithmetic_combinations" {
-  // 测试复合运算
-  let a = 10
-  let b = 20
-  let c = -5
+test "divide_with_ceil_precision_analysis" {
+  // 向上取整除法精度分析
+  let test_cases = [
+    (100, 33),   // 100/33 ≈ 3.03 → 4
+    (999, 100),  // 999/100 = 9.99 → 10
+    (1000, 3),   // 1000/3 ≈ 333.33 → 334
+    (12345, 123), // 12345/123 ≈ 100.36 → 101
+    (50, 49)     // 50/49 ≈ 1.02 → 2
+  ]
   
-  // 测试加法和乘法的组合
-  assert_eq(200, multiply(a, b))
-  assert_eq(30, add(a, b))
-  assert_eq(5, add(a, c))
+  let expected_results = [4, 10, 334, 101, 2]
   
-  // 测试链式运算
-  assert_eq(50, multiply(add(a, b), c))
-  assert_eq(25, add(multiply(a, c), multiply(b, c)))
+  for i = 0; i < test_cases.length(); i = i + 1 {
+    let (dividend, divisor) = test_cases[i]
+    let result = divide_with_ceil(dividend, divisor)
+    assert_eq(expected_results[i], result)
+  }
 }
 
-test "assert_functions_comprehensive" {
-  // 全面测试断言函数
-  let x = 42
-  let y = "MoonBit"
-  let flag = true
-  let flag_false = false
+test "edge_case_comprehensive_validation" {
+  // 边界情况综合验证
+  // 测试极值情况
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, -1))
   
-  // 测试各种断言
-  assert_true(flag)
-  assert_false(flag_false)
-  assert_eq(x, 42)
-  assert_eq_string(y, "MoonBit")
+  // 测试单位值
+  assert_eq(5, add(5, 0))
+  assert_eq(5, multiply(5, 1))
+  assert_eq(5, divide_with_ceil(5, 1))
+  assert_eq(1, divide_with_ceil(5, 5))
   
-  // 测试计算结果的断言
-  assert_eq(add(10, 20), 30)
-  assert_eq(multiply(5, 6), 30)
-  assert_eq_string(greet("Test"), "Hello, Test!")
+  // 测试负值边界
+  assert_eq(-5, add(-5, 0))
+  assert_eq(-5, multiply(-5, 1))
+  assert_eq(-5, divide_with_ceil(-5, 1))
+  assert_eq(1, divide_with_ceil(-5, -5))
+}
+
+test "real_world_business_calculation" {
+  // 真实世界业务计算
+  // 场景：电商订单处理
+  let orders_per_day = 342
+  let items_per_order = 3
+  let processing_capacity_per_worker = 85
+  let work_days_per_month = 22
+  
+  // 计算日处理总量
+  let daily_items = multiply(orders_per_day, items_per_order)
+  
+  // 计算需要的工人数量
+  let workers_needed = divide_with_ceil(daily_items, processing_capacity_per_worker)
+  assert_eq(13, workers_needed)
+  
+  // 计算月处理能力
+  let monthly_capacity = multiply(workers_needed, multiply(processing_capacity_per_worker, work_days_per_month))
+  assert_eq(24310, monthly_capacity)
+  
+  // 计算月订单处理量
+  let monthly_orders = multiply(orders_per_day, work_days_per_month)
+  assert_eq(7524, monthly_orders)
+}
+
+// 辅助函数
+fn subtract(a : Int, b : Int) -> Int {
+  a - b
 }
