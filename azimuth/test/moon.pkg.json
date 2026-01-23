@@ -167,6 +167,7 @@
     "quality_enhanced_test_cases.mbt",
     "standard_enhanced_test_cases.mbt",
     "standard_enhanced_tests.mbt",
-    "simple_enhanced_tests.mbt"
+    "simple_enhanced_tests.mbt",
+  "user_moonbit_tests.mbt"
   ]
 }
