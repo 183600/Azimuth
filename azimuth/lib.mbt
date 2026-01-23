@@ -1033,4 +1033,183 @@ test "mathematical_commutativity" {
   assert_eq(multiply(5, 7), multiply(7, 5))
 }
 
+// 标准 MoonBit 增强测试用例 - 新增10个高质量测试用例
+test "add_function_commutative_law" {
+  // 验证加法交换律
+  assert_eq(15, add(8, 7))
+  assert_eq(15, add(7, 8))
+  assert_eq(0, add(-5, 5))
+  assert_eq(0, add(5, -5))
+  assert_eq(-10, add(-3, -7))
+  assert_eq(-10, add(-7, -3))
+}
+
+test "multiply_function_distributive_law" {
+  // 验证乘法分配律: a * (b + c) = a * b + a * c
+  let a = 6
+  let b = 4
+  let c = 2
+  
+  let left_result = multiply(a, add(b, c))
+  let right_result = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_result, right_result)  // 6 * (4 + 2) = 6 * 4 + 6 * 2 = 36
+  
+  // 另一个例子
+  assert_eq(20, multiply(4, add(2, 3)))  // 4 * (2 + 3) = 20
+  assert_eq(20, add(multiply(4, 2), multiply(4, 3)))  // 4 * 2 + 4 * 3 = 20
+}
+
+test "divide_with_ceil_real_world_scenarios" {
+  // 真实世界场景：计算装盒问题
+  let total_items = 47
+  let box_capacity = 12
+  let boxes_needed = divide_with_ceil(total_items, box_capacity)
+  assert_eq(4, boxes_needed)  // ceil(47/12) = 4
+  
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(48, total_capacity)
+  
+  // 场景：计算需要的运输车辆
+  let packages = 25
+  let capacity_per_truck = 8
+  let trucks_needed = divide_with_ceil(packages, capacity_per_truck)
+  assert_eq(4, trucks_needed)  // ceil(25/8) = 4
+}
+
+test "greet_function_special_characters" {
+  // 测试特殊字符和Unicode支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+  assert_eq_string("Hello, 🌙⭐!", greet("🌙⭐"))
+}
+
+test "complex_calculation_pipeline" {
+  // 复杂计算流水线：项目资源规划
+  let team_size = 8
+  let tasks_per_person = 5
+  let sprint_capacity = 15
+  
+  // 计算总任务数
+  let total_tasks = multiply(team_size, tasks_per_person)
+  assert_eq(40, total_tasks)
+  
+  // 计算需要的冲刺数
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  assert_eq(3, sprints_needed)  // ceil(40/15) = 3
+  
+  // 验证总容量
+  let total_capacity = multiply(sprints_needed, sprint_capacity)
+  assert_eq(45, total_capacity)
+}
+
+test "mathematical_identity_properties" {
+  // 数学恒等式验证
+  let x = 42
+  
+  // 加法恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(x, add(0, x))
+  
+  // 乘法恒等式
+  assert_eq(x, multiply(x, 1))
+  assert_eq(x, multiply(1, x))
+  assert_eq(0, multiply(x, 0))
+  assert_eq(0, multiply(0, x))
+  
+  // 负数恒等式
+  assert_eq(multiply(x, -1), multiply(-1, x))
+}
+
+test "divide_with_ceil_edge_cases" {
+  // 向上取整除法的边缘情况
+  // 零值测试
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(0, -5))
+  
+  // 负数测试
+  assert_eq(-2, divide_with_ceil(-7, 4))
+  assert_eq(-1, divide_with_ceil(-3, 4))
+  assert_eq(-1, divide_with_ceil(-1, 4))
+  
+  // 负除数测试
+  assert_eq(-2, divide_with_ceil(7, -4))
+  assert_eq(-1, divide_with_ceil(3, -4))
+  assert_eq(0, divide_with_ceil(1, -4))
+  
+  // 双负数测试
+  assert_eq(2, divide_with_ceil(-7, -4))
+  assert_eq(1, divide_with_ceil(-3, -4))
+  assert_eq(1, divide_with_ceil(-1, -4))
+}
+
+test "business_logic_inventory_management" {
+  // 库存管理业务逻辑 - 简化版本，不使用数组
+  // 产品1: 25个物品，每箱8个
+  let boxes_1 = divide_with_ceil(25, 8)  // ceil(25/8) = 4
+  let capacity_1 = multiply(boxes_1, 8)  // 4 * 8 = 32
+  
+  // 产品2: 47个物品，每箱12个
+  let boxes_2 = divide_with_ceil(47, 12)  // ceil(47/12) = 4
+  let capacity_2 = multiply(boxes_2, 12)  // 4 * 12 = 48
+  
+  // 产品3: 156个物品，每箱20个
+  let boxes_3 = divide_with_ceil(156, 20)  // ceil(156/20) = 8
+  let capacity_3 = multiply(boxes_3, 20)  // 8 * 20 = 160
+  
+  // 产品4: 89个物品，每箱15个
+  let boxes_4 = divide_with_ceil(89, 15)  // ceil(89/15) = 6
+  let capacity_4 = multiply(boxes_4, 15)  // 6 * 15 = 90
+  
+  // 计算总箱子数
+  let total_boxes = add(add(boxes_1, boxes_2), add(boxes_3, boxes_4))
+  assert_eq(22, total_boxes)
+  
+  // 计算总存储容量
+  let total_capacity = add(add(capacity_1, capacity_2), add(capacity_3, capacity_4))
+  assert_eq(330, total_capacity)
+}
+
+test "large_number_operations" {
+  // 大数运算测试 - 使用较小的大数以避免溢出
+  let large_num = 10000
+  
+  // 大数加法
+  assert_eq(20000, add(large_num, large_num))
+  
+  // 大数乘法
+  assert_eq(100000000, multiply(large_num, large_num))
+  
+  // 大数除法
+  assert_eq(1, divide_with_ceil(large_num, large_num))
+  assert_eq(2, divide_with_ceil(add(large_num, 1), large_num))
+  
+  // 边界值测试
+  assert_eq(10, divide_with_ceil(99, 10))
+  assert_eq(11, divide_with_ceil(101, 10))
+}
+
+test "nested_calculations_composition" {
+  // 嵌套计算组合测试
+  let base_value = 10
+  
+  // 复杂嵌套计算：(base * 3 + base * 2) / (base + ceil(base/3))
+  let numerator = add(multiply(base_value, 3), multiply(base_value, 2))
+  let denominator = add(base_value, divide_with_ceil(base_value, 3))
+  let result = divide_with_ceil(numerator, denominator)
+  
+  // 手动验证：(10*3 + 10*2) / (10 + ceil(10/3)) = 50 / 14 = ceil(3.57) = 4
+  assert_eq(4, result)
+  
+  // 另一个嵌套计算示例
+  let complex_result = divide_with_ceil(
+    multiply(add(5, 3), 4),
+    subtract(10, 2)
+  )
+  assert_eq(4, complex_result)  // ceil((5+3)*4 / (10-2)) = ceil(32/8) = 4
+}
+
 
