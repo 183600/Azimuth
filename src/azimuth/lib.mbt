@@ -2534,3 +2534,156 @@ test "time_and_scheduling_calculation" {
   assert_eq(3, weeks_needed)
 }
 
+// 新增的综合测试用例
+test "factorial_calculation_simulation" {
+  // 模拟阶乘计算：使用现有的 add 和 multiply 函数
+  // 5! = 5 * 4 * 3 * 2 * 1 = 120
+  let factorial_1 = 1
+  let factorial_2 = multiply(2, factorial_1)
+  let factorial_3 = multiply(3, factorial_2)
+  let factorial_4 = multiply(4, factorial_3)
+  let factorial_5 = multiply(5, factorial_4)
+  
+  assert_eq(1, factorial_1)
+  assert_eq(2, factorial_2)
+  assert_eq(6, factorial_3)
+  assert_eq(24, factorial_4)
+  assert_eq(120, factorial_5)
+}
+
+test "geometric_progression_calculation" {
+  // 几何级数计算：a * r^n
+  let first_term = 3
+  let ratio = 2
+  
+  let term_1 = first_term
+  let term_2 = multiply(term_1, ratio)
+  let term_3 = multiply(term_2, ratio)
+  let term_4 = multiply(term_3, ratio)
+  let term_5 = multiply(term_4, ratio)
+  
+  // 计算前5项的和
+  let sum = add(add(add(add(term_1, term_2), term_3), term_4), term_5)
+  
+  assert_eq(3, term_1)
+  assert_eq(6, term_2)
+  assert_eq(12, term_3)
+  assert_eq(24, term_4)
+  assert_eq(48, term_5)
+  assert_eq(93, sum)
+}
+
+test "temperature_conversion_simulation" {
+  // 模拟温度转换（简化版）
+  // 摄氏度到华氏度：F = C * 9/5 + 32
+  let celsius_0 = 0
+  let celsius_100 = 100
+  let celsius_minus40 = -40
+  
+  // 使用整数运算模拟（简化计算）
+  let fahrenheit_0 = add(multiply(celsius_0, 9) / 5, 32)
+  let fahrenheit_100 = add(multiply(celsius_100, 9) / 5, 32)
+  let fahrenheit_minus40 = add(multiply(celsius_minus40, 9) / 5, 32)
+  
+  assert_eq(32, fahrenheit_0)
+  assert_eq(212, fahrenheit_100)
+  assert_eq(-40, fahrenheit_minus40)
+}
+
+test "bank_interest_calculation" {
+  // 银行利息计算（简化版）
+  let principal = 1000
+  let interest_rate = 5  // 5%
+  let years = 3
+  
+  // 简单利息计算
+  let interest_per_year = divide_with_ceil(multiply(principal, interest_rate), 100)
+  let total_interest = multiply(interest_per_year, years)
+  let final_amount = add(principal, total_interest)
+  
+  assert_eq(50, interest_per_year)
+  assert_eq(150, total_interest)
+  assert_eq(1150, final_amount)
+}
+
+test "array_index_calculation" {
+  // 模拟数组索引计算
+  let rows = 4
+  let cols = 5
+  let row = 2
+  let col = 3
+  
+  // 二维数组转一维索引：index = row * cols + col
+  let linear_index = add(multiply(row, cols), col)
+  
+  assert_eq(13, linear_index)
+  
+  // 计算总元素数
+  let total_elements = multiply(rows, cols)
+  assert_eq(20, total_elements)
+}
+
+test "binary_representation_simulation" {
+  // 模拟二进制表示转换为十进制
+  // 二进制 1011 = 1*2^3 + 0*2^2 + 1*2^1 + 1*2^0 = 8 + 0 + 2 + 1 = 11
+  
+  let bit_0 = 1
+  let bit_1 = 1
+  let bit_2 = 0
+  let bit_3 = 1
+  
+  let value_0 = multiply(bit_0, 1)      // 2^0
+  let value_1 = multiply(bit_1, 2)      // 2^1
+  let value_2 = multiply(bit_2, 4)      // 2^2
+  let value_3 = multiply(bit_3, 8)      // 2^3
+  
+  let decimal_value = add(add(add(value_0, value_1), value_2), value_3)
+  
+  assert_eq(1, value_0)
+  assert_eq(2, value_1)
+  assert_eq(0, value_2)
+  assert_eq(8, value_3)
+  assert_eq(11, decimal_value)
+}
+
+test "time_zone_conversion" {
+  // 时区转换模拟
+  let local_hour = 14  // 下午2点
+  let timezone_offset = -8  // UTC-8 到 UTC+0 的偏移
+  
+  // 转换为UTC时间
+  let utc_hour = add(local_hour, timezone_offset)
+  let normalized_utc_hour = if utc_hour < 0 {
+    add(utc_hour, 24)
+  } else if utc_hour >= 24 {
+    add(utc_hour, -24)
+  } else {
+    utc_hour
+  }
+  
+  assert_eq(6, normalized_utc_hour)  // 14 + (-8) = 6 (UTC时间)
+}
+
+test "greeting_template_system" {
+  // 问候模板系统测试
+  let user_name = "Alice"
+  let time_of_day = "morning"
+  let language = "Chinese"
+  
+  // 构建复杂问候语
+  let base_greeting = greet(user_name)
+  let time_prefix = "Good " + time_of_day + ", "
+  let language_suffix = " (" + language + ")"
+  
+  // 模拟组合问候语（简化版）
+  let formal_greeting = greet(time_prefix + user_name + language_suffix)
+  
+  assert_eq_string("Hello, Alice!", base_greeting)
+  assert_eq_string("Hello, Good morning, Alice (Chinese)!", formal_greeting)
+  
+  // 测试多语言支持
+  assert_eq_string("Hello, Alice!", greet("Alice"))
+  assert_eq_string("Hello, 鲍勃!", greet("鲍勃"))
+  assert_eq_string("Hello, ヨシダ!", greet("ヨシダ"))
+}
+
