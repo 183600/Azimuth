@@ -168,6 +168,8 @@
     "standard_enhanced_test_cases.mbt",
     "standard_enhanced_tests.mbt",
     "simple_enhanced_tests.mbt",
-  "user_moonbit_tests.mbt"
+  "user_moonbit_tests.mbt",
+  "enhanced_comprehensive_tests.mbt",
+  "simple_verification_test.mbt"
   ]
 }
