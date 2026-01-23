@@ -93,5 +93,6 @@
               "standard_moonbit_test_cases.mbt",
             "quality_enhanced_unit_tests.mbt",
             "standard_azimuth_core_tests.mbt",
-            "new_additional_tests.mbt"
+            "new_additional_tests.mbt",
+            "standard_comprehensive_tests_new.mbt"
             ]}
