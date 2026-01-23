@@ -92,3 +92,46 @@ test "error_handling_robustness" {
   assert_eq(0, divide_with_ceil(-10, 0))
   assert_eq(0, divide_with_ceil(0, 0))
 }
+
+// 新增的测试用例
+test "large_number_operations" {
+  // 测试大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(100, divide_with_ceil(9999, 100))
+}
+
+test "unicode_greeting" {
+  // 测试 Unicode 字符问候
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, αβγ!", greet("αβγ"))
+}
+
+test "complex_financial_calculation" {
+  // 复杂金融计算
+  let principal = 1000
+  let rate = 5
+  let years = 3
+  
+  // 计算复利
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate), 100))
+  
+  assert_eq(1050, year1)
+  assert_eq(1103, year2)
+  assert_eq(1158, year3)
+}
+
+test "resource_allocation" {
+  // 资源分配计算
+  let total_budget = 10000
+  let project_costs = add(add(3500, 2800), 2200)
+  let remaining = add(total_budget, -project_costs)
+  let additional_projects = divide_with_ceil(remaining, 600)
+  
+  assert_eq(8500, project_costs)
+  assert_eq(1500, remaining)
+  assert_eq(3, additional_projects)
+}
