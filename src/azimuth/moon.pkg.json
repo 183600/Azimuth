@@ -155,5 +155,6 @@
                                     "standard_azimuth_tests.mbt",
                                                 "simple_azimuth_tests.mbt",
                                                                         "additional_standard_tests.mbt",
-                                                                        "my_simple_tests.mbt"
-                                                                        ]}
+                                                                            "my_simple_tests.mbt",
+                                                                            "focused_comprehensive_tests.mbt"
+                                                                                                                                                ]}
