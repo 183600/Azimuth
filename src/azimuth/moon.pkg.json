@@ -21,6 +21,7 @@
     "standard_tests.mbt",
     "simple_new_tests.mbt",
     "azimuth_enhanced_test_suite.mbt",
+    "azimuth_enhanced_test_cases.mbt",
     "test/additional_test_cases.mbt",
     "enhanced_coverage_tests.mbt",
     "standard_moonbit_test_cases.mbt",
