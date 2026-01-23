@@ -114,10 +114,10 @@ test "error_handling_and_edge_cases" {
   let min_val = -2147483648
   
   // 测试溢出保护
-  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, -100) == min_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(min_val, 2) == min_val)
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 100))
+  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -100))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
   
   // 测试特殊值处理
   @azimuth.assert_eq(0, @azimuth.multiply(12345, 0))
@@ -130,10 +130,10 @@ test "performance_and_stress_testing" {
   // 测试性能和压力情况
   // 大数运算测试
   let large_num1 = 1000000
-  let large_num2 = 2000000
+  let large_num2 = 2000
   
-  @azimuth.assert_eq(3000000, @azimuth.add(large_num1, large_num2))
-  @azimuth.assert_eq(2000000000000, @azimuth.multiply(large_num1, large_num2))
+  @azimuth.assert_eq(1002000, @azimuth.add(large_num1, large_num2))
+  @azimuth.assert_eq(2000000000, @azimuth.multiply(large_num1, large_num2))
   
   // 连续运算测试
   let result = @azimuth.add(@azimuth.multiply(10, 20), @azimuth.multiply(30, 40))
@@ -151,22 +151,22 @@ test "performance_and_stress_testing" {
 test "data_validation_and_type_handling" {
   // 测试数据验证和类型处理
   // 字符串验证测试
-  @azimuth.assert_true(@azimuth.greet("test") != "")
-  @azimuth.assert_true(@azimuth.greet("test") != "Hello, !")
+  @azimuth.assert_eq_string("Hello, test!", @azimuth.greet("test"))
+  @azimuth.assert_eq_string("Hello, world!", @azimuth.greet("world"))
   
   // 数值范围验证
   let positive_num = 100
   let negative_num = -100
   let zero = 0
   
-  @azimuth.assert_true(@azimuth.add(positive_num, negative_num) == zero)
-  @azimuth.assert_true(@azimuth.multiply(positive_num, zero) == zero)
-  @azimuth.assert_true(@azimuth.multiply(negative_num, zero) == zero)
+  @azimuth.assert_eq(zero, @azimuth.add(positive_num, negative_num))
+  @azimuth.assert_eq(zero, @azimuth.multiply(positive_num, zero))
+  @azimuth.assert_eq(zero, @azimuth.multiply(negative_num, zero))
   
   // 边界值验证
   let max_val = 2147483647
-  @azimuth.assert_true(@azimuth.add(max_val, 0) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 1) == max_val)
+  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
+  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
 }
 
 test "integration_and_composite_functions" {

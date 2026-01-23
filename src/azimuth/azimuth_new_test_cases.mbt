@@ -1,165 +1,144 @@
-// Azimuth 新增测试用例 - 使用标准 MoonBit 测试语法
-// 包含9个测试用例，涵盖 azimuth 库的核心功能
+// 新增的标准 MoonBit 测试用例
+// 针对 azimuth 库的核心功能进行补充测试
 
-test "add_function_boundary_values" {
-  // 测试加法函数的边界值
-  // 包括：零值、正数、负数、大数的加法运算
-  let test_case_1 = 0  // add(0, 0) 应该返回 0
-  let test_case_2 = 1  // add(1, 0) 应该返回 1
-  let test_case_3 = -1 // add(-1, 0) 应该返回 -1
-  let test_case_4 = 2147483647  // add(2147483646, 1) 边界测试
-  let test_case_5 = -2147483648 // add(-2147483647, -1) 边界测试
-  let _ = test_case_1
-  let _ = test_case_2
-  let _ = test_case_3
-  let _ = test_case_4
-  let _ = test_case_5
+test "extreme_boundary_addition" {
+  // 测试极端边界值的加法
+  assert_eq(2147483647, add(2147483646, 1))  // 接近Int最大值
+  assert_eq(-2147483648, add(-2147483647, -1))  // 接近Int最小值
+  assert_eq(0, add(2147483647, -2147483647))  // 最大值与相反数
+  assert_eq(1, add(-2147483648, 2147483647))  // 最小值与最大值-1
 }
 
-test "multiply_function_zero_cases" {
-  // 测试乘法函数的零值情况
-  // 验证任何数与0相乘都等于0
-  let test_case_1 = 0  // multiply(0, 0) 应该返回 0
-  let test_case_2 = 0  // multiply(0, 5) 应该返回 0
-  let test_case_3 = 0  // multiply(5, 0) 应该返回 0
-  let test_case_4 = 0  // multiply(-10, 0) 应该返回 0
-  let test_case_5 = 0  // multiply(0, -10) 应该返回 0
-  let _ = test_case_1
-  let _ = test_case_2
-  let _ = test_case_3
-  let _ = test_case_4
-  let _ = test_case_5
+test "divide_with_ceil_complex_scenarios" {
+  // 测试复杂的向上取整除法场景
+  assert_eq(1, divide_with_ceil(1, 2147483647))  // 极大除数
+  assert_eq(2147483647, divide_with_ceil(2147483647, 1))  // 极大商
+  assert_eq(-1, divide_with_ceil(-1, 2147483647))  // 负数极小商
+  assert_eq(0, divide_with_ceil(2147483647, -2147483648))  // 正负边界
 }
 
-test "divide_with_ceil_precision_test" {
-  // 测试向上取整除法的精度
-  // 验证除法结果的向上取整功能
-  let test_case_1 = 1  // divide_with_ceil(1, 1) 应该返回 1
-  let test_case_2 = 2  // divide_with_ceil(3, 2) 应该返回 2 (1.5 -> 2)
-  let test_case_3 = 3  // divide_with_ceil(8, 3) 应该返回 3 (2.666... -> 3)
-  let test_case_4 = 4  // divide_with_ceil(9, 2) 应该返回 4 (4.5 -> 4)
-  let test_case_5 = 0  // divide_with_ceil(0, 5) 应该返回 0
-  let _ = test_case_1
-  let _ = test_case_2
-  let _ = test_case_3
-  let _ = test_case_4
-  let _ = test_case_5
+test "greet_function_edge_unicode" {
+  // 测试问候函数的边缘Unicode字符
+  assert_eq_string("Hello, \n!", greet("\n"))  // 换行符
+  assert_eq_string("Hello, \t!", greet("\t"))  // 制表符
+  assert_eq_string("Hello, \r!", greet("\r"))  // 回车符
+  assert_eq_string("Hello, 🌈!", greet("🌈"))  // 彩虹emoji
 }
 
-test "greet_function_unicode_support" {
-  // 测试问候函数的 Unicode 支持
-  // 验证函数能正确处理各种 Unicode 字符
-  let test_case_1 = "Hello, 世界!"  // greet("世界") 的预期结果
-  let test_case_2 = "Hello, 🌟!"   // greet("🌟") 的预期结果
-  let test_case_3 = "Hello, αβγ!"  // greet("αβγ") 的预期结果
-  let test_case_4 = "Hello, ñáéíóú!" // greet("ñáéíóú") 的预期结果
-  let _ = test_case_1
-  let _ = test_case_2
-  let _ = test_case_3
-  let _ = test_case_4
+test "mathematical_identities" {
+  // 测试数学恒等式
+  let x = 42
+  let y = 17
+  
+  // 加法恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(x, add(0, x))
+  
+  // 乘法恒等式
+  assert_eq(x, multiply(x, 1))
+  assert_eq(x, multiply(1, x))
+  
+  // 零性质
+  assert_eq(0, multiply(x, 0))
+  assert_eq(0, multiply(0, x))
 }
 
-test "complex_calculation_scenario" {
-  // 复杂计算场景测试
-  // 模拟真实业务场景：计算商品总价（含税）
-  let base_price = 50      // 商品单价
-  let quantity = 8         // 数量
-  let tax_rate = 10        // 税率百分比
-  let shipping = 15        // 运费
+test "nested_function_composition" {
+  // 测试嵌套函数组合
+  let base = 10
   
-  // 预期计算结果：
-  // subtotal = 50 * 8 = 400
-  // tax = ceil(400 * 10 / 100) = 40
-  // total = 400 + 40 + 15 = 455
-  let expected_subtotal = 400
-  let expected_tax = 40
-  let expected_total = 455
+  // 复杂嵌套：multiply(add(divide_with_ceil(multiply(base, 3), 4), 5), 2)
+  let step1 = multiply(base, 3)  // 30
+  let step2 = divide_with_ceil(step1, 4)  // 8
+  let step3 = add(step2, 5)  // 13
+  let result = multiply(step3, 2)  // 26
   
-  let _ = expected_subtotal
-  let _ = expected_tax
-  let _ = expected_total
+  assert_eq(30, step1)
+  assert_eq(8, step2)
+  assert_eq(13, step3)
+  assert_eq(26, result)
 }
 
-test "negative_number_operations_comprehensive" {
-  // 负数运算综合测试
-  // 验证所有函数对负数的处理正确性
-  let test_case_1 = -10  // add(-3, -7) 应该返回 -10
-  let test_case_2 = 2    // add(-5, 7) 应该返回 2
-  let test_case_3 = 15   // multiply(-3, -5) 应该返回 15
-  let test_case_4 = -15  // multiply(3, -5) 应该返回 -15
-  let test_case_5 = -3   // divide_with_ceil(-10, 3) 应该返回 -3
-  let test_case_6 = 3    // divide_with_ceil(-9, -3) 应该返回 3
-  let _ = test_case_1
-  let _ = test_case_2
-  let _ = test_case_3
-  let _ = test_case_4
-  let _ = test_case_5
-  let _ = test_case_6
+test "real_world_financial_calculation" {
+  // 实际金融计算：贷款分期付款
+  let loan_amount = 10000
+  let interest_rate = 5  // 5%
+  let months = 24
+  
+  // 计算总利息（简化模型）
+  let total_interest = divide_with_ceil(multiply(loan_amount, multiply(interest_rate, months)), 1200)
+  
+  // 计算月供（向上取整）
+  let monthly_payment = divide_with_ceil(add(loan_amount, total_interest), months)
+  
+  // 计算总还款额
+  let total_payment = multiply(monthly_payment, months)
+  
+  assert_eq(1000, total_interest)  // 10000 * 5% * 24 / 12 = 1000
+  assert_eq(459, monthly_payment)  // ceil(11000 / 24) = 459
+  assert_eq(11016, total_payment)  // 459 * 24 = 11016
 }
 
-test "mathematical_properties_verification" {
-  // 数学性质验证测试
-  // 验证基本数学运算的性质
-  let x = 12
-  let y = 8
+test "algorithm_complexity_simulation" {
+  // 模拟算法复杂度计算
+  let n = 100
+  let constant_factor = 3
   
-  // 交换律验证：
-  // add(x, y) 应该等于 add(y, x)
-  // multiply(x, y) 应该等于 multiply(y, x)
-  let commutative_add_result = 20  // add(12, 8) 的预期结果
-  let commutative_mul_result = 96  // multiply(12, 8) 的预期结果
+  // O(n) 算法
+  let linear_time = multiply(n, constant_factor)
   
-  // 单位元性质：
-  // add(x, 0) 应该等于 x
-  // multiply(x, 1) 应该等于 x
-  let identity_add_result = 12    // add(12, 0) 的预期结果
-  let identity_mul_result = 12    // multiply(12, 1) 的预期结果
+  // O(n²) 算法（简化计算）
+  let quadratic_time = multiply(multiply(n, n), constant_factor) / 100
   
-  // 零元素性质：
-  // multiply(x, 0) 应该等于 0
-  let zero_element_result = 0     // multiply(12, 0) 的预期结果
+  // O(log n) 算法（简化为向上取整除法）
+  let logarithmic_time = divide_with_ceil(n, 10)
   
-  let _ = commutative_add_result
-  let _ = commutative_mul_result
-  let _ = identity_add_result
-  let _ = identity_mul_result
-  let _ = zero_element_result
+  assert_eq(300, linear_time)
+  assert_eq(300, quadratic_time)
+  assert_eq(10, logarithmic_time)
 }
 
-test "real_world_application_test" {
-  // 实际应用测试：计算购物车总价
-  // 模拟电商网站的购物车计算逻辑
-  let item1_price = 25       // 商品1单价
-  let item1_quantity = 3     // 商品1数量
-  let item2_price = 40       // 商品2单价
-  let item2_quantity = 2     // 商品2数量
-  let discount = 20          // 折扣金额
+test "string_processing_with_numbers" {
+  // 测试字符串与数字的处理
+  let number_as_string = "12345"
+  let processed_greeting = greet("User_" + number_as_string)
   
-  // 预期计算结果：
-  // item1_total = 25 * 3 = 75
-  // item2_total = 40 * 2 = 80
-  // subtotal = 75 + 80 = 155
-  // final_total = 155 - 20 = 135
-  let expected_item1_total = 75
-  let expected_item2_total = 80
-  let expected_subtotal = 155
-  let expected_final_total = 135
+  assert_eq_string("Hello, User_12345!", processed_greeting)
   
-  let _ = expected_item1_total
-  let _ = expected_item2_total
-  let _ = expected_subtotal
-  let _ = expected_final_total
+  // 测试特殊字符组合
+  let special_chars = "!@#$%^&*()"
+  assert_eq_string("Hello, !@#$%^&*()!", greet(special_chars))
 }
 
-test "edge_case_division_by_zero" {
-  // 除零边界情况测试
-  // 验证除数为零时的安全处理
-  let test_case_1 = 0  // divide_with_ceil(100, 0) 应该返回 0（安全处理）
-  let test_case_2 = 0  // divide_with_ceil(-100, 0) 应该返回 0（安全处理）
-  let test_case_3 = 0  // divide_with_ceil(0, 0) 应该返回 0（安全处理）
-  let test_case_4 = 0  // divide_with_ceil(1, 0) 应该返回 0（安全处理）
-  let _ = test_case_1
-  let _ = test_case_2
-  let _ = test_case_3
-  let _ = test_case_4
+test "resource_allocation_optimization" {
+  // 资源分配优化问题
+  let total_resources = 100
+  let project_requirements = [15, 25, 30, 20]
+  
+  // 计算总需求
+  let total_required = add(add(add(project_requirements[0], project_requirements[1]), project_requirements[2]), project_requirements[3])
+  
+  // 计算剩余资源
+  let remaining = add(total_resources, -total_required)
+  
+  // 计算可以支持的额外项目数（每个项目需要10个资源）
+  let additional_projects = divide_with_ceil(remaining, 10)
+  
+  assert_eq(90, total_required)  // 15 + 25 + 30 + 20 = 90
+  assert_eq(10, remaining)  // 100 - 90 = 10
+  assert_eq(1, additional_projects)  // ceil(10 / 10) = 1
+}
+
+test "error_boundary_conditions" {
+  // 错误边界条件测试
+  // 测试除数为零的各种情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  
+  // 测试极值运算
+  assert_eq(0, multiply(2147483647, 0))
+  assert_eq(0, multiply(-2147483648, 0))
+  assert_eq(0, multiply(0, 2147483647))
+  assert_eq(0, multiply(0, -2147483648))
 }
