@@ -127,6 +127,7 @@
             "standard_azimuth_tests.mbt",
             "standard_moonbit_tests.mbt",
             "standard_moonbit_quality_tests.mbt",
+            "standard_moonbit_test_suite.mbt",
             "test/high_quality_comprehensive_tests.mbt",
             "../azimuth/azimuth_new_tests.mbt",
             "standard_moonbit_tests_new.mbt"
