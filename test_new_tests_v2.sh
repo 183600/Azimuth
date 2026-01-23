@@ -7,7 +7,7 @@ echo "Testing azimuth_new_tests.mbt..."
 # 设置路径
 PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
 CORE_PATH="$PROJECT_ROOT/core"
-AZIMUTH_PATH="$PROJECT_ROOT/src/azimuth"
+AZIMUTH_PATH="$PROJECT_ROOT/azimuth"
 
 cd "$AZIMUTH_PATH"
 

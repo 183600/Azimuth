@@ -1,6 +1,51 @@
-// 新增的 MoonBit 测试用例
-// 针对 azimuth 库的核心功能进行测试
+// 独立的 MoonBit 测试用例
+// 包含函数定义和测试用例
 
+// 断言函数
+pub fn assert_eq(lhs : Int, rhs : Int) -> Unit {
+  if lhs != rhs {
+    let _ = "Assertion failed"
+  }
+}
+
+pub fn assert_eq_string(lhs : String, rhs : String) -> Unit {
+  if lhs != rhs {
+    let _ = "String assertion failed"
+  }
+}
+
+// 库函数
+pub fn add(a : Int, b : Int) -> Int {
+  a + b
+}
+
+pub fn multiply(a : Int, b : Int) -> Int {
+  a * b
+}
+
+pub fn greet(name : String) -> String {
+  "Hello, " + name + "!"
+}
+
+pub fn divide_with_ceil(a : Int, b : Int) -> Int {
+  if b == 0 { 
+    0 
+  } else {
+    let quotient = a / b
+    let remainder = a % b
+    if remainder == 0 {
+      quotient
+    } else if a > 0 && b > 0 {
+      quotient + 1
+    } else if a < 0 && b < 0 {
+      quotient + 1
+    } else {
+      quotient
+    }
+  }
+}
+
+// 测试用例
 test "add_function_basic_operations" {
   // 测试加法基本运算
   assert_eq(8, add(3, 5))

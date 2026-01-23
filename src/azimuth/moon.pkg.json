@@ -126,5 +126,6 @@
             "simple_test_new.mbt",
             "standard_azimuth_tests.mbt",
             "standard_moonbit_tests.mbt",
-            "standard_moonbit_quality_tests.mbt"
+            "standard_moonbit_quality_tests.mbt",
+            "../azimuth/azimuth_new_tests.mbt"
             ]}
