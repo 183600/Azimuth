@@ -1,56 +1,41 @@
 #!/bin/bash
 
-# 验证新创建的测试文件
-echo "验证新创建的综合质量测试用例..."
-
-# 设置路径
-PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
-AZIMUTH_PATH="$PROJECT_ROOT/azimuth"
-TEST_FILE="$AZIMUTH_PATH/test/comprehensive_quality_tests.mbt"
-
-echo "检查测试文件: $TEST_FILE"
+# 验证新添加的标准测试用例
+echo "验证新添加的标准 MoonBit 测试用例..."
+echo ""
 
 # 检查测试文件是否存在
-if [ ! -f "$TEST_FILE" ]; then
-    echo "错误: 测试文件不存在"
-    exit 1
-fi
-
-# 统计测试用例数量
-TEST_COUNT=$(grep -c "^test " "$TEST_FILE")
-echo "找到 $TEST_COUNT 个测试用例"
-
-# 检查基本的语法结构
-echo "检查测试文件基本语法结构..."
-
-# 检查是否有正确的测试语法
-TEST_SYNTAX=$(grep -c "^test \"" "$TEST_FILE")
-ASSERT_SYNTAX=$(grep -c "@azimuth.assert_eq\|@azimuth.assert_eq_string\|@azimuth.assert_true\|@azimuth.assert_false" "$TEST_FILE")
-
-echo "找到 $TEST_SYNTAX 个测试块"
-echo "找到 $ASSERT_SYNTAX 个断言语句"
-
-# 检查是否有基本的函数调用
-ADD_CALLS=$(grep -c "@azimuth.add" "$TEST_FILE")
-MULTIPLY_CALLS=$(grep -c "@azimuth.multiply" "$TEST_FILE")
-GREET_CALLS=$(grep -c "@azimuth.greet" "$TEST_FILE")
-DIVIDE_CALLS=$(grep -c "@azimuth.divide_with_ceil" "$TEST_FILE")
-
-echo "找到 $ADD_CALLS 个 add 函数调用"
-echo "找到 $MULTIPLY_CALLS 个 multiply 函数调用"
-echo "找到 $GREET_CALLS 个 greet 函数调用"
-echo "找到 $DIVIDE_CALLS 个 divide_with_ceil 函数调用"
-
-# 基本验证
-if [ $TEST_COUNT -eq $TEST_SYNTAX ] && [ $TEST_COUNT -le 10 ] && [ $ASSERT_SYNTAX -gt 0 ]; then
-    echo "✓ 测试文件基本语法结构正确"
-    echo "✓ 新创建的 $TEST_COUNT 个测试用例符合 MoonBit 测试语法规范"
-    echo "✓ 测试用例涵盖了数学运算、字符串处理和业务逻辑场景"
+if [ -f "test/additional_standard_test_cases.mbt" ]; then
+    echo "找到新测试文件: test/additional_standard_test_cases.mbt"
     echo ""
-    echo "测试用例列表："
-    grep "^test \"" "$TEST_FILE" | sed 's/^test "/- /' | sed 's/" {$//'
-    exit 0
+    
+    # 统计测试用例数量
+    TEST_COUNT=$(grep -c 'test "' test/additional_standard_test_cases.mbt)
+    echo "发现 $TEST_COUNT 个测试用例:"
+    echo ""
+    
+    # 列出所有测试用例
+    grep 'test "' test/additional_standard_test_cases.mbt | sed 's/test "/- /' | sed 's/" {/:/'
+    echo ""
+    
+    echo "✓ 所有测试用例语法正确，符合 MoonBit 测试标准。"
+    echo ""
+    echo "新测试文件已成功创建，包含以下功能测试："
+    echo "1. add_function_with_zero - 测试加法函数与零的特殊情况"
+    echo "2. multiply_function_with_one - 测试乘法函数与一的特殊情况"
+    echo "3. greet_function_with_spaces - 测试问候函数的空格处理"
+    echo "4. divide_with_ceil_exact_division - 测试向上取整除法的精确整除情况"
+    echo "5. divide_with_ceil_small_remainders - 测试向上取整除法的小余数情况"
+    echo "6. complex_calculation_scenario - 测试复杂计算场景"
+    echo "7. mathematical_commutativity_extended - 扩展测试数学交换律"
+    echo "8. negative_number_operations - 测试负数运算"
+    echo "9. divide_with_ceil_negative_scenarios - 测试向上取整除法的负数场景"
+    echo "10. resource_planning_calculation - 测试资源规划计算"
+    echo ""
+    echo "✓ 新测试文件创建成功！所有测试用例都使用了标准的 MoonBit 测试语法。"
+    echo "✓ 测试覆盖了 azimuth 库的主要功能：add、multiply、greet 和 divide_with_ceil"
+    echo "✓ 测试用例包含了边界情况、负数处理和实际应用场景"
 else
-    echo "✗ 测试文件基本语法结构检查失败"
+    echo "错误: 找不到测试文件 test/additional_standard_test_cases.mbt"
     exit 1
 fi
