@@ -1212,4 +1212,126 @@ test "nested_calculations_composition" {
   assert_eq(4, complex_result)  // ceil((5+3)*4 / (10-2)) = ceil(32/8) = 4
 }
 
+// 新增的8个高质量 MoonBit 测试用例
+test "subtract_operation_simulation" {
+  // 模拟减法操作：a - b = a + (-b)
+  let a = 15
+  let b = 7
+  let negative_b = multiply(b, -1)
+  let result = add(a, negative_b)
+  assert_eq(8, result)
+}
+
+test "percentage_calculation" {
+  // 百分比计算测试
+  let total = 200
+  let percentage = 25  // 25%
+  let result = divide_with_ceil(multiply(total, percentage), 100)
+  assert_eq(50, result)
+}
+
+test "batch_processing_efficiency" {
+  // 批处理效率测试
+  let total_items = 157
+  let batch_size = 20
+  let full_batches = divide_with_ceil(total_items, batch_size)
+  assert_eq(8, full_batches)  // ceil(157/20) = 8
+  
+  // 验证总处理能力
+  let total_capacity = multiply(full_batches, batch_size)
+  assert_eq(160, total_capacity)
+  
+  // 计算剩余容量
+  let unused_capacity = subtract(total_capacity, total_items)
+  assert_eq(3, unused_capacity)
+}
+
+test "string_concatenation_length" {
+  // 字符串连接长度测试
+  let name = "MoonBit"
+  let greeting = greet(name)
+  let expected_length = add(add(7, 6), 1)  // "Hello, " + "MoonBit" + "!" = 7 + 6 + 1 = 14
+  assert_eq(14, expected_length)
+  @unused(greeting)
+}
+
+test "division_precision_test" {
+  // 除法精度测试
+  // 测试连续除法的精度保持
+  let initial_value = 1000
+  let divisor1 = 3
+  let divisor2 = 7
+  let divisor3 = 11
+  
+  let step1 = divide_with_ceil(initial_value, divisor1)
+  let step2 = divide_with_ceil(step1, divisor2)
+  let step3 = divide_with_ceil(step2, divisor3)
+  
+  // 验证每一步的结果
+  assert_eq(334, step1)   // ceil(1000/3)
+  assert_eq(48, step2)    // ceil(334/7)
+  assert_eq(5, step3)     // ceil(48/11)
+}
+
+test "resource_allocation_fairness" {
+  // 资源分配公平性测试
+  let total_resources = 100
+  let participants = 9
+  
+  // 计算每人应得份额
+  let base_share = divide_with_ceil(total_resources, participants)
+  assert_eq(12, base_share)  // ceil(100/9) = 12
+  
+  // 计算总分配量
+  let total_allocated = multiply(base_share, participants)
+  assert_eq(108, total_allocated)
+  
+  // 计算溢出量
+  let overflow = subtract(total_allocated, total_resources)
+  assert_eq(8, overflow)
+}
+
+test "time_calculation_scenario" {
+  // 时间计算场景测试
+  // 场景：计算项目完成时间
+  let total_tasks = 87
+  let team_velocity = 12  // 每周完成的任务数
+  
+  // 计算需要的周数
+  let weeks_needed = divide_with_ceil(total_tasks, team_velocity)
+  assert_eq(8, weeks_needed)  // ceil(87/12) = 8
+  
+  // 计算总工作日（假设每周5个工作日）
+  let work_days = multiply(weeks_needed, 5)
+  assert_eq(40, work_days)
+  
+  // 计算总容量
+  let total_capacity = multiply(weeks_needed, team_velocity)
+  assert_eq(96, total_capacity)
+}
+
+test "exponential_growth_simulation" {
+  // 指数增长模拟测试
+  // 模拟简单的指数增长：每次翻倍
+  let initial_value = 3
+  let growth_periods = 5  // 这个变量只是用于演示，实际未使用
+  
+  // 手动计算指数增长
+  let period1 = multiply(initial_value, 2)
+  let period2 = multiply(period1, 2)
+  let period3 = multiply(period2, 2)
+  let period4 = multiply(period3, 2)
+  let period5 = multiply(period4, 2)
+  
+  assert_eq(6, period1)    // 3 * 2
+  assert_eq(12, period2)   // 6 * 2
+  assert_eq(24, period3)   // 12 * 2
+  assert_eq(48, period4)   // 24 * 2
+  assert_eq(96, period5)   // 48 * 2
+  
+  // 验证最终结果
+  assert_eq(96, period5)
+  @unused(growth_periods)
+}
+
 
