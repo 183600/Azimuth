@@ -118,5 +118,9 @@
             "enhanced_test_cases.mbt",
             "simplified_enhanced_tests.mbt",
             "concise_standard_tests.mbt",
-            "new_moonbit_standard_tests.mbt"
+            "new_moonbit_standard_tests.mbt",
+            "moonbit_standard_test_cases_new.mbt",
+            "moonbit_test_cases_final.mbt",
+            "simple_moonbit_tests.mbt",
+            "azimuth_simple_tests.mbt"
             ]}
