@@ -174,6 +174,7 @@
   "enhanced_comprehensive_tests.mbt",
   "simple_verification_test.mbt",
   "azimuth_enhanced_quality_tests.mbt",
-  "azimuth_comprehensive_test_suite.mbt"
+  "azimuth_comprehensive_test_suite.mbt",
+  "standard_moonbit_tests.mbt"
   ]
 }
