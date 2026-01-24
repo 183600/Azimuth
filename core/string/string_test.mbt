@@ -49,3 +49,32 @@ test "string_equality" {
   let _ = if (s1 != s3) { 0 } else { 1 }
   let _ = if (s1 == s2) { 0 } else { 1 }
 }
+
+test "string basic operations enhanced" {
+  let empty = ""
+  let hello = "Hello, World!"
+  inspect(empty.length(), content="0")
+  inspect(hello.length(), content="13")
+  inspect(hello[0], content="'H'")
+  inspect(hello[7], content="'W'")
+}
+
+test "string concatenation enhanced" {
+  let str1 = "Hello"
+  let str2 = ", "
+  let str3 = "World"
+  let str4 = "!"
+  let result = str1 + str2 + str3 + str4
+  inspect(result, content="Hello, World!")
+  assert_eq(result, "Hello, World!")
+}
+
+test "string comparison enhanced" {
+  let str1 = "apple"
+  let str2 = "banana"
+  let str3 = "apple"
+  assert_eq(str1, str3)
+  assert_ne(str1, str2)
+  inspect(str1 < str2, content="true")
+  inspect(str2 > str1, content="true")
+}

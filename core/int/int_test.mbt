@@ -81,3 +81,30 @@ test "to_be_bytes" {
     ),
   )
 }
+
+///|
+test "int boundary values" {
+  inspect(@int.max_value, content="2147483647")
+  inspect(@int.min_value, content="-2147483648")
+  assert_eq(@int.max_value + 1, @int.min_value)
+  assert_eq(@int.min_value - 1, @int.max_value)
+}
+
+///|
+test "int arithmetic operations" {
+  inspect(10 + 5, content="15")
+  inspect(10 - 5, content="5")
+  inspect(10 * 5, content="50")
+  inspect(10 / 3, content="3")
+  inspect(10 % 3, content="1")
+}
+
+///|
+test "int bit operations" {
+  inspect(10 & 12, content="8")
+  inspect(10 | 12, content="14")
+  inspect(10 ^ 12, content="6")
+  inspect(~10, content="-11")
+  inspect(10 << 2, content="40")
+  inspect(10 >> 2, content="2")
+}

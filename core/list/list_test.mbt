@@ -1201,3 +1201,32 @@ test "List default trait" {
   let ls : @list.List[Int] = Default::default()
   inspect(ls, content="@list.from_array([])")
 }
+
+///|
+test "list basic operations enhanced" {
+  let empty = @list.empty()
+  let single = @list.singleton(42)
+  let multi = @list.from_array([1, 2, 3, 4, 5])
+  inspect(empty.length(), content="0")
+  inspect(single.length(), content="1")
+  inspect(multi.length(), content="5")
+  inspect(single, content="@list.from_array([42])")
+}
+
+///|
+test "list prepend and append enhanced" {
+  let base = @list.from_array([2, 3])
+  let prepended = @list.cons(1, base)
+  let appended = @list.append(base, 4)
+  inspect(prepended, content="@list.from_array([1, 2, 3])")
+  inspect(appended, content="@list.from_array([2, 3, 4])")
+}
+
+///|
+test "list map and filter enhanced" {
+  let numbers = @list.from_array([1, 2, 3, 4, 5])
+  let doubled = @list.map(x => x * 2, numbers)
+  let evens = @list.filter(x => x % 2 == 0, numbers)
+  inspect(doubled, content="@list.from_array([2, 4, 6, 8, 10])")
+  inspect(evens, content="@list.from_array([2, 4])")
+}
