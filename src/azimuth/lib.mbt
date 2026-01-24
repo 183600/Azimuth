@@ -3469,3 +3469,195 @@ test "standard_math_properties" {
   assert_eq(a, add(a, 0))
 }
 
+// 新增的10个标准 MoonBit 测试用例
+test "advanced_fibonacci_calculation" {
+  // 高级斐波那契数列计算
+  let fib0 = 0
+  let fib1 = 1
+  let fib2 = add(fib0, fib1)
+  let fib3 = add(fib1, fib2)
+  let fib4 = add(fib2, fib3)
+  let fib5 = add(fib3, fib4)
+  let fib6 = add(fib4, fib5)
+  
+  assert_eq(1, fib2)
+  assert_eq(2, fib3)
+  assert_eq(3, fib4)
+  assert_eq(5, fib5)
+  assert_eq(8, fib6)
+}
+
+test "temperature_conversion" {
+  // 温度转换计算（简化的摄氏度到华氏度）
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 9), 160) / 5
+  
+  assert_eq(77, fahrenheit)  // (25 * 9/5) + 32 = 45 + 32 = 77
+}
+
+test "resource_distribution_optimization" {
+  // 资源分配优化测试
+  let total_resources = 100
+  let project_a_needs = 35
+  let project_b_needs = 28
+  let project_c_needs = 22
+  
+  let allocated_a = project_a_needs
+  let allocated_b = project_b_needs
+  let allocated_c = project_c_needs
+  let total_allocated = add(add(allocated_a, allocated_b), allocated_c)
+  let remaining_resources = add(total_resources, -total_allocated)
+  
+  // 计算剩余资源可以支持的小项目数量
+  let small_projects_supported = divide_with_ceil(remaining_resources, 8)
+  
+  assert_eq(85, total_allocated)
+  assert_eq(15, remaining_resources)
+  assert_eq(2, small_projects_supported)
+}
+
+test "data_structure_simulation" {
+  // 模拟数据结构操作
+  let array_size = 10
+  let element_size = 4
+  let header_size = 8
+  
+  // 计算数组总大小
+  let data_size = multiply(array_size, element_size)
+  let total_size = add(data_size, header_size)
+  
+  // 计算需要的内存块数（每块16字节）
+  let memory_blocks = divide_with_ceil(total_size, 16)
+  
+  assert_eq(40, data_size)
+  assert_eq(48, total_size)
+  assert_eq(3, memory_blocks)
+}
+
+test "financial_compound_interest" {
+  // 金融复利计算
+  let principal = 1000
+  let rate_percent = 5
+  let years = 3
+  
+  // 简化的年复利计算
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, rate_percent), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, rate_percent), 100))
+  
+  assert_eq(1050, year1_amount)
+  assert_eq(1103, year2_amount)
+  assert_eq(1158, year3_amount)
+}
+
+test "algorithm_efficiency_analysis" {
+  // 算法效率分析
+  let input_size = 100
+  let linear_complexity = multiply(input_size, 2)
+  let quadratic_complexity = multiply(input_size, input_size)
+  let logarithmic_complexity = divide_with_ceil(input_size, 10)
+  
+  // 比较不同算法的复杂度
+  let linear_vs_log = divide_with_ceil(linear_complexity, logarithmic_complexity)
+  let quadratic_vs_linear = divide_with_ceil(quadratic_complexity, linear_complexity)
+  
+  assert_eq(200, linear_complexity)
+  assert_eq(10000, quadratic_complexity)
+  assert_eq(10, logarithmic_complexity)
+  assert_eq(20, linear_vs_log)
+  assert_eq(50, quadratic_vs_linear)
+}
+
+test "geometry_area_calculation" {
+  // 几何面积计算
+  let rectangle_length = 12
+  let rectangle_width = 8
+  let triangle_base = 10
+  let triangle_height = 6
+  
+  // 计算矩形面积
+  let rectangle_area = multiply(rectangle_length, rectangle_width)
+  
+  // 计算三角形面积（底×高/2，使用向上取整）
+  let triangle_area = divide_with_ceil(multiply(triangle_base, triangle_height), 2)
+  
+  // 计算总面积
+  let total_area = add(rectangle_area, triangle_area)
+  
+  assert_eq(96, rectangle_area)
+  assert_eq(30, triangle_area)
+  assert_eq(126, total_area)
+}
+
+test "data_transfer_performance" {
+  // 网络吞吐量计算
+  let packet_size = 1500  // 字节
+  let packets_per_second = 1000
+  let transmission_overhead = 200  // 字节/秒
+  
+  // 计算原始数据传输速率
+  let raw_throughput = multiply(packet_size, packets_per_second)
+  
+  // 计算实际吞吐量
+  let effective_throughput = add(raw_throughput, -transmission_overhead)
+  
+  // 计算传输1GB数据需要的时间（秒）
+  let gigabyte = 1024 * 1024 * 1024
+  let time_for_gb = divide_with_ceil(gigabyte, effective_throughput)
+  
+  assert_eq(1500000, raw_throughput)
+  assert_eq(1499800, effective_throughput)
+  assert_eq(716, time_for_gb)
+}
+
+test "string_pattern_analysis" {
+  // 字符串模式分析
+  let base_pattern = "AB"
+  let repeat_count = 5
+  let separator = "-"
+  
+  // 使用greet函数模拟字符串重复操作
+  let pattern1 = greet(base_pattern)
+  let pattern2 = greet(base_pattern + base_pattern)
+  let pattern3 = greet(base_pattern + base_pattern + base_pattern)
+  
+  // 验证模式长度（简化计算）
+  let pattern1_length = add(7, 2)  // "Hello, " + "AB!" = 7 + 2 = 9
+  let pattern2_length = add(7, 4)  // "Hello, " + "ABAB!" = 7 + 4 = 11
+  let pattern3_length = add(7, 6)  // "Hello, " + "ABABAB!" = 7 + 6 = 13
+  
+  assert_eq_string("Hello, AB!", pattern1)
+  assert_eq_string("Hello, ABAB!", pattern2)
+  assert_eq_string("Hello, ABABAB!", pattern3)
+  assert_eq(9, pattern1_length)
+  assert_eq(11, pattern2_length)
+  assert_eq(13, pattern3_length)
+}
+
+test "cache_performance_analysis" {
+  // 缓存策略模拟
+  let total_requests = 1000
+  let cache_hit_rate = 70  // 70%
+  let cache_access_time = 1  // 毫秒
+  let database_access_time = 50  // 毫秒
+  
+  // 计算缓存命中数
+  let cache_hits = divide_with_ceil(multiply(total_requests, cache_hit_rate), 100)
+  let cache_misses = add(total_requests, -cache_hits)
+  
+  // 计算总响应时间
+  let cache_response_time = multiply(cache_hits, cache_access_time)
+  let database_response_time = multiply(cache_misses, database_access_time)
+  let total_response_time = add(cache_response_time, database_response_time)
+  
+  // 计算平均响应时间
+  let average_response_time = divide_with_ceil(total_response_time, total_requests)
+  
+  assert_eq(700, cache_hits)
+  assert_eq(300, cache_misses)
+  assert_eq(700, cache_response_time)
+  assert_eq(15000, database_response_time)
+  assert_eq(15700, total_response_time)
+  assert_eq(16, average_response_time)
+}
+
