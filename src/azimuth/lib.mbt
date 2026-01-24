@@ -1169,6 +1169,95 @@ test "concise_greet_functionality" {
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
 }
 
+// 新增的10个实用测试用例
+test "enhanced_power_operation_simulation" {
+  // 模拟幂运算：计算 2^4 = 16
+  let base = 2
+  let result = multiply(multiply(multiply(base, base), base), base)
+  assert_eq(16, result)
+}
+
+test "enhanced_percentage_calculation" {
+  // 百分比计算：计算 250 的 15%
+  let amount = 250
+  let percentage = 15
+  let result = divide_with_ceil(multiply(amount, percentage), 100)
+  assert_eq(38, result)
+}
+
+test "enhanced_temperature_conversion" {
+  // 温度转换：摄氏度转华氏度 F = C * 9/5 + 32
+  let celsius = 25
+  let fahrenheit = add(divide_with_ceil(multiply(celsius, 9), 5), 32)
+  assert_eq(77, fahrenheit)
+}
+
+test "enhanced_currency_exchange_calculation" {
+  // 货币兑换计算：100 USD * 6.8 exchange_rate = 680 CNY
+  let usd_amount = 100
+  let exchange_rate = 68  // 使用 68/10 来模拟 6.8
+  let cny_amount = divide_with_ceil(multiply(usd_amount, exchange_rate), 10)
+  assert_eq(680, cny_amount)
+}
+
+test "enhanced_geometric_area_calculation" {
+  // 几何面积计算：圆形面积 A = π * r^2 (使用 π ≈ 3.14)
+  let radius = 5
+  let pi_approximation = 314  // 使用 314/100 来模拟 3.14
+  let area = divide_with_ceil(multiply(pi_approximation, multiply(radius, radius)), 100)
+  assert_eq(79, area)  // 3.14 * 25 = 78.5 -> 79
+}
+
+test "enhanced_speed_distance_time_calculation" {
+  // 速度、距离、时间计算：距离 = 速度 × 时间
+  let speed = 60  // km/h
+  let distance = divide_with_ceil(multiply(speed, 25), 10)  // 2.5 hours = 25/10
+  assert_eq(150, distance)
+}
+
+test "enhanced_discount_and_promotion_calculation" {
+  // 折扣和促销计算：原价 200，8 折 + 满 100 减 20
+  let original_price = 200
+  let discount_rate = 80  // 8 折 = 80%
+  let threshold_discount = 20
+  
+  let discounted_price = divide_with_ceil(multiply(original_price, discount_rate), 100)
+  let final_price = add(discounted_price, -threshold_discount)
+  
+  assert_eq(140, final_price)  // 200 * 0.8 - 20 = 160 - 20 = 140
+}
+
+test "enhanced_data_unit_conversion" {
+  // 数据单位转换：GB 转 MB
+  let gb_amount = 5
+  let mb_per_gb = 1024
+  let total_mb = multiply(gb_amount, mb_per_gb)
+  assert_eq(5120, total_mb)
+}
+
+test "enhanced_simple_hash_simulation" {
+  // 简单哈希算法模拟：多项式滚动哈希
+  let input_string_value = 123  // 模拟字符串的数值表示
+  let base = 31
+  let modulus = 10007
+  
+  let hash_value = multiply(input_string_value, base) % modulus
+  assert_eq(3813, hash_value)
+}
+
+test "enhanced_loan_interest_calculation" {
+  // 贷款利息计算：简单利息
+  let principal = 10000
+  let annual_rate = 6  // 6%
+  let loan_years = 3
+  
+  let total_interest = divide_with_ceil(multiply(principal, multiply(annual_rate, loan_years)), 100)
+  let total_repayment = add(principal, total_interest)
+  
+  assert_eq(1800, total_interest)
+  assert_eq(11800, total_repayment)
+}
+
 test "concise_divide_with_ceil" {
   // 测试基本向上取整除法
   assert_eq(4, divide_with_ceil(10, 3))
