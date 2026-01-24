@@ -27,7 +27,7 @@
     "standard_tests.mbt",
     "nine_core_tests.mbt",
     "new_standard_tests.mbt",
-    "simple_core_test.mbt",
+    "simple_core_test.mbt", "self_contained_test.mbt", "simple_new_test.mbt",
     "standard_core_tests.mbt",
     "standalone_tests.mbt",
     "simple_single_test.mbt",
@@ -179,6 +179,9 @@
   "standard_moonbit_tests.mbt",
   "standard_quality_tests.mbt",
   "simple_new_tests.mbt",
-  "concise_standard_tests.mbt"
+  "concise_standard_tests.mbt",
+  "new_comprehensive_unit_tests.mbt",
+  "simple_new_test.mbt",
+  "azimuth_new_unit_tests.mbt"
   ]
 }

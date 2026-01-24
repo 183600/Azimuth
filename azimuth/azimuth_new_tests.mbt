@@ -1,55 +1,55 @@
-test "basic_addition" {
+// 新增的 MoonBit 测试用例 - 10个高质量测试用例
+// 测试 azimuth 库的核心功能
+
+test "add_basic_functionality" {
   assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
+  assert_eq(-1, add(2, -3))
 }
 
-test "basic_multiplication" {
+test "multiply_basic_functionality" {
   assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(-6, multiply(-2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-6, multiply(2, -3))
 }
 
-test "basic_greeting" {
-  assert_eq_string("Hello, World!", greet("World"))
+test "greet_basic_functionality" {
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
-test "basic_divide_with_ceil" {
+test "divide_with_ceil_basic" {
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "mathematical_properties" {
-  assert_eq(add(7, 13), add(13, 7))
-  assert_eq(multiply(7, 13), multiply(13, 7))
+test "add_identity_properties" {
+  assert_eq(7, add(7, 0))
+  assert_eq(7, add(0, 7))
 }
 
-test "zero_element_properties" {
-  assert_eq(5, add(5, 0))
-  assert_eq(0, multiply(5, 0))
+test "multiply_zero_properties" {
+  assert_eq(0, multiply(7, 0))
+  assert_eq(0, multiply(0, 7))
 }
 
-test "complex_arithmetic" {
-  let result = add(multiply(2, 3), multiply(4, 5))
-  assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
+test "divide_with_ceil_negative_numbers" {
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(3, divide_with_ceil(-10, -3))
 }
 
-test "packaging_calculation" {
-  let total_items = 25
-  let items_per_box = 6
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
+test "complex_calculation" {
+  let result = add(multiply(3, 4), divide_with_ceil(10, 4))
+  assert_eq(15, result)  // 12 + 3 = 15
 }
 
-test "unicode_greeting" {
+test "greet_unicode_characters" {
   assert_eq_string("Hello, 世界!", greet("世界"))
   assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
 
-test "divide_with_ceil_edge_cases" {
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(5, 5))
-  assert_eq(2, divide_with_ceil(3, 2))
+test "mathematical_commutativity" {
+  assert_eq(add(5, 7), add(7, 5))
+  assert_eq(multiply(5, 7), multiply(7, 5))
 }

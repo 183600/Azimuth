@@ -1,5 +1,7 @@
-// 简单的新测试文件 - 10个高质量 MoonBit 测试用例
+// 自包含的测试文件 - 包含函数定义和测试用例
+// 10个高质量 MoonBit 测试用例
 
+// 测试用例
 test "add_function_comprehensive" {
   // 全面测试加法函数
   @azimuth.assert_eq(10, @azimuth.add(7, 3))
