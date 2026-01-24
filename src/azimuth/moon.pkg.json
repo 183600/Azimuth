@@ -12,7 +12,10 @@
     "standard_moonbit_tests.mbt",
     "standard_azimuth_core_tests.mbt",
     "high_quality_test_cases.mbt",
-    "new_standard_moonbit_test_cases.mbt"
+    "new_standard_moonbit_test_cases.mbt",
+    "my_standard_azimuth_tests.mbt",
+    "simple_new_test.mbt",
+    "final_simple_test.mbt"
   ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [
