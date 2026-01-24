@@ -2784,3 +2784,304 @@ test "complex_combined_operations" {
   assert_eq(85, complex_result)  // 10*7 + 5*6 = 70 + 15 = 85
 }
 
+// 新增的10个标准 MoonBit 测试用例
+
+test "bitwise_operations_simulation" {
+  // 模拟位运算操作
+  let a = 12  // 二进制 1100
+  let b = 10  // 二进制 1010
+  
+  // 模拟按位与操作：1100 & 1010 = 1000 (8)
+  let bitwise_and = a & b
+  assert_eq(8, bitwise_and)
+  
+  // 模拟按位或操作：1100 | 1010 = 1110 (14)
+  let bitwise_or = a | b
+  assert_eq(14, bitwise_or)
+  
+  // 模拟按位异或操作：1100 ^ 1010 = 0110 (6)
+  let bitwise_xor = a ^ b
+  assert_eq(6, bitwise_xor)
+  
+  // 模拟左移操作：12 << 2 = 48
+  let left_shift = multiply(a, 4)
+  assert_eq(48, left_shift)
+  
+  // 模拟右移操作：12 >> 2 = 3
+  let right_shift = divide_with_ceil(a, 4)
+  assert_eq(3, right_shift)
+}
+
+test "scientific_calculation_simulation" {
+  // 模拟科学计算场景
+  // 计算自由落体距离：s = 0.5 * g * t^2
+  let gravity = 98  // 重力加速度 (cm/s^2)
+  let time = 5      // 时间 (秒)
+  
+  // s = 0.5 * 98 * 5^2 = 49 * 25 = 1225
+  let distance = multiply(divide_with_ceil(gravity, 2), multiply(time, time))
+  assert_eq(1225, distance)
+  
+  // 计算动能：KE = 0.5 * m * v^2
+  let mass = 1000    // 质量 (kg)
+  let velocity = 20  // 速度 (m/s)
+  
+  // KE = 0.5 * 1000 * 20^2 = 500 * 400 = 200000
+  let kinetic_energy = multiply(divide_with_ceil(mass, 2), multiply(velocity, velocity))
+  assert_eq(200000, kinetic_energy)
+}
+
+test "data_structure_operations_enhanced" {
+  // 模拟高级数据结构操作
+  // 模拟哈希表的大小调整
+  let initial_capacity = 16
+  let load_factor = 75  // 75%
+  let current_size = 12
+  
+  // 计算是否需要扩容：current_size * 100 / initial_capacity > load_factor
+  let current_load = divide_with_ceil(multiply(current_size, 100), initial_capacity)
+  let needs_resize = if current_load > load_factor { 1 } else { 0 }
+  assert_eq(1, needs_resize)
+  
+  // 计算新的容量（翻倍）
+  let new_capacity = multiply(initial_capacity, 2)
+  assert_eq(32, new_capacity)
+  
+  // 模拟优先队列的操作
+  let heap_size = 15
+  let parent_index = 3
+  let left_child = add(multiply(parent_index, 2), 1)
+  let right_child = multiply(parent_index + 1, 2)
+  
+  assert_eq(7, left_child)
+  assert_eq(8, right_child)
+}
+
+test "algorithm_complexity_comparison" {
+  // 模拟不同算法的时间复杂度比较
+  let input_size = 1000
+  
+  // O(1) 常数时间
+  let constant_time = 1
+  
+  // O(log n) 对数时间
+  let logarithmic_time = divide_with_ceil(
+    multiply(input_size, 10), 
+    multiply(input_size, 2)
+  )
+  
+  // O(n) 线性时间
+  let linear_time = multiply(input_size, 1)
+  
+  // O(n log n) 线性对数时间
+  let n_log_n_time = multiply(input_size, logarithmic_time)
+  
+  // O(n²) 平方时间
+  let quadratic_time = divide_with_ceil(multiply(input_size, input_size), 10)
+  
+  assert_eq(1, constant_time)
+  assert_eq(5, logarithmic_time)
+  assert_eq(1000, linear_time)
+  assert_eq(5000, n_log_n_time)
+  assert_eq(100000, quadratic_time)
+}
+
+test "numerical_precision_enhanced" {
+  // 测试数值精度和稳定性
+  // 测试大数运算的精度保持
+  let large_number_1 = 1000000
+  let large_number_2 = 999999
+  
+  // 测试大数相减的精度
+  let large_diff = add(large_number_1, -large_number_2)
+  assert_eq(1, large_diff)
+  
+  // 测试连续运算的精度累积
+  let precision_test = add(
+    multiply(100, 100),
+    add(multiply(50, 50), multiply(25, 25))
+  )
+  assert_eq(18750, precision_test)
+  
+  // 测试除法精度
+  let precision_div_1 = divide_with_ceil(multiply(1000, 3), 10)
+  let precision_div_2 = multiply(divide_with_ceil(1000, 10), 3)
+  
+  assert_eq(300, precision_div_1)
+  assert_eq(300, precision_div_2)
+}
+
+test "conditional_logic_simulation" {
+  // 模拟条件逻辑和分支
+  let score = 85
+  let attendance = 90
+  let projects = 88
+  
+  // 计算加权分数：score * 0.6 + attendance * 0.2 + projects * 0.2
+  let weighted_score = add(
+    add(
+      divide_with_ceil(multiply(score, 60), 100),
+      divide_with_ceil(multiply(attendance, 20), 100)
+    ),
+    divide_with_ceil(multiply(projects, 20), 100)
+  )
+  
+  // 根据分数确定等级
+  let grade = if weighted_score >= 90 {
+    "A"
+  } else if weighted_score >= 80 {
+    "B"
+  } else if weighted_score >= 70 {
+    "C"
+  } else if weighted_score >= 60 {
+    "D"
+  } else {
+    "F"
+  }
+  
+  assert_eq(86, weighted_score)
+  assert_eq_string("B", grade)
+  
+  // 测试复杂条件组合
+  let is_excellent = if weighted_score >= 85 && attendance >= 85 && projects >= 85 {
+    1
+  } else {
+    0
+  }
+  assert_eq(1, is_excellent)
+}
+
+test "loop_accumulation_simulation" {
+  // 模拟循环累加操作
+  // 模拟 for i = 1 to 10: sum += i
+  let mut sum_val = 0
+  sum_val = add(sum_val, 1)  // i = 1
+  sum_val = add(sum_val, 2)  // i = 2
+  sum_val = add(sum_val, 3)  // i = 3
+  sum_val = add(sum_val, 4)  // i = 4
+  sum_val = add(sum_val, 5)  // i = 5
+  sum_val = add(sum_val, 6)  // i = 6
+  sum_val = add(sum_val, 7)  // i = 7
+  sum_val = add(sum_val, 8)  // i = 8
+  sum_val = add(sum_val, 9)  // i = 9
+  sum_val = add(sum_val, 10) // i = 10
+  
+  assert_eq(55, sum_val)  // 1+2+3+...+10 = 55
+  
+  // 模拟阶乘计算：5! = 5 * 4 * 3 * 2 * 1
+  let mut factorial_val = 1
+  factorial_val = multiply(factorial_val, 5)  // 1 * 5
+  factorial_val = multiply(factorial_val, 4)  // 5 * 4
+  factorial_val = multiply(factorial_val, 3)  // 20 * 3
+  factorial_val = multiply(factorial_val, 2)  // 60 * 2
+  factorial_val = multiply(factorial_val, 1)  // 120 * 1
+  
+  assert_eq(120, factorial_val)
+}
+
+test "string_processing_enhanced" {
+  // 增强的字符串处理测试
+  // 测试复杂的字符串组合
+  let first_name = "John"
+  let last_name = "Doe"
+  let middle_initial = "W"
+  let title = "Dr."
+  
+  // 构建完整姓名
+  let full_name = first_name + " " + middle_initial + ". " + last_name
+  let formal_name = title + " " + full_name
+  let greeting_formal = greet(formal_name)
+  
+  assert_eq_string("Hello, Dr. John W. Doe!", greeting_formal)
+  
+  // 测试包含特殊字符的字符串
+  let email = "user@example.com"
+  let phone = "+1-555-123-4567"
+  let address = "123 Main St., Apt. 4B"
+  
+  assert_eq_string("Hello, user@example.com!", greet(email))
+  assert_eq_string("Hello, +1-555-123-4567!", greet(phone))
+  assert_eq_string("Hello, 123 Main St., Apt. 4B!", greet(address))
+  
+  // 测试超长字符串
+  let long_string = "This is a very long string that contains multiple words and spaces"
+  assert_eq_string("Hello, This is a very long string that contains multiple words and spaces!", greet(long_string))
+}
+
+test "error_recovery_mechanism" {
+  // 测试错误恢复机制
+  // 模拟输入验证和错误处理
+  let user_input = -5
+  let min_value = 0
+  let max_value = 100
+  
+  // 输入验证：确保输入在有效范围内
+  let validated_input = if user_input < min_value {
+    min_value
+  } else if user_input > max_value {
+    max_value
+  } else {
+    user_input
+  }
+  
+  assert_eq(0, validated_input)
+  
+  // 测试除法错误的恢复
+  let dividend = 100
+  let divisor = 0
+  
+  // 安全除法：处理除数为零的情况
+  let safe_result = if divisor == 0 {
+    0  // 默认值
+  } else {
+    divide_with_ceil(dividend, divisor)
+  }
+  
+  assert_eq(0, safe_result)
+  
+  // 测试链式操作中的错误恢复
+  let chain_result = add(
+    multiply(10, 5),
+    add(0, -divide_with_ceil(20, 0))  // 这里的除法返回0
+  )
+  assert_eq(50, chain_result)
+}
+
+test "performance_benchmark_calculation" {
+  // 性能基准测试计算
+  let base_operations = 1000
+  let optimization_factor = 4
+  let overhead_percentage = 15
+  
+  // 计算优化后的性能
+  let optimized_operations = multiply(base_operations, optimization_factor)
+  assert_eq(4000, optimized_operations)
+  
+  // 计算系统开销
+  let overhead = divide_with_ceil(multiply(optimized_operations, overhead_percentage), 100)
+  assert_eq(600, overhead)
+  
+  // 计算实际性能
+  let actual_performance = add(optimized_operations, -overhead)
+  assert_eq(3400, actual_performance)
+  
+  // 计算性能提升倍数
+  let performance_improvement = divide_with_ceil(actual_performance, base_operations)
+  assert_eq(4, performance_improvement)
+  
+  // 计算效率百分比
+  let efficiency_percentage = divide_with_ceil(
+    multiply(actual_performance, 100), 
+    optimized_operations
+  )
+  assert_eq(85, efficiency_percentage)
+  
+  // 模拟内存使用计算
+  let memory_per_operation = 1024  // bytes
+  let total_memory_usage = multiply(actual_performance, memory_per_operation)
+  let memory_mb = divide_with_ceil(total_memory_usage, multiply(1024, 1024))
+  
+  assert_eq(3481600, total_memory_usage)
+  assert_eq(4, memory_mb)
+}
+
