@@ -1,0 +1,6 @@
+azimuth_test/azimuth_enhanced_test_cases.mbt:35:18-35:26 [E0002] Warning (unused_value): Unused variable 'expected'
+azimuth_test/azimuth_enhanced_test_cases.mbt:35:34-35:40 [E0002] Warning (unused_value): Unused variable 'actual'
+azimuth_test/azimuth_enhanced_test_cases.mbt:39:25-39:33 [E0002] Warning (unused_value): Unused variable 'expected'
+azimuth_test/azimuth_enhanced_test_cases.mbt:39:44-39:50 [E0002] Warning (unused_value): Unused variable 'actual'
+azimuth_test/azimuth_enhanced_test_cases.mbt:43:20-43:29 [E0002] Warning (unused_value): Unused variable 'condition'
+azimuth_test/azimuth_enhanced_test_cases.mbt:47:21-47:30 [E0002] Warning (unused_value): Unused variable 'condition'
