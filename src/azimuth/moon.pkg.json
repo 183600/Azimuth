@@ -15,7 +15,8 @@
     "new_standard_moonbit_test_cases.mbt",
     "my_standard_azimuth_tests.mbt",
     "simple_new_test.mbt",
-    "final_simple_test.mbt"
+    "final_simple_test.mbt",
+    "azimuth_standard_quality_tests.mbt"
   ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [
