@@ -9,6 +9,7 @@
   ],
   "test": [
     "quality_test_cases.mbt",
+    "test/standard_azimuth_basic_tests.mbt",
     "standard_moonbit_tests.mbt",
     "standard_azimuth_core_tests.mbt",
     "high_quality_test_cases.mbt",
