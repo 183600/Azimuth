@@ -26,7 +26,8 @@
     "simple_azimuth_tests.mbt",
     "advanced_test_scenarios.mbt",
     "standard_enhanced_test_cases.mbt",
-    "standard_moonbit_test_cases.mbt"
+    "standard_moonbit_test_cases.mbt",
+    "azimuth_enhanced_test_cases.mbt"
   ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [
