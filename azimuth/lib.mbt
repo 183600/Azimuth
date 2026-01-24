@@ -545,31 +545,40 @@ test "algorithm_complexity_validation" {
   assert_eq(300, efficiency_ratio)
 }
 
-test "resource_optimization_problem" {
+test "resource_optimization_problem_new" {
   // 资源优化问题测试
   // 场景：仓库存储优化
-  let items = [
-    (25, 8),   // (数量, 每箱容量)
-    (47, 12),
-    (156, 20),
-    (89, 15)
-  ]
+  // 使用单独的变量而不是数组来避免导入问题
   
-  // 计算每种物品需要的箱子数量
-  let boxes_1 = divide_with_ceil(items[0].0, items[0].1)  // ceil(25/8) = 4
-  let boxes_2 = divide_with_ceil(items[1].0, items[1].1)  // ceil(47/12) = 4
-  let boxes_3 = divide_with_ceil(items[2].0, items[2].1)  // ceil(156/20) = 8
-  let boxes_4 = divide_with_ceil(items[3].0, items[3].1)  // ceil(89/15) = 6
+  // 物品1：25个，每箱容量8
+  let item1_quantity = 25
+  let item1_capacity = 8
+  let boxes_1 = divide_with_ceil(item1_quantity, item1_capacity)  // ceil(25/8) = 4
+  
+  // 物品2：47个，每箱容量12
+  let item2_quantity = 47
+  let item2_capacity = 12
+  let boxes_2 = divide_with_ceil(item2_quantity, item2_capacity)  // ceil(47/12) = 4
+  
+  // 物品3：156个，每箱容量20
+  let item3_quantity = 156
+  let item3_capacity = 20
+  let boxes_3 = divide_with_ceil(item3_quantity, item3_capacity)  // ceil(156/20) = 8
+  
+  // 物品4：89个，每箱容量15
+  let item4_quantity = 89
+  let item4_capacity = 15
+  let boxes_4 = divide_with_ceil(item4_quantity, item4_capacity)  // ceil(89/15) = 6
   
   // 计算总箱子数
   let total_boxes = add(add(boxes_1, boxes_2), add(boxes_3, boxes_4))
   assert_eq(22, total_boxes)
   
   // 计算总存储容量
-  let capacity_1 = multiply(boxes_1, items[0].1)  // 4 * 8 = 32
-  let capacity_2 = multiply(boxes_2, items[1].1)  // 4 * 12 = 48
-  let capacity_3 = multiply(boxes_3, items[2].1)  // 8 * 20 = 160
-  let capacity_4 = multiply(boxes_4, items[3].1)  // 6 * 15 = 90
+  let capacity_1 = multiply(boxes_1, item1_capacity)  // 4 * 8 = 32
+  let capacity_2 = multiply(boxes_2, item2_capacity)  // 4 * 12 = 48
+  let capacity_3 = multiply(boxes_3, item3_capacity)  // 8 * 20 = 160
+  let capacity_4 = multiply(boxes_4, item4_capacity)  // 6 * 15 = 90
   
   let total_capacity = add(add(capacity_1, capacity_2), add(capacity_3, capacity_4))
   assert_eq(330, total_capacity)
@@ -677,7 +686,7 @@ test "error_handling_and_boundaries" {
   assert_eq(0, divide_with_ceil(0, 1))
 }
 
-test "string_processing_comprehensive" {
+test "string_processing_comprehensive_new" {
   // 字符串处理综合测试
   assert_eq_string("Hello, single!", greet("single"))
   assert_eq_string("Hello, space test!", greet("space test"))
@@ -727,7 +736,7 @@ test "error_boundary_conditions" {
   assert_eq(0, divide_with_ceil(-2147483648, 0))  // 最小值/0
 }
 
-test "string_encoding_handling" {
+test "string_encoding_handling_new" {
   // 字符串编码处理测试
   assert_eq_string("Hello, 🌙⭐!", greet("🌙⭐"))
   assert_eq_string("Hello, \n\r\t!", greet("\n\r\t"))
@@ -761,17 +770,20 @@ test "complex_financial_calculations" {
 
 test "algorithm_complexity_analysis" {
   // 算法复杂度分析测试
-  let input_sizes = [10, 100, 1000]
+  // 使用单独的变量而不是数组来避免导入问题
+  let input_size_10 = 10
+  let input_size_100 = 100
+  let input_size_1000 = 1000
   
   // 模拟O(n)算法
-  let linear_10 = multiply(input_sizes[0], 2)
-  let linear_100 = multiply(input_sizes[1], 2)
-  let linear_1000 = multiply(input_sizes[2], 2)
+  let linear_10 = multiply(input_size_10, 2)
+  let linear_100 = multiply(input_size_100, 2)
+  let linear_1000 = multiply(input_size_1000, 2)
   
   // 模拟O(log n)算法（简化为除法）
-  let log_10 = divide_with_ceil(input_sizes[0], 3)
-  let log_100 = divide_with_ceil(input_sizes[1], 3)
-  let log_1000 = divide_with_ceil(input_sizes[2], 3)
+  let log_10 = divide_with_ceil(input_size_10, 3)
+  let log_100 = divide_with_ceil(input_size_100, 3)
+  let log_1000 = divide_with_ceil(input_size_1000, 3)
   
   // 验证复杂度特征
   assert_eq(20, linear_10)
@@ -803,7 +815,7 @@ test "data_structure_operations" {
   assert_true(can_add_more)
 }
 
-test "resource_utilization_optimization" {
+test "resource_utilization_optimization_new" {
   // 资源利用优化测试
   // 场景：服务器资源分配
   let total_memory = 16384  // GB
@@ -1695,7 +1707,7 @@ test "string_edge_cases_comprehensive" {
   assert_eq_string("Hello, !", greet(""))
   assert_eq_string("Hello,   !", greet("   "))
   assert_eq_string("Hello, \n\r\t!", greet("\n\r\t"))
-  assert_eq_string("Hello, \0!", greet("\0"))
+  assert_eq_string("Hello, \\0!", greet("\\0"))
   assert_eq_string("Hello, \\\"!", greet("\""))
   assert_eq_string("Hello, \\\\!", greet("\\"))
   assert_eq_string("Hello, null!", greet("null"))
@@ -1734,24 +1746,38 @@ test "complex_mathematical_series" {
 test "real_world_logistics_optimization" {
   // 真实世界物流优化测试
   // 场景：多仓库货物分配
-  let warehouses = [(100, 25), (150, 40), (80, 20), (200, 35)]  // (货物数量，每车容量)
+  // 使用单独的变量而不是数组来避免导入问题
   
-  // 计算每个仓库需要的车辆数
-  let trucks_1 = divide_with_ceil(warehouses[0].0, warehouses[0].1)  // ceil(100/25) = 4
-  let trucks_2 = divide_with_ceil(warehouses[1].0, warehouses[1].1)  // ceil(150/40) = 4
-  let trucks_3 = divide_with_ceil(warehouses[2].0, warehouses[2].1)  // ceil(80/20) = 4
-  let trucks_4 = divide_with_ceil(warehouses[3].0, warehouses[3].1)  // ceil(200/35) = 6
+  // 仓库1：100个货物，每车容量25
+  let warehouse1_goods = 100
+  let warehouse1_capacity = 25
+  let trucks_1 = divide_with_ceil(warehouse1_goods, warehouse1_capacity)  // ceil(100/25) = 4
+  
+  // 仓库2：150个货物，每车容量40
+  let warehouse2_goods = 150
+  let warehouse2_capacity = 40
+  let trucks_2 = divide_with_ceil(warehouse2_goods, warehouse2_capacity)  // ceil(150/40) = 4
+  
+  // 仓库3：80个货物，每车容量20
+  let warehouse3_goods = 80
+  let warehouse3_capacity = 20
+  let trucks_3 = divide_with_ceil(warehouse3_goods, warehouse3_capacity)  // ceil(80/20) = 4
+  
+  // 仓库4：200个货物，每车容量35
+  let warehouse4_goods = 200
+  let warehouse4_capacity = 35
+  let trucks_4 = divide_with_ceil(warehouse4_goods, warehouse4_capacity)  // ceil(200/35) = 6
   
   let total_trucks = add(add(trucks_1, trucks_2), add(trucks_3, trucks_4))
   assert_eq(18, total_trucks)
   
   // 计算总运力和利用率
   let total_capacity = add(
-    multiply(trucks_1, warehouses[0].1),
-    add(multiply(trucks_2, warehouses[1].1), 
-    add(multiply(trucks_3, warehouses[2].1), multiply(trucks_4, warehouses[3].1)))
+    multiply(trucks_1, warehouse1_capacity),
+    add(multiply(trucks_2, warehouse2_capacity), 
+    add(multiply(trucks_3, warehouse3_capacity), multiply(trucks_4, warehouse4_capacity)))
   )
-  let total_goods = add(add(warehouses[0].0, warehouses[1].0), add(warehouses[2].0, warehouses[3].0))
+  let total_goods = add(add(warehouse1_goods, warehouse2_goods), add(warehouse3_goods, warehouse4_goods))
   
   assert_eq(530, total_capacity)  // 4*25 + 4*40 + 4*20 + 6*35
   assert_eq(530, total_goods)     // 100 + 150 + 80 + 200
@@ -1779,30 +1805,34 @@ test "advanced_error_recovery_scenarios" {
 test "statistical_analysis_operations" {
   // 统计分析操作测试
   // 计算平均值（使用向上取整）
-  let numbers = [10, 20, 30, 40, 50]
-  let sum = add(add(add(add(numbers[0], numbers[1]), numbers[2]), numbers[3]), numbers[4])
+  // 使用单独的变量而不是数组来避免导入问题
+  let num1 = 10
+  let num2 = 20
+  let num3 = 30
+  let num4 = 40
+  let num5 = 50
+  let sum = add(add(add(add(num1, num2), num3), num4), num5)
   let count = 5
   let average = divide_with_ceil(sum, count)
   assert_eq(30, average)  // ceil(150/5) = 30
   
   // 计算方差（简化）
-  let deviations = [
-    subtract(numbers[0], average),  // -20
-    subtract(numbers[1], average),  // -10
-    subtract(numbers[2], average),  // 0
-    subtract(numbers[3], average),  // 10
-    subtract(numbers[4], average)   // 20
-  ]
+  // 使用单独的变量而不是数组来避免导入问题
+  let dev1 = subtract(num1, average)
+  let dev2 = subtract(num2, average)
+  let dev3 = subtract(num3, average)
+  let dev4 = subtract(num4, average)
+  let dev5 = subtract(num5, average)
+    // dev1 = -20, dev2 = -10, dev3 = 0, dev4 = 10, dev5 = 20
   
-  let squared_deviations = [
-    multiply(deviations[0], deviations[0]),  // 400
-    multiply(deviations[1], deviations[1]),  // 100
-    multiply(deviations[2], deviations[2]),  // 0
-    multiply(deviations[3], deviations[3]),  // 100
-    multiply(deviations[4], deviations[4])   // 400
-  ]
+  // 计算平方偏差
+  let squared_dev1 = multiply(dev1, dev1)  // 400
+  let squared_dev2 = multiply(dev2, dev2)  // 100
+  let squared_dev3 = multiply(dev3, dev3)  // 0
+    let squared_dev4 = multiply(dev4, dev4)  // 100
+  let squared_dev5 = multiply(dev5, dev5)  // 400
   
-  let variance_sum = add(add(add(add(squared_deviations[0], squared_deviations[1]), squared_deviations[2]), squared_deviations[3]), squared_deviations[4])
+  let variance_sum = add(add(add(add(squared_dev1, squared_dev2), squared_dev3), squared_dev4), squared_dev5)
   let variance = divide_with_ceil(variance_sum, count)
   assert_eq(200, variance)  // ceil(1000/5) = 200
 }
@@ -2022,6 +2052,186 @@ test "new_real_world_calculation_scenario" {
   
   // 验证总座位数正确
   assert_eq(88, total_seats)
+}
+
+// 新增的10个标准 MoonBit 测试用例
+test "boundary_condition_extreme_values_new" {
+  // 边界条件极值测试
+  assert_eq(2147483646, add(2147483645, 1))  // 接近Int最大值
+  assert_eq(-2147483647, add(-2147483646, -1))  // 接近Int最小值
+  assert_eq(1, divide_with_ceil(2147483646, 2147483646))
+  assert_eq(0, divide_with_ceil(-2147483647, 2147483646))
+}
+
+test "performance_large_scale_computations_new" {
+  // 大规模运算性能测试
+  let large_number = 100000
+  let iterations = 10
+  
+  // 测试大数加法
+  let sum_result = add(large_number, large_number)
+  assert_eq(200000, sum_result)
+  
+  // 测试大数乘法
+  let product_result = multiply(large_number, iterations)
+  assert_eq(1000000, product_result)
+  
+  // 测试大数除法
+  let division_result = divide_with_ceil(product_result, large_number)
+  assert_eq(10, division_result)
+}
+
+test "error_handling_division_by_zero_new" {
+  // 除零错误处理测试
+  assert_eq(0, divide_with_ceil(100, 0))  // 正数除零
+  assert_eq(0, divide_with_ceil(-100, 0))  // 负数除零
+  assert_eq(0, divide_with_ceil(0, 0))  // 零除零
+  assert_eq(0, divide_with_ceil(2147483647, 0))  // 最大值除零
+  assert_eq(0, divide_with_ceil(-2147483648, 0))  // 最小值除零
+}
+
+test "internationalization_unicode_support_new" {
+  // 国际化Unicode支持测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+  assert_eq_string("Hello, 🌙⭐!", greet("🌙⭐"))
+  assert_eq_string("Hello, 🏳️‍🌈!", greet("🏳️‍🌈"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+  assert_eq_string("Hello, עברית!", greet("עברית"))
+}
+
+test "complex_business_logic_inventory_new" {
+  // 复杂业务逻辑：库存管理测试
+  let product_types = 5
+  let average_quantity = 150
+  let box_capacity = 24
+  
+  // 计算总库存量
+  let total_inventory = multiply(product_types, average_quantity)
+  assert_eq(750, total_inventory)
+  
+  // 计算需要的箱子数量
+  let boxes_needed = divide_with_ceil(total_inventory, box_capacity)
+  assert_eq(32, boxes_needed)  // ceil(750/24) = 32
+  
+  // 计算总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(768, total_capacity)
+  
+  // 计算剩余空间
+  let remaining_space = subtract(total_capacity, total_inventory)
+  assert_eq(18, remaining_space)
+}
+
+test "algorithm_complexity_analysis_new" {
+  // 算法复杂度分析测试
+  let input_size = 1000
+  
+  // O(1) 常数时间操作
+  let constant_time = add(5, 10)
+  assert_eq(15, constant_time)
+  
+  // O(n) 线性时间操作模拟
+  let linear_time = multiply(input_size, 2)
+  assert_eq(2000, linear_time)
+  
+  // O(log n) 对数时间操作模拟
+  let logarithmic_time = divide_with_ceil(input_size, 100)
+  assert_eq(10, logarithmic_time)
+  
+  // 验证复杂度关系
+  let comparison1 = subtract(linear_time, logarithmic_time)
+  let comparison2 = subtract(linear_time, constant_time)
+  assert_eq(1990, comparison1)  // linear_time > logarithmic_time
+  assert_eq(1985, comparison2)  // linear_time > constant_time
+}
+
+test "data_type_conversion_edge_cases_new" {
+  // 数据类型转换边缘情况测试
+  // 测试零值转换
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 12345))
+  assert_eq(0, divide_with_ceil(0, 12345))
+  
+  // 测试单位值转换
+  assert_eq(1, add(1, 0))
+  assert_eq(1, multiply(1, 1))
+  assert_eq(1, divide_with_ceil(1, 1))
+  
+  // 测试负值转换
+  assert_eq(-1, add(0, -1))
+  assert_eq(-1, multiply(-1, 1))
+  assert_eq(-1, divide_with_ceil(-1, 1))
+}
+
+test "security_input_validation_new" {
+  // 安全性输入验证测试
+  // 测试空字符串和特殊字符
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, null!", greet("null"))
+  assert_eq_string("Hello, undefined!", greet("undefined"))
+  assert_eq_string("Hello, <script>!", greet("<script>"))
+  assert_eq_string("Hello, SELECT * FROM!", greet("SELECT * FROM"))
+  assert_eq_string("Hello, ../etc/passwd!", greet("../etc/passwd"))
+  
+  // 测试数值边界安全
+  assert_eq(0, divide_with_ceil(2147483647, 0))  // 防止整数溢出
+  assert_eq(0, divide_with_ceil(-2147483648, 0))  // 防止整数下溢
+}
+
+test "compatibility_backward_compatibility_new" {
+  // 兼容性和向后兼容性测试
+  // 测试基本运算的兼容性
+  assert_eq(10, add(3, 7))  // 基本加法兼容性
+  assert_eq(21, multiply(3, 7))  // 基本乘法兼容性
+  assert_eq_string("Hello, World!", greet("World"))  // 字符串处理兼容性
+  
+  // 测试边界情况兼容性
+  assert_eq(0, multiply(2147483647, 0))  // 大数与零相乘
+  assert_eq(2147483647, multiply(2147483647, 1))  // 大数与一相乘
+  assert_eq(1, divide_with_ceil(2147483647, 2147483647))  // 相等大数相除
+  
+  // 测试负数兼容性
+  assert_eq(-10, add(-3, -7))
+  assert_eq(21, multiply(-3, -7))
+  assert_eq(-4, divide_with_ceil(-10, 3))
+}
+
+test "real_world_financial_calculations_new" {
+  // 真实世界金融计算测试
+  // 场景：贷款分期计算
+  let loan_amount = 50000
+  let monthly_payment = 2200
+  let months_needed = divide_with_ceil(loan_amount, monthly_payment)
+  assert_eq(23, months_needed)  // ceil(50000/2200) = 23
+  
+  // 计算总支付金额
+  let total_payment = multiply(months_needed, monthly_payment)
+  assert_eq(50600, total_payment)
+  
+  // 计算最后一个月的实际支付金额
+  let final_payment = subtract(total_payment, multiply(months_needed - 1, monthly_payment))
+  assert_eq(200, final_payment)
+  
+  // 场景：投资回报计算
+  let initial_investment = 10000
+  let return_rate = 8  // 8%
+  
+  // 简化的年复利计算
+  let year1 = add(initial_investment, divide_with_ceil(multiply(initial_investment, return_rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, return_rate), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, return_rate), 100))
+  let year4 = add(year3, divide_with_ceil(multiply(year3, return_rate), 100))
+  let year5 = add(year4, divide_with_ceil(multiply(year4, return_rate), 100))
+  
+  // 验证投资增长
+  assert_eq(10800, year1)  // 10000 + 8%
+  assert_eq(11664, year2)  // 10800 + 8%
+  assert_eq(12597, year3)  // 11664 + 8%
+  assert_eq(13605, year4)  // 12597 + 8%
+  assert_eq(14693, year5)  // 13605 + 8%
 }
 
 
