@@ -35,7 +35,6 @@
     "standard_azimuth_core_tests.mbt",
     "standard_moonbit_tests.mbt",
     "high_quality_azimuth_tests.mbt",
-    "standard_moonbit_test_suite.mbt",
     "simple_core_tests.mbt",
     "simple_concise_tests.mbt",
     "concise_standard_tests.mbt",
