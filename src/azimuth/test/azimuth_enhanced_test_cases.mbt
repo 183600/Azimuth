@@ -29,8 +29,8 @@ test "string_comparison" {
   let medium = "Hello, World!"
   let long = "This is a very long string for testing purposes"
   
-  assert_true(short < medium)
-  assert_true(medium < long)
+  @azimuth.assert_true(short < medium)
+  @azimuth.assert_true(medium < long)
 }
 
 // 测试数值范围和边界
@@ -39,13 +39,13 @@ test "numeric_ranges" {
   let negative = -42
   let zero = 0
   
-  assert_true(positive > 0)
-  assert_true(negative < 0)
-  assert_true(zero == 0)
+  @azimuth.assert_true(positive > 0)
+  @azimuth.assert_true(negative < 0)
+  @azimuth.assert_true(zero == 0)
   
-  assert_true(positive > negative)
-  assert_true(negative < zero)
-  assert_true(positive > zero)
+  @azimuth.assert_true(positive > negative)
+  @azimuth.assert_true(negative < zero)
+  @azimuth.assert_true(positive > zero)
 }
 
 // 测试布尔逻辑
@@ -53,13 +53,13 @@ test "boolean_logic" {
   let true_val = true
   let false_val = false
   
-  assert_true(true_val && true_val)
-  assert_true(true_val || false_val)
-  assert_false(false_val && false_val)
-  assert_false(false_val || false_val)
+  @azimuth.assert_true(true_val && true_val)
+  @azimuth.assert_true(true_val || false_val)
+  @azimuth.assert_false(false_val && false_val)
+  @azimuth.assert_false(false_val || false_val)
   
-  assert_true(true_val != false_val)
-  assert_false(true_val == false_val)
+  @azimuth.assert_true(true_val != false_val)
+  @azimuth.assert_false(true_val == false_val)
 }
 
 // 测试函数组合
