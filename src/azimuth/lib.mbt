@@ -3845,3 +3845,96 @@ test "cache_performance_analysis" {
   assert_eq(16, average_response_time)
 }
 
+// 新增的10个标准 MoonBit 测试用例
+test "azimuth_add_commutative_law" {
+  // 测试加法交换律
+  assert_eq(15, add(8, 7))
+  assert_eq(15, add(7, 8))
+  assert_eq(0, add(-5, 5))
+  assert_eq(0, add(5, -5))
+}
+
+test "azimuth_multiply_distributive_law" {
+  // 测试乘法分配律
+  let a = 6
+  let b = 4
+  let c = 2
+  
+  let left_result = multiply(a, add(b, c))
+  let right_result = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_result, right_result)  // 6 * (4 + 2) = 6 * 4 + 6 * 2 = 36
+}
+
+test "azimuth_greet_unicode_support" {
+  // 测试问候函数的Unicode支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, café!", greet("café"))
+}
+
+test "azimuth_divide_ceil_packaging" {
+  // 测试向上取整除法的业务应用：装盒问题
+  let products = 47
+  let box_capacity = 12
+  let boxes_needed = divide_with_ceil(products, box_capacity)
+  assert_eq(4, boxes_needed)  // ceil(47/12) = 4
+}
+
+test "azimuth_project_management" {
+  // 测试复杂计算流水线：项目管理
+  let tasks = 25
+  let people = 4
+  let tasks_per_person = 2
+  
+  let daily_capacity = multiply(people, tasks_per_person)
+  let days_needed = divide_with_ceil(tasks, daily_capacity)
+  assert_eq(4, days_needed)  // ceil(25/(4*2)) = 4
+}
+
+test "azimuth_math_identity_properties" {
+  // 测试数学恒等式
+  let x = 42
+  
+  // 加法恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(x, add(0, x))
+  
+  // 乘法恒等式
+  assert_eq(x, multiply(x, 1))
+  assert_eq(0, multiply(x, 0))
+}
+
+test "azimuth_budget_allocation" {
+  // 测试资源分配：预算分配
+  let budget = 10000
+  let team_members = 6
+  let max_share = divide_with_ceil(budget, team_members)
+  assert_eq(1667, max_share)  // ceil(10000/6) = 1667
+}
+
+test "azimuth_error_handling" {
+  // 测试错误边界情况
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(0, divide_with_ceil(0, 1))
+}
+
+test "azimuth_string_processing" {
+  // 测试字符串边界情况
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, a!", greet("a"))
+}
+
+test "azimuth_event_planning" {
+  // 测试真实世界场景：活动策划
+  let participants = 87
+  let chairs_per_table = 8
+  let tables_needed = divide_with_ceil(participants, chairs_per_table)
+  assert_eq(11, tables_needed)  // ceil(87/8) = 11
+  
+  let total_seats = multiply(tables_needed, chairs_per_table)
+  assert_eq(88, total_seats)
+}
+
