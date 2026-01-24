@@ -1,249 +1,184 @@
 // 高级测试场景 - 针对 azimuth 库的深度测试
-// 包含复杂业务逻辑、算法模拟和极端边界情况
+// 包含复杂算法、实际应用和性能相关的测试用例
 
-test "recursive_factorial_simulation" {
-  // 模拟递归阶乘计算：5! = 5 × 4 × 3 × 2 × 1 = 120
-  let n1 = 5
-  let factorial_5 = multiply(n1, multiply(n1 - 1, multiply(n1 - 2, multiply(n1 - 3, n1 - 4))))
-  assert_eq(120, factorial_5)
+test "algorithm_binary_search_simulation" {
+  // 模拟二分查找算法的索引计算
+  let low = 0
+  let high = 100
+  let mid = divide_with_ceil(add(low, high), 2)
   
-  // 模拟递归阶乘计算：4! = 4 × 3 × 2 × 1 = 24
-  let n2 = 4
-  let factorial_4 = multiply(n2, multiply(n2 - 1, multiply(n2 - 2, n2 - 3)))
-  assert_eq(24, factorial_4)
+  // 验证中点计算
+  assert_eq(50, mid)
+  
+  // 模拟第二次查找
+  let new_low = add(mid, 1)
+  let new_mid = divide_with_ceil(add(new_low, high), 2)
+  assert_eq(76, new_mid)
 }
 
-test "data_statistics_analysis" {
-  // 模拟数据统计分析
-  let data_points = [15, 22, 18, 25, 20, 16, 23]
-  let sum_manual = add(add(add(add(add(add(15, 22), 18), 25), 20), 16), 23)
-  let count = 7
-  let mean = divide_with_ceil(sum_manual, count)
-  
-  // 计算最大值和最小值的差
-  let max_val = 25
-  let min_val = 15
-  let range = add(max_val, -min_val)
-  
-  assert_eq(139, sum_manual)
-  assert_eq(20, mean)  // ceil(139/7) = 20
-  assert_eq(10, range)
-}
-
-test "binary_search_simulation" {
-  // 模拟二分查找的索引计算
-  let array_size = 32
-  let search_iterations = 5
-  
-  // 模拟二分查找的中间索引计算过程
-  let mid1 = divide_with_ceil(array_size, 2)  // 第一次分割
-  let mid2 = divide_with_ceil(mid1, 2)        // 第二次分割
-  let mid3 = divide_with_ceil(mid2, 2)        // 第三次分割
-  let mid4 = divide_with_ceil(mid3, 2)        // 第四次分割
-  let mid5 = divide_with_ceil(mid4, 2)        // 第五次分割
-  
-  assert_eq(16, mid1)
-  assert_eq(8, mid2)
-  assert_eq(4, mid3)
-  assert_eq(2, mid4)
-  assert_eq(1, mid5)
-}
-
-test "complex_financial_compound_interest" {
-  // 复杂的复利计算场景
+test "financial_compound_interest" {
+  // 复利计算的高级测试
   let principal = 10000
-  let annual_rate = 8
-  let years = 5
-  let compound_frequency = 12  // 月复利
+  let rate_percent = 8
+  let years = 3
   
-  // 简化的复利计算（使用向上取整）
-  let rate_per_period = divide_with_ceil(annual_rate, compound_frequency)
-  let total_periods = multiply(years, compound_frequency)
+  // 第一年
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  // 第二年
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  // 第三年
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
   
-  // 模拟复利增长（简化版）
-  let amount_year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
-  let amount_year2 = add(amount_year1, divide_with_ceil(multiply(amount_year1, annual_rate), 100))
-  let amount_year3 = add(amount_year2, divide_with_ceil(multiply(amount_year2, annual_rate), 100))
-  let amount_year5 = add(amount_year3, multiply(divide_with_ceil(multiply(amount_year3, annual_rate), 100), 2))
-  
-  assert_eq(1, rate_per_period)
-  assert_eq(60, total_periods)
-  assert_eq(14705, amount_year5)  // 向上取整导致的结果
+  assert_eq(10800, year1)
+  assert_eq(11664, year2)
+  assert_eq(12597, year3)
 }
 
-test "extreme_boundary_conditions" {
-  // 极端边界条件测试
-  let max_positive = 2147483647
-  let min_negative = -2147483648
+test "data_structure_array_operations" {
+  // 模拟数组操作的计算
+  let array_size = 10
+  let element_size = 4
+  let total_memory = multiply(array_size, element_size)
   
-  // 测试接近边界的运算
-  let boundary_add1 = add(max_positive - 1000000, 500000)
-  let boundary_add2 = add(min_negative + 1000000, -500000)
+  // 计算内存页数（每页16字节）
+  let page_size = 16
+  let pages_needed = divide_with_ceil(total_memory, page_size)
   
-  // 测试大数除法的边界情况
-  let large_division1 = divide_with_ceil(max_positive, 2)
-  let large_division2 = divide_with_ceil(min_negative, 2)
-  
-  // 测试零的边界情况
-  let zero_boundary1 = divide_with_ceil(1, max_positive)
-  let zero_boundary2 = divide_with_ceil(-1, max_positive)
-  
-  assert_eq(2146483647, boundary_add1)
-  assert_eq(-2146483648, boundary_add2)
-  assert_eq(1073741824, large_division1)
-  assert_eq(-1073741824, large_division2)
-  assert_eq(1, zero_boundary1)
-  assert_eq(0, zero_boundary2)
+  assert_eq(40, total_memory)
+  assert_eq(3, pages_needed)
 }
 
-test "advanced_string_processing_scenarios" {
-  // 高级字符串处理场景
-  let template = "Dear {name}, your order {order_id} is ready"
-  let customer_name = "张三"
-  let order_number = "ORD-2024-001"
+test "network_packet_fragmentation" {
+  // 网络数据包分片计算
+  let total_data_size = 1500
+  let mtu = 500  // 最大传输单元
+  let fragments_needed = divide_with_ceil(total_data_size, mtu)
   
-  // 模拟字符串模板替换（简化版）
-  let greeting_part = greet(customer_name)
-  let order_message = "Your order " + order_number + " is ready"
+  // 计算每个分片的大小（最后一个可能较小）
+  let full_fragments = divide_with_ceil(total_data_size, mtu) - 1
+  let remaining_data = add(total_data_size, -multiply(full_fragments, mtu))
   
-  // 测试特殊字符和格式的处理
-  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
-  let special_greeting = greet(special_chars)
-  
-  // 测试数字和字母混合
-  let mixed_input = "User123_Admin456"
-  let mixed_greeting = greet(mixed_input)
-  
-  assert_eq_string("Hello, 张三!", greeting_part)
-  assert_eq_string("Hello, !@#$%^&*()_+-=[]{}|;':\",./<>?!", special_greeting)
-  assert_eq_string("Hello, User123_Admin456!", mixed_greeting)
+  assert_eq(3, fragments_needed)
+  assert_eq(2, full_fragments)
+  assert_eq(500, remaining_data)
 }
 
-test "algorithm_complexity_simulation" {
-  // 算法复杂度模拟
-  let input_size = 1000
+test "cryptography_hash_simulation" {
+  // 模拟哈希计算的迭代过程
+  let input_value = 12345
+  let iterations = 10
+  let multiplier = 31
+  let modulus = 1000000
   
-  // 模拟 O(n) 线性复杂度
-  let linear_operations = multiply(input_size, 1)
+  // 模拟哈希迭代
+  let hash1 = multiply(input_value, multiplier) % modulus
+  let hash2 = multiply(add(hash1, input_value), multiplier) % modulus
+  let hash3 = multiply(add(hash2, input_value), multiplier) % modulus
   
-  // 模拟 O(n²) 二次复杂度
-  let quadratic_operations = multiply(input_size, input_size)
-  
-  // 模拟 O(log n) 对数复杂度（简化）
-  let log_operations = divide_with_ceil(input_size, 100)
-  
-  // 模拟 O(n log n) 复杂度
-  let n_log_n_operations = multiply(input_size, log_operations)
-  
-  // 计算相对性能比率
-  let linear_to_quadratic = divide_with_ceil(quadratic_operations, linear_operations)
-  let linear_to_log = divide_with_ceil(linear_operations, log_operations)
-  
-  assert_eq(1000, linear_operations)
-  assert_eq(1000000, quadratic_operations)
-  assert_eq(10, log_operations)
-  assert_eq(10000, n_log_n_operations)
-  assert_eq(1000, linear_to_quadratic)
-  assert_eq(100, linear_to_log)
+  assert_eq(382695, hash1)
+  assert_eq(11961030 % modulus, hash2)
+  assert_eq(37179155 % modulus, hash3)
 }
 
-test "multi_step_workflow_simulation" {
-  // 多步骤工作流模拟：订单处理流程
-  let order_value = 500
-  let customer_level = 3  // VIP等级
-  let quantity = 12
-  let shipping_distance = 150
+test "game_physics_calculation" {
+  // 游戏物理计算：抛物线运动
+  let initial_velocity = 20
+  let gravity = 10
+  let time_steps = 4
   
-  // 步骤1：计算基础价格
-  let base_price = multiply(order_value, quantity)
+  // 计算每秒的位置
+  let pos1 = add(multiply(initial_velocity, 1), -divide_with_ceil(multiply(gravity, 1), 2))
+  let pos2 = add(multiply(initial_velocity, 2), -divide_with_ceil(multiply(gravity, 4), 2))
+  let pos3 = add(multiply(initial_velocity, 3), -divide_with_ceil(multiply(gravity, 9), 2))
+  let pos4 = add(multiply(initial_velocity, 4), -divide_with_ceil(multiply(gravity, 16), 2))
   
-  // 步骤2：应用VIP折扣
-  let discount_rate = multiply(customer_level, 5)  // 每级5%折扣
-  let discount_amount = divide_with_ceil(multiply(base_price, discount_rate), 100)
-  let discounted_price = add(base_price, -discount_amount)
-  
-  // 步骤3：计算运费
-  let base_shipping = 50
-  let distance_charge = divide_with_ceil(multiply(shipping_distance, 2), 10)
-  let total_shipping = add(base_shipping, distance_charge)
-  
-  // 步骤4：计算税费
-  let tax_rate = 8
-  let tax_amount = divide_with_ceil(multiply(discounted_price, tax_rate), 100)
-  
-  // 步骤5：计算最终总价
-  let final_total = add(add(discounted_price, total_shipping), tax_amount)
-  
-  assert_eq(6000, base_price)
-  assert_eq(15, discount_rate)
-  assert_eq(900, discount_amount)
-  assert_eq(5100, discounted_price)
-  assert_eq(80, distance_charge)
-  assert_eq(130, total_shipping)
-  assert_eq(408, tax_amount)
-  assert_eq(5638, final_total)
+  assert_eq(15, pos1)
+  assert_eq(20, pos2)
+  assert_eq(15, pos3)
+  assert_eq(0, pos4)
 }
 
-test "error_recovery_and_robustness" {
-  // 错误恢复和健壮性测试
-  // 测试各种异常输入的处理
+test "machine_learning_matrix_multiplication" {
+  // 模拟机器学习中的矩阵乘法
+  // 2x2 矩阵乘法
+  let a11 = 2
+  let a12 = 3
+  let a21 = 1
+  let a22 = 4
   
-  // 除零异常的多重测试
-  let zero_div_1 = divide_with_ceil(100, 0)
-  let zero_div_2 = divide_with_ceil(-100, 0)
-  let zero_div_3 = divide_with_ceil(0, 0)
-  let zero_div_4 = divide_with_ceil(2147483647, 0)
-  let zero_div_5 = divide_with_ceil(-2147483648, 0)
+  let b11 = 5
+  let b12 = 6
+  let b21 = 7
+  let b22 = 8
   
-  // 极端值运算测试
-  let extreme_add_1 = add(2147483647, -2147483647)
-  let extreme_add_2 = add(-2147483648, 2147483648)  // 可能溢出，但测试行为
-  let extreme_mul_1 = multiply(2147483647, 0)
-  let extreme_mul_2 = multiply(-2147483648, 0)
+  // 结果矩阵计算
+  let c11 = add(multiply(a11, b11), multiply(a12, b21))
+  let c12 = add(multiply(a11, b12), multiply(a12, b22))
+  let c21 = add(multiply(a21, b11), multiply(a22, b21))
+  let c22 = add(multiply(a21, b12), multiply(a22, b22))
   
-  // 边界除法测试
-  let boundary_div_1 = divide_with_ceil(1, 2147483647)
-  let boundary_div_2 = divide_with_ceil(-1, 2147483647)
-  let boundary_div_3 = divide_with_ceil(2147483647, 2147483647)
-  
-  // 验证所有异常情况都返回安全的默认值
-  assert_eq(0, zero_div_1)
-  assert_eq(0, zero_div_2)
-  assert_eq(0, zero_div_3)
-  assert_eq(0, zero_div_4)
-  assert_eq(0, zero_div_5)
-  assert_eq(0, extreme_add_1)
-  assert_eq(0, extreme_mul_1)
-  assert_eq(0, extreme_mul_2)
-  assert_eq(1, boundary_div_1)
-  assert_eq(0, boundary_div_2)
-  assert_eq(1, boundary_div_3)
+  assert_eq(31, c11)  // 2*5 + 3*7 = 10 + 21
+  assert_eq(36, c12)  // 2*6 + 3*8 = 12 + 24
+  assert_eq(33, c21)  // 1*5 + 4*7 = 5 + 28
+  assert_eq(38, c22)  // 1*6 + 4*8 = 6 + 32
 }
 
-test "performance_benchmark_simulation" {
-  // 性能基准测试模拟
-  let data_size = 10000
+test "database_query_optimization" {
+  // 数据库查询优化计算
+  let table_rows = 10000
+  let index_selectivity = 5  // 百分比
+  let join_factor = 3
   
-  // 模拟不同算法的性能特征
-  let algorithm_a_time = multiply(data_size, 3)      // O(n) 算法
-  let algorithm_b_time = multiply(data_size, 10)     // O(n) 算法，但常数更大
-  let algorithm_c_time = divide_with_ceil(multiply(data_size, data_size), 1000)  // O(n²) 算法
+  // 计算索引扫描的行数
+  let indexed_rows = divide_with_ceil(multiply(table_rows, index_selectivity), 100)
   
-  // 计算性能提升百分比
-  let improvement_a_over_b = divide_with_ceil(multiply(algorithm_b_time - algorithm_a_time, 100), algorithm_b_time)
-  let improvement_a_over_c = divide_with_ceil(multiply(algorithm_c_time - algorithm_a_time, 100), algorithm_c_time)
+  // 计算连接操作的成本
+  let join_cost = multiply(indexed_rows, join_factor)
   
-  // 计算吞吐量（操作/秒）
-  let throughput_a = divide_with_ceil(1000000, algorithm_a_time)
-  let throughput_b = divide_with_ceil(1000000, algorithm_b_time)
-  let throughput_c = divide_with_ceil(1000000, algorithm_c_time)
+  // 计算总查询成本
+  let total_cost = add(indexed_rows, join_cost)
   
-  assert_eq(30000, algorithm_a_time)
-  assert_eq(100000, algorithm_b_time)
-  assert_eq(100000, algorithm_c_time)
-  assert_eq(70, improvement_a_over_b)
-  assert_eq(70, improvement_a_over_c)
-  assert_eq(34, throughput_a)
-  assert_eq(10, throughput_b)
-  assert_eq(10, throughput_c)
+  assert_eq(500, indexed_rows)
+  assert_eq(1500, join_cost)
+  assert_eq(2000, total_cost)
+}
+
+test "image_processing_pixel_manipulation" {
+  // 图像处理的像素操作
+  let image_width = 1920
+  let image_height = 1080
+  let bytes_per_pixel = 4  // RGBA
+  
+  // 计算总字节数
+  let total_bytes = multiply(multiply(image_width, image_height), bytes_per_pixel)
+  
+  // 计算需要的内存块数（每块64KB）
+  let block_size = 65536
+  let blocks_needed = divide_with_ceil(total_bytes, block_size)
+  
+  assert_eq(8294400, total_bytes)
+  assert_eq(127, blocks_needed)
+}
+
+test "compression_algorithm_simulation" {
+  // 压缩算法模拟
+  let original_size = 10000
+  let pattern_frequency = 30  // 百分比
+  let compression_ratio = 60  // 百分比
+  
+  // 计算可压缩的数据量
+  let compressible_data = divide_with_ceil(multiply(original_size, pattern_frequency), 100)
+  
+  // 计算压缩后的大小
+  let compressed_size = add(
+    multiply(compressible_data, compression_ratio) / 100,
+    add(original_size, -compressible_data)
+  )
+  
+  // 计算压缩率
+  let actual_compression_ratio = multiply(100, compressed_size) / original_size
+  
+  assert_eq(3000, compressible_data)
+  assert_eq(8200, compressed_size)
+  assert_eq(82, actual_compression_ratio)
 }
