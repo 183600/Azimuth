@@ -1,180 +1,134 @@
-// 增强的 Azimuth 测试用例
-// 包含10个高质量的新测试用例，使用标准 MoonBit 测试语法
+// Azimuth 库的增强测试用例
+// 使用标准 MoonBit 测试语法
 
-test "temperature_conversion" {
-  // 温度转换测试：摄氏度到华氏度
-  // F = C * 9/5 + 32
-  let celsius = 25
-  let fahrenheit = add(multiply(celsius, 9) / 5, 32)
-  assert_eq(77, fahrenheit)
-  
-  // 零度测试
-  let freezing_point = add(multiply(0, 9) / 5, 32)
-  assert_eq(32, freezing_point)
-  
-  // 负温度测试
-  let negative_celsius = -10
-  let negative_fahrenheit = add(multiply(negative_celsius, 9) / 5, 32)
-  assert_eq(14, negative_fahrenheit)
+test "enhanced_error_handling_division" {
+  // 增强的错误处理测试：除数为零的多种情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  assert_eq(0, divide_with_ceil(-2147483648, 0))
 }
 
-test "loan_interest_calculation" {
-  // 贷款利息计算测试
+test "enhanced_mathematical_series" {
+  // 数学级数：等比数列计算
+  let first_term = 2
+  let ratio = 3
+  let terms = 5
+  
+  // 计算等比数列的和：a * (r^n - 1) / (r - 1)
+  let power_n = multiply(multiply(multiply(ratio, ratio), ratio), ratio)  // 3^4 = 81
+  let numerator = add(multiply(first_term, power_n), -first_term)  // 2 * (81 - 1) = 160
+  let sum = divide_with_ceil(numerator, add(ratio, -1))  // 160 / 2 = 80
+  
+  assert_eq(242, sum)  // 2 + 6 + 18 + 54 + 162 = 242
+}
+
+test "enhanced_financial_compound_interest" {
+  // 金融复利计算的精确测试
   let principal = 10000
-  let annual_rate_percent = 6
-  let years = 3
-  
-  // 简单利息计算：A = P * (1 + r * t)
-  let total_interest = multiply(principal, multiply(annual_rate_percent, years)) / 100
-  let total_amount = add(principal, total_interest)
-  
-  assert_eq(1800, total_interest)
-  assert_eq(11800, total_amount)
-}
-
-test "batch_processing_simulation" {
-  // 批处理模拟测试
-  let total_records = 157
-  let batch_size = 25
-  
-  // 计算需要的批次数
-  let batches_needed = divide_with_ceil(total_records, batch_size)
-  
-  // 计算最后一批的记录数
-  let last_batch_size = total_records - multiply(batches_needed - 1, batch_size)
-  
-  assert_eq(7, batches_needed)
-  assert_eq(7, last_batch_size)
-}
-
-test "game_score_calculation" {
-  // 游戏得分计算测试
-  let base_score = 1000
-  let level_multiplier = 3
-  let bonus_points = 250
-  let penalty_points = 50
-  
-  // 计算最终得分
-  let level_score = multiply(base_score, level_multiplier)
-  let final_score = add(add(level_score, bonus_points), -penalty_points)
-  
-  assert_eq(3000, level_score)
-  assert_eq(3200, final_score)
-}
-
-test "resource_allocation_optimization" {
-  // 资源分配优化测试
-  let total_budget = 5000
-  let project_a_cost = 1200
-  let project_b_cost = 1800
-  let project_c_cost = 1500
-  
-  // 计算已分配预算
-  let allocated_budget = add(add(project_a_cost, project_b_cost), project_c_cost)
-  
-  // 计算剩余预算
-  let remaining_budget = add(total_budget, -allocated_budget)
-  
-  // 计算可以启动的额外小型项目数量
-  let small_project_cost = 300
-  let additional_projects = divide_with_ceil(remaining_budget, small_project_cost)
-  
-  assert_eq(4500, allocated_budget)
-  assert_eq(500, remaining_budget)
-  assert_eq(2, additional_projects)
-}
-
-test "cryptographic_hash_simulation" {
-  // 加密哈希模拟测试
-  let input_number = 12345
-  let prime_multiplier = 31
-  let modulo_value = 100000
-  
-  // 简单的哈希函数模拟
-  let hash_step1 = multiply(input_number, prime_multiplier)
-  let hash_step2 = add(hash_step1, input_number)
-  let final_hash = hash_step2 % modulo_value
-  
-  assert_eq(382760, hash_step1)
-  assert_eq(395105, hash_step2)
-  assert_eq(95105, final_hash)
-}
-
-test "parallel_processing_efficiency" {
-  // 并行处理效率测试
-  let single_core_time = 120  // 分钟
-  let core_count = 4
-  let parallel_efficiency_percent = 75  // 并行效率75%
-  
-  // 计算理论并行时间
-  let theoretical_parallel_time = divide_with_ceil(single_core_time, core_count)
-  
-  // 考虑并行效率的实际时间
-  let efficiency_factor = divide_with_ceil(multiply(theoretical_parallel_time, 100), parallel_efficiency_percent)
-  
-  assert_eq(30, theoretical_parallel_time)
-  assert_eq(40, efficiency_factor)
-}
-
-test "data_structure_operations" {
-  // 数据结构操作测试
-  let array_size = 10
-  let page_size = 3
-  
-  // 计算分页数量
-  let total_pages = divide_with_ceil(array_size, page_size)
-  
-  // 计算完整页面的元素数量
-  let full_pages = array_size / page_size
-  let full_page_elements = multiply(full_pages, page_size)
-  
-  // 计算最后一页的元素数量
-  let last_page_elements = array_size - full_page_elements
-  
-  assert_eq(4, total_pages)
-  assert_eq(9, full_page_elements)
-  assert_eq(1, last_page_elements)
-}
-
-test "financial_compound_interest" {
-  // 复利计算测试
-  let principal = 5000
-  let annual_rate_percent = 8
+  let rate_percent = 5
   let years = 4
   
-  // 逐年计算复利
-  let year1_amount = add(principal, divide_with_ceil(multiply(principal, annual_rate_percent), 100))
-  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, annual_rate_percent), 100))
-  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, annual_rate_percent), 100))
-  let year4_amount = add(year3_amount, divide_with_ceil(multiply(year3_amount, annual_rate_percent), 100))
+  // 年度复利计算
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
+  let year4 = add(year3, divide_with_ceil(multiply(year3, rate_percent), 100))
   
-  assert_eq(5400, year1_amount)
-  assert_eq(5832, year2_amount)
-  assert_eq(6299, year3_amount)
-  assert_eq(6803, year4_amount)
+  assert_eq(12167, year4)  // 由于向上取整，结果略高于标准复利
 }
 
-test "queue_simulation" {
-  // 队列模拟测试
-  let arrival_rate = 15  // 每小时到达人数
-  let service_rate = 20   // 每小时服务人数
-  let time_hours = 8      // 营业时间
+test "enhanced_resource_optimization" {
+  // 资源优化算法测试
+  let total_resources = 1000
+  let project_requirements = multiply(45, 8)
+  let contingency_percentage = 10
   
-  // 计算总到达人数和总服务人数
-  let total_arrivals = multiply(arrival_rate, time_hours)
-  let total_served = multiply(service_rate, time_hours)
+  let allocated_resources = project_requirements
+  let contingency = divide_with_ceil(multiply(allocated_resources, contingency_percentage), 100)
+  let total_allocated = add(allocated_resources, contingency)
+  let remaining = add(total_resources, -total_allocated)
   
-  // 计算队列中剩余人数
-  let remaining_in_queue = add(total_arrivals, -total_served)
-  if remaining_in_queue < 0 {
-    remaining_in_queue = 0
-  }
+  assert_eq(360, allocated_resources)
+  assert_eq(36, contingency)
+  assert_eq(396, total_allocated)
+  assert_eq(604, remaining)
+}
+
+test "enhanced_string_validation" {
+  // 字符串验证和边界情况
+  assert_eq_string("Hello, single!", greet("single"))
+  assert_eq_string("Hello,   multiple   spaces   !", greet("   multiple   spaces   "))
+  assert_eq_string("Hello, newline\n!", greet("newline\n"))
+  assert_eq_string("Hello, tab\tcharacter!", greet("tab\tcharacter"))
+  assert_eq_string("Hello, mixed123!@#", greet("mixed123!@#"))
+}
+
+test "enhanced_temperature_conversion" {
+  // 温度转换计算（模拟）
+  let celsius = 25
+  let fahrenheit = add(multiply(divide_with_ceil(multiply(celsius, 9), 5), 1), 32)
+  let back_to_celsius = divide_with_ceil(multiply(add(fahrenheit, -32), 5), 9)
   
-  // 计算需要的额外服务时间（分钟）
-  let additional_service_time = divide_with_ceil(multiply(remaining_in_queue, 60), service_rate)
+  assert_eq(77, fahrenheit)  // 25°C = 77°F
+  assert_eq(25, back_to_celsius)  // 转换回去
+}
+
+test "enhanced_performance_benchmark" {
+  // 性能基准测试模拟
+  let base_operations = 1000
+  let optimization_factor = 4
+  let overhead_percentage = 12
   
-  assert_eq(120, total_arrivals)
-  assert_eq(160, total_served)
-  assert_eq(0, remaining_in_queue)
-  assert_eq(0, additional_service_time)
+  let optimized_ops = multiply(base_operations, optimization_factor)
+  let overhead = divide_with_ceil(multiply(optimized_ops, overhead_percentage), 100)
+  let actual_performance = add(optimized_ops, -overhead)
+  let improvement_ratio = divide_with_ceil(actual_performance, base_operations)
+  
+  assert_eq(4000, optimized_ops)
+  assert_eq(480, overhead)
+  assert_eq(3520, actual_performance)
+  assert_eq(4, improvement_ratio)
+}
+
+test "enhanced_inventory_turnover" {
+  // 库存周转率计算
+  let beginning_inventory = 500
+  let ending_inventory = 300
+  let cost_of_goods_sold = 2400
+  
+  let average_inventory = divide_with_ceil(add(beginning_inventory, ending_inventory), 2)
+  let inventory_turnover = divide_with_ceil(multiply(cost_of_goods_sold, 100), average_inventory)
+  
+  assert_eq(400, average_inventory)
+  assert_eq(600, inventory_turnover)
+}
+
+test "enhanced_network_throughput" {
+  // 网络吞吐量计算
+  let packet_size = 1500
+  let packets_per_second = 1000
+  let transmission_overhead = 15
+  
+  let raw_throughput = multiply(packet_size, packets_per_second)
+  let overhead_bytes = divide_with_ceil(multiply(raw_throughput, transmission_overhead), 100)
+  let effective_throughput = add(raw_throughput, -overhead_bytes)
+  
+  assert_eq(1500000, raw_throughput)
+  assert_eq(225000, overhead_bytes)
+  assert_eq(1275000, effective_throughput)
+}
+
+test "enhanced_statistical_analysis" {
+  // 统计分析计算
+  let data_points = [15, 22, 28, 35, 42, 48, 55]
+  let sum = add(add(add(add(add(add(data_points[0], data_points[1]), data_points[2]), data_points[3]), data_points[4]), data_points[5]), data_points[6])
+  let mean = divide_with_ceil(sum, 7)
+  let variance_base = add(add(add(add(add(add(multiply(data_points[0] - mean, data_points[0] - mean), multiply(data_points[1] - mean, data_points[1] - mean)), multiply(data_points[2] - mean, data_points[2] - mean)), multiply(data_points[3] - mean, data_points[3] - mean)), multiply(data_points[4] - mean, data_points[4] - mean)), multiply(data_points[5] - mean, data_points[5] - mean)), multiply(data_points[6] - mean, data_points[6] - mean))
+  let variance = divide_with_ceil(variance_base, 7)
+  
+  assert_eq(245, sum)
+  assert_eq(35, mean)
+  assert_eq(154, variance)
 }
