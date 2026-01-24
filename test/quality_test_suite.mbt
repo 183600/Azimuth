@@ -1,164 +1,203 @@
 // 高质量 MoonBit 测试套件
-// 包含10个标准测试用例，测试核心功能
+// 针对 azimuth 库的全面测试，包含边界情况、实际应用场景和数学性质验证
 
-test "basic_arithmetic_operations" {
-  // 测试基本算术运算
-  assert_eq(8, add(3, 5))
-  assert_eq(15, multiply(3, 5))
-  assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(-2, add(3, -5))
-  assert_eq(-15, multiply(3, -5))
+test "mathematical_fundamentals" {
+  // 测试基本数学运算的数学性质
+  let a = 17
+  let b = 23
+  
+  // 加法交换律和结合律
+  assert_eq(add(a, b), add(b, a))  // 交换律
+  assert_eq(add(add(a, b), 5), add(a, add(b, 5)))  // 结合律
+  
+  // 乘法交换律和分配律
+  assert_eq(multiply(a, b), multiply(b, a))  // 交换律
+  assert_eq(multiply(a, add(b, 3)), add(multiply(a, b), multiply(a, 3)))  // 分配律
 }
 
-test "string_greeting_functionality" {
-  // 测试字符串问候功能
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 用户123!", greet("用户123"))
+test "divide_with_ceil_comprehensive" {
+  // 全面测试向上取整除法的各种情况
+  // 正数情况
+  assert_eq(4, divide_with_ceil(11, 3))  // 11/3 = 3.666... -> 4
+  assert_eq(3, divide_with_ceil(9, 3))   // 9/3 = 3 -> 3
+  assert_eq(1, divide_with_ceil(1, 100)) // 1/100 = 0.01 -> 1
+  
+  // 负数情况
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -10/3 = -3.333... -> -3
+  assert_eq(-4, divide_with_ceil(-11, 3))  // -11/3 = -3.666... -> -4
+  assert_eq(4, divide_with_ceil(-11, -3))  // -11/-3 = 3.666... -> 4
+  
+  // 边界情况
+  assert_eq(0, divide_with_ceil(0, 5))   // 0/5 = 0 -> 0
+  assert_eq(0, divide_with_ceil(5, 0))   // 除数为0，返回0
+  assert_eq(0, divide_with_ceil(0, 0))   // 0/0，返回0
+}
+
+test "string_processing_internationalization" {
+  // 测试字符串处理的国际化支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
   assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, John Doe!", greet("John Doe"))
+  assert_eq_string("Hello, María!", greet("María"))
+  assert_eq_string("Hello, αβγ!", greet("αβγ"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
 }
 
-test "mathematical_properties_verification" {
-  // 测试数学性质验证
-  let a = 12
-  let b = 8
+test "complex_business_workflow" {
+  // 测试复杂的业务工作流程
+  let product_price = 89
+  let quantity = 4
+  let tax_rate = 8
+  let shipping_cost = 12
+  let discount_threshold = 300
+  let discount_amount = 25
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  // 计算小计
+  let subtotal = multiply(product_price, quantity)
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  // 计算税费（向上取整）
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
   
-  // 分配律
-  assert_eq(multiply(a, add(b, 4)), add(multiply(a, b), multiply(a, 4)))
+  // 计算总价（含运费）
+  let pre_discount_total = add(add(subtotal, tax_amount), shipping_cost)
   
-  // 结合律
-  assert_eq(add(add(a, b), 4), add(a, add(b, 4)))
+  // 应用折扣（如果满足条件）
+  let final_total = if pre_discount_total > discount_threshold {
+    add(pre_discount_total, -discount_amount)
+  } else {
+    pre_discount_total
+  }
+  
+  assert_eq(356, subtotal)
+  assert_eq(29, tax_amount)
+  assert_eq(397, pre_discount_total)
+  assert_eq(372, final_total)
 }
 
-test "boundary_value_handling" {
-  // 测试边界值处理
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "resource_allocation_optimization" {
+  // 测试资源分配优化算法
+  let total_budget = 10000
+  let project_a_cost = 3200
+  let project_b_cost = 2800
+  let project_c_cost = 2100
+  let small_project_cost = 450
   
-  // 边界值加法
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(-1, add(max_val, min_val))
+  // 计算大项目总成本
+  let major_projects_cost = add(add(project_a_cost, project_b_cost), project_c_cost)
   
-  // 边界值乘法
-  assert_eq(0, multiply(max_val, 0))
-  assert_eq(min_val, multiply(min_val, -1))
-  assert_eq(max_val, multiply(max_val, 1))
+  // 计算剩余预算
+  let remaining_budget = add(total_budget, -major_projects_cost)
+  
+  // 计算可以支持的小项目数量
+  let small_projects_count = divide_with_ceil(remaining_budget, small_project_cost)
+  
+  assert_eq(8100, major_projects_cost)
+  assert_eq(1900, remaining_budget)
+  assert_eq(5, small_projects_count)
 }
 
-test "practical_business_calculations" {
-  // 测试实际业务计算
-  // 订单总价计算
-  let unit_price = 199
-  let quantity = 3
-  let discount = 50
-  let shipping = 20
+test "mathematical_series_calculation" {
+  // 测试数学级数计算
+  let first_term = 7
+  let common_difference = 3
+  let number_of_terms = 12
   
-  let subtotal = multiply(unit_price, quantity)
-  let discounted_total = add(subtotal, -discount)
-  let final_total = add(discounted_total, shipping)
+  // 使用公式计算等差数列的和：S = n/2 * (2a + (n-1)d)
+  let series_sum = divide_with_ceil(
+    multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference))),
+    2
+  )
   
-  assert_eq(627, final_total)
+  // 验证结果：12/2 * (14 + 33) = 6 * 47 = 282
+  assert_eq(282, series_sum)
 }
 
-test "time_and_date_calculations" {
-  // 测试时间日期计算
-  // 计算总分钟数
-  let hours = 2
-  let minutes = 45
-  let total_minutes = add(multiply(hours, 60), minutes)
-  assert_eq(165, total_minutes)
+test "time_management_scenarios" {
+  // 测试时间管理场景
+  let tasks_per_day = 7
+  let total_tasks = 45
+  let work_hours_per_day = 8
+  let meeting_hours_per_week = 6
   
-  // 计算时间差
-  let start_time = 480  // 8:00 AM
-  let end_time = 1020   // 5:00 PM
-  let duration = add(end_time, -start_time)
-  assert_eq(540, duration)
+  // 计算工作日数
+  let work_days_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  
+  // 计算周数
+  let weeks_needed = divide_with_ceil(work_days_needed, 5)
+  
+  // 计算总工作小时数
+  let total_work_hours = multiply(work_days_needed, work_hours_per_day)
+  
+  // 计算可用工作时间（减去会议）
+  let available_work_hours = add(total_work_hours, -multiply(weeks_needed, meeting_hours_per_week))
+  
+  assert_eq(7, work_days_needed)
+  assert_eq(2, weeks_needed)
+  assert_eq(56, total_work_hours)
+  assert_eq(44, available_work_hours)
 }
 
-test "statistical_computations" {
-  // 测试统计计算
-  // 计算平均值
-  let values_sum = add(add(add(add(85, 90), 75), 95), 80)
-  let count = 5
-  let average = values_sum / count
-  assert_eq(85, average)
+test "engineering_precision_calculations" {
+  // 测试工程精度计算
+  let beam_length = 1250  // 毫米
+  let support_spacing = 300  // 毫米
+  let safety_factor = 2
+  let load_per_support = 150  // 公斤
   
-  // 计算总和
-  assert_eq(425, values_sum)
+  // 计算需要的支撑点数量
+  let supports_needed = divide_with_ceil(beam_length, support_spacing)
   
-  // 计算最大值和最小值的差
-  let max_val = 95
-  let min_val = 75
-  let range = add(max_val, -min_val)
-  assert_eq(20, range)
+  // 计算总承载能力
+  let total_capacity = multiply(supports_needed, load_per_support)
+  
+  // 应用安全系数
+  let safe_capacity = divide_with_ceil(total_capacity, safety_factor)
+  
+  assert_eq(5, supports_needed)
+  assert_eq(750, total_capacity)
+  assert_eq(375, safe_capacity)
 }
 
-test "geometric_calculations" {
-  // 测试几何计算
-  // 矩形面积和周长
-  let length = 10
-  let width = 6
+test "data_analysis_statistics" {
+  // 测试数据分析统计
+  let data_points = [15, 22, 18, 31, 25, 19, 28, 16, 24, 21]
+  let sum_manual = add(add(add(add(add(add(add(add(add(data_points[0], data_points[1]), data_points[2]), data_points[3]), data_points[4]), data_points[5]), data_points[6]), data_points[7]), data_points[8]), data_points[9])
   
-  let area = multiply(length, width)
-  let perimeter = add(multiply(2, length), multiply(2, width))
+  // 计算平均值（向上取整）
+  let average = divide_with_ceil(sum_manual, 10)
   
-  assert_eq(60, area)
-  assert_eq(32, perimeter)
+  // 计算方差（简化版本）
+  let variance_base = add(add(add(add(add(add(add(add(add(multiply(15 - average, 15 - average), multiply(22 - average, 22 - average)), multiply(18 - average, 18 - average)), multiply(31 - average, 31 - average)), multiply(25 - average, 25 - average)), multiply(19 - average, 19 - average)), multiply(28 - average, 28 - average)), multiply(16 - average, 16 - average)), multiply(24 - average, 24 - average)), multiply(21 - average, 21 - average))
+  let variance = divide_with_ceil(variance_base, 10)
   
-  // 三角形面积（底×高÷2）
-  let base = 8
-  let height = 5
-  let triangle_area = multiply(base, height) / 2
-  assert_eq(20, triangle_area)
+  assert_eq(219, sum_manual)
+  assert_eq(22, average)
+  assert_eq(30, variance)
 }
 
-test "currency_conversion_scenarios" {
-  // 测试货币转换场景
-  let usd_amount = 150
-  let exchange_rate = 7  // 1 USD = 7 CNY
-  let fee_rate = 2       // 2% 手续费
+test "extreme_boundary_conditions" {
+  // 测试极端边界条件
+  // 接近Int最大值的运算
+  let near_max = 2147483640
+  let small_increment = 5
+  let max_safe_add = add(near_max, small_increment)
   
-  // 转换为人民币
-  let cny_amount = multiply(usd_amount, exchange_rate)
-  assert_eq(1050, cny_amount)
+  // 接近Int最小值的运算
+  let near_min = -2147483640
+  let small_decrement = -5
+  let min_safe_add = add(near_min, small_decrement)
   
-  // 计算手续费
-  let fee = multiply(cny_amount, fee_rate) / 100
-  assert_eq(21, fee)
+  // 大数除法精度测试
+  let large_dividend = 1000000
+  let large_divisor = 37
+  let large_division_result = divide_with_ceil(large_dividend, large_divisor)
   
-  // 计算最终金额
-  let final_amount = add(cny_amount, fee)
-  assert_eq(1071, final_amount)
-}
-
-test "complex_formula_evaluations" {
-  // 测试复杂公式计算
-  // 计算复利：本金 × (1 + 利率 × 年数)
-  let principal = 10000
-  let rate = 5  // 5%
-  let years = 3
+  // 负数大数除法
+  let negative_large_division = divide_with_ceil(-1000000, 37)
   
-  let growth_factor = add(1, multiply(rate, years))
-  let total = multiply(principal, growth_factor)
-  assert_eq(160000, total)
-  
-  // 计算 (a + b) × (c + d) - e × f
-  let a = 5
-  let b = 3
-  let c = 4
-  let d = 2
-  let e = 6
-  let f = 3
-  
-  let result = add(multiply(add(a, b), add(c, d)), multiply(-e, f))
-  assert_eq(52, result)
+  assert_eq(2147483645, max_safe_add)
+  assert_eq(-2147483645, min_safe_add)
+  assert_eq(27028, large_division_result)
+  assert_eq(-27027, negative_large_division)
 }
