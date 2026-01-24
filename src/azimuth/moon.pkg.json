@@ -18,7 +18,8 @@
     "simple_new_test.mbt",
     "final_simple_test.mbt",
     "azimuth_standard_quality_tests.mbt",
-    "comprehensive_unit_tests.mbt"
+    "comprehensive_unit_tests.mbt",
+    "azimuth_standard_test_cases.mbt"
   ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [
