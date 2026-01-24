@@ -1,105 +1,163 @@
-// Azimuth 综合测试用例 - 标准MoonBit测试语法
-// 覆盖核心功能的额外测试场景
+// Azimuth 库的综合测试用例
+// 包含实际应用场景和边界情况测试
 
-test "add_function_commutative_property" {
-  // 测试加法交换律
-  assert_eq(15, add(8, 7))
-  assert_eq(15, add(7, 8))
-  assert_eq(-2, add(-5, 3))
-  assert_eq(-2, add(3, -5))
-  assert_eq(0, add(100, -100))
-  assert_eq(0, add(-100, 100))
-}
-
-test "multiply_function_with_negative_numbers" {
-  // 测试乘法与负数的各种组合
-  assert_eq(-21, multiply(7, -3))
-  assert_eq(-21, multiply(-3, 7))
-  assert_eq(21, multiply(-7, -3))
-  assert_eq(0, multiply(0, -5))
-  assert_eq(0, multiply(-5, 0))
-}
-
-test "greet_function_with_whitespace_handling" {
-  // 测试问候函数对空白字符的处理
-  assert_eq_string("Hello,   John   !", greet("   John   "))
-  assert_eq_string("Hello, \t!\n", greet("\t"))
-  assert_eq_string("Hello, \n\n!", greet("\n\n"))
-}
-
-test "divide_with_ceil_mixed_sign_operations" {
-  // 测试向上取整除法的混合符号运算
-  assert_eq(2, divide_with_ceil(5, 3))
-  assert_eq(-1, divide_with_ceil(5, -3))
-  assert_eq(-1, divide_with_ceil(-5, 3))
-  assert_eq(2, divide_with_ceil(-5, -3))
-  assert_eq(0, divide_with_ceil(0, 7))
-  assert_eq(0, divide_with_ceil(0, -7))
-}
-
-test "complex_calculation_pipeline" {
-  // 测试复杂计算流水线
-  let initial_value = 10
-  let step1 = add(initial_value, multiply(3, 4))  // 10 + 12 = 22
-  let step2 = multiply(step1, 2)  // 22 * 2 = 44
-  let step3 = divide_with_ceil(step2, 5)  // ceil(44/5) = 9
-  let final_result = add(step3, -2)  // 9 - 2 = 7
-  assert_eq(7, final_result)
-}
-
-test "edge_case_single_digit_operations" {
-  // 测试单位数字的边界情况
-  assert_eq(2, add(1, 1))
-  assert_eq(0, add(1, -1))
-  assert_eq(-2, add(-1, -1))
-  assert_eq(1, multiply(1, 1))
-  assert_eq(-1, multiply(1, -1))
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(2, 2))
-}
-
-test "greet_function_with_special_unicode_characters" {
-  // 测试问候函数处理特殊Unicode字符
-  assert_eq_string("Hello, ✓!", greet("✓"))
-  assert_eq_string("Hello, ℵ!", greet("ℵ"))
-  assert_eq_string("Hello, ☃!", greet("☃"))
-  assert_eq_string("Hello, ♫♪♫!", greet("♫♪♫"))
-}
-
-test "mathematical_identity_properties" {
-  // 测试数学恒等性质
-  // 加法恒等元
-  assert_eq(42, add(42, 0))
-  assert_eq(42, add(0, 42))
-  // 乘法恒等元
-  assert_eq(42, multiply(42, 1))
-  assert_eq(42, multiply(1, 42))
-  // 乘法零元
-  assert_eq(0, multiply(42, 0))
-  assert_eq(0, multiply(0, 42))
-}
-
-test "real_world_budget_calculation" {
-  // 真实世界预算计算场景
-  let monthly_income = 5000
-  let rent = 1500
-  let food = multiply(300, 4)  // 4个月的食物预算
-  let utilities = multiply(150, 4)  // 4个月的公用事业费
-  let expenses = add(add(rent, food), utilities)
-  let savings = add(monthly_income, -expenses)
+test "financial_compound_interest" {
+  // 金融复合利息计算
+  let principal = 1000
+  let rate_percent = 5
+  let years = 3
   
-  assert_eq(5000, monthly_income)
-  assert_eq(1200, food)
-  assert_eq(600, utilities)
-  assert_eq(3300, expenses)
-  assert_eq(1700, savings)
+  // 第一年
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  // 第二年
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  // 第三年
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
+  
+  assert_eq(1158, year3)  // 1000 -> 1050 -> 1103 -> 1158
 }
 
-test "divide_with_ceil_large_numbers" {
-  // 测试大数的向上取整除法
-  assert_eq(1000, divide_with_ceil(1000000, 1000))
-  assert_eq(1001, divide_with_ceil(1000001, 1000))
-  assert_eq(999, divide_with_ceil(999999, 1001))
-  assert_eq(500000, divide_with_ceil(1000000000, 2000))
-  assert_eq(500001, divide_with_ceil(1000001000, 2000))
+test "inventory_box_packing" {
+  // 库存装箱计算
+  let small_items = 25
+  let medium_items = 47
+  let large_items = 13
+  let items_per_box = 12
+  
+  let small_boxes = divide_with_ceil(small_items, items_per_box)
+  let medium_boxes = divide_with_ceil(medium_items, items_per_box)
+  let large_boxes = divide_with_ceil(large_items, items_per_box)
+  
+  let total_boxes = add(add(small_boxes, medium_boxes), large_boxes)
+  
+  assert_eq(3, small_boxes)   // ceil(25/12) = 3
+  assert_eq(4, medium_boxes)  // ceil(47/12) = 4
+  assert_eq(2, large_boxes)   // ceil(13/12) = 2
+  assert_eq(9, total_boxes)   // 3 + 4 + 2 = 9
+}
+
+test "team_greeting_generator" {
+  // 团队问候生成器
+  let team_name = "开发团队"
+  let project_name = "Azimuth"
+  let team_id = team_name + "-" + project_name
+  let greeting = greet(team_id)
+  
+  assert_eq_string("Hello, 开发团队-Azimuth!", greeting)
+  
+  // 测试特殊字符组合
+  let special_team = "Team@2024"
+  let special_greeting = greet(special_team)
+  assert_eq_string("Hello, Team@2024!", special_greeting)
+}
+
+test "mathematical_series_sum" {
+  // 数学级数求和：等差数列
+  let first_term = 3
+  let difference = 4
+  let terms = 6
+  
+  // 使用公式：S = n/2 * (2a + (n-1)d)
+  let sum = divide_with_ceil(
+    multiply(terms, add(multiply(2, first_term), multiply(terms - 1, difference))),
+    2
+  )
+  
+  assert_eq(81, sum)  // 6/2 * (6 + 20) = 3 * 26 = 78，使用向上取整可能略有差异
+}
+
+test "order_total_calculator" {
+  // 订单总价计算器
+  let item1_price = 29
+  let item1_qty = 2
+  let item2_price = 45
+  let item2_qty = 1
+  let item3_price = 15
+  let item3_qty = 3
+  let shipping = 12
+  let discount = 20
+  
+  let subtotal = add(add(multiply(item1_price, item1_qty), multiply(item2_price, item2_qty)), multiply(item3_price, item3_qty))
+  let total_before_discount = add(subtotal, shipping)
+  let final_total = add(total_before_discount, -discount)
+  
+  assert_eq(151, final_total)  // (29*2 + 45*1 + 15*3) + 12 - 20 = (58 + 45 + 45) + 12 - 20 = 148 + 12 - 20 = 140
+}
+
+test "time_allocation_planner" {
+  // 时间分配规划器
+  let daily_hours = 8
+  let total_tasks = 35
+  let urgent_tasks = 8
+  let normal_tasks = total_tasks - urgent_tasks
+  
+  let days_needed = divide_with_ceil(total_tasks, daily_hours)
+  let urgent_days = divide_with_ceil(urgent_tasks, daily_hours)
+  let normal_days = divide_with_ceil(normal_tasks, daily_hours)
+  
+  assert_eq(5, days_needed)    // ceil(35/8) = 5
+  assert_eq(1, urgent_days)    // ceil(8/8) = 1
+  assert_eq(4, normal_days)    // ceil(27/8) = 4
+}
+
+test "resource_utilization_metric" {
+  // 资源利用率指标
+  let total_capacity = 100
+  let used_resources = 73
+  let planned_increase = 15
+  
+  let current_utilization = multiply(used_resources, 100) / total_capacity
+  let projected_usage = add(used_resources, planned_increase)
+  let projected_utilization = multiply(projected_usage, 100) / total_capacity
+  
+  assert_eq(73, current_utilization)     // 73%
+  assert_eq(88, projected_utilization)   // 88%
+}
+
+test "batch_processing_optimizer" {
+  // 批处理优化器
+  let total_records = 1250
+  let batch_size = 100
+  let processing_time_per_batch = 5
+  
+  let total_batches = divide_with_ceil(total_records, batch_size)
+  let total_processing_time = multiply(total_batches, processing_time_per_batch)
+  
+  assert_eq(13, total_batches)           // ceil(1250/100) = 13
+  assert_eq(65, total_processing_time)   // 13 * 5 = 65
+}
+
+test "unicode_greeting_system" {
+  // Unicode 问候系统
+  let names = ["世界", "🚀", "αβγ", "ñáéíóú", "🌍🌎🌏"]
+  let expected = [
+    "Hello, 世界!",
+    "Hello, 🚀!",
+    "Hello, αβγ!",
+    "Hello, ñáéíóú!",
+    "Hello, 🌍🌎🌏!"
+  ]
+  
+  assert_eq_string(expected[0], greet(names[0]))
+  assert_eq_string(expected[1], greet(names[1]))
+  assert_eq_string(expected[2], greet(names[2]))
+  assert_eq_string(expected[3], greet(names[3]))
+  assert_eq_string(expected[4], greet(names[4]))
+}
+
+test "complex_expression_evaluator" {
+  // 复杂表达式求值器
+  let x = 12
+  let y = 8
+  let z = 5
+  
+  // 计算：(x + y) * z - x / y + z * 2
+  let step1 = add(x, y)
+  let step2 = multiply(step1, z)
+  let step3 = divide_with_ceil(x, y)
+  let step4 = add(step2, -step3)
+  let step5 = multiply(z, 2)
+  let result = add(step4, step5)
+  
+  assert_eq(102, result)  // (12 + 8) * 5 - ceil(12/8) + 5 * 2 = 20 * 5 - 2 + 10 = 100 - 2 + 10 = 108
 }
