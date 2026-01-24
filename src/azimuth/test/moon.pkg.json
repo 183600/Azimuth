@@ -132,7 +132,7 @@
     "creative_moonbit_tests.mbt",
     "standard_test_suite.mbt",
     "additional_test_scenarios.mbt",
-    "focused_core_tests.mbt",
+    "azimuth_enhanced_test_suite.mbt",    "focused_core_tests.mbt",
     "my_additional_tests.mbt",
     "additional_moonbit_tests_new.mbt",
     "moonbit_standard_test_cases_new.mbt",
