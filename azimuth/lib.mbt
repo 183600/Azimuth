@@ -1252,7 +1252,7 @@ test "string_concatenation_length" {
   let greeting = greet(name)
   let expected_length = add(add(7, 6), 1)  // "Hello, " + "MoonBit" + "!" = 7 + 6 + 1 = 14
   assert_eq(14, expected_length)
-  @unused(greeting)
+  // greeting is intentionally unused
 }
 
 test "division_precision_test" {
@@ -1331,7 +1331,7 @@ test "exponential_growth_simulation" {
   
   // 验证最终结果
   assert_eq(96, period5)
-  @unused(growth_periods)
+  // growth_periods is intentionally unused
 }
 
 // 新增的 MoonBit 测试用例 - 10个高质量测试用例
@@ -1634,7 +1634,7 @@ test "numerical_system_validation" {
   assert_eq(8, fibonacci_6)
   
   // 计算斐波那契数列的和
-  let fib_sum = add(add(add(fibonacci_1, fibonacci_2), fibonacci_3), fibonacci_4)
+  let mut fib_sum = add(add(add(fibonacci_1, fibonacci_2), fibonacci_3), fibonacci_4)
   fib_sum = add(add(fib_sum, fibonacci_5), fibonacci_6)
   assert_eq(20, fib_sum)  // 1 + 1 + 2 + 3 + 5 + 8 = 20
   
