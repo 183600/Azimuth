@@ -30,7 +30,9 @@
     "test/azimuth_standard_core_tests.mbt",
     "azimuth_enhanced_test_cases.mbt",
     "test/user_standard_tests.mbt",
-    "test/standard_moonbit_tests_new.mbt"
+    "test/standard_moonbit_tests_new.mbt",
+    "standard_comprehensive_tests.mbt",
+    "simple_standard_test.mbt"
   ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [
