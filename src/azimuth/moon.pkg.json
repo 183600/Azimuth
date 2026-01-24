@@ -28,7 +28,8 @@
     "standard_enhanced_test_cases.mbt",
     "standard_moonbit_test_cases.mbt",
     "azimuth_enhanced_test_cases.mbt",
-    "test/user_standard_tests.mbt"
+    "test/user_standard_tests.mbt",
+    "test/standard_moonbit_tests_new.mbt"
   ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [
