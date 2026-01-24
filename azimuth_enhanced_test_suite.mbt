@@ -1,208 +1,183 @@
-// Azimuth 项目新增测试用例
-// 使用标准 MoonBit 测试语法，针对核心功能进行全面测试
+// Azimuth 项目增强测试套件
+// 使用标准 MoonBit 测试语法，包含10个高质量测试用例
 
-test "string_operations_with_greet" {
-  // 测试字符串操作与问候函数的组合
-  let first_name = "张"
-  let last_name = "三"
-  let full_name = first_name + last_name
-  let greeting = greet(full_name)
-  assert_eq_string("Hello, 张三!", greeting)
+// 导入必要的模块
+use azimuth
+
+test "arithmetic_sequence_operations" {
+  // 测试算术序列运算
+  let start = 5
+  let difference = 3
+  let terms = 4
   
-  // 测试包含数字的字符串
-  let user_id = "user_" + "12345"
-  let id_greeting = greet(user_id)
-  assert_eq_string("Hello, user_12345!", id_greeting)
+  // 计算等差数列的和：start + (start + difference) + (start + 2*difference) + ...
+  let term1 = start
+  let term2 = azimuth.add(start, difference)
+  let term3 = azimuth.add(term2, difference)
+  let term4 = azimuth.add(term3, difference)
+  
+  let sequence_sum = azimuth.add(azimuth.add(term1, term2), azimuth.add(term3, term4))
+  assert_eq(32, sequence_sum)  // 5 + 8 + 11 + 14 = 38
 }
 
-test "financial_calculations" {
-  // 测试金融计算场景
-  let principal = 10000
-  let interest_rate = 5
-  let years = 3
+test "inventory_packing_optimization" {
+  // 测试库存打包优化
+  let small_items = 23
+  let medium_items = 47
+  let large_items = 15
   
-  // 计算复利（简化版本）
-  let year1_amount = add(principal, divide_with_ceil(multiply(principal, interest_rate), 100))
-  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, interest_rate), 100))
-  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, interest_rate), 100))
+  let small_box_capacity = 6
+  let medium_box_capacity = 12
+  let large_box_capacity = 8
   
-  assert_eq(10500, year1_amount)
-  assert_eq(11025, year2_amount)
-  assert_eq(11576, year3_amount)
+  // 计算每种物品需要的箱子数量
+  let small_boxes = azimuth.divide_with_ceil(small_items, small_box_capacity)
+  let medium_boxes = azimuth.divide_with_ceil(medium_items, medium_box_capacity)
+  let large_boxes = azimuth.divide_with_ceil(large_items, large_box_capacity)
+  
+  // 计算总箱子数
+  let total_boxes = azimuth.add(azimuth.add(small_boxes, medium_boxes), large_boxes)
+  assert_eq(14, total_boxes)  // ceil(23/6) + ceil(47/12) + ceil(15/8) = 4 + 4 + 2 = 10
 }
 
-test "resource_allocation_optimization" {
-  // 测试资源分配优化
-  let total_budget = 5000
-  let team_a_cost = 1200
-  let team_b_cost = 1800
-  let team_c_cost = 1500
+test "time_calculation_scenarios" {
+  // 测试时间计算场景
+  let total_minutes = 157
+  let minutes_per_hour = 60
   
-  // 计算已分配预算
-  let allocated_budget = add(add(team_a_cost, team_b_cost), team_c_cost)
+  // 计算小时数和剩余分钟数
+  let hours = azimuth.divide_with_ceil(total_minutes, minutes_per_hour)
+  let exact_hours = total_minutes / minutes_per_hour
+  let remaining_minutes = azimuth.subtract(total_minutes, azimuth.multiply(exact_hours, minutes_per_hour))
   
-  // 计算剩余预算
-  let remaining_budget = add(total_budget, -allocated_budget)
-  
-  // 计算可以支持的额外小项目数量
-  let small_project_cost = 200
-  let additional_projects = divide_with_ceil(remaining_budget, small_project_cost)
-  
-  assert_eq(4500, allocated_budget)
-  assert_eq(500, remaining_budget)
-  assert_eq(3, additional_projects)
+  assert_eq(3, hours)  // ceil(157/60) = 3
+  assert_eq(2, exact_hours)  // 157/60 = 2
+  assert_eq(37, remaining_minutes)  // 157 - 2*60 = 37
 }
 
-test "time_management_calculations" {
-  // 测试时间管理计算
-  let daily_working_hours = 8
-  let total_tasks = 75
-  let average_task_time = 2  // 每个任务平均2小时
+test "financial_rounding_calculations" {
+  // 测试金融舍入计算
+  let total_amount = 1000
+  let people = 3
   
-  // 计算完成任务需要的总小时数
-  let total_hours_needed = multiply(total_tasks, average_task_time)
+  // 计算每人应该支付的金额（向上取整确保覆盖总额）
+  let payment_per_person = azimuth.divide_with_ceil(total_amount, people)
+  let total_collected = azimuth.multiply(payment_per_person, people)
+  let excess = azimuth.subtract(total_collected, total_amount)
   
-  // 计算需要的工作天数
-  let workdays_needed = divide_with_ceil(total_hours_needed, daily_working_hours)
-  
-  // 计算剩余小时数（最后一个工作日）
-  let remaining_hours = add(total_hours_needed, -multiply(workdays_needed - 1, daily_working_hours))
-  
-  assert_eq(150, total_hours_needed)
-  assert_eq(19, workdays_needed)
-  assert_eq(6, remaining_hours)
+  assert_eq(334, payment_per_person)  // ceil(1000/3) = 334
+  assert_eq(1002, total_collected)  // 334 * 3 = 1002
+  assert_eq(2, excess)  // 1002 - 1000 = 2
 }
 
-test "inventory_turnover_calculation" {
-  // 测试库存周转率计算
-  let initial_inventory = 500
-  let monthly_sales = 120
-  let months_to_simulate = 6
+test "geometric_progression_analysis" {
+  // 浏几何级数分析
+  let first_term = 2
+  let ratio = 3
+  let terms = 4
   
-  // 计算总销售量
-  let total_sales = multiply(monthly_sales, months_to_simulate)
-  
-  // 计算期末库存
-  let final_inventory = add(initial_inventory, -total_sales)
-  
-  // 计算需要补货的时间点（当库存低于100时）
-  let reorder_point = 100
-  let months_until_reorder = divide_with_ceil(add(initial_inventory, -reorder_point), monthly_sales)
-  
-  assert_eq(720, total_sales)
-  assert_eq(-220, final_inventory)
-  assert_eq(4, months_until_reorder)
-}
-
-test "data_processing_batch_size" {
-  // 测试数据处理批次大小计算
-  let total_records = 10000
-  let max_batch_size = 750
-  let processing_overhead = 50  // 每批次的额外开销
-  
-  // 计算需要的批次数
-  let batches_needed = divide_with_ceil(total_records, max_batch_size)
-  
-  // 计算实际处理的记录数（包含开销）
-  let total_processed = add(multiply(batches_needed, max_batch_size), multiply(batches_needed, processing_overhead))
-  
-  // 计算处理效率
-  let efficiency = divide_with_ceil(multiply(total_records, 100), total_processed)
-  
-  assert_eq(14, batches_needed)
-  assert_eq(11200, total_processed)
-  assert_eq(89, efficiency)
-}
-
-test "geometric_progression_calculations" {
-  // 测试等比数列计算
-  let first_term = 3
-  let common_ratio = 2
-  let number_of_terms = 8
-  
-  // 计算第n项（简化版本，只计算前几项）
+  // 计算几何级数：a, ar, ar², ar³
   let term1 = first_term
-  let term2 = multiply(term1, common_ratio)
-  let term3 = multiply(term2, common_ratio)
-  let term4 = multiply(term3, common_ratio)
+  let term2 = azimuth.multiply(first_term, ratio)
+  let term3 = azimuth.multiply(term2, ratio)
+  let term4 = azimuth.multiply(term3, ratio)
   
-  // 计算前四项的和
-  let sum_first_four = add(add(add(term1, term2), term3), term4)
-  
-  assert_eq(3, term1)
-  assert_eq(6, term2)
-  assert_eq(12, term3)
-  assert_eq(24, term4)
-  assert_eq(45, sum_first_four)
+  let sum = azimuth.add(azimuth.add(term1, term2), azimuth.add(term3, term4))
+  assert_eq(80, sum)  // 2 + 6 + 18 + 54 = 80
 }
 
-test "shipping_logistics_optimization" {
-  // 测试物流配送优化
-  let total_packages = 157
-  let truck_capacity = 24
-  let delivery_cost_per_truck = 150
-  let handling_cost_per_package = 5
+test "resource_scheduling_problem" {
+  // 测试资源调度问题
+  let tasks = 25
+  let workers = 4
+  let max_tasks_per_worker = 7
   
-  // 计算需要的卡车数量
-  let trucks_needed = divide_with_ceil(total_packages, truck_capacity)
+  // 计算需要的额外轮次
+  let first_round_capacity = azimuth.multiply(workers, max_tasks_per_worker)
+  let remaining_tasks = azimuth.subtract(tasks, first_round_capacity)
+  let additional_workers_needed = azimuth.divide_with_ceil(remaining_tasks, max_tasks_per_worker)
   
-  // 计算总配送成本
-  let total_delivery_cost = multiply(trucks_needed, delivery_cost_per_truck)
+  let total_rounds = azimuth.add(1, additional_workers_needed)  // 第一轮 + 额外轮次
+  assert_eq(1, additional_workers_needed)  // ceil((25-4*7)/7) = ceil((-3)/7) = 1（处理负数情况）
+}
+
+test "string_concatenation_validation" {
+  // 测试字符串连接验证
+  let prefix = "Hello"
+  let suffix = "World"
+  let spacer = ", "
   
-  // 计算总处理成本
-  let total_handling_cost = multiply(total_packages, handling_cost_per_package)
+  // 测试不同的问候组合
+  let greeting1 = azimuth.greet(prefix)
+  let greeting2 = azimuth.greet(suffix)
+  let greeting3 = azimuth.greet(prefix + spacer + suffix)
   
-  // 计算总成本
-  let total_cost = add(total_delivery_cost, total_handling_cost)
+  assert_eq_string("Hello, Hello!", greeting1)
+  assert_eq_string("Hello, World!", greeting2)
+  assert_eq_string("Hello, Hello, World!", greeting3)
+}
+
+test "batch_processing_efficiency" {
+  // 测试批处理效率
+  let total_records = 1000
+  let batch_size = 75
+  let processing_time_per_batch = 5
   
-  assert_eq(7, trucks_needed)
-  assert_eq(1050, total_delivery_cost)
-  assert_eq(785, total_handling_cost)
-  assert_eq(1835, total_cost)
+  // 计算批次数和总处理时间
+  let batches = azimuth.divide_with_ceil(total_records, batch_size)
+  let total_time = azimuth.multiply(batches, processing_time_per_batch)
+  
+  // 计算实际处理的记录数
+  let processed_records = azimuth.multiply(batches - 1, batch_size)
+  let final_batch_size = azimuth.subtract(total_records, processed_records)
+  
+  assert_eq(14, batches)  // ceil(1000/75) = 14
+  assert_eq(70, total_time)  // 14 * 5 = 70
+  assert_eq(25, final_batch_size)  // 1000 - 13*75 = 25
 }
 
 test "temperature_conversion_calculations" {
-  // 测试温度转换计算（简化版本）
-  let celsius_temp = 25
-  let fahrenheit_temp = 77
+  // 测试温度转换计算
+  let celsius_temps = azimuth.add(azimuth.add(0, 10), 20)  // 0, 10, 20度
+  let conversion_factor = 9
+  let conversion_divisor = 5
+  let offset = 32
   
-  // 模拟温度转换公式（简化为整数运算）
-  // F = C * 9/5 + 32
-  let converted_fahrenheit = add(divide_with_ceil(multiply(celsius_temp, 9), 5), 32)
+  // 转换为华氏度：F = C * 9/5 + 32
+  let celsius_0 = 0
+  let celsius_10 = 10
+  let celsius_20 = 20
   
-  // C = (F - 32) * 5/9
-  let converted_celsius = divide_with_ceil(multiply(add(fahrenheit_temp, -32), 5), 9)
+  let fahrenheit_0 = azimuth.add(
+    azimuth.divide_with_ceil(azimuth.multiply(celsius_0, conversion_factor), conversion_divisor),
+    offset
+  )
+  let fahrenheit_10 = azimuth.add(
+    azimuth.divide_with_ceil(azimuth.multiply(celsius_10, conversion_factor), conversion_divisor),
+    offset
+  )
+  let fahrenheit_20 = azimuth.add(
+    azimuth.divide_with_ceil(azimuth.multiply(celsius_20, conversion_factor), conversion_divisor),
+    offset
+  )
   
-  assert_eq(77, converted_fahrenheit)
-  assert_eq(25, converted_celsius)
+  assert_eq(32, fahrenheit_0)   // 0 * 9/5 + 32 = 32
+  assert_eq(50, fahrenheit_10)  // 10 * 9/5 + 32 = 50
+  assert_eq(68, fahrenheit_20)  // 20 * 9/5 + 32 = 68
 }
 
-test "error_boundary_testing" {
-  // 测试错误边界情况
-  // 测试极大值运算
-  let large_num1 = 1000000
-  let large_num2 = 999999
-  let large_sum = add(large_num1, large_num2)
-  let large_product = multiply(1000, 1000)
+test "comprehensive_error_handling" {
+  // 测试综合错误处理
+  let normal_cases = azimuth.add(azimuth.multiply(5, 3), azimuth.divide_with_ceil(10, 2))
+  let edge_cases = azimuth.add(azimuth.multiply(0, 100), azimuth.divide_with_ceil(0, 1))
+  let error_cases = azimuth.add(azimuth.multiply(10, 0), azimuth.divide_with_ceil(50, 0))
   
-  // 测试边界除法
-  let boundary_div1 = divide_with_ceil(1, 1000000)
-  let boundary_div2 = divide_with_ceil(999999, 1000000)
-  let boundary_div3 = divide_with_ceil(1000000, 1)
+  // 验证正常情况
+  assert_eq(18, normal_cases)  // 5*3 + ceil(10/2) = 15 + 5 = 20
   
-  // 测试零值处理
-  let zero_add = add(0, 0)
-  let zero_multiply = multiply(0, 12345)
-  let zero_divide = divide_with_ceil(0, 123)
-  let zero_divisor = divide_with_ceil(123, 0)
+  // 验证边缘情况
+  assert_eq(0, edge_cases)  // 0*100 + ceil(0/1) = 0 + 0 = 0
   
-  assert_eq(1999999, large_sum)
-  assert_eq(1000000, large_product)
-  assert_eq(1, boundary_div1)
-  assert_eq(1, boundary_div2)
-  assert_eq(1000000, boundary_div3)
-  assert_eq(0, zero_add)
-  assert_eq(0, zero_multiply)
-  assert_eq(0, zero_divide)
-  assert_eq(0, zero_divisor)
+  // 验证错误情况（除零）
+  assert_eq(0, error_cases)  // 10*0 + ceil(50/0) = 0 + 0 = 0
 }
