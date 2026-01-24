@@ -1,4 +1,5 @@
-// 标准 MoonBit 测试用例 - 针对 azimuth 库的核心功能
+// 新的标准 MoonBit 测试用例 - 针对 azimuth 库的核心功能
+// 包含基本功能、边界情况和实际应用场景的测试
 
 test "basic_arithmetic_operations" {
   // 基本算术运算测试
@@ -52,7 +53,7 @@ test "real_world_shopping_cart" {
   let subtotal2 = multiply(item2_price, item2_quantity)
   let total = add(subtotal1, subtotal2)
   
-  assert_eq(105, total)
+  assert_eq(105, total)  // 25*3 + 15*2 = 75 + 30 = 105
 }
 
 test "packaging_optimization" {
@@ -61,7 +62,7 @@ test "packaging_optimization" {
   let capacity_per_box = 12
   let boxes_needed = divide_with_ceil(total_products, capacity_per_box)
   
-  assert_eq(4, boxes_needed)
+  assert_eq(4, boxes_needed)  // ceil(47/12) = 4
 }
 
 test "string_greeting_variations" {
@@ -69,6 +70,7 @@ test "string_greeting_variations" {
   assert_eq_string("Hello, Alice!", greet("Alice"))
   assert_eq_string("Hello, 123!", greet("123"))
   assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
 
 test "complex_business_calculation" {
@@ -83,5 +85,22 @@ test "complex_business_calculation" {
   let total_before_discount = add(subtotal, tax)
   let final_total = add(total_before_discount, -discount)
   
-  assert_eq(520, final_total)
+  assert_eq(520, final_total)  // 100*5 + ceil(500*8/100) - 20 = 500 + 40 - 20 = 520
+}
+
+test "large_number_handling" {
+  // 大数处理测试
+  let large_num = 100000
+  assert_eq(200000, add(large_num, large_num))
+  assert_eq(10000000000, multiply(large_num, large_num))
+  assert_eq(33334, divide_with_ceil(1000000, 30))
+}
+
+test "edge_case_divisions" {
+  // 除法边界情况
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(2, divide_with_ceil(101, 100))
+  assert_eq(100, divide_with_ceil(100, 1))
+  assert_eq(-1, divide_with_ceil(-1, 100))
+  assert_eq(0, divide_with_ceil(0, 100))
 }

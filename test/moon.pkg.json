@@ -4,6 +4,7 @@
     "azimuth"
   ],
   "test": [
+    "azimuth_new_test_cases.mbt",
     "verified_standard_tests.mbt",
     "standard_azimuth_tests.mbt",
     "ultra_simple_test.mbt",
