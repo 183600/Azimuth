@@ -1,282 +1,208 @@
-// Azimuth 库增强测试套件
-// 包含10个高质量的 MoonBit 测试用例
+// Azimuth 项目新增测试用例
+// 使用标准 MoonBit 测试语法，针对核心功能进行全面测试
 
-test "bubble_sort_simulation" {
-  // 模拟冒泡排序算法的比较次数
-  let array_size = 8
-  let mut comparisons = 0
+test "string_operations_with_greet" {
+  // 测试字符串操作与问候函数的组合
+  let first_name = "张"
+  let last_name = "三"
+  let full_name = first_name + last_name
+  let greeting = greet(full_name)
+  assert_eq_string("Hello, 张三!", greeting)
   
-  // 外层循环：n-1 轮
-  let outer_passes = add(array_size, -1)
-  
-  // 内层循环：每轮比较次数递减
-  let inner_first_pass = add(array_size, -1)
-  let inner_second_pass = add(array_size, -2)
-  let inner_third_pass = add(array_size, -3)
-  
-  // 计算总比较次数
-  comparisons = add(comparisons, inner_first_pass)
-  comparisons = add(comparisons, inner_second_pass)
-  comparisons = add(comparisons, inner_third_pass)
-  
-  // 验证冒泡排序的时间复杂度 O(n²)
-  let expected_comparisons = divide_with_ceil(multiply(array_size, add(array_size, -1)), 2)
-  
-  assert_eq(21, comparisons)  // 7 + 6 + 5 = 18 (3轮的简化计算)
-  assert_eq(28, expected_comparisons)  // 8*7/2 = 28
+  // 测试包含数字的字符串
+  let user_id = "user_" + "12345"
+  let id_greeting = greet(user_id)
+  assert_eq_string("Hello, user_12345!", id_greeting)
 }
 
-test "hash_table_collision_resolution" {
-  // 模拟哈希表冲突解决
-  let table_size = 10
-  let elements_to_insert = 15
+test "financial_calculations" {
+  // 测试金融计算场景
+  let principal = 10000
+  let interest_rate = 5
+  let years = 3
   
-  // 计算预期的冲突次数（基于负载因子）
-  let load_factor = divide_with_ceil(multiply(elements_to_insert, 100), table_size)
+  // 计算复利（简化版本）
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, interest_rate), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, interest_rate), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, interest_rate), 100))
   
-  // 模拟链地址法的冲突处理
-  let base_slots = table_size
-  let overflow_elements = add(elements_to_insert, -table_size)
-  let total_slots_needed = add(base_slots, overflow_elements)
-  
-  // 计算冲突率
-  let collision_rate = divide_with_ceil(multiply(overflow_elements, 100), elements_to_insert)
-  
-  assert_eq(150, load_factor)
-  assert_eq(15, total_slots_needed)
-  assert_eq(33, collision_rate)  // 5/15 = 0.333... -> 33%
+  assert_eq(10500, year1_amount)
+  assert_eq(11025, year2_amount)
+  assert_eq(11576, year3_amount)
 }
 
-test "binary_tree_depth_calculation" {
-  // 模拟二叉树深度计算
-  let nodes = 31  // 完全二叉树的节点数
+test "resource_allocation_optimization" {
+  // 测试资源分配优化
+  let total_budget = 5000
+  let team_a_cost = 1200
+  let team_b_cost = 1800
+  let team_c_cost = 1500
   
-  // 计算树的高度（基于 log₂(n+1)）
-  let mut height = 0
-  let mut nodes_at_level = 1
+  // 计算已分配预算
+  let allocated_budget = add(add(team_a_cost, team_b_cost), team_c_cost)
   
-  // 模拟逐层计算
-  let level1_nodes = 1
-  let level2_nodes = multiply(2, level1_nodes)
-  let level3_nodes = multiply(2, level2_nodes)
-  let level4_nodes = multiply(2, level3_nodes)
-  let level5_nodes = multiply(2, level4_nodes)
+  // 计算剩余预算
+  let remaining_budget = add(total_budget, -allocated_budget)
   
-  // 计算累计节点数
-  let cumulative_level1 = level1_nodes
-  let cumulative_level2 = add(cumulative_level1, level2_nodes)
-  let cumulative_level3 = add(cumulative_level2, level3_nodes)
-  let cumulative_level4 = add(cumulative_level3, level4_nodes)
-  let cumulative_level5 = add(cumulative_level4, level5_nodes)
+  // 计算可以支持的额外小项目数量
+  let small_project_cost = 200
+  let additional_projects = divide_with_ceil(remaining_budget, small_project_cost)
   
-  // 找到能容纳所有节点的最小层数
-  let tree_height = if cumulative_level4 >= nodes {
-    4
-  } else {
-    5
-  }
-  
-  assert_eq(1, level1_nodes)
-  assert_eq(2, level2_nodes)
-  assert_eq(4, level3_nodes)
-  assert_eq(8, level4_nodes)
-  assert_eq(16, level5_nodes)
-  assert_eq(15, cumulative_level4)
-  assert_eq(31, cumulative_level5)
-  assert_eq(5, tree_height)
+  assert_eq(4500, allocated_budget)
+  assert_eq(500, remaining_budget)
+  assert_eq(3, additional_projects)
 }
 
-test "dynamic_programming_fibonacci" {
-  // 使用动态规划思想优化斐波那契数列计算
-  let n = 10
+test "time_management_calculations" {
+  // 测试时间管理计算
+  let daily_working_hours = 8
+  let total_tasks = 75
+  let average_task_time = 2  // 每个任务平均2小时
   
-  // 模拟动态规划的迭代计算
-  let fib0 = 0
-  let fib1 = 1
-  let fib2 = add(fib0, fib1)
-  let fib3 = add(fib1, fib2)
-  let fib4 = add(fib2, fib3)
-  let fib5 = add(fib3, fib4)
-  let fib6 = add(fib4, fib5)
-  let fib7 = add(fib5, fib6)
-  let fib8 = add(fib6, fib7)
-  let fib9 = add(fib7, fib8)
-  let fib10 = add(fib8, fib9)
+  // 计算完成任务需要的总小时数
+  let total_hours_needed = multiply(total_tasks, average_task_time)
   
-  // 验证结果
-  assert_eq(1, fib2)
-  assert_eq(2, fib3)
-  assert_eq(3, fib4)
-  assert_eq(5, fib5)
-  assert_eq(8, fib6)
-  assert_eq(13, fib7)
-  assert_eq(21, fib8)
-  assert_eq(34, fib9)
-  assert_eq(55, fib10)
+  // 计算需要的工作天数
+  let workdays_needed = divide_with_ceil(total_hours_needed, daily_working_hours)
+  
+  // 计算剩余小时数（最后一个工作日）
+  let remaining_hours = add(total_hours_needed, -multiply(workdays_needed - 1, daily_working_hours))
+  
+  assert_eq(150, total_hours_needed)
+  assert_eq(19, workdays_needed)
+  assert_eq(6, remaining_hours)
 }
 
-test "graph_shortest_path_approximation" {
-  // 模拟图的最短路径近似算法
-  let vertices = 6
-  let edges = 9
+test "inventory_turnover_calculation" {
+  // 测试库存周转率计算
+  let initial_inventory = 500
+  let monthly_sales = 120
+  let months_to_simulate = 6
   
-  // 模拟 Dijkstra 算法的松弛操作
-  let distances = [100, 100, 100, 100, 100, 100]  // 初始距离
-  let source = 0
+  // 计算总销售量
+  let total_sales = multiply(monthly_sales, months_to_simulate)
   
-  // 模拟距离更新过程
-  let step1_dist = 10  // source -> vertex 1
-  let step2_dist = add(step1_dist, 15)  // vertex 1 -> vertex 2
-  let step3_dist = add(step2_dist, 20)  // vertex 2 -> vertex 3
-  let step4_dist = add(step3_dist, 25)  // vertex 3 -> vertex 4
-  let step5_dist = add(step4_dist, 30)  // vertex 4 -> vertex 5
+  // 计算期末库存
+  let final_inventory = add(initial_inventory, -total_sales)
   
-  // 计算总路径长度
-  let total_path_length = step5_dist
+  // 计算需要补货的时间点（当库存低于100时）
+  let reorder_point = 100
+  let months_until_reorder = divide_with_ceil(add(initial_inventory, -reorder_point), monthly_sales)
   
-  // 计算平均边权重
-  let average_edge_weight = divide_with_ceil(total_path_length, vertices - 1)
-  
-  assert_eq(10, step1_dist)
-  assert_eq(25, step2_dist)
-  assert_eq(45, step3_dist)
-  assert_eq(70, step4_dist)
-  assert_eq(100, step5_dist)
-  assert_eq(20, average_edge_weight)
+  assert_eq(720, total_sales)
+  assert_eq(-220, final_inventory)
+  assert_eq(4, months_until_reorder)
 }
 
-test "string_pattern_matching_simulation" {
-  // 模拟字符串模式匹配算法
-  let text_length = 100
-  let pattern_length = 8
+test "data_processing_batch_size" {
+  // 测试数据处理批次大小计算
+  let total_records = 10000
+  let max_batch_size = 750
+  let processing_overhead = 50  // 每批次的额外开销
   
-  // 模拟朴素字符串匹配算法的比较次数
-  let possible_positions = add(text_length, -pattern_length) + 1
-  let worst_case_comparisons = multiply(possible_positions, pattern_length)
+  // 计算需要的批次数
+  let batches_needed = divide_with_ceil(total_records, max_batch_size)
   
-  // 模拟 KMP 算法的优化效果
-  let kmp_preprocessing = pattern_length
-  let kmp_comparisons = add(text_length, kmp_preprocessing)
+  // 计算实际处理的记录数（包含开销）
+  let total_processed = add(multiply(batches_needed, max_batch_size), multiply(batches_needed, processing_overhead))
   
-  // 计算性能提升
-  let performance_improvement = divide_with_ceil(worst_case_comparisons, kmp_comparisons)
+  // 计算处理效率
+  let efficiency = divide_with_ceil(multiply(total_records, 100), total_processed)
   
-  assert_eq(93, possible_positions)
-  assert_eq(744, worst_case_comparisons)
-  assert_eq(108, kmp_comparisons)
-  assert_eq(7, performance_improvement)
+  assert_eq(14, batches_needed)
+  assert_eq(11200, total_processed)
+  assert_eq(89, efficiency)
 }
 
-test "memory_pool_allocation" {
-  // 模拟内存池分配策略
-  let pool_size = 1024
-  let block_sizes = [16, 32, 64, 128, 256]
+test "geometric_progression_calculations" {
+  // 测试等比数列计算
+  let first_term = 3
+  let common_ratio = 2
+  let number_of_terms = 8
   
-  // 计算每种块大小的分配数量
-  let blocks_16 = divide_with_ceil(pool_size, 16)
-  let blocks_32 = divide_with_ceil(pool_size, 32)
-  let blocks_64 = divide_with_ceil(pool_size, 64)
-  let blocks_128 = divide_with_ceil(pool_size, 128)
-  let blocks_256 = divide_with_ceil(pool_size, 256)
+  // 计算第n项（简化版本，只计算前几项）
+  let term1 = first_term
+  let term2 = multiply(term1, common_ratio)
+  let term3 = multiply(term2, common_ratio)
+  let term4 = multiply(term3, common_ratio)
   
-  // 计算内存碎片率（最小块大小）
-  let fragmentation_rate_16 = divide_with_ceil(
-    multiply(multiply(blocks_16, 16), 100),
-    pool_size
-  ) - 100
+  // 计算前四项的和
+  let sum_first_four = add(add(add(term1, term2), term3), term4)
   
-  // 计算最佳块大小的利用率
-  let utilization_256 = multiply(multiply(blocks_256, 256), 100) / pool_size
-  
-  assert_eq(64, blocks_16)
-  assert_eq(32, blocks_32)
-  assert_eq(16, blocks_64)
-  assert_eq(8, blocks_128)
-  assert_eq(4, blocks_256)
-  assert_eq(0, fragmentation_rate_16)
-  assert_eq(100, utilization_256)
+  assert_eq(3, term1)
+  assert_eq(6, term2)
+  assert_eq(12, term3)
+  assert_eq(24, term4)
+  assert_eq(45, sum_first_four)
 }
 
-test "cpu_scheduling_round_robin" {
-  // 模拟轮询调度算法
-  let processes = 5
-  let time_quantum = 10
-  let total_burst_time = 87
+test "shipping_logistics_optimization" {
+  // 测试物流配送优化
+  let total_packages = 157
+  let truck_capacity = 24
+  let delivery_cost_per_truck = 150
+  let handling_cost_per_package = 5
   
-  // 计算需要的轮次
-  let rounds_needed = divide_with_ceil(total_burst_time, multiply(processes, time_quantum))
+  // 计算需要的卡车数量
+  let trucks_needed = divide_with_ceil(total_packages, truck_capacity)
   
-  // 计算每个进程的等待时间
-  let avg_wait_time = multiply(processes - 1, time_quantum)
+  // 计算总配送成本
+  let total_delivery_cost = multiply(trucks_needed, delivery_cost_per_truck)
   
-  // 计算上下文切换次数
-  let context_switches = multiply(rounds_needed, processes)
+  // 计算总处理成本
+  let total_handling_cost = multiply(total_packages, handling_cost_per_package)
   
-  // 计算CPU利用率
-  let cpu_utilization = multiply(multiply(total_burst_time, 100), 
-                                add(total_burst_time, multiply(context_switches, 1))) / 
-                                add(total_burst_time, multiply(context_switches, 1))
+  // 计算总成本
+  let total_cost = add(total_delivery_cost, total_handling_cost)
   
-  assert_eq(2, rounds_needed)
-  assert_eq(40, avg_wait_time)
-  assert_eq(10, context_switches)
-  assert_eq(89, cpu_utilization)
+  assert_eq(7, trucks_needed)
+  assert_eq(1050, total_delivery_cost)
+  assert_eq(785, total_handling_cost)
+  assert_eq(1835, total_cost)
 }
 
-test "database_index_b_tree" {
-  // 模拟 B 树索引结构
-  let order = 4  // B 树的阶数
-  let keys_to_insert = 50
+test "temperature_conversion_calculations" {
+  // 测试温度转换计算（简化版本）
+  let celsius_temp = 25
+  let fahrenheit_temp = 77
   
-  // 计算B树的最小和最大键数
-  let min_keys = divide_with_ceil(order, 2) - 1
-  let max_keys = order - 1
+  // 模拟温度转换公式（简化为整数运算）
+  // F = C * 9/5 + 32
+  let converted_fahrenheit = add(divide_with_ceil(multiply(celsius_temp, 9), 5), 32)
   
-  // 估算树的层数
-  let keys_per_level = multiply(order, order)
-  let estimated_levels = divide_with_ceil(keys_to_insert, keys_per_level)
+  // C = (F - 32) * 5/9
+  let converted_celsius = divide_with_ceil(multiply(add(fahrenheit_temp, -32), 5), 9)
   
-  // 计算节点数量
-  let leaf_nodes = divide_with_ceil(keys_to_insert, max_keys)
-  let internal_nodes = divide_with_ceil(leaf_nodes, order)
-  let total_nodes = add(leaf_nodes, internal_nodes)
-  
-  // 计算索引查找效率
-  let search_comparisons = multiply(estimated_levels, order)
-  
-  assert_eq(1, min_keys)
-  assert_eq(3, max_keys)
-  assert_eq(4, estimated_levels)
-  assert_eq(17, leaf_nodes)
-  assert_eq(5, internal_nodes)
-  assert_eq(22, total_nodes)
-  assert_eq(16, search_comparisons)
+  assert_eq(77, converted_fahrenheit)
+  assert_eq(25, converted_celsius)
 }
 
-test "error_correction_hamming_code" {
-  // 模拟汉明码错误纠正
-  let data_bits = 8
-  let redundancy_bits = 4
+test "error_boundary_testing" {
+  // 测试错误边界情况
+  // 测试极大值运算
+  let large_num1 = 1000000
+  let large_num2 = 999999
+  let large_sum = add(large_num1, large_num2)
+  let large_product = multiply(1000, 1000)
   
-  // 计算汉明码总长度
-  let total_bits = add(data_bits, redundancy_bits)
+  // 测试边界除法
+  let boundary_div1 = divide_with_ceil(1, 1000000)
+  let boundary_div2 = divide_with_ceil(999999, 1000000)
+  let boundary_div3 = divide_with_ceil(1000000, 1)
   
-  // 计算错误检测能力
-  let error_detection_capability = multiply(redundancy_bits, 2)
+  // 测试零值处理
+  let zero_add = add(0, 0)
+  let zero_multiply = multiply(0, 12345)
+  let zero_divide = divide_with_ceil(0, 123)
+  let zero_divisor = divide_with_ceil(123, 0)
   
-  // 计算编码效率
-  let encoding_efficiency = multiply(data_bits, 100) / total_bits
-  
-  // 模拟单比特错误纠正
-  let error_position = 7
-  let syndrome = divide_with_ceil(error_position, 2)
-  
-  // 计算纠错开销
-  let correction_overhead = multiply(redundancy_bits, 100) / data_bits
-  
-  assert_eq(12, total_bits)
-  assert_eq(8, error_detection_capability)
-  assert_eq(67, encoding_efficiency)
-  assert_eq(4, syndrome)
-  assert_eq(50, correction_overhead)
+  assert_eq(1999999, large_sum)
+  assert_eq(1000000, large_product)
+  assert_eq(1, boundary_div1)
+  assert_eq(1, boundary_div2)
+  assert_eq(1000000, boundary_div3)
+  assert_eq(0, zero_add)
+  assert_eq(0, zero_multiply)
+  assert_eq(0, zero_divide)
+  assert_eq(0, zero_divisor)
 }
