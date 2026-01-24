@@ -1,109 +1,118 @@
-// 高质量 MoonBit 测试用例
-// 覆盖 azimuth 库的核心功能和边界情况
+// 高质量 MoonBit 测试套件
+// 针对 azimuth 库的核心功能进行全面测试
 
-test "add_commutative_property" {
-  // 测试加法交换律：a + b = b + a
-  assert_eq(15, add(8, 7))
-  assert_eq(15, add(7, 8))
-  assert_eq(0, add(5, -5))
-  assert_eq(0, add(-5, 5))
+test "add_function_comprehensive" {
+  // 全面测试加法功能
+  assert_eq(10, add(7, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-8, 3))
+  assert_eq(1000000, add(500000, 500000))
+  assert_eq(1, add(2147483647, -2147483646))
 }
 
-test "multiply_zero_property" {
-  // 测试乘法零元素性质：a × 0 = 0
-  assert_eq(0, multiply(10, 0))
-  assert_eq(0, multiply(0, 10))
-  assert_eq(0, multiply(0, 0))
-  assert_eq(0, multiply(-100, 0))
+test "multiply_function_comprehensive" {
+  // 全面测试乘法功能
+  assert_eq(21, multiply(7, 3))
+  assert_eq(0, multiply(0, 100))
+  assert_eq(-24, multiply(-8, 3))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(1, multiply(1, 1))
 }
 
-test "greet_with_unicode_and_special_chars" {
-  // 测试包含Unicode和特殊字符的问候
+test "divide_with_ceil_advanced" {
+  // 测试向上取整除法的边界情况
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+  assert_eq(0, divide_with_ceil(5, 0))
+}
+
+test "greet_function_various_inputs" {
+  // 测试问候函数的各种输入
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
   assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, José!", greet("José"))
-  assert_eq_string("Hello, !@#$%", greet("!@#$%"))
-}
-
-test "divide_with_ceil_comprehensive" {
-  // 全面测试向上取整除法
-  assert_eq(4, divide_with_ceil(11, 3))    // 11/3 = 3.666... -> 4
-  assert_eq(3, divide_with_ceil(9, 3))     // 9/3 = 3 -> 3
-  assert_eq(-3, divide_with_ceil(-10, 3))  // -10/3 = -3.333... -> -3
-  assert_eq(4, divide_with_ceil(-11, -3))  // -11/-3 = 3.666... -> 4
-  assert_eq(0, divide_with_ceil(5, 0))     // 除数为0时返回0
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
 
 test "complex_business_calculation" {
-  // 复杂业务计算：订单总价
-  let product_price = 89
-  let quantity = 4
-  let shipping = 12
-  let discount = 20
+  // 复杂业务计算场景
+  let product_price = 25
+  let quantity = 8
+  let tax_rate = 8
+  let shipping = 15
   
   let subtotal = multiply(product_price, quantity)
-  let total_before_discount = add(subtotal, shipping)
-  let final_total = add(total_before_discount, -discount)
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let total = add(add(subtotal, tax), shipping)
   
-  assert_eq(356, subtotal)
-  assert_eq(368, total_before_discount)
-  assert_eq(348, final_total)
+  assert_eq(200, subtotal)
+  assert_eq(16, tax)
+  assert_eq(231, total)
 }
 
-test "mathematical_distributive_property" {
-  // 测试分配律：a × (b + c) = a × b + a × c
-  let a = 3
-  let b = 4
+test "mathematical_properties_verification" {
+  // 验证数学性质
+  let a = 12
+  let b = 8
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 分配律 a * (b + c) = a * b + a * c
   let c = 5
-  
-  let left_side = multiply(a, add(b, c))
-  let right_side = add(multiply(a, b), multiply(a, c))
-  
-  assert_eq(left_side, right_side)  // 3 × (4 + 5) = 3 × 4 + 3 × 5 = 27
+  let left = multiply(a, add(b, c))
+  let right = add(multiply(a, b), multiply(a, c))
+  assert_eq(left, right)
 }
 
-test "real_world_packaging_scenario" {
-  // 真实世界场景：包装计算
-  let total_items = 47
-  let items_per_box = 12
-  
+test "edge_cases_and_boundary_values" {
+  // 边界值和极端情况测试
+  assert_eq(0, add(2147483647, -2147483647))
+  assert_eq(0, multiply(2147483647, 0))
+  assert_eq(1, divide_with_ceil(1, 2147483647))
+  assert_eq(2147483647, multiply(1, 2147483647))
+  assert_eq(-2147483648, add(-2147483647, -1))
+}
+
+test "real_world_scenarios" {
+  // 真实世界应用场景测试
+  // 库存管理：计算需要的存储箱数量
+  let total_items = 157
+  let items_per_box = 24
   let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  let actual_capacity = multiply(boxes_needed, items_per_box)
-  let wasted_space = add(actual_capacity, -total_items)
+  assert_eq(7, boxes_needed)
   
-  assert_eq(4, boxes_needed)      // ceil(47/12) = 4
-  assert_eq(48, actual_capacity)  // 4 × 12 = 48
-  assert_eq(1, wasted_space)      // 48 - 47 = 1
+  // 订单计算：商品总价
+  let unit_price = 89
+  let quantity = 6
+  let order_total = multiply(unit_price, quantity)
+  assert_eq(534, order_total)
 }
 
-test "extreme_boundary_values" {
-  // 测试极端边界值
-  assert_eq(2147483647, add(2147483646, 1))      // 接近Int最大值
-  assert_eq(-2147483648, add(-2147483647, -1))   // 接近Int最小值
-  assert_eq(0, add(2147483647, -2147483647))     // 最大值与相反数相加
-  assert_eq(1, divide_with_ceil(1, 2147483647))  // 极大除数
+test "error_handling_and_safety" {
+  // 错误处理和安全性测试
+  // 除零安全性
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 大数运算稳定性
+  let large_num = 1000000
+  assert_eq(2000000, add(large_num, large_num))
+  assert_eq(1000000000000, multiply(large_num, large_num))
 }
 
-test "string_greeting_edge_cases" {
-  // 测试字符串问候的边界情况
-  assert_eq_string("Hello, !", greet(""))           // 空字符串
-  assert_eq_string("Hello, A!", greet("A"))         // 单字符
-  assert_eq_string("Hello,   !", greet("  "))       // 空格字符串
-  assert_eq_string("Hello, This is a very long name!", greet("This is a very long name"))  // 长字符串
-}
-
-test "complex_financial_calculation" {
-  // 复杂金融计算：投资回报
-  let principal = 10000
-  let rate_percent = 5
-  let years = 3
-  
-  // 简化的复利计算（每年计算一次，使用向上取整）
-  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
-  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
-  
-  assert_eq(10500, year1)  // 10000 + ceil(10000×5/100) = 10000 + 500 = 10500
-  assert_eq(11025, year2)  // 10500 + ceil(10500×5/100) = 10500 + 525 = 11025
-  assert_eq(11576, year3)  // 11025 + ceil(11025×5/100) = 11025 + 551 = 11576
+test "string_processing_internationalization" {
+  // 字符串处理和国际化测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, María!", greet("María"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, 🌍!", greet("🌍"))
+  assert_eq_string("Hello, αβγδε!", greet("αβγδε"))
 }
