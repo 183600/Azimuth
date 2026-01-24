@@ -1,195 +1,171 @@
-// 标准 MoonBit 测试用例
-// 针对 azimuth 库的核心功能进行全面测试
+// 标准 MoonBit 测试用例 - 为 azimuth 库新增10个高质量测试
+// 测试覆盖所有主要功能：add, multiply, greet, divide_with_ceil
 
-test "basic_arithmetic_operations" {
-  // 测试基本算术运算
-  let sum = 1 + 1
-  let product = 2 * 3
-  let difference = 5 - 2
-  let quotient = 10 / 3
-  let remainder = 10 % 3
-  
-  // 简单的验证
-  let sum_check = sum == 2
-  let product_check = product == 6
-  let difference_check = difference == 3
-  let quotient_check = quotient == 3
-  let remainder_check = remainder == 1
-  
-  // 所有检查都应该为真
-  let all_checks = sum_check && product_check && difference_check && quotient_check && remainder_check
-  let _ = if all_checks { "All tests passed" } else { "Some tests failed" }
+test "add_function_comprehensive" {
+  // 全面测试加法函数的正负数情况
+  assert_eq(10, add(7, 3))
+  assert_eq(0, add(5, -5))
+  assert_eq(-10, add(-7, -3))
+  assert_eq(1000000, add(500000, 500000))
+  assert_eq(1, add(2147483647, -2147483646))
 }
 
-test "string_operations" {
-  // 测试字符串操作
-  let greeting = "Hello"
-  let target = "World"
-  let combined = greeting + ", " + target + "!"
-  
-  // 验证字符串连接
-  let check = combined == "Hello, World!"
-  let _ = if check { "String test passed" } else { "String test failed" }
+test "multiply_function_properties" {
+  // 测试乘法函数的数学性质
+  assert_eq(0, multiply(12345, 0))
+  assert_eq(12345, multiply(12345, 1))
+  assert_eq(-12345, multiply(12345, -1))
+  assert_eq(12345, multiply(-12345, -1))
+  assert_eq(1000000, multiply(1000, 1000))
 }
 
-test "conditional_expressions" {
-  // 测试条件表达式
-  let value = 15
-  let result = if value > 10 { "large" } else { "small" }
-  
-  // 验证条件逻辑
-  let check = result == "large"
-  let _ = if check { "Conditional test passed" } else { "Conditional test failed" }
+test "greet_function_international_support" {
+  // 测试问候函数的国际字符和特殊符号支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀 MoonBit!", greet("🚀 MoonBit"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, ñoño!", greet("ñoño"))
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 7
-  let b = 13
+test "divide_with_ceil_business_scenarios" {
+  // 测试向上取整除法的实际业务场景
+  // 场景1：计算运输车辆需求
+  let packages = 47
+  let capacity_per_truck = 10
+  let trucks_needed = divide_with_ceil(packages, capacity_per_truck)
+  assert_eq(5, trucks_needed)
+  
+  // 场景2：计算存储空间需求
+  let items = 156
+  let box_capacity = 25
+  let boxes_needed = divide_with_ceil(items, box_capacity)
+  assert_eq(7, boxes_needed)
+}
+
+test "mathematical_commutative_laws" {
+  // 验证数学交换律
+  let a = 42
+  let b = 17
   
   // 加法交换律
-  let add_forward = a + b
-  let add_backward = b + a
-  let add_commutative = add_forward == add_backward
+  assert_eq(add(a, b), add(b, a))
   
   // 乘法交换律
-  let mul_forward = a * b
-  let mul_backward = b * a
-  let mul_commutative = mul_forward == mul_backward
+  assert_eq(multiply(a, b), multiply(b, a))
   
-  // 验证数学性质
-  let all_properties = add_commutative && mul_commutative
-  let _ = if all_properties { "Math properties test passed" } else { "Math properties test failed" }
+  // 测试负数情况
+  assert_eq(add(-5, 10), add(10, -5))
+  assert_eq(multiply(-3, 7), multiply(7, -3))
 }
 
-test "edge_cases" {
-  // 测试边界情况
-  let zero_multiply = 5 * 0
-  let zero_add = 5 + 0
-  let negative_add = -10 + 5
-  let negative_multiply = -2 * 3
+test "complex_calculation_pipeline" {
+  // 测试复杂计算流水线
+  // 场景：项目资源规划计算
+  let team_members = 8
+  let tasks_per_member = 6
+  let sprint_capacity = 20
   
-  // 验证边界情况
-  let zero_mul_check = zero_multiply == 0
-  let zero_add_check = zero_add == 5
-  let neg_add_check = negative_add == -5
-  let neg_mul_check = negative_multiply == -6
+  // 计算总任务数
+  let total_tasks = multiply(team_members, tasks_per_member)
+  assert_eq(48, total_tasks)
   
-  let all_edge_checks = zero_mul_check && zero_add_check && neg_add_check && neg_mul_check
-  let _ = if all_edge_checks { "Edge cases test passed" } else { "Edge cases test failed" }
+  // 计算需要的冲刺数
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  assert_eq(3, sprints_needed)
+  
+  // 计算总处理能力
+  let total_capacity = multiply(sprints_needed, sprint_capacity)
+  assert_eq(60, total_capacity)
+  
+  // 计算剩余能力
+  let remaining_capacity = total_capacity - total_tasks
+  assert_eq(12, remaining_capacity)
 }
 
-test "complex_calculations" {
-  // 测试复杂计算
-  let x = 10
-  let y = 20
-  let z = 5
+test "edge_cases_and_boundary_conditions" {
+  // 测试边缘情况和边界条件
+  // 除零的各种情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
   
-  // (x + y) * z
-  let complex1 = (x + y) * z
+  // 极值测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(-1, divide_with_ceil(-1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
   
-  // x * y + z
-  let complex2 = x * y + z
+  // 加法恒等式
+  assert_eq(42, add(42, 0))
+  assert_eq(42, add(0, 42))
   
-  // x + y * z
-  let complex3 = x + y * z
-  
-  // 验证复杂计算
-  let check1 = complex1 == 150
-  let check2 = complex2 == 205
-  let check3 = complex3 == 110
-  
-  let all_complex_checks = check1 && check2 && check3
-  let _ = if all_complex_checks { "Complex calculations test passed" } else { "Complex calculations test failed" }
+  // 乘法恒等式
+  assert_eq(0, multiply(42, 0))
+  assert_eq(42, multiply(42, 1))
 }
 
-test "division_with_ceil_simulation" {
-  // 模拟向上取整除法 - 测试案例1
-  let a1 = 10
-  let b1 = 3
-  let q1 = a1 / b1
-  let r1 = a1 % b1
-  let result1 = if r1 == 0 { q1 } else { q1 + 1 }
-  
-  // 测试案例2
-  let a2 = 9
-  let b2 = 3
-  let q2 = a2 / b2
-  let r2 = a2 % b2
-  let result2 = if r2 == 0 { q2 } else { q2 + 1 }
-  
-  // 测试案例3
-  let a3 = 1
-  let b3 = 100
-  let q3 = a3 / b3
-  let r3 = a3 % b3
-  let result3 = if r3 == 0 { q3 } else { q3 + 1 }
-  
-  // 测试案例4 - 除零情况，直接返回0
-  let result4 = 0
-  
-  // 验证所有测试案例
-  let check1 = result1 == 4
-  let check2 = result2 == 3
-  let check3 = result3 == 1
-  let check4 = result4 == 0
-  
-  let all_tests = check1 && check2 && check3 && check4
-  let _ = if all_tests { "Division with ceil test passed" } else { "Division with ceil test failed" }
+test "string_processing_comprehensive" {
+  // 字符串处理综合测试
+  // 测试各种字符串输入
+  assert_eq_string("Hello, single!", greet("single"))
+  assert_eq_string("Hello, space test!", greet("space test"))
+  assert_eq_string("Hello, 12345!", greet("12345"))
+  assert_eq_string("Hello, !@#$%^&*()", greet("!@#$%^&*()"))
+  assert_eq_string("Hello, mixedCASE123!", greet("mixedCASE123"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
 }
 
-test "boolean_logic" {
-  // 测试布尔逻辑
-  let true_val = true
-  let false_val = false
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  // 场景：预算分配问题
+  let total_budget = 10000
+  let departments = 6
   
-  // 基本布尔运算
-  let and_result = true_val && false_val  // false
-  let or_result = true_val || false_val   // true
-  let not_true = !true_val                // false
-  let not_false = !false_val              // true
+  // 计算每个部门的平均预算（向上取整）
+  let budget_per_dept = divide_with_ceil(total_budget, departments)
+  assert_eq(1667, budget_per_dept)
   
-  // 验证布尔逻辑
-  let and_check = and_result == false
-  let or_check = or_result == true
-  let not_true_check = not_true == false
-  let not_false_check = not_false == true
+  // 计算实际分配的总预算
+  let actual_total = multiply(budget_per_dept, departments)
+  assert_eq(10002, actual_total)
   
-  let all_boolean_checks = and_check && or_check && not_true_check && not_false_check
-  let _ = if all_boolean_checks { "Boolean logic test passed" } else { "Boolean logic test failed" }
+  // 计算预算溢出
+  let budget_overflow = actual_total - total_budget
+  assert_eq(2, budget_overflow)
+  
+  // 场景2：优化分配策略
+  let optimized_departments = departments + 1
+  let optimized_budget = divide_with_ceil(total_budget, optimized_departments)
+  assert_eq(1429, optimized_budget)
 }
 
-test "nested_expressions" {
-  // 测试嵌套表达式
-  let a = 5
-  let b = 10
-  let c = 15
+test "mathematical_distributive_law" {
+  // 验证数学分配律: a * (b + c) = a * b + a * c
+  let a = 6
+  let b = 8
+  let c = 4
   
-  // 嵌套算术表达式
-  let nested1 = a + b * c
-  let nested2 = (a + b) * c
-  let nested3 = a * b + c * a
+  // 计算左边：a * (b + c)
+  let left_side = multiply(a, add(b, c))
   
-  // 验证嵌套表达式
-  let check1 = nested1 == 155
-  let check2 = nested2 == 225
-  let check3 = nested3 == 175
+  // 计算右边：a * b + a * c
+  let right_side = add(multiply(a, b), multiply(a, c))
   
-  let all_nested_checks = check1 && check2 && check3
-  let _ = if all_nested_checks { "Nested expressions test passed" } else { "Nested expressions test failed" }
-}
-
-test "unicode_strings" {
-  // 测试Unicode字符串
-  let chinese = "中文"
-  let emoji = "🚀"
-  let greek = "αβγ"
+  // 验证分配律
+  assert_eq(left_side, right_side)
   
-  // 字符串连接
-  let combined = chinese + " " + emoji + " " + greek
-  let expected = "中文 🚀 αβγ"
+  // 另一个测试案例
+  let x = 12
+  let y = 5
+  let z = 3
   
-  // 验证Unicode字符串
-  let check = combined == expected
-  let _ = if check { "Unicode strings test passed" } else { "Unicode strings test failed" }
+  assert_eq(
+    multiply(x, add(y, z)),
+    add(multiply(x, y), multiply(x, z))
+  )
+  
+  // 验证具体数值
+  assert_eq(96, multiply(12, add(5, 3)))  // 12 * 8 = 96
+  assert_eq(96, add(multiply(12, 5), multiply(12, 3)))  // 60 + 36 = 96
 }
