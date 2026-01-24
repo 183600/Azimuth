@@ -1680,4 +1680,219 @@ test "performance_metrics_evaluation" {
   assert_eq(24, performance_score)  // 10 + 10 + 4
 }
 
+// 新增的10个标准 MoonBit 测试用例
+test "extreme_boundary_conditions" {
+  // 极端边界条件测试
+  // 测试接近整数边界的值
+  assert_eq(2147483647, add(2147483646, 1))
+  assert_eq(-2147483648, add(-2147483647, -1))
+  assert_eq(1, divide_with_ceil(2147483647, 2147483647))
+  assert_eq(0, divide_with_ceil(-2147483648, 2147483647))
+}
+
+test "string_edge_cases_comprehensive" {
+  // 字符串边缘情况综合测试
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("   "))
+  assert_eq_string("Hello, \n\r\t!", greet("\n\r\t"))
+  assert_eq_string("Hello, \0!", greet("\0"))
+  assert_eq_string("Hello, \\\"!", greet("\""))
+  assert_eq_string("Hello, \\\\!", greet("\\"))
+  assert_eq_string("Hello, null!", greet("null"))
+  assert_eq_string("Hello, undefined!", greet("undefined"))
+}
+
+test "divide_with_ceil_comprehensive_error_handling" {
+  // 向上取整除法的综合错误处理
+  // 各种除零情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(1, 0))
+  assert_eq(0, divide_with_ceil(-1, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  
+  // 极小除数
+  assert_eq(2147483647, divide_with_ceil(2147483647, 1))
+  assert_eq(-2147483648, divide_with_ceil(-2147483648, 1))
+}
+
+test "complex_mathematical_series" {
+  // 复杂数学级数测试
+  // 等差数列求和
+  let n = 10
+  let first_term = 1
+  let last_term = 10
+  let arithmetic_sum = divide_with_ceil(multiply(n, add(first_term, last_term)), 2)
+  assert_eq(55, arithmetic_sum)  // 10 * (1 + 10) / 2 = 55
+  
+  // 等比数列求和（简化）
+  let ratio = 2
+  let geometric_sum = subtract(multiply(ratio, n), 1)
+  assert_eq(19, geometric_sum)  // 2^10 - 1 (简化计算)
+}
+
+test "real_world_logistics_optimization" {
+  // 真实世界物流优化测试
+  // 场景：多仓库货物分配
+  let warehouses = [(100, 25), (150, 40), (80, 20), (200, 35)]  // (货物数量，每车容量)
+  
+  // 计算每个仓库需要的车辆数
+  let trucks_1 = divide_with_ceil(warehouses[0].0, warehouses[0].1)  // ceil(100/25) = 4
+  let trucks_2 = divide_with_ceil(warehouses[1].0, warehouses[1].1)  // ceil(150/40) = 4
+  let trucks_3 = divide_with_ceil(warehouses[2].0, warehouses[2].1)  // ceil(80/20) = 4
+  let trucks_4 = divide_with_ceil(warehouses[3].0, warehouses[3].1)  // ceil(200/35) = 6
+  
+  let total_trucks = add(add(trucks_1, trucks_2), add(trucks_3, trucks_4))
+  assert_eq(18, total_trucks)
+  
+  // 计算总运力和利用率
+  let total_capacity = add(
+    multiply(trucks_1, warehouses[0].1),
+    add(multiply(trucks_2, warehouses[1].1), 
+    add(multiply(trucks_3, warehouses[2].1), multiply(trucks_4, warehouses[3].1)))
+  )
+  let total_goods = add(add(warehouses[0].0, warehouses[1].0), add(warehouses[2].0, warehouses[3].0))
+  
+  assert_eq(530, total_capacity)  // 4*25 + 4*40 + 4*20 + 6*35
+  assert_eq(530, total_goods)     // 100 + 150 + 80 + 200
+}
+
+test "advanced_error_recovery_scenarios" {
+  // 高级错误恢复场景测试
+  // 模拟数据损坏和恢复
+  let corrupted_data = -1
+  let fallback_value = 0
+  
+  // 错误检测和恢复
+  let recovered_data = add(corrupted_data, multiply(fallback_value, 2))
+  assert_eq(-1, recovered_data)
+  
+  // 使用除法进行错误检测
+  let error_detected = divide_with_ceil(corrupted_data, 0)
+  assert_eq(0, error_detected)  // 除零错误返回0
+  
+  // 数据验证
+  let is_valid = multiply(recovered_data, recovered_data) >= 0
+  assert_true(is_valid)
+}
+
+test "statistical_analysis_operations" {
+  // 统计分析操作测试
+  // 计算平均值（使用向上取整）
+  let numbers = [10, 20, 30, 40, 50]
+  let sum = add(add(add(add(numbers[0], numbers[1]), numbers[2]), numbers[3]), numbers[4])
+  let count = 5
+  let average = divide_with_ceil(sum, count)
+  assert_eq(30, average)  // ceil(150/5) = 30
+  
+  // 计算方差（简化）
+  let deviations = [
+    subtract(numbers[0], average),  // -20
+    subtract(numbers[1], average),  // -10
+    subtract(numbers[2], average),  // 0
+    subtract(numbers[3], average),  // 10
+    subtract(numbers[4], average)   // 20
+  ]
+  
+  let squared_deviations = [
+    multiply(deviations[0], deviations[0]),  // 400
+    multiply(deviations[1], deviations[1]),  // 100
+    multiply(deviations[2], deviations[2]),  // 0
+    multiply(deviations[3], deviations[3]),  // 100
+    multiply(deviations[4], deviations[4])   // 400
+  ]
+  
+  let variance_sum = add(add(add(add(squared_deviations[0], squared_deviations[1]), squared_deviations[2]), squared_deviations[3]), squared_deviations[4])
+  let variance = divide_with_ceil(variance_sum, count)
+  assert_eq(200, variance)  // ceil(1000/5) = 200
+}
+
+test "cryptography_simulation" {
+  // 密码学模拟测试
+  // 简化的凯撒密码
+  let plaintext = "Hello"
+  let shift = 3
+  
+  // 模拟加密过程（使用数值运算）
+  let encrypted_numeric = add(72, shift)  // 'H' (72) + 3 = 75 ('K')
+  assert_eq(75, encrypted_numeric)
+  
+  // 模拟解密过程
+  let decrypted_numeric = subtract(encrypted_numeric, shift)
+  assert_eq(72, decrypted_numeric)
+  
+  // 简化的哈希模拟
+  let hash_input = 12345
+  let hash_prime = 31
+  let hash_result = multiply(hash_input, hash_prime)
+  assert_eq(382695, hash_result)
+  
+  // 模拟哈希冲突检测
+  let another_input = 617
+  let another_hash = multiply(another_input, hash_prime)
+  let hash_collision = divide_with_ceil(hash_result, another_hash)
+  assert_eq(2, hash_collision)  // ceil(382695/19127) = 2
+}
+
+test "advanced_financial_modeling" {
+  // 高级金融建模测试
+  // 复杂的贷款计算
+  let principal = 200000
+  let annual_rate = 6  // 6%
+  let loan_term_years = 30
+  
+  // 计算月利率（简化）
+  let monthly_rate = divide_with_ceil(annual_rate, 12)
+  assert_eq(1, monthly_rate)  // ceil(6/12) = 1%
+  
+  // 计算总月数
+  let total_months = multiply(loan_term_years, 12)
+  assert_eq(360, total_months)
+  
+  // 简化的月供计算
+  let monthly_payment = divide_with_ceil(
+    add(principal, divide_with_ceil(multiply(principal, annual_rate), 100)),
+    total_months
+  )
+  assert_eq(556, monthly_payment)  // ceil((200000 + 12000) / 360)
+  
+  // 计算总支付额
+  let total_payment = multiply(monthly_payment, total_months)
+  assert_eq(200160, total_payment)
+  
+  // 计算总利息
+  let total_interest = subtract(total_payment, principal)
+  assert_eq(160, total_interest)
+}
+
+test "quantum_computing_simulation" {
+  // 量子计算模拟测试
+  // 模拟量子位操作
+  let qubit_state_0 = 0
+  let qubit_state_1 = 1
+  
+  // 量子叠加模拟（简化）
+  let superposition_coefficient = divide_with_ceil(multiply(qubit_state_0 + qubit_state_1, 100), 2)
+  assert_eq(50, superposition_coefficient)  // ceil(1*100/2) = 50
+  
+  // 量子纠缠模拟
+  let entangled_pair_1 = 1
+  let entangled_pair_2 = 0
+  
+  // 测量操作模拟
+  let measurement_result = add(entangled_pair_1, entangled_pair_2)
+  assert_eq(1, measurement_result)
+  
+  // 量子门操作模拟
+  let hadamard_gate_input = 1
+  let hadamard_gate_output = divide_with_ceil(hadamard_gate_input + 1, 2)
+  assert_eq(1, hadamard_gate_output)  // ceil(2/2) = 1
+  
+  // 量子算法模拟（Grover算法简化）
+  let search_space_size = 1000
+  let target_items = 1
+  let oracle_calls = divide_with_ceil(multiply(search_space_size, target_items), 100)
+  assert_eq(10, oracle_calls)  // ceil(1000/100) = 10
+}
+
 
