@@ -1,192 +1,134 @@
 // Azimuth 项目综合单元测试
-// 使用标准 MoonBit 测试语法
+// 使用标准 MoonBit 测试语法，包含10个高质量测试用例
 
-test "integer_division_operations" {
-  // 测试整数除法运算
-  let dividend = 17
-  let divisor = 5
-  
-  let quotient = dividend / divisor
-  let remainder = dividend % divisor
-  
-  // 验证除法结果
-  let check_quotient = quotient
-  let check_remainder = remainder
+test "add_function_comprehensive" {
+  // 测试加法函数的综合情况
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(10, @azimuth.add(7, 3))
+  @azimuth.assert_eq(-10, @azimuth.add(-7, -3))
+  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
+  @azimuth.assert_eq(100, @azimuth.add(50, 50))
 }
 
-test "negative_number_operations" {
-  // 测试负数运算
-  let a = -10
-  let b = 3
-  
-  let sum = a + b
-  let diff = a - b
-  let product = a * b
-  let negated = -a
-  
-  // 验证负数运算结果
-  let check_sum = sum
-  let check_diff = diff
-  let check_product = product
-  let check_negated = negated
+test "multiply_function_edge_cases" {
+  // 测试乘法函数的边界情况
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
+  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
+  @azimuth.assert_eq(-1, @azimuth.multiply(-1, 1))
+  @azimuth.assert_eq(25, @azimuth.multiply(-5, -5))
 }
 
-test "boolean_expressions" {
-  // 测试布尔表达式
-  let x = 5
-  let y = 10
-  
-  let expr1 = x < y && y > 0
-  let expr2 = x > 0 || y < 0
-  let expr3 = !(x == y)
-  let expr4 = x <= y && y >= x
-  
-  // 验证布尔表达式结果
-  let check_expr1 = expr1
-  let check_expr2 = expr2
-  let check_expr3 = expr3
-  let check_expr4 = expr4
+test "greet_function_unicode_and_special_chars" {
+  // 测试问候函数的Unicode和特殊字符
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
+  @azimuth.assert_eq_string("Hello, @#$%!", @azimuth.greet("@#$%"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, Line\nBreak!", @azimuth.greet("Line\nBreak"))
 }
 
-test "string_length_operations" {
-  // 测试字符串长度操作
-  let short = "Hi"
-  let medium = "Azimuth"
-  let long = "MoonBit Programming Language"
-  
-  // 假设有长度函数
-  let short_len = short  // length(short) 的占位符
-  let medium_len = medium  // length(medium) 的占位符
-  let long_len = long  // length(long) 的占位符
-  
-  // 验证字符串长度
-  let check_short = short_len
-  let check_medium = medium_len
-  let check_long = long_len
+test "divide_with_ceil_comprehensive" {
+  // 测试向上取整除法的综合情况
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(5, 0))
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(-10, -3))
 }
 
-test "array_index_operations" {
-  // 测试数组索引操作
-  let numbers = [10, 20, 30, 40, 50]
-  let first = numbers[0]
-  let middle = numbers[2]
-  let last = numbers[4]
+test "complex_business_calculation" {
+  // 测试复杂业务计算场景
+  // 装盒问题：47个物品，每盒12个，需要多少盒？
+  let items = 47
+  let box_capacity = 12
+  let boxes_needed = @azimuth.divide_with_ceil(items, box_capacity)
+  @azimuth.assert_eq(5, boxes_needed)
   
-  // 数组边界测试
-  let length = 5
-  let valid_index = 3
-  let element = numbers[valid_index]
-  
-  // 验证数组索引操作
-  let check_first = first
-  let check_middle = middle
-  let check_last = last
-  let check_element = element
+  // 价格计算：单价199，数量3，运费20
+  let price = 199
+  let quantity = 3
+  let shipping = 20
+  let subtotal = @azimuth.multiply(price, quantity)
+  let total = @azimuth.add(subtotal, shipping)
+  @azimuth.assert_eq(617, total)
 }
 
-test "nested_function_calls" {
-  // 测试嵌套函数调用
-  let add_one = fn(x) { x + 1 }
-  let double = fn(x) { x * 2 }
-  let square = fn(x) { x * x }
+test "mathematical_properties_and_identities" {
+  // 测试数学性质和恒等式
+  let x = 42
+  let y = 17
   
-  let value = 3
-  
-  // 嵌套调用: square(double(add_one(value)))
-  let step1 = add_one(value)
-  let step2 = double(step1)
-  let step3 = square(step2)
-  
-  // 验证嵌套函数调用结果
-  let check_step1 = step1
-  let check_step2 = step2
-  let check_step3 = step3
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
+  // 加法单位元
+  @azimuth.assert_eq(x, @azimuth.add(x, 0))
+  // 乘法单位元
+  @azimuth.assert_eq(x, @azimuth.multiply(x, 1))
+  // 乘法零元
+  @azimuth.assert_eq(0, @azimuth.multiply(x, 0))
 }
 
-test "conditional_nested_logic" {
-  // 测试嵌套条件逻辑
-  let score = 75
-  let extra_credit = 5
-  let attendance = true
+test "error_handling_and_boundary_conditions" {
+  // 测试错误处理和边界条件
+  // 除数为零的情况
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-10, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
   
-  let final_score = score + extra_credit
-  let grade = if (final_score >= 90) {
-    "A"
-  } else if (final_score >= 80) {
-    "B"
-  } else if (final_score >= 70) {
-    if (attendance) {
-      "C+"
-    } else {
-      "C"
-    }
-  } else {
-    "D"
-  }
-  
-  // 验证嵌套条件逻辑结果
-  let check_final_score = final_score
-  let check_grade = grade
+  // 大数运算
+  @azimuth.assert_eq(2000000, @azimuth.add(1000000, 1000000))
+  @azimuth.assert_eq(1000000000000, @azimuth.multiply(1000000, 1000000))
 }
 
-test "mathematical_series" {
-  // 测试数学级数
-  // 等差数列: 2, 5, 8, 11, 14
-  let arithmetic_sum = 2 + 5 + 8 + 11 + 14
+test "sequential_operations_pipeline" {
+  // 测试连续操作管道
+  let initial = 15
+  let step1 = @azimuth.add(initial, 10)        // 25
+  let step2 = @azimuth.multiply(step1, 2)      // 50
+  let step3 = @azimuth.divide_with_ceil(step2, 12)  // 5
+  let step4 = @azimuth.add(step3, 3)           // 8
+  let step5 = @azimuth.multiply(step4, 1)      // 8
   
-  // 等比数列: 2, 4, 8, 16, 32
-  let geometric_sum = 2 + 4 + 8 + 16 + 32
-  
-  // 平方数列: 1, 4, 9, 16, 25
-  let square_sum = 1 + 4 + 9 + 16 + 25
-  
-  // 验证数学级数结果
-  let check_arithmetic = arithmetic_sum
-  let check_geometric = geometric_sum
-  let check_square = square_sum
+  @azimuth.assert_eq(8, step5)
 }
 
-test "data_validation_patterns" {
-  // 测试数据验证模式
-  let age = 25
-  let height = 175
-  let weight = 70
+test "string_processing_with_greet" {
+  // 测试使用greet函数进行字符串处理
+  let names = ["Alice", "Bob", "Charlie", "世界", "🚀"]
+  let expected_greetings = [
+    "Hello, Alice!",
+    "Hello, Bob!", 
+    "Hello, Charlie!",
+    "Hello, 世界!",
+    "Hello, 🚀!"
+  ]
   
-  // 验证年龄范围
-  let valid_age = age >= 0 && age <= 120
-  
-  // 验证身高范围 (cm)
-  let valid_height = height >= 50 && height <= 250
-  
-  // 验证体重范围 (kg)
-  let valid_weight = weight >= 10 && weight <= 300
-  
-  // 综合验证
-  let all_valid = valid_age && valid_height && valid_weight
-  
-  // 验证数据验证结果
-  let check_age = valid_age
-  let check_height = valid_height
-  let check_weight = valid_weight
-  let check_all = all_valid
+  @azimuth.assert_eq_string(expected_greetings[0], @azimuth.greet(names[0]))
+  @azimuth.assert_eq_string(expected_greetings[1], @azimuth.greet(names[1]))
+  @azimuth.assert_eq_string(expected_greetings[2], @azimuth.greet(names[2]))
+  @azimuth.assert_eq_string(expected_greetings[3], @azimuth.greet(names[3]))
+  @azimuth.assert_eq_string(expected_greetings[4], @azimuth.greet(names[4]))
 }
 
-test "calculation_precision" {
-  // 测试计算精度
-  let precise_value = 3.14159  // π 的近似值
-  let radius = 10
+test "real_world_inventory_management" {
+  // 测试现实世界库存管理场景
+  // 仓库有不同数量的商品，需要统一包装
+  let product_a_qty = 23
+  let product_b_qty = 47
+  let product_c_qty = 89
+  let package_size = 12
   
-  // 圆的面积: π * r²
-  let area = precise_value * radius * radius
+  let packages_a = @azimuth.divide_with_ceil(product_a_qty, package_size)
+  let packages_b = @azimuth.divide_with_ceil(product_b_qty, package_size)
+  let packages_c = @azimuth.divide_with_ceil(product_c_qty, package_size)
   
-  // 圆的周长: 2 * π * r
-  let circumference = 2 * precise_value * radius
+  let total_packages = @azimuth.add(@azimuth.add(packages_a, packages_b), packages_c)
   
-  // 球的体积: (4/3) * π * r³
-  let volume = 4 * precise_value * radius * radius * radius / 3
-  
-  // 验证计算精度结果
-  let check_area = area
-  let check_circumference = circumference
-  let check_volume = volume
+  @azimuth.assert_eq(2, packages_a)  // ceil(23/12) = 2
+  @azimuth.assert_eq(4, packages_b)  // ceil(47/12) = 4
+  @azimuth.assert_eq(8, packages_c)  // ceil(89/12) = 8
+  @azimuth.assert_eq(14, total_packages)  // 2 + 4 + 8 = 14
 }
