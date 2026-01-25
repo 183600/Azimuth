@@ -1,160 +1,249 @@
-// 新增的高质量 MoonBit 测试用例
-// 包含数学性质、实际应用场景和边缘情况的测试
+// 质量增强测试用例 - 为 azimuth 库新增的10个高质量测试用例
+// 覆盖数学性质、业务场景、边界条件和错误处理等方面
 
-test "mathematical_associative_laws" {
-  // 测试加法结合律: (a + b) + c = a + (b + c)
-  let a = 15
-  let b = 27
-  let c = 42
+test "mathematical_distributive_property" {
+  // 测试数学分配律: a * (b + c) = a * b + a * c
+  let a = 7
+  let b = 5
+  let c = 3
   
-  let left_assoc = @azimuth.add(@azimuth.add(a, b), c)
-  let right_assoc = @azimuth.add(a, @azimuth.add(b, c))
-  @azimuth.assert_eq(left_assoc, right_assoc)
+  // 计算左侧: a * (b + c)
+  let sum_bc = @azimuth.add(b, c)
+  let left_side = @azimuth.multiply(a, sum_bc)
   
-  // 测试乘法结合律: (a * b) * c = a * (b * c)
-  let m = 3
-  let n = 7
-  let p = 11
+  // 计算右侧: a * b + a * c
+  let product_ab = @azimuth.multiply(a, b)
+  let product_ac = @azimuth.multiply(a, c)
+  let right_side = @azimuth.add(product_ab, product_ac)
   
-  let left_mult = @azimuth.multiply(@azimuth.multiply(m, n), p)
-  let right_mult = @azimuth.multiply(m, @azimuth.multiply(n, p))
-  @azimuth.assert_eq(left_mult, right_mult)
+  @azimuth.assert_eq(left_side, right_side)  // 7 * (5 + 3) = 7 * 5 + 7 * 3 = 56
 }
 
-test "mathematical_distributive_law" {
-  // 测试分配律: a * (b + c) = a * b + a * c
-  let a = 5
-  let b = 12
-  let c = 8
+test "inventory_management_optimization" {
+  // 库存管理优化场景测试
+  // 场景：计算最优装箱方案
+  let product_a_quantity = 47
+  let product_b_quantity = 63
+  let product_c_quantity = 29
+  let box_capacity = 12
   
-  let left_dist = @azimuth.multiply(a, @azimuth.add(b, c))
-  let right_dist = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
-  @azimuth.assert_eq(left_dist, right_dist)
+  // 计算每种产品需要的箱子数量
+  let boxes_a = @azimuth.divide_with_ceil(product_a_quantity, box_capacity)
+  let boxes_b = @azimuth.divide_with_ceil(product_b_quantity, box_capacity)
+  let boxes_c = @azimuth.divide_with_ceil(product_c_quantity, box_capacity)
+  
+  // 计算总箱子数量
+  let total_boxes = @azimuth.add(@azimuth.add(boxes_a, boxes_b), boxes_c)
+  
+  // 验证结果
+  @azimuth.assert_eq(4, boxes_a)  // ceil(47/12) = 4
+  @azimuth.assert_eq(6, boxes_b)  // ceil(63/12) = 6
+  @azimuth.assert_eq(3, boxes_c)  // ceil(29/12) = 3
+  @azimuth.assert_eq(13, total_boxes)  // 4 + 6 + 3 = 13
 }
 
-test "financial_calculation_scenario" {
-  // 测试金融计算场景：计算投资回报
-  let principal = 10000  // 本金
-  let rate1 = 5          // 第一年收益率5%
-  let rate2 = 8          // 第二年收益率8%
-  let rate3 = 6          // 第三年收益率6%
-  
-  // 计算三年后的总金额（简化计算，使用乘法模拟百分比）
-  let year1 = @azimuth.multiply(principal, rate1)
-  let year2 = @azimuth.multiply(year1, rate2)
-  let year3 = @azimuth.multiply(year2, rate3)
-  
-  // 计算总收益（简化版）
-  let total_return = @azimuth.add(year1, @azimuth.add(year2, year3))
-  @azimuth.assert_true(total_return > 0)
-}
-
-test "inventory_management_scenario" {
-  // 测试库存管理场景
-  let initial_stock = 500
-  let shipment1 = 150
-  let shipment2 = 200
-  let sold_items = 320
-  
-  // 计算最终库存
-  let total_received = @azimuth.add(shipment1, shipment2)
-  let current_stock = @azimuth.add(initial_stock, total_received)
-  let final_stock = @azimuth.add(current_stock, -sold_items)
-  
-  @azimuth.assert_eq(530, final_stock)
-  
-  // 计算需要的箱子数量（每箱装25个）
-  let boxes_needed = @azimuth.divide_with_ceil(final_stock, 25)
-  @azimuth.assert_eq(22, boxes_needed)
-}
-
-test "temperature_conversion_scenario" {
-  // 测试温度转换场景（简化版）
-  let celsius_temp = 25
-  let conversion_factor = 9
-  let conversion_divisor = 5
-  let offset = 32
-  
-  // 简化的华氏度计算：F = C * 9/5 + 32
-  let multiplied = @azimuth.multiply(celsius_temp, conversion_factor)
-  let divided = @azimuth.divide_with_ceil(multiplied, conversion_divisor)
-  let fahrenheit_temp = @azimuth.add(divided, offset)
-  
-  @azimuth.assert_eq(77, fahrenheit_temp)
-}
-
-test "error_handling_boundary_conditions" {
-  // 测试错误处理的边界条件
+test "extreme_boundary_combinations" {
+  // 极值边界组合测试
   let max_val = 2147483647
   let min_val = -2147483648
+  let mid_val = 0
   
-  // 测试接近边界的运算
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(46341, 46341))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(-46341, 46341))
+  // 测试最大值与最小值的运算
+  let max_plus_min = @azimuth.add(max_val, min_val)
+  @azimuth.assert_eq(-1, max_plus_min)
+  
+  // 测试最大值与中间值的运算
+  let max_plus_mid = @azimuth.add(max_val, mid_val)
+  @azimuth.assert_eq(max_val, max_plus_mid)
+  
+  // 测试最小值与中间值的运算
+  let min_plus_mid = @azimuth.add(min_val, mid_val)
+  @azimuth.assert_eq(min_val, min_plus_mid)
+  
+  // 测试边界值的乘法（防止溢出）
+  let max_times_one = @azimuth.multiply(max_val, 1)
+  let min_times_one = @azimuth.multiply(min_val, 1)
+  @azimuth.assert_eq(max_val, max_times_one)
+  @azimuth.assert_eq(min_val, min_times_one)
 }
 
-test "string_processing_complex_cases" {
-  // 测试复杂的字符串处理情况
-  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
-  let unicode_chars = "αβγδεζηθικλμνξοπρστυφχψω"
+test "financial_calculation_with_rounding" {
+  // 金融计算与舍入场景测试
+  // 场景：计算贷款分期付款
+  let principal = 10000
+  let annual_rate_percent = 5
+  let loan_term_years = 3
   
-  let result1 = @azimuth.greet(special_chars)
-  let result2 = @azimuth.greet(unicode_chars)
+  // 简化的年利率计算
+  let yearly_interest = @azimuth.divide_with_ceil(@azimuth.multiply(principal, annual_rate_percent), 100)
+  let total_with_interest = @azimuth.add(principal, yearly_interest)
   
-  // 验证字符串不为空，通过简单的断言检查
-  @azimuth.assert_true(result1 != "")
-  @azimuth.assert_true(result2 != "")
+  // 计算月供（简化计算）
+  let total_months = @azimuth.multiply(loan_term_years, 12)
+  let monthly_payment = @azimuth.divide_with_ceil(total_with_interest, total_months)
+  
+  // 验证计算结果
+  @azimuth.assert_eq(500, yearly_interest)  // ceil(10000 * 5 / 100) = 500
+  @azimuth.assert_eq(10500, total_with_interest)  // 10000 + 500
+  @azimuth.assert_eq(36, total_months)  // 3 * 12
+  @azimuth.assert_eq(292, monthly_payment)  // ceil(10500 / 36)
 }
 
-test "algorithmic_sequence_calculation" {
-  // 测试算法序列计算
-  // 计算斐波那契数列的前几项（简化版）
+test "error_handling_and_recovery" {
+  // 错误处理与恢复测试
+  // 测试除零错误的处理
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(2147483647, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-2147483648, 0))
+  
+  // 测试极小除数的情况
+  @azimuth.assert_eq(1000000, @azimuth.divide_with_ceil(999999, 1))
+  @azimuth.assert_eq(-999999, @azimuth.divide_with_ceil(-999999, 1))
+  
+  // 测试字符串处理的边界情况
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, null!", @azimuth.greet("null"))
+  @azimuth.assert_eq_string("Hello, undefined!", @azimuth.greet("undefined"))
+}
+
+test "performance_and_scalability" {
+  // 性能与可扩展性测试
+  // 测试大规模运算的性能
+  let large_number = 100000
+  
+  // 连续加法测试
+  let mut sum = 0
+  sum = @azimuth.add(sum, large_number)
+  sum = @azimuth.add(sum, large_number)
+  sum = @azimuth.add(sum, large_number)
+  sum = @azimuth.add(sum, large_number)
+  sum = @azimuth.add(sum, large_number)
+  @azimuth.assert_eq(500000, sum)
+  
+  // 连续乘法测试
+  let mut product = 1
+  product = @azimuth.multiply(product, 2)
+  product = @azimuth.multiply(product, 2)
+  product = @azimuth.multiply(product, 2)
+  product = @azimuth.multiply(product, 2)
+  product = @azimuth.multiply(product, 2)
+  @azimuth.assert_eq(32, product)
+  
+  // 混合运算测试
+  let mixed_result = @azimuth.multiply(
+    @azimuth.add(large_number, 50000),
+    @azimuth.divide_with_ceil(100000, 25000)
+  )
+  @azimuth.assert_eq(600000, mixed_result)  // (100000 + 50000) * ceil(100000/25000) = 150000 * 4
+}
+
+test "internationalization_and_encoding" {
+  // 国际化和编码测试
+  // 测试各种语言的问候
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, Москва!", @azimuth.greet("Москва"))
+  @azimuth.assert_eq_string("Hello, café!", @azimuth.greet("café"))
+  @azimuth.assert_eq_string("Hello, ñoño!", @azimuth.greet("ñoño"))
+  @azimuth.assert_eq_string("Hello, 🌍!", @azimuth.greet("🌍"))
+  @azimuth.assert_eq_string("Hello, 🏳️‍🌈!", @azimuth.greet("🏳️‍🌈"))
+  
+  // 测试特殊字符和符号
+  @azimuth.assert_eq_string("Hello, ©®™!", @azimuth.greet("©®™"))
+  @azimuth.assert_eq_string("Hello, αβγ!", @azimuth.greet("αβγ"))
+  @azimuth.assert_eq_string("Hello, ١٢٣!", @azimuth.greet("١٢٣"))  // 阿拉伯数字
+}
+
+test "complex_mathematical_sequences" {
+  // 复杂数学序列测试
+  // 测试斐波那契数列（简化版）
   let fib1 = 1
   let fib2 = 1
   let fib3 = @azimuth.add(fib1, fib2)  // 2
   let fib4 = @azimuth.add(fib2, fib3)  // 3
   let fib5 = @azimuth.add(fib3, fib4)  // 5
   let fib6 = @azimuth.add(fib4, fib5)  // 8
+  let fib7 = @azimuth.add(fib5, fib6)  // 13
   
-  let fib_sum = @azimuth.add(fib1, @azimuth.add(fib2, @azimuth.add(fib3, @azimuth.add(fib4, @azimuth.add(fib5, fib6)))))
-  @azimuth.assert_eq(20, fib_sum)
+  @azimuth.assert_eq(2, fib3)
+  @azimuth.assert_eq(3, fib4)
+  @azimuth.assert_eq(5, fib5)
+  @azimuth.assert_eq(8, fib6)
+  @azimuth.assert_eq(13, fib7)
+  
+  // 测试阶乘计算（简化版）
+  let fact1 = 1
+  let fact2 = @azimuth.multiply(fact1, 2)  // 2
+  let fact3 = @azimuth.multiply(fact2, 3)  // 6
+  let fact4 = @azimuth.multiply(fact3, 4)  // 24
+  let fact5 = @azimuth.multiply(fact4, 5)  // 120
+  
+  @azimuth.assert_eq(2, fact2)
+  @azimuth.assert_eq(6, fact3)
+  @azimuth.assert_eq(24, fact4)
+  @azimuth.assert_eq(120, fact5)
 }
 
-test "resource_allocation_scenario" {
-  // 测试资源分配场景
-  let total_budget = 10000
-  let team_size = 8
-  let project_duration = 12  // 月
+test "function_composition_and_pipelining" {
+  // 函数组合与管道测试
+  // 测试函数组合：f(g(h(x))) 模式
+  let initial_value = 10
   
-  // 计算每人每月预算
-  let total_person_months = @azimuth.multiply(team_size, project_duration)
-  let budget_per_person_month = @azimuth.divide_with_ceil(total_budget, total_person_months)
+  // 第一层：乘法
+  let step1 = @azimuth.multiply(initial_value, 3)  // 30
   
-  // 计算总分配（可能由于向上取整而超过原预算）
-  let allocated_budget = @azimuth.multiply(budget_per_person_month, total_person_months)
+  // 第二层：加法
+  let step2 = @azimuth.add(step1, 15)  // 45
   
-  @azimuth.assert_true(budget_per_person_month > 0)
-  @azimuth.assert_true(allocated_budget >= total_budget)
+  // 第三层：除法向上取整
+  let step3 = @azimuth.divide_with_ceil(step2, 8)  // 6
+  
+  // 第四层：再次加法
+  let final_result = @azimuth.add(step3, 4)  // 10
+  
+  @azimuth.assert_eq(10, final_result)
+  
+  // 测试更复杂的管道
+  let pipeline_result = @azimuth.multiply(
+    @azimuth.add(
+      @azimuth.divide_with_ceil(100, 3),
+      5
+    ),
+    2
+  )
+  @azimuth.assert_eq(76, pipeline_result)  // (ceil(100/3) + 5) * 2 = (34 + 5) * 2 = 78
 }
 
-test "geometric_calculation_scenario" {
-  // 测试几何计算场景
-  // 计算矩形的周长和面积（简化版）
-  let length = 15
-  let width = 8
+test "data_validation_and_business_rules" {
+  // 数据验证与业务规则测试
+  // 场景：电商订单验证
   
-  // 周长 = 2 * (length + width)
-  let perimeter = @azimuth.multiply(2, @azimuth.add(length, width))
+  // 订单金额计算
+  let item_price = 199
+  let quantity = 3
+  let shipping_cost = 15
+  let discount = -20
   
-  // 面积 = length * width
-  let area = @azimuth.multiply(length, width)
+  let subtotal = @azimuth.multiply(item_price, quantity)  // 597
+  let total_before_discount = @azimuth.add(subtotal, shipping_cost)  // 612
+  let final_total = @azimuth.add(total_before_discount, discount)  // 592
   
-  @azimuth.assert_eq(46, perimeter)
-  @azimuth.assert_eq(120, area)
+  @azimuth.assert_eq(597, subtotal)
+  @azimuth.assert_eq(612, total_before_discount)
+  @azimuth.assert_eq(592, final_total)
   
-  // 计算需要多少个1x1的瓷砖来覆盖面积
-  let tiles_needed = @azimuth.divide_with_ceil(area, 1)
-  @azimuth.assert_eq(120, tiles_needed)
+  // 验证业务规则：订单金额必须为正数
+  @azimuth.assert_true(final_total > 0)
+  
+  // 库存验证：计算需要的包装数量
+  let items_per_package = 2
+  let packages_needed = @azimuth.divide_with_ceil(quantity, items_per_package)
+  @azimuth.assert_eq(2, packages_needed)  // ceil(3/2) = 2
+  
+  // 个性化问候生成
+  let customer_name = "张三"
+  let membership_level = "VIP"
+  let personalized_greeting = @azimuth.greet(customer_name + " (" + membership_level + ")")
+  @azimuth.assert_eq_string("Hello, 张三 (VIP)!", personalized_greeting)
 }
