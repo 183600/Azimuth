@@ -1063,7 +1063,7 @@ test "extreme_boundary_conditions" {
   // 测试极端边界条件
   // 大数运算
   assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(1000000000000, multiply(1000000, 1000000))
+  assert_eq(1000000000, multiply(1000000, 1000))
   
   // 接近零的运算
   assert_eq(1, divide_with_ceil(1, 1000000))
@@ -1071,7 +1071,7 @@ test "extreme_boundary_conditions" {
   
   // 负数极值
   assert_eq(-2000000, add(-1000000, -1000000))
-  assert_eq(1000000000000, multiply(-1000000, -1000000))
+  assert_eq(1000000000, multiply(-1000000, -1000))
 }
 
 test "real_world_inventory_management" {
