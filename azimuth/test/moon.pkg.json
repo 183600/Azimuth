@@ -183,6 +183,7 @@
   "concise_standard_tests.mbt",
   "new_comprehensive_unit_tests.mbt",
   "simple_new_test.mbt",
-  "azimuth_new_unit_tests.mbt"
+  "azimuth_new_unit_tests.mbt",
+  "azimuth_standard_test_cases_new.mbt"
   ]
 }
