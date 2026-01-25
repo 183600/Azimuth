@@ -3080,4 +3080,252 @@ test "complex_business_workflow" {
   assert_eq(25, capacity_utilization)  // ceil(6*100/24) = 25%
 }
 
+// 新增的10个高质量 MoonBit 测试用例
+test "arithmetic_sequence_operations" {
+  // 等差数列运算测试
+  let first_term = 3
+  let difference = 5
+  let n_terms = 6
+  
+  // 计算等差数列第n项：a_n = a_1 + (n-1)*d
+  let nth_term = add(first_term, multiply(n_terms - 1, difference))
+  assert_eq(28, nth_term)  // 3 + (6-1)*5 = 28
+  
+  // 计算等差数列前n项和：S_n = n*(a_1 + a_n)/2
+  let sum = divide_with_ceil(multiply(n_terms, add(first_term, nth_term)), 2)
+  assert_eq(93, sum)  // 6*(3+28)/2 = 93
+}
+
+test "geometric_progression_calculations" {
+  // 等比数列计算测试
+  let first_term = 2
+  let ratio = 3
+  let n_terms = 4
+  
+  // 计算等比数列第n项：a_n = a_1 * r^(n-1)
+  let nth_term = multiply(first_term, multiply(ratio, multiply(ratio, ratio)))
+  assert_eq(54, nth_term)  // 2 * 3^3 = 54
+  
+  // 计算等比数列前n项和的近似值
+  let sum_approx = multiply(first_term, divide_with_ceil(multiply(ratio, n_terms), ratio - 1))
+  assert_eq(24, sum_approx)  // 近似计算
+}
+
+test "string_processing_comprehensive" {
+  // 字符串处理综合测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, @#$%!", greet("@#$%"))
+}
+
+test "resource_scheduling_optimization" {
+  // 资源调度优化测试
+  let total_tasks = 127
+  let workers = 8
+  let hours_per_day = 8
+  let working_days = 5
+  
+  // 计算每个工人的任务量
+  let tasks_per_worker = divide_with_ceil(total_tasks, workers)
+  assert_eq(16, tasks_per_worker)  // ceil(127/8) = 16
+  
+  // 计算总工作时长
+  let total_hours = multiply(tasks_per_worker, workers)
+  assert_eq(128, total_hours)
+  
+  // 计算需要的天数
+  let days_needed = divide_with_ceil(total_hours, hours_per_day)
+  assert_eq(16, days_needed)  // ceil(128/8) = 16
+  
+  // 计算需要的周数
+  let weeks_needed = divide_with_ceil(days_needed, working_days)
+  assert_eq(4, weeks_needed)  // ceil(16/5) = 4
+}
+
+test "mathematical_series_analysis" {
+  // 数学级数分析测试
+  // 模拟调和级数的部分和计算
+  
+  // 计算 H_n = 1 + 1/2 + 1/3 + ... + 1/n 的近似值
+  // 使用整数运算模拟
+  let term1 = divide_with_ceil(1000, 1)
+  let term2 = divide_with_ceil(1000, 2)
+  let term3 = divide_with_ceil(1000, 3)
+  let term4 = divide_with_ceil(1000, 4)
+  let term5 = divide_with_ceil(1000, 5)
+  
+  let partial_sum = add(add(add(add(term1, term2), add(term3, term4)), term5)
+  assert_eq(2834, partial_sum)  // 1000 + 500 + 334 + 250 + 200 = 2283 (向上取整)
+}
+
+test "inventory_management_system" {
+  // 库存管理系统测试
+  let product_a_qty = 45
+  let product_b_qty = 67
+  let product_c_qty = 23
+  
+  let box_capacity_a = 12
+  let box_capacity_b = 15
+  let box_capacity_c = 8
+  
+  // 计算每种产品需要的箱子数量
+  let boxes_a = divide_with_ceil(product_a_qty, box_capacity_a)
+  let boxes_b = divide_with_ceil(product_b_qty, box_capacity_b)
+  let boxes_c = divide_with_ceil(product_c_qty, box_capacity_c)
+  
+  assert_eq(4, boxes_a)   // ceil(45/12) = 4
+  assert_eq(5, boxes_b)   // ceil(67/15) = 5
+  assert_eq(3, boxes_c)   // ceil(23/8) = 3
+  
+  // 计算总箱子数量
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  assert_eq(12, total_boxes)
+  
+  // 计算总存储容量
+  let total_capacity = add(
+    multiply(boxes_a, box_capacity_a),
+    add(multiply(boxes_b, box_capacity_b), multiply(boxes_c, box_capacity_c))
+  )
+  assert_eq(156, total_capacity)
+  
+  // 计算剩余空间
+  let total_products = add(add(product_a_qty, product_b_qty), product_c_qty)
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(21, remaining_space)
+}
+
+test "financial_calculations" {
+  // 金融计算测试
+  let principal = 10000
+  let annual_rate = 8  // 8%
+  let years = 4
+  
+  // 简化的年度复利计算
+  let year1_end = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
+  let year2_end = add(year1_end, divide_with_ceil(multiply(year1_end, annual_rate), 100))
+  let year3_end = add(year2_end, divide_with_ceil(multiply(year2_end, annual_rate), 100))
+  let year4_end = add(year3_end, divide_with_ceil(multiply(year3_end, annual_rate), 100))
+  
+  // 验证每年的复利增长
+  assert_eq(10800, year1_end)  // 10000 + 8%
+  assert_eq(11664, year2_end)  // 10800 + 8%
+  assert_eq(12597, year3_end)  // 11664 + 8%
+  assert_eq(13605, year4_end)  // 12597 + 8%
+  
+  // 计算总收益
+  let total_return = subtract(year4_end, principal)
+  assert_eq(3605, total_return)
+  
+  // 计算月供（4年=48个月）
+  let monthly_payment = divide_with_ceil(year4_end, multiply(years, 12))
+  assert_eq(284, monthly_payment)  // ceil(13605/48)
+}
+
+test "algorithm_complexity_analysis" {
+  // 算法复杂度分析测试
+  
+  // 模拟O(n)算法的执行步骤
+  let linear_100 = multiply(100, 3)
+  let linear_1000 = multiply(1000, 3)
+  let linear_10000 = multiply(10000, 3)
+  
+  // 模拟O(log n)算法的执行步骤（简化计算）
+  let log_100 = divide_with_ceil(100, 10)
+  let log_1000 = divide_with_ceil(1000, 10)
+  let log_10000 = divide_with_ceil(10000, 10)
+  
+  // 模拟O(n²)算法的执行步骤（简化计算）
+  let quadratic_100 = divide_with_ceil(multiply(100, 100), 100)
+  let quadratic_1000 = divide_with_ceil(multiply(1000, 1000), 10000)
+  let quadratic_10000 = divide_with_ceil(multiply(10000, 10000), 100000)
+  
+  // 验证不同算法的复杂度特征
+  assert_eq(300, linear_100)
+  assert_eq(3000, linear_1000)
+  assert_eq(30000, linear_10000)
+  
+  assert_eq(10, log_100)
+  assert_eq(100, log_1000)
+  assert_eq(1000, log_10000)
+  
+  assert_eq(100, quadratic_100)
+  assert_eq(100, quadratic_1000)
+  assert_eq(1000, quadratic_10000)
+}
+
+test "data_structure_operations" {
+  // 数据结构操作测试
+  // 模拟栈操作
+  let stack_initial_size = 0
+  let push_operations = 5
+  let pop_operations = 3
+  
+  let stack_after_push = add(stack_initial_size, push_operations)
+  let stack_after_pop = subtract(stack_after_push, pop_operations)
+  
+  assert_eq(5, stack_after_push)
+  assert_eq(2, stack_after_pop)
+  
+  // 模拟队列操作
+  let queue_capacity = 20
+  let queue_enqueued = 15
+  let queue_dequeued = 8
+  
+  let queue_current_size = subtract(queue_enqueued, queue_dequeued)
+  let queue_remaining_capacity = subtract(queue_capacity, queue_current_size)
+  
+  assert_eq(7, queue_current_size)
+  assert_eq(13, queue_remaining_capacity)
+  
+  // 模拟哈希表负载因子计算
+  let hash_table_size = 16
+  let occupied_slots = 11
+  let load_factor = divide_with_ceil(multiply(occupied_slots, 100), hash_table_size)
+  
+  assert_eq(69, load_factor)  // ceil(11*100/16) = 69%
+}
+
+test "business_workflow_simulation" {
+  // 业务工作流模拟测试
+  // 场景：电商订单处理系统
+  
+  // 订单基本信息
+  let order_items = 47
+  let items_per_box = 8
+  let processing_time_per_box = 15  // 分钟
+  
+  // 计算需要的包装箱数量
+  let boxes_needed = divide_with_ceil(order_items, items_per_box)
+  assert_eq(6, boxes_needed)  // ceil(47/8) = 6
+  
+  // 计算总处理时间
+  let total_processing_time = multiply(boxes_needed, processing_time_per_box)
+  assert_eq(90, total_processing_time)  // 6 * 15 = 90分钟
+  
+  // 计算工作小时数
+  let processing_hours = divide_with_ceil(total_processing_time, 60)
+  assert_eq(2, processing_hours)  // ceil(90/60) = 2小时
+  
+  // 计算配送成本
+  let base_shipping_cost = 50
+  let cost_per_box = 12
+  let total_shipping_cost = add(base_shipping_cost, multiply(boxes_needed, cost_per_box))
+  assert_eq(122, total_shipping_cost)  // 50 + 6*12 = 122
+  
+  // 计算总订单价值（假设每个物品平均价值25）
+  let average_item_value = 25
+  let total_order_value = multiply(order_items, average_item_value)
+  assert_eq(1175, total_order_value)  // 47 * 25 = 1175
+  
+  // 计算配送成本占比
+  let shipping_cost_percentage = divide_with_ceil(multiply(total_shipping_cost, 100), total_order_value)
+  assert_eq(11, shipping_cost_percentage)  // ceil(122*100/1175) = 11%
+}
+}
+
 
