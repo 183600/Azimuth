@@ -1,128 +1,137 @@
-// 额外的综合测试用例 - 针对 azimuth 库的补充测试
-// 包含边界情况、特殊场景和实际应用场景的测试
+// 额外的综合测试用例 - 针对 azimuth 库的高级测试
+// 包含实际应用场景、边界条件和复合运算测试
 
-test "extreme_boundary_values" {
-  // 测试极端边界值
-  assert_eq(2147483647, add(2147483646, 1))  // 接近Int最大值
-  assert_eq(-2147483648, add(-2147483647, -1))  // 接近Int最小值
-  assert_eq(0, add(2147483647, -2147483647))  // 最大值与相反数相加
-}
-
-test "divide_with_ceil_edge_cases" {
-  // 测试向上取整除法的边界情况
-  assert_eq(1, divide_with_ceil(1, 1))  // 完全相等
-  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
-  assert_eq(100, divide_with_ceil(9999, 100))  // 99.99 -> 100
-  assert_eq(-3, divide_with_ceil(-10, 3))  // -10/3 = -3.333... -> -3
-  assert_eq(0, divide_with_ceil(0, 1000))  // 零除以正数
-}
-
-test "greet_function_unicode_support" {
-  // 测试问候函数的Unicode支持
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, αβγ!", greet("αβγ"))
-  assert_eq_string("Hello, ñáéíóú!", greet("ñáéíóú"))
-  assert_eq_string("Hello, 🌍🌎🌏!", greet("🌍🌎🌏"))
-}
-
-test "complex_mathematical_expressions" {
-  // 测试复杂数学表达式
-  let x = 10
-  let y = 20
-  let z = 5
+test "data_processing_aggregation" {
+  // 数据处理聚合测试
+  let data_points = [10, 15, 20, 25, 30]
+  let sum = add(add(add(add(data_points[0], data_points[1]), data_points[2]), data_points[3]), data_points[4])
+  let average = divide_with_ceil(sum, 5)
+  let max_value = 30
   
-  // 测试表达式：(x + y) * z - x / y
-  let result = add(multiply(add(x, y), z), -divide_with_ceil(x, y))
-  assert_eq(149, result)  // (10 + 20) * 5 - ceil(10/20) = 30*5 - 1 = 150 - 1 = 149
+  assert_eq(100, sum)
+  assert_eq(20, average)
+  assert_eq(30, max_value)
 }
 
-test "financial_calculation_scenario" {
-  // 金融计算场景：复利计算
-  let principal = 1000
+test "algorithm_binary_search_simulation" {
+  // 模拟二分查找算法的索引计算
+  let low = 0
+  let high = 15
+  let mid = divide_with_ceil(add(low, high), 2)
+  
+  assert_eq(8, mid)
+  
+  // 模拟下一步查找范围
+  let new_low = add(mid, 1)
+  let new_mid = divide_with_ceil(add(new_low, high), 2)
+  
+  assert_eq(12, new_mid)
+}
+
+test "financial_compound_interest" {
+  // 金融复利计算测试
+  let principal = 10000
   let rate_percent = 5
+  let years = 3
   
-  // 简化的复利计算（每年计算一次）
-  let amount_after_year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  let amount_after_year2 = add(amount_after_year1, divide_with_ceil(multiply(amount_after_year1, rate_percent), 100))
-  let amount_after_year3 = add(amount_after_year2, divide_with_ceil(multiply(amount_after_year2, rate_percent), 100))
+  // 第一年
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  // 第二年
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  // 第三年
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
   
-  // 验证结果（由于使用向上取整，结果会略高于标准复利计算）
-  assert_eq(1158, amount_after_year3)  // 1000 -> 1050 -> 1103 -> 1158
+  assert_eq(10500, year1)
+  assert_eq(11025, year2)
+  assert_eq(11576, year3)
 }
 
-test "inventory_management_calculation" {
-  // 库存管理计算
-  let items_per_box = 24
-  let total_items_small = 100
-  let total_items_medium = 250
-  let total_items_large = 1000
+test "extreme_boundary_conditions" {
+  // 极端边界条件测试
+  let max_positive = 2147483647
+  let min_negative = -2147483648
   
-  let boxes_small = divide_with_ceil(total_items_small, items_per_box)
-  let boxes_medium = divide_with_ceil(total_items_medium, items_per_box)
-  let boxes_large = divide_with_ceil(total_items_large, items_per_box)
+  // 测试大数运算
+  assert_eq(1, add(max_positive, -max_positive))
+  assert_eq(-1, add(min_negative, max_positive))
   
-  let total_boxes = add(add(boxes_small, boxes_medium), boxes_large)
-  
-  assert_eq(5, boxes_small)   // ceil(100/24) = 5
-  assert_eq(11, boxes_medium) // ceil(250/24) = 11
-  assert_eq(42, boxes_large)  // ceil(1000/24) = 42
-  assert_eq(58, total_boxes)  // 5 + 11 + 42 = 58
+  // 测试零的边界
+  assert_eq(0, multiply(0, max_positive))
+  assert_eq(0, multiply(min_negative, 0))
 }
 
-test "time_and_resource_calculation" {
-  // 时间和资源计算
-  let tasks_per_day = 8
-  let total_tasks = 45
-  let days_needed = divide_with_ceil(total_tasks, tasks_per_day)
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_resources = 100
+  let project_requirements = [15, 25, 30, 20]
   
-  // 计算工作小时数（每天8小时）
-  let total_hours = multiply(days_needed, 8)
+  // 计算总需求
+  let total_required = add(add(add(project_requirements[0], project_requirements[1]), project_requirements[2]), project_requirements[3])
   
-  assert_eq(6, days_needed)  // ceil(45/8) = 6
-  assert_eq(48, total_hours)  // 6 * 8 = 48
+  // 计算剩余资源
+  let remaining = add(total_resources, -total_required)
+  
+  // 计算可以支持的额外项目数（每个项目需要10个资源）
+  let additional_projects = divide_with_ceil(remaining, 10)
+  
+  assert_eq(90, total_required)
+  assert_eq(10, remaining)
+  assert_eq(1, additional_projects)
 }
 
-test "error_handling_robustness" {
-  // 错误处理健壮性测试
-  // 测试除数为零的情况
+test "error_robustness_validation" {
+  // 错误处理健壮性验证
+  // 测试除零错误处理
   assert_eq(0, divide_with_ceil(100, 0))
   assert_eq(0, divide_with_ceil(-100, 0))
   assert_eq(0, divide_with_ceil(0, 0))
   
-  // 测试大数运算
-  let big_num = 1000000
-  assert_eq(2000000, add(big_num, big_num))
-  assert_eq(1000000, multiply(1000, 1000))
+  // 测试极大数运算的稳定性
+  let large_num = 1000000
+  assert_eq(2000000, add(large_num, large_num))
+  assert_eq(1000000000000, multiply(large_num, large_num))
 }
 
-test "string_processing_with_greet" {
-  // 字符串处理与问候函数结合
-  let first_name = "John"
-  let last_name = "Doe"
-  let full_name = first_name + " " + last_name
-  let greeting = greet(full_name)
+test "string_processing_validation" {
+  // 字符串处理验证测试
+  let username = "user123"
+  let domain = "example.com"
+  let email = username + "@" + domain
+  let greeting = greet(email)
   
-  assert_eq_string("Hello, John Doe!", greeting)
+  assert_eq_string("Hello, user123@example.com!", greeting)
   
   // 测试特殊字符处理
-  let special_name = "Alice & Bob"
-  let special_greeting = greet(special_name)
-  assert_eq_string("Hello, Alice & Bob!", special_greeting)
+  let special_chars = "!@#$%^&*()"
+  assert_eq_string("Hello, !@#$%^&*()!", greet(special_chars))
+  
+  // 测试Unicode字符
+  let unicode_text = "🚀 MoonBit 测试"
+  assert_eq_string("Hello, 🚀 MoonBit 测试!", greet(unicode_text))
 }
 
-test "mathematical_properties_verification" {
-  // 数学性质验证
-  let a = 12
-  let b = 8
-  let c = 5
+test "complex_mathematical_series" {
+  // 复杂数学级数计算
+  // 计算等差数列：3, 7, 11, 15, 19 的和
+  let a1 = 3
+  let d = 4
+  let n = 5
   
-  // 验证分配律：a * (b + c) = a * b + a * c
-  let distributive_left = multiply(a, add(b, c))
-  let distributive_right = add(multiply(a, b), multiply(a, c))
-  assert_eq(distributive_left, distributive_right)
+  // 使用等差数列求和公式：S = n/2 * (2a1 + (n-1)d)
+  let sum_formula = divide_with_ceil(
+    multiply(n, add(multiply(2, a1), multiply(n - 1, d))),
+    2
+  )
   
-  // 验证结合律：(a + b) + c = a + (b + c)
-  let associative_left = add(add(a, b), c)
-  let associative_right = add(a, add(b, c))
-  assert_eq(associative_left, associative_right)
+  // 验证结果
+  assert_eq(55, sum_formula)
+  
+  // 计算等比数列：2, 4, 8, 16 的和
+  let g1 = 2
+  let r = 2
+  let gn = 4
+  
+  // 等比数列求和：S = g1 * (r^n - 1) / (r - 1)
+  let geometric_sum = multiply(g1, divide_with_ceil(multiply(r, gn) - 1, r - 1))
+  assert_eq(30, geometric_sum)
 }
