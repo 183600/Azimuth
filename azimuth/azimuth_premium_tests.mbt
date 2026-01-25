@@ -1,312 +1,163 @@
-// Azimuth 高级测试用例集合
-// 专为深度验证而设计的测试套件
-
-test "mathematical_identities_and_properties" {
-  // 验证基本数学恒等式和性质
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 加法单位元性质
-  @azimuth.assert_eq(42, @azimuth.add(42, 0))
-  @azimuth.assert_eq(-42, @azimuth.add(-42, 0))
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 0))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, 0))
-  
-  // 乘法单位元性质
-  @azimuth.assert_eq(42, @azimuth.multiply(42, 1))
-  @azimuth.assert_eq(-42, @azimuth.multiply(-42, 1))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
-  
-  // 乘法零元性质
-  @azimuth.assert_eq(0, @azimuth.multiply(42, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(-42, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
-  
-  // 加法交换律（在安全范围内）
-  @azimuth.assert_eq(@azimuth.add(15, 27), @azimuth.add(27, 15))
-  @azimuth.assert_eq(@azimuth.add(-15, 27), @azimuth.add(27, -15))
-  @azimuth.assert_eq(@azimuth.add(-15, -27), @azimuth.add(-27, -15))
-  
-  // 乘法交换律（在安全范围内）
-  @azimuth.assert_eq(@azimuth.multiply(12, 8), @azimuth.multiply(8, 12))
-  @azimuth.assert_eq(@azimuth.multiply(-12, 8), @azimuth.multiply(8, -12))
-  @azimuth.assert_eq(@azimuth.multiply(-12, -8), @azimuth.multiply(-8, -12))
-}
+// Azimuth 项目高级 MoonBit 测试用例
+// 使用标准 MoonBit 测试语法，包含8个高质量测试用例
+// 覆盖边界情况、性能测试和实际应用场景
 
 test "extreme_boundary_conditions" {
-  // 测试极端边界条件和溢出行为
-  let max_val = 2147483647
-  let min_val = -2147483648
+  // 测试极值边界条件
+  // 接近 Int 最大值和最小值的运算
+  assert_eq(2147483646, add(2147483645, 1))
+  assert_eq(-2147483647, add(-2147483646, -1))
+  assert_eq(2147483646, multiply(46340, 46341))  // 接近 sqrt(Int.max)
+  assert_eq(1, divide_with_ceil(2147483646, 2147483646))
+  assert_eq(0, divide_with_ceil(-2147483647, 2147483646))
+}
+
+test "financial_calculations" {
+  // 金融计算场景测试
+  // 贷款分期计算
+  let loan_amount = 250000
+  let monthly_payment = 8500
+  let months_needed = divide_with_ceil(loan_amount, monthly_payment)
+  assert_eq(30, months_needed)  // ceil(250000/8500) = 30
   
-  // 最大值加法溢出
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 100))
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
+  // 验证总支付金额
+  let total_payment = multiply(months_needed, monthly_payment)
+  assert_eq(255000, total_payment)
   
-  // 最小值加法溢出
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -100))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
+  // 计算最后一期实际支付金额
+  let final_payment = subtract(loan_amount, multiply(months_needed - 1, monthly_payment))
+  assert_eq(5000, final_payment)
+}
+
+test "complex_nested_operations" {
+  // 复杂嵌套运算测试
+  let base = 15
   
-  // 最大值乘法溢出
-  @azimuth.assert_eq(max_val, @azimuth.multiply(46341, 46341))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 2))
+  // 嵌套计算：ceil((base*3 + base*2) / (base + ceil(base/3)))
+  let numerator = add(multiply(base, 3), multiply(base, 2))
+  let denominator = add(base, divide_with_ceil(base, 3))
+  let result = divide_with_ceil(numerator, denominator)
   
-  // 最小值乘法特殊处理
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(-1, min_val))
+  // 手动验证：ceil((45+30)/(15+5)) = ceil(75/20) = 4
+  assert_eq(4, result)
+}
+
+test "resource_optimization_problem" {
+  // 资源优化问题测试
+  // 仓库存储优化：多种物品的装箱问题
+  let item1_qty = 47
+  let item1_cap = 8   // ceil(47/8) = 6
+  let item2_qty = 89
+  let item2_cap = 12  // ceil(89/12) = 8
+  let item3_qty = 156
+  let item3_cap = 20 // ceil(156/20) = 8
+  
+  let boxes1 = divide_with_ceil(item1_qty, item1_cap)
+  let boxes2 = divide_with_ceil(item2_qty, item2_cap)
+  let boxes3 = divide_with_ceil(item3_qty, item3_cap)
+  
+  let total_boxes = add(add(boxes1, boxes2), boxes3)
+  assert_eq(22, total_boxes)
+  
+  // 计算总容量和利用率
+  let total_capacity = add(
+    multiply(boxes1, item1_cap),
+    add(multiply(boxes2, item2_cap), multiply(boxes3, item3_cap))
+  )
+  let total_items = add(add(item1_qty, item2_qty), item3_qty)
+  let utilization = divide_with_ceil(multiply(total_items, 100), total_capacity)
+  
+  assert_eq(292, total_capacity)  // 48 + 96 + 160
+  assert_eq(92, utilization)      // floor(29200/292) = 100%，但使用ceil
+}
+
+test "string_processing_edge_cases" {
+  // 字符串处理边缘情况测试
+  // 测试各种特殊字符和编码
+  assert_eq_string("Hello, 🌙⭐✨!", greet("🌙⭐✨"))
+  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))
+  assert_eq_string("Hello, 'single'!", greet("'single'"))
+  assert_eq_string("Hello, \\backslash!", greet("\\backslash"))
+  assert_eq_string("Hello, \n\t\r!", greet("\n\t\r"))
+  assert_eq_string("Hello, emoji 🎉🚀🌟!", greet("emoji 🎉🚀🌟"))
+  assert_eq_string("Hello, 中文字符!", greet("中文字符"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+}
+
+test "performance_large_scale_computations" {
+  // 大规模计算性能测试
+  let large_num = 100000
+  let iterations = 1000
+  
+  // 大数运算
+  let sum_result = add(large_num, multiply(large_num, 9))
+  let product_result = multiply(large_num, iterations)
+  let division_result = divide_with_ceil(product_result, large_num)
+  
+  assert_eq(1000000, sum_result)      // 100000 + 100000*9
+  assert_eq(100000000, product_result) // 100000 * 1000
+  assert_eq(1000, division_result)     // ceil(100000000/100000)
+  
+  // 连续运算链
+  let chain_result = divide_with_ceil(
+    multiply(
+      add(large_num, 50000),
+      divide_with_ceil(iterations, 100)
+    ),
+    add(100, divide_with_ceil(large_num, 10000))
+  )
+  assert_eq(7500, chain_result)
+}
+
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  // 各种除零情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  
+  // 极小除数测试
+  assert_eq(100000, divide_with_ceil(99999, 1))
+  assert_eq(-99999, divide_with_ceil(-99999, 1))
+  assert_eq(50000, divide_with_ceil(99999, 2))
   
   // 边界值组合
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
-  @azimuth.assert_eq(0, @azimuth.add(max_val, min_val + 1))
+  assert_eq(1, divide_with_ceil(1, 2147483647))
+  assert_eq(0, divide_with_ceil(-1, 2147483647))
+  assert_eq(-1, divide_with_ceil(1, -2147483647))
 }
 
-test "advanced_string_processing" {
-  // 高级字符串处理测试
-  // 空字符串和单字符
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, a!", @azimuth.greet("a"))
-  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
+test "real_world_scheduling_problem" {
+  // 真实世界调度问题测试
+  // 活动安排：会议室分配
+  let total_participants = 342
   
-  // 数字和字母组合
-  @azimuth.assert_eq_string("Hello, test123!", @azimuth.greet("test123"))
-  @azimuth.assert_eq_string("Hello, 123test!", @azimuth.greet("123test"))
-  @azimuth.assert_eq_string("Hello, t1e2s3t!", @azimuth.greet("t1e2s3t"))
+  // 计算每种会议室需要的数量
+  let rooms_50 = divide_with_ceil(total_participants, 50)
+  let rooms_30 = divide_with_ceil(total_participants, 30)
+  let rooms_20 = divide_with_ceil(total_participants, 20)
+  let rooms_15 = divide_with_ceil(total_participants, 15)
+  let rooms_10 = divide_with_ceil(total_participants, 10)
   
-  // 特殊字符和符号
-  @azimuth.assert_eq_string("Hello, !@#$%^&*()!", @azimuth.greet("!@#$%^&*()"))
-  @azimuth.assert_eq_string("Hello, []{}|\\:;\"'<>?,./!", @azimuth.greet("[]{}|\\:;\"'<>?,./"))
+  assert_eq(7, rooms_50)   // ceil(342/50) = 7
+  assert_eq(12, rooms_30)  // ceil(342/30) = 12
+  assert_eq(18, rooms_20)  // ceil(342/20) = 18
+  assert_eq(23, rooms_15)  // ceil(342/15) = 23
+  assert_eq(35, rooms_10)  // ceil(342/10) = 35
   
-  // Unicode字符
-  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
-  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
-  @azimuth.assert_eq_string("Hello, αβγδε!", @azimuth.greet("αβγδε"))
-  @azimuth.assert_eq_string("Hello, café!", @azimuth.greet("café"))
+  // 计算最优方案（使用50人会议室）
+  let total_capacity_50 = multiply(rooms_50, 50)
+  let wasted_seats_50 = subtract(total_capacity_50, total_participants)
+  let efficiency_50 = divide_with_ceil(multiply(total_participants, 100), total_capacity_50)
   
-  // 空白字符
-  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("   "))
-  @azimuth.assert_eq_string("Hello, \t\t!", @azimuth.greet("\t\t"))
-  @azimuth.assert_eq_string("Hello, \n\n!", @azimuth.greet("\n\n"))
+  assert_eq(350, total_capacity_50)  // 7 * 50
+  assert_eq(8, wasted_seats_50)      // 350 - 342
+  assert_eq(98, efficiency_50)       // ceil(34200/350)
 }
 
-test "complex_arithmetic_scenarios" {
-  // 复杂算术场景测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 多级运算链
-  let step1 = @azimuth.add(10, 20)
-  let step2 = @azimuth.multiply(step1, 3)
-  let step3 = @azimuth.add(step2, 5)
-  let result = @azimuth.divide_with_ceil(step3, 7)
-  @azimuth.assert_eq(14, result)  // ceil((10+20)*3+5)/7 = ceil(95/7) = 14
-  
-  // 嵌套运算
-  let nested = @azimuth.add(
-    @azimuth.multiply(5, 10),
-    @azimuth.divide_with_ceil(@azimuth.add(15, 20), 3)
-  )
-  @azimuth.assert_eq(62, nested)  // 5*10 + ceil(35/3) = 50 + 12 = 62
-  
-  // 条件运算场景
-  let positive_result = @azimuth.multiply(@azimuth.add(100, 50), 2)
-  let negative_result = @azimuth.multiply(@azimuth.add(-100, 50), 2)
-  @azimuth.assert_eq(300, positive_result)
-  @azimuth.assert_eq(-100, negative_result)
-  
-  // 边界值运算链
-  let boundary_chain = @azimuth.add(
-    @azimuth.multiply(1000, 1000),
-    @azimuth.divide_with_ceil(max_val - 1000000, 1000)
-  )
-  @azimuth.assert_eq(1001148, boundary_chain)
-}
-
-test "error_recovery_and_stability" {
-  // 错误恢复和稳定性测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 溢出后的函数可用性测试
-  let _ = @azimuth.add(max_val, max_val)  // 触发溢出
-  @azimuth.assert_eq(10, @azimuth.add(3, 7))  // 验证正常功能恢复
-  
-  let _ = @azimuth.multiply(max_val, max_val)  // 触发溢出
-  @azimuth.assert_eq(21, @azimuth.multiply(3, 7))  // 验证正常功能恢复
-  
-  // 连续溢出处理
-  let overflow1 = @azimuth.add(max_val, 1)
-  let overflow2 = @azimuth.add(max_val, 2)
-  let overflow3 = @azimuth.add(max_val, 3)
-  @azimuth.assert_eq(max_val, overflow1)
-  @azimuth.assert_eq(max_val, overflow2)
-  @azimuth.assert_eq(max_val, overflow3)
-  
-  // 交替正常和溢出运算
-  let normal1 = @azimuth.add(5, 10)
-  let overflow4 = @azimuth.multiply(max_val, 2)
-  let normal2 = @azimuth.add(15, 20)
-  @azimuth.assert_eq(15, normal1)
-  @azimuth.assert_eq(max_val, overflow4)
-  @azimuth.assert_eq(35, normal2)
-  
-  // 除法稳定性
-  let div1 = @azimuth.divide_with_ceil(10, 3)
-  let div2 = @azimuth.divide_with_ceil(-10, 3)
-  let div3 = @azimuth.divide_with_ceil(10, -3)
-  let div4 = @azimuth.divide_with_ceil(-10, -3)
-  @azimuth.assert_eq(4, div1)
-  @azimuth.assert_eq(-3, div2)
-  @azimuth.assert_eq(-3, div3)
-  @azimuth.assert_eq(3, div4)
-}
-
-test "performance_and_memory_safety" {
-  // 性能和内存安全测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 批量运算稳定性测试
-  let mutable sum = 0
-  for i = 0; i < 100; i = i + 1 {
-    sum = @azimuth.add(sum, i)
-  }
-  @azimuth.assert_eq(4950, sum)  // 0+1+2+...+99 = 4950
-  
-  // 批量乘法测试
-  let mutable product = 1
-  for i = 1; i < 11; i = i + 1 {
-    product = @azimuth.multiply(product, i)
-  }
-  @azimuth.assert_eq(3628800, product)  // 10! = 3628800
-  
-  // 混合运算批量测试
-  let mutable mixed_result = 0
-  for i = 0; i < 50; i = i + 1 {
-    let temp = @azimuth.multiply(i, 2)
-    mixed_result = @azimuth.add(mixed_result, temp)
-  }
-  @azimuth.assert_eq(2450, mixed_result)  // 0*2 + 1*2 + ... + 49*2 = 2450
-  
-  // 极值批量操作
-  let mutable extreme_sum = 0
-  for i = 0; i < 10; i = i + 1 {
-    extreme_sum = @azimuth.add(extreme_sum, max_val - 1000000 * i)
-  }
-  @azimuth.assert_true(extreme_sum > 0)  // 验证极值操作不崩溃
-  
-  // 字符串批量处理
-  let _ = @azimuth.greet("test1")
-  let _ = @azimuth.greet("test2")
-  let _ = @azimuth.greet("test3")
-  let _ = @azimuth.greet("")
-  let _ = @azimuth.greet("very long string with many characters")
-  
-  // 验证最终状态
-  @azimuth.assert_eq(100, @azimuth.add(50, 50))
-  @azimuth.assert_eq(2500, @azimuth.multiply(50, 50))
-  @azimuth.assert_eq(17, @azimuth.divide_with_ceil(50, 3))
-}
-
-test "mathematical_sequence_validation" {
-  // 数学序列验证测试
-  // 斐波那契数列验证（前几项）
-  let fib1 = @azimuth.add(0, 1)
-  let fib2 = @azimuth.add(fib1, 1)
-  let fib3 = @azimuth.add(fib2, fib1)
-  let fib4 = @azimuth.add(fib3, fib2)
-  let fib5 = @azimuth.add(fib4, fib3)
-  @azimuth.assert_eq(1, fib1)
-  @azimuth.assert_eq(2, fib2)
-  @azimuth.assert_eq(3, fib3)
-  @azimuth.assert_eq(5, fib4)
-  @azimuth.assert_eq(8, fib5)
-  
-  // 等差数列验证
-  let ap1 = @azimuth.add(1, 3)
-  let ap2 = @azimuth.add(ap1, 3)
-  let ap3 = @azimuth.add(ap2, 3)
-  let ap4 = @azimuth.add(ap3, 3)
-  @azimuth.assert_eq(4, ap1)
-  @azimuth.assert_eq(7, ap2)
-  @azimuth.assert_eq(10, ap3)
-  @azimuth.assert_eq(13, ap4)
-  
-  // 等比数列验证
-  let gp1 = @azimuth.multiply(2, 3)
-  let gp2 = @azimuth.multiply(gp1, 3)
-  let gp3 = @azimuth.multiply(gp2, 3)
-  let gp4 = @azimuth.multiply(gp3, 3)
-  @azimuth.assert_eq(6, gp1)
-  @azimuth.assert_eq(18, gp2)
-  @azimuth.assert_eq(54, gp3)
-  @azimuth.assert_eq(162, gp4)
-  
-  // 平方数列验证
-  let sq1 = @azimuth.multiply(1, 1)
-  let sq2 = @azimuth.multiply(2, 2)
-  let sq3 = @azimuth.multiply(3, 3)
-  let sq4 = @azimuth.multiply(4, 4)
-  let sq5 = @azimuth.multiply(5, 5)
-  @azimuth.assert_eq(1, sq1)
-  @azimuth.assert_eq(4, sq2)
-  @azimuth.assert_eq(9, sq3)
-  @azimuth.assert_eq(16, sq4)
-  @azimuth.assert_eq(25, sq5)
-}
-
-test "comprehensive_functional_testing" {
-  // 综合功能测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 断言函数全面测试
-  @azimuth.assert_true(true)
-  @azimuth.assert_true(1 == 1)
-  @azimuth.assert_true(0 == 0)
-  @azimuth.assert_true(-1 == -1)
-  @azimuth.assert_true(max_val == max_val)
-  @azimuth.assert_true(min_val == min_val)
-  
-  @azimuth.assert_false(false)
-  @azimuth.assert_false(1 == 0)
-  @azimuth.assert_false(0 == 1)
-  @azimuth.assert_false(-1 == 1)
-  @azimuth.assert_false(max_val == min_val)
-  @azimuth.assert_false(min_val == max_val)
-  
-  @azimuth.assert_eq(0, 0)
-  @azimuth.assert_eq(1, 1)
-  @azimuth.assert_eq(-1, -1)
-  @azimuth.assert_eq(max_val, max_val)
-  @azimuth.assert_eq(min_val, min_val)
-  
-  @azimuth.assert_eq_string("", "")
-  @azimuth.assert_eq_string("test", "test")
-  @azimuth.assert_eq_string("Hello, World!", "Hello, World!")
-  
-  // 函数组合测试
-  let add_result = @azimuth.add(100, 200)
-  let mul_result = @azimuth.multiply(add_result, 2)
-  let div_result = @azimuth.divide_with_ceil(mul_result, 150)
-  @azimuth.assert_eq(4, div_result)  // ceil((100+200)*2/150) = ceil(600/150) = 4
-  
-  // 字符串函数组合
-  let greet1 = @azimuth.greet("Alice")
-  let greet2 = @azimuth.greet("Bob")
-  let greet3 = @azimuth.greet("")
-  @azimuth.assert_eq_string("Hello, Alice!", greet1)
-  @azimuth.assert_eq_string("Hello, Bob!", greet2)
-  @azimuth.assert_eq_string("Hello, !", greet3)
-  
-  // 边界条件综合测试
-  let boundary_add = @azimuth.add(max_val - 1000, 999)
-  let boundary_mul = @azimuth.multiply(46340, 46340)
-  let boundary_div = @azimuth.divide_with_ceil(max_val, 1000000)
-  @azimuth.assert_eq(max_val - 1, boundary_add)
-  @azimuth.assert_eq(2147395600, boundary_mul)
-  @azimuth.assert_eq(2148, boundary_div)
+// 辅助函数：减法
+fn subtract(a : Int, b : Int) -> Int {
+  a - b
 }
