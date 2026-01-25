@@ -1,174 +1,186 @@
-// 标准 MoonBit 测试套件 - 增强版
-// 测试 azimuth 包的核心功能
+// 标准 MoonBit 增强测试套件
+// 为 azimuth 库提供10个高质量的标准测试用例
 
-test "enhanced_add_commutativity" {
-  // 测试加法交换律：a + b = b + a
-  let a = 12345
-  let b = 67890
+test "addition_associative_law" {
+  // 测试加法结合律: (a + b) + c = a + (b + c)
+  let a = 15
+  let b = 27
+  let c = 42
   
-  let result1 = add(a, b)
-  let result2 = add(b, a)
-  assert_eq(result1, result2)
+  let left_side = add(add(a, b), c)
+  let right_side = add(a, add(b, c))
   
-  // 测试包含负数的情况
-  let c = -12345
-  let d = 67890
-  
-  let result3 = add(c, d)
-  let result4 = add(d, c)
-  assert_eq(result3, result4)
+  assert_eq(left_side, right_side)  // (15 + 27) + 42 = 15 + (27 + 42) = 84
 }
 
-test "enhanced_multiply_distributivity" {
-  // 测试乘法分配律：a × (b + c) = a × b + a × c
-  let a = 15
-  let b = 20
-  let c = 25
+test "multiplication_distributive_law" {
+  // 测试乘法分配律: a * (b + c) = a * b + a * c
+  let a = 8
+  let b = 12
+  let c = 7
   
   let left_side = multiply(a, add(b, c))
   let right_side = add(multiply(a, b), multiply(a, c))
-  assert_eq(left_side, right_side)
+  
+  assert_eq(left_side, right_side)  // 8 * (12 + 7) = 8 * 12 + 8 * 7 = 152
 }
 
-test "enhanced_divide_with_ceil_functionality" {
-  // 测试向上取整除法功能
-  // 正常情况
-  assert_eq(3, divide_with_ceil(10, 4))
-  assert_eq(3, divide_with_ceil(11, 4))
-  assert_eq(3, divide_with_ceil(12, 4))
-  assert_eq(4, divide_with_ceil(13, 4))
+test "negative_number_boundary_operations" {
+  // 测试负数边界运算
+  let max_negative = -2147483647
+  let min_positive = 1
   
-  // 边界情况
+  // 测试负数加法
+  assert_eq(-2147483646, add(max_negative, min_positive))
+  
+  // 测试负数乘法
+  assert_eq(2147483647, multiply(max_negative, -1))
+  
+  // 测试负数除法向上取整
+  assert_eq(-2147483647, divide_with_ceil(max_negative, 1))
+  assert_eq(1, divide_with_ceil(max_negative, -2147483647))
+}
+
+test "large_number_stability_operations" {
+  // 测试大数运算稳定性
+  let large_num1 = 1000000
+  let large_num2 = 999999
+  let large_num3 = 500000
+  
+  // 测试大数加法稳定性
+  let sum_result = add(large_num1, large_num2)
+  assert_eq(1999999, sum_result)
+  
+  // 测试大数乘法稳定性
+  let product_result = multiply(large_num3, 2)
+  assert_eq(1000000, product_result)
+  
+  // 测试大数除法稳定性
+  let divide_result = divide_with_ceil(sum_result, large_num3)
+  assert_eq(4, divide_result)  // ceil(1999999/500000) = 4
+}
+
+test "string_processing_security_tests" {
+  // 测试字符串处理安全性
+  // 测试空字符串和边界情况
+  assert_eq_string("Hello, !", greet(""))
+  
+  // 测试包含特殊字符的字符串
+  assert_eq_string("Hello, \n\t\r!", greet("\n\t\r"))
+  
+  // 测试包含引号的字符串
+  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))
+  
+  // 测试包含路径的字符串
+  assert_eq_string("Hello, /path/to/file!", greet("/path/to/file"))
+}
+
+test "division_edge_cases_comprehensive" {
+  // 全面测试除法边界情况
+  // 测试被除数为0的情况
   assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(0, divide_with_ceil(0, -5))
+  assert_eq(0, divide_with_ceil(0, 1))
   
-  // 负数情况
-  assert_eq(-2, divide_with_ceil(-7, 4))
-  assert_eq(-1, divide_with_ceil(-4, 4))
+  // 测试被除数小于除数的情况
+  assert_eq(1, divide_with_ceil(3, 10))
+  assert_eq(1, divide_with_ceil(-3, -10))
+  assert_eq(-1, divide_with_ceil(-3, 10))
+  
+  // 测试除数为1的情况
+  assert_eq(100, divide_with_ceil(100, 1))
+  assert_eq(-100, divide_with_ceil(-100, 1))
+  
+  // 测试除数为-1的情况
+  assert_eq(-100, divide_with_ceil(100, -1))
+  assert_eq(100, divide_with_ceil(-100, -1))
 }
 
-test "enhanced_string_processing_multilingual" {
-  // 测试多语言字符串处理
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, العربية!", greet("العربية"))
-  assert_eq_string("Hello, 🌎!", greet("🌎"))
+test "complex_function_composition" {
+  // 测试复合函数计算
+  let base_value = 10
+  let multiplier = 3
+  let divisor = 4
+  let addition = 15
+  
+  // 复合计算: ((base * multiplier) / divisor) + addition
+  let step1 = multiply(base_value, multiplier)
+  let step2 = divide_with_ceil(step1, divisor)
+  let final_result = add(step2, addition)
+  
+  assert_eq(30, step1)    // 10 * 3 = 30
+  assert_eq(8, step2)     // ceil(30/4) = 8
+  assert_eq(23, final_result)  // 8 + 15 = 23
 }
 
-test "enhanced_mathematical_series" {
-  // 测试数学级数计算
-  // 计算等比数列：2 + 4 + 8 + 16 = 30
-  let term1 = 2
-  let term2 = multiply(term1, 2)
-  let term3 = multiply(term2, 2)
-  let term4 = multiply(term3, 2)
+test "real_world_shopping_cart_calculation" {
+  // 测试实际购物车计算场景
+  let item1_price = 29
+  let item1_quantity = 2
+  let item2_price = 15
+  let item2_quantity = 3
+  let item3_price = 8
+  let item3_quantity = 4
+  let shipping_cost = 12
+  let discount = 25
   
-  let series_sum = add(add(add(term1, term2), term3), term4)
-  assert_eq(30, series_sum)
+  // 计算各商品小计
+  let item1_total = multiply(item1_price, item1_quantity)
+  let item2_total = multiply(item2_price, item2_quantity)
+  let item3_total = multiply(item3_price, item3_quantity)
+  
+  // 计算商品总价
+  let subtotal = add(add(item1_total, item2_total), item3_total)
+  
+  // 计算最终总价
+  let total_before_discount = add(subtotal, shipping_cost)
+  let final_total = add(total_before_discount, -discount)
+  
+  assert_eq(58, item1_total)   // 29 * 2 = 58
+  assert_eq(45, item2_total)   // 15 * 3 = 45
+  assert_eq(32, item3_total)   // 8 * 4 = 32
+  assert_eq(135, subtotal)     // 58 + 45 + 32 = 135
+  assert_eq(147, total_before_discount)  // 135 + 12 = 147
+  assert_eq(122, final_total)  // 147 - 25 = 122
 }
 
-test "enhanced_boundary_stress_test" {
-  // 边界值压力测试
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "error_handling_robustness_validation" {
+  // 测试错误处理健壮性验证
+  // 测试极端除零情况
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
   
-  // 连续边界运算
-  let step1 = add(max_val, -1000000)
-  let step2 = add(step1, 500000)
-  let step3 = add(step2, -250000)
-  let step4 = add(step3, 125000)
-  let step5 = add(step4, -62500)
+  // 测试数值溢出保护
+  let large_add = add(1073741823, 1073741824)
+  assert_eq(2147483647, large_add)
   
-  assert_eq(2147483647, step5)
-  
-  // 乘法链测试
-  let mul_step1 = multiply(1000, 1000)
-  let mul_step2 = multiply(mul_step1, 1000)
-  let mul_step3 = multiply(mul_step2, 2)
-  
-  assert_eq(2000000000, mul_step3)
+  // 测试字符串边界处理
+  assert_eq_string("Hello, x!", greet("x"))
+  assert_eq_string("Hello, verylongstringwithoutspaces!", greet("verylongstringwithoutspaces"))
 }
 
-test "enhanced_financial_compound_interest" {
-  // 复利计算测试（更精确的版本）
-  let principal = 10000
-  let rate_percent = 8
-  let years = 4
+test "numerical_precision_boundary_validation" {
+  // 测试数值精度和边界验证
+  // 测试精度保持
+  assert_eq(333334, divide_with_ceil(1000000, 3))
+  assert_eq(666667, divide_with_ceil(2000000, 3))
   
-  // 简化的复利计算，避免浮点数
-  // 本息和 = 本金 × (1 + 利率%)^年数
-  let growth_factor = add(100, rate_percent)
-  let growth_squared = multiply(growth_factor, growth_factor)
-  let growth_fourth = multiply(growth_squared, growth_squared)
-  let total = multiply(principal, growth_fourth) / 1000000
+  // 测试边界值运算
+  let max_int = 2147483647
+  let min_int = -2147483647
   
-  assert_eq(13605, total)
-}
-
-test "enhanced_scientific_notation_simulation" {
-  // 科学计数法模拟测试
-  // 模拟 1.23 × 10^6 = 1230000
-  let mantissa = 123
-  let exponent = 4
-  let result = multiply(mantissa, multiply(10, multiply(10, multiply(10, 10))))
-  assert_eq(1230000, result)
+  // 测试边界值加法
+  assert_eq(2147483646, add(max_int, -1))
+  assert_eq(-2147483646, add(min_int, 1))
   
-  // 模拟 4.56 × 10^3 = 4560
-  let mantissa2 = 456
-  let exponent2 = 1
-  let result2 = multiply(mantissa2, 10)
-  assert_eq(4560, result2)
-}
-
-test "enhanced_error_boundary_conditions" {
-  // 错误边界条件测试
-  let max_val = 2147483647
-  let min_val = -2147483648
+  // 测试边界值乘法
+  assert_eq(2147483647, multiply(max_int, 1))
+  assert_eq(-2147483647, multiply(min_int, 1))
   
-  // 测试连续溢出操作
-  let overflow1 = add(max_val, 1000)
-  let overflow2 = add(overflow1, 1000)
-  let overflow3 = add(overflow2, 1000)
-  
-  assert_eq(max_val, overflow3)
-  
-  // 测试乘法溢出链
-  let mul_overflow1 = multiply(100000, 100000)
-  let mul_overflow2 = multiply(mul_overflow1, 1000)
-  
-  assert_eq(max_val, mul_overflow2)
-  
-  // 测试断言函数的边界情况
-  assert_true(max_val > 0)
-  assert_false(min_val > 0)
-  assert_eq(max_val, 2147483647)
-  assert_eq_string("max", "max")
-}
-
-test "enhanced_real_world_inventory_management" {
-  // 实际库存管理场景测试
-  let initial_stock = 1000
-  let sales_day1 = 150
-  let sales_day2 = 200
-  let sales_day3 = 175
-  let restock_day2 = 300
-  let restock_day3 = 500
-  
-  // 计算每日库存
-  let stock_day1 = add(initial_stock, -sales_day1)
-  let stock_day2_before = add(stock_day1, -sales_day2)
-  let stock_day2_after = add(stock_day2_before, restock_day2)
-  let stock_day3_before = add(stock_day2_after, -sales_day3)
-  let stock_day3_after = add(stock_day3_before, restock_day3)
-  
-  assert_eq(1275, stock_day3_after)
-  
-  // 计算总销售额
-  let total_sales = add(add(sales_day1, sales_day2), sales_day3)
-  assert_eq(525, total_sales)
-  
-  // 计算总补货量
-  let total_restock = add(restock_day2, restock_day3)
-  assert_eq(800, total_restock)
+  // 测试边界值除法
+  assert_eq(2147483647, divide_with_ceil(max_int, 1))
+  assert_eq(-2147483647, divide_with_ceil(min_int, 1))
+  assert_eq(1, divide_with_ceil(max_int, max_int))
+  assert_eq(1, divide_with_ceil(min_int, min_int))
 }

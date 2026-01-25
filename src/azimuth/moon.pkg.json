@@ -50,7 +50,8 @@
     "simple_new_test_cases.mbt",
     "azimuth_standard_test_suite.mbt",
     "azimuth_enhanced_standard_tests.mbt",
-    "azimuth_quality_test_suite.mbt"
+    "azimuth_quality_test_suite.mbt",
+    "standard_enhanced_test_suite.mbt"
   ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [
@@ -64,6 +65,7 @@
     "simple_core_tests.mbt",
     "simple_concise_tests.mbt",
     "concise_standard_tests.mbt",
+    "standard_enhanced_test_suite.mbt",
     "simple_quality_tests.mbt",
     "quality_test_cases.mbt",
     "core_tests.mbt",
