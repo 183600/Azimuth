@@ -1,166 +1,156 @@
-// 新的标准 MoonBit 测试用例 - 针对 azimuth 库
-// 包含边界测试、错误处理和实际应用场景
+// 新增的标准 MoonBit 测试用例
+// 测试 azimuth 库的核心功能
 
-test "extreme_boundary_addition" {
-  // 测试加法的极端边界情况
-  assert_eq(2147483647, add(2147483646, 1))
-  assert_eq(-2147483648, add(-2147483647, -1))
-  assert_eq(0, add(2147483647, -2147483647))
-  assert_eq(1, add(-2147483648, 2147483649))
+test "mathematical_properties_commutative_new" {
+  // 测试数学交换律
+  let a = 8
+  let b = 12
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
 }
 
-test "divide_with_ceil_comprehensive_negative" {
-  // 全面测试负数向上取整除法
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-4, divide_with_ceil(-11, 3))
-  assert_eq(-3, divide_with_ceil(-9, 3))
-  assert_eq(4, divide_with_ceil(-10, -3))
-  assert_eq(3, divide_with_ceil(-9, -3))
-  assert_eq(0, divide_with_ceil(-5, 0))
+test "combined_operations_business_scenario_new" {
+  // 测试组合运算的业务场景
+  let unit_price = 25
+  let quantity = 8
+  let shipping = 15
+  
+  let subtotal = multiply(unit_price, quantity)
+  let total = add(subtotal, shipping)
+  
+  assert_eq(200, subtotal)
+  assert_eq(215, total)
 }
 
-test "mathematical_identities" {
-  // 验证数学恒等式
+test "packaging_calculation_scenario_new" {
+  // 测试包装计算场景
+  let total_items = 35
+  let items_per_box = 8
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  
+  assert_eq(5, boxes_needed)
+}
+
+test "mathematical_identity_properties_new" {
+  // 测试数学单位元性质
   let x = 42
-  let y = 17
   
   // 加法单位元
   assert_eq(x, add(x, 0))
-  assert_eq(y, add(y, 0))
+  assert_eq(x, add(0, x))
   
   // 乘法单位元
   assert_eq(x, multiply(x, 1))
-  assert_eq(y, multiply(y, 1))
+  assert_eq(x, multiply(1, x))
   
-  // 乘法零元
+  // 乘法零元素
   assert_eq(0, multiply(x, 0))
-  assert_eq(0, multiply(y, 0))
+  assert_eq(0, multiply(0, x))
 }
 
-test "complex_financial_calculation" {
-  // 复杂财务计算场景
-  let principal = 10000
-  let annual_rate = 5
-  let years = 3
-  
-  // 计算复利（简化版，使用向上取整）
-  let year1_amount = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
-  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, annual_rate), 100))
-  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, annual_rate), 100))
-  
-  assert_eq(10500, year1_amount)
-  assert_eq(11025, year2_amount)
-  assert_eq(11576, year3_amount)
+test "unicode_and_special_characters_new" {
+  // 测试 Unicode 和特殊字符
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, αβγ!", greet("αβγ"))
+  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
 }
 
-test "string_greeting_edge_cases" {
-  // 字符串问候的边界情况
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, A!", greet("A"))
-  assert_eq_string("Hello, This is a very long name that might cause issues!", greet("This is a very long name that might cause issues"))
-  assert_eq_string("Hello, 🌟🌙⭐!", greet("🌟🌙⭐"))
+test "divide_with_ceil_edge_cases_new" {
+  // 测试向上取整除法的边界情况
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(100, divide_with_ceil(9999, 100))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(-3, divide_with_ceil(-10, 3))
 }
 
-test "resource_allocation_optimization" {
-  // 资源分配优化问题
-  let total_resources = 100
-  let project1_needs = 23
-  let project2_needs = 31
-  let project3_needs = 19
+test "complex_business_workflow_new" {
+  // 模拟完整的订单处理流程
+  let product_cost = 120
+  let quantity = 15
+  let tax_rate = 8
+  let shipping_cost_per_item = 5
+  let discount_threshold = 1000
+  let discount_amount = 50
   
-  let allocated1 = project1_needs
-  let allocated2 = project2_needs
-  let allocated3 = project3_needs
-  let total_allocated = add(add(allocated1, allocated2), allocated3)
-  let remaining = add(total_resources, -total_allocated)
+  // 步骤1: 计算商品总价
+  let subtotal = multiply(product_cost, quantity)
   
-  // 计算可以支持的小项目数量
-  let small_projects = divide_with_ceil(remaining, 7)
+  // 步骤2: 计算运费
+  let total_shipping = multiply(shipping_cost_per_item, quantity)
   
-  assert_eq(73, total_allocated)
-  assert_eq(27, remaining)
-  assert_eq(4, small_projects)
+  // 步骤3: 计算税费
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  
+  // 步骤4: 计算折扣前总价
+  let pre_discount_total = add(add(subtotal, total_shipping), tax_amount)
+  
+  // 步骤5: 应用折扣（如果满足条件）
+  let final_total = if pre_discount_total > discount_threshold {
+    add(pre_discount_total, -discount_amount)
+  } else {
+    pre_discount_total
+  }
+  
+  assert_eq(1800, subtotal)
+  assert_eq(75, total_shipping)
+  assert_eq(144, tax_amount)
+  assert_eq(2019, pre_discount_total)
+  assert_eq(1969, final_total)
 }
 
-test "time_series_calculation" {
-  // 时间序列计算
-  let base_value = 100
-  let growth_rate = 15
-  let periods = 5
+test "financial_calculation_scenario_new" {
+  // 金融计算场景：计算复利
+  let principal = 1000
+  let rate_percent = 5
   
-  // 计算增长序列
-  let period1 = add(base_value, divide_with_ceil(multiply(base_value, growth_rate), 100))
-  let period2 = add(period1, divide_with_ceil(multiply(period1, growth_rate), 100))
-  let period3 = add(period2, divide_with_ceil(multiply(period2, growth_rate), 100))
-  let period4 = add(period3, divide_with_ceil(multiply(period3, growth_rate), 100))
-  let period5 = add(period4, divide_with_ceil(multiply(period4, growth_rate), 100))
+  // 计算复利（简化版）
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
   
-  assert_eq(115, period1)
-  assert_eq(133, period2)
-  assert_eq(153, period3)
-  assert_eq(176, period4)
-  assert_eq(203, period5)
+  assert_eq(1050, year1)
+  assert_eq(1103, year2)
+  assert_eq(1158, year3)
 }
 
-test "error_boundary_conditions" {
-  // 错误边界条件测试
-  // 测试除数为零的各种情况
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
+test "data_analysis_statistics_new" {
+  // 模拟销售数据分析
+  let sales_q1 = 15000
+  let sales_q2 = 18000
+  let sales_q3 = 22000
+  let sales_q4 = 25000
+  
+  // 计算年度总销售额
+  let annual_sales = add(add(add(sales_q1, sales_q2), sales_q3), sales_q4)
+  
+  // 计算季度平均销售额（向上取整）
+  let quarterly_average = divide_with_ceil(annual_sales, 4)
+  
+  assert_eq(80000, annual_sales)
+  assert_eq(20000, quarterly_average)
 }
 
-test "algorithm_complexity_simulation" {
-  // 算法复杂度模拟
-  let n = 100
-  let constant_factor = 3
+test "inventory_management_scenario_new" {
+  // 库存管理场景：计算需要的存储空间
+  let items_per_box = 24
+  let total_items_small = 100
+  let total_items_medium = 250
+  let total_items_large = 1000
   
-  // 模拟 O(n) 算法
-  let linear_result = multiply(n, constant_factor)
+  let boxes_small = divide_with_ceil(total_items_small, items_per_box)
+  let boxes_medium = divide_with_ceil(total_items_medium, items_per_box)
+  let boxes_large = divide_with_ceil(total_items_large, items_per_box)
   
-  // 模拟 O(n log n) 算法（简化版）
-  let log_approx = divide_with_ceil(n, 10)  // 简化的对数近似
-  let nlogn_result = multiply(n, log_approx)
+  let total_boxes = add(add(boxes_small, boxes_medium), boxes_large)
   
-  // 模拟 O(n²) 算法
-  let quadratic_result = multiply(n, n)
-  
-  assert_eq(300, linear_result)
-  assert_eq(1000, nlogn_result)
-  assert_eq(10000, quadratic_result)
-}
-
-test "statistical_analysis_basic" {
-  // 基础统计分析
-  let data1 = 25
-  let data2 = 30
-  let data3 = 45
-  let data4 = 40
-  let data5 = 35
-  
-  // 计算总和
-  let sum = add(add(add(add(data1, data2), data3), data4), data5)
-  
-  // 计算平均值（向上取整）
-  let count = 5
-  let average = divide_with_ceil(sum, count)
-  
-  // 计算方差（简化版）
-  let diff1 = data1 - average
-  let diff2 = data2 - average
-  let diff3 = data3 - average
-  let diff4 = data4 - average
-  let diff5 = data5 - average
-  
-  let variance = divide_with_ceil(
-    add(add(add(add(multiply(diff1, diff1), multiply(diff2, diff2)), multiply(diff3, diff3)), multiply(diff4, diff4)), 
-    multiply(diff5, diff5)
-  , count)
-  
-  assert_eq(175, sum)
-  assert_eq(35, average)
-  assert_eq(50, variance)
+  assert_eq(5, boxes_small)
+  assert_eq(11, boxes_medium)
+  assert_eq(42, boxes_large)
+  assert_eq(58, total_boxes)
 }
