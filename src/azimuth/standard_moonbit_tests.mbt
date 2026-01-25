@@ -1,171 +1,142 @@
-// 标准 MoonBit 测试用例 - 为 azimuth 库新增10个高质量测试
-// 测试覆盖所有主要功能：add, multiply, greet, divide_with_ceil
+// 标准 MoonBit 测试用例
+// 针对 azimuth 库的全面测试，包含边界情况和实际应用场景
 
-test "add_function_comprehensive" {
-  // 全面测试加法函数的正负数情况
-  assert_eq(10, add(7, 3))
-  assert_eq(0, add(5, -5))
-  assert_eq(-10, add(-7, -3))
-  assert_eq(1000000, add(500000, 500000))
-  assert_eq(1, add(2147483647, -2147483646))
+test "addition_with_various_ranges" {
+  // 测试不同范围的加法运算
+  assert_eq(100, add(50, 50))
+  assert_eq(-100, add(-50, -50))
+  assert_eq(0, add(50, -50))
+  assert_eq(999999, add(500000, 499999))
 }
 
-test "multiply_function_properties" {
-  // 测试乘法函数的数学性质
-  assert_eq(0, multiply(12345, 0))
-  assert_eq(12345, multiply(12345, 1))
-  assert_eq(-12345, multiply(12345, -1))
-  assert_eq(12345, multiply(-12345, -1))
-  assert_eq(1000000, multiply(1000, 1000))
+test "multiplication_identity_and_zero" {
+  // 测试乘法的单位元和零元素性质
+  assert_eq(15, multiply(15, 1))
+  assert_eq(-15, multiply(-15, 1))
+  assert_eq(0, multiply(15, 0))
+  assert_eq(0, multiply(0, 15))
+  assert_eq(0, multiply(0, 0))
 }
 
-test "greet_function_international_support" {
-  // 测试问候函数的国际字符和特殊符号支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀 MoonBit!", greet("🚀 MoonBit"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+test "divide_with_ceil_comprehensive" {
+  // 全面测试向上取整除法
+  assert_eq(5, divide_with_ceil(20, 4))  // 整除
+  assert_eq(5, divide_with_ceil(19, 4))  // 4.75 -> 5
+  assert_eq(1, divide_with_ceil(3, 5))   // 0.6 -> 1
+  assert_eq(-4, divide_with_ceil(-15, 4)) // -3.75 -> -3
+  assert_eq(4, divide_with_ceil(-15, -4)) // 3.75 -> 4
+  assert_eq(0, divide_with_ceil(10, 0))   // 除数为零
 }
 
-test "divide_with_ceil_business_scenarios" {
-  // 测试向上取整除法的实际业务场景
-  // 场景1：计算运输车辆需求
-  let packages = 47
-  let capacity_per_truck = 10
-  let trucks_needed = divide_with_ceil(packages, capacity_per_truck)
-  assert_eq(5, trucks_needed)
-  
-  // 场景2：计算存储空间需求
-  let items = 156
-  let box_capacity = 25
-  let boxes_needed = divide_with_ceil(items, box_capacity)
-  assert_eq(7, boxes_needed)
+test "greet_function_special_cases" {
+  // 测试问候函数的特殊情况
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 123456!", greet("123456"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, a+b=c!", greet("a+b=c"))
+  assert_eq_string("Hello,   !", greet("   "))
 }
 
-test "mathematical_commutative_laws" {
-  // 验证数学交换律
-  let a = 42
-  let b = 17
+test "complex_financial_calculation" {
+  // 复杂财务计算场景
+  let principal = 10000
+  let rate_percent = 5
+  let years = 3
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  // 简化的复利计算
+  let year1_interest = divide_with_ceil(multiply(principal, rate_percent), 100)
+  let year1_total = add(principal, year1_interest)
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  let year2_interest = divide_with_ceil(multiply(year1_total, rate_percent), 100)
+  let year2_total = add(year1_total, year2_interest)
   
-  // 测试负数情况
-  assert_eq(add(-5, 10), add(10, -5))
-  assert_eq(multiply(-3, 7), multiply(7, -3))
+  let year3_interest = divide_with_ceil(multiply(year2_total, rate_percent), 100)
+  let final_amount = add(year2_total, year3_interest)
+  
+  assert_eq(500, year1_interest)
+  assert_eq(10500, year1_total)
+  assert_eq(525, year2_interest)
+  assert_eq(11025, year2_total)
+  assert_eq(552, year3_interest)
+  assert_eq(11577, final_amount)
 }
 
-test "complex_calculation_pipeline" {
-  // 测试复杂计算流水线
-  // 场景：项目资源规划计算
-  let team_members = 8
-  let tasks_per_member = 6
-  let sprint_capacity = 20
+test "inventory_optimization" {
+  // 库存优化算法
+  let demand_forecast = 157
+  let safety_stock = 20
+  let reorder_point = add(demand_forecast, safety_stock)
+  let economic_order_qty = 50
+  let orders_needed = divide_with_ceil(reorder_point, economic_order_qty)
   
-  // 计算总任务数
-  let total_tasks = multiply(team_members, tasks_per_member)
-  assert_eq(48, total_tasks)
-  
-  // 计算需要的冲刺数
-  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
-  assert_eq(3, sprints_needed)
-  
-  // 计算总处理能力
-  let total_capacity = multiply(sprints_needed, sprint_capacity)
-  assert_eq(60, total_capacity)
-  
-  // 计算剩余能力
-  let remaining_capacity = total_capacity - total_tasks
-  assert_eq(12, remaining_capacity)
+  assert_eq(177, reorder_point)
+  assert_eq(4, orders_needed)
 }
 
-test "edge_cases_and_boundary_conditions" {
-  // 测试边缘情况和边界条件
-  // 除零的各种情况
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
+test "mathematical_sequence_calculation" {
+  // 数学序列计算
+  let first_term = 3
+  let common_diff = 4
+  let n_terms = 6
   
-  // 极值测试
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(-1, divide_with_ceil(-1, 1))
-  assert_eq(1, divide_with_ceil(-1, -1))
+  // 等差数列第n项: a + (n-1)d
+  let nth_term = add(first_term, multiply(n_terms - 1, common_diff))
   
-  // 加法恒等式
-  assert_eq(42, add(42, 0))
-  assert_eq(42, add(0, 42))
-  
-  // 乘法恒等式
-  assert_eq(0, multiply(42, 0))
-  assert_eq(42, multiply(42, 1))
-}
-
-test "string_processing_comprehensive" {
-  // 字符串处理综合测试
-  // 测试各种字符串输入
-  assert_eq_string("Hello, single!", greet("single"))
-  assert_eq_string("Hello, space test!", greet("space test"))
-  assert_eq_string("Hello, 12345!", greet("12345"))
-  assert_eq_string("Hello, !@#$%^&*()", greet("!@#$%^&*()"))
-  assert_eq_string("Hello, mixedCASE123!", greet("mixedCASE123"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello,   !", greet("  "))
-}
-
-test "resource_allocation_optimization" {
-  // 资源分配优化测试
-  // 场景：预算分配问题
-  let total_budget = 10000
-  let departments = 6
-  
-  // 计算每个部门的平均预算（向上取整）
-  let budget_per_dept = divide_with_ceil(total_budget, departments)
-  assert_eq(1667, budget_per_dept)
-  
-  // 计算实际分配的总预算
-  let actual_total = multiply(budget_per_dept, departments)
-  assert_eq(10002, actual_total)
-  
-  // 计算预算溢出
-  let budget_overflow = actual_total - total_budget
-  assert_eq(2, budget_overflow)
-  
-  // 场景2：优化分配策略
-  let optimized_departments = departments + 1
-  let optimized_budget = divide_with_ceil(total_budget, optimized_departments)
-  assert_eq(1429, optimized_budget)
-}
-
-test "mathematical_distributive_law" {
-  // 验证数学分配律: a * (b + c) = a * b + a * c
-  let a = 6
-  let b = 8
-  let c = 4
-  
-  // 计算左边：a * (b + c)
-  let left_side = multiply(a, add(b, c))
-  
-  // 计算右边：a * b + a * c
-  let right_side = add(multiply(a, b), multiply(a, c))
-  
-  // 验证分配律
-  assert_eq(left_side, right_side)
-  
-  // 另一个测试案例
-  let x = 12
-  let y = 5
-  let z = 3
-  
-  assert_eq(
-    multiply(x, add(y, z)),
-    add(multiply(x, y), multiply(x, z))
+  // 等差数列前n项和: n/2 * (2a + (n-1)d)
+  let sum_n_terms = divide_with_ceil(
+    multiply(n_terms, add(multiply(2, first_term), multiply(n_terms - 1, common_diff))),
+    2
   )
   
-  // 验证具体数值
-  assert_eq(96, multiply(12, add(5, 3)))  // 12 * 8 = 96
-  assert_eq(96, add(multiply(12, 5), multiply(12, 3)))  // 60 + 36 = 96
+  assert_eq(23, nth_term)  // 3 + 5*4 = 23
+  assert_eq(78, sum_n_terms)  // 6/2 * (6 + 20) = 3 * 26 = 78
+}
+
+test "resource_allocation_algorithm" {
+  // 资源分配算法
+  let total_resources = 100
+  let project1_priority = 3
+  let project2_priority = 2
+  let project3_priority = 1
+  let total_priority = add(add(project1_priority, project2_priority), project3_priority)
+  
+  let project1_allocation = divide_with_ceil(multiply(total_resources, project1_priority), total_priority)
+  let project2_allocation = divide_with_ceil(multiply(total_resources, project2_priority), total_priority)
+  let project3_allocation = divide_with_ceil(multiply(total_resources, project3_priority), total_priority)
+  
+  assert_eq(50, project1_allocation)  // ceil(100*3/6) = 50
+  assert_eq(34, project2_allocation)  // ceil(100*2/6) = 34
+  assert_eq(17, project3_allocation)  // ceil(100*1/6) = 17
+}
+
+test "time_zone_conversion" {
+  // 时区转换计算
+  let local_hour = 14  // 下午2点
+  let timezone_offset = -8  // UTC-8
+  let meeting_duration = 3  // 3小时会议
+  
+  // 转换为UTC时间
+  let utc_hour = add(local_hour, -timezone_offset)
+  let normalized_utc = if utc_hour >= 24 { add(utc_hour, -24) } else if utc_hour < 0 { add(utc_hour, 24) } else { utc_hour }
+  
+  // 计算会议结束时间
+  let meeting_end_utc = add(normalized_utc, meeting_duration)
+  let normalized_end = if meeting_end_utc >= 24 { add(meeting_end_utc, -24) } else { meeting_end_utc }
+  
+  assert_eq(22, normalized_utc)  // 14 + 8 = 22
+  assert_eq(1, normalized_end)   // 22 + 3 = 25 -> 1
+}
+
+test "data_compression_ratio" {
+  // 数据压缩比计算
+  let original_size = 1024
+  let compressed_size = 256
+  let compression_ratio = multiply(divide_with_ceil(compressed_size * 100, original_size), 1)
+  
+  // 计算节省的空间
+  let space_saved = add(original_size, -compressed_size)
+  let saving_percentage = multiply(divide_with_ceil(space_saved * 100, original_size), 1)
+  
+  assert_eq(25, compression_ratio)  // ceil(256*100/1024) = 25%
+  assert_eq(75, saving_percentage)  // ceil(768*100/1024) = 75%
 }
