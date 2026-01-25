@@ -217,3 +217,55 @@ test "overflow_protection_multiply" {
   @clean_test.assert_eq(min_val, @clean_test.multiply(min_val, 2))
   @clean_test.assert_eq(min_val, @clean_test.multiply(min_val, -1))
 }
+
+// 新增的标准 MoonBit 测试用例
+test "comprehensive_add_function" {
+  // 全面测试加法函数的各种情况
+  @clean_test.assert_eq(10, @clean_test.add(7, 3))
+  @clean_test.assert_eq(0, @clean_test.add(0, 0))
+  @clean_test.assert_eq(-10, @clean_test.add(-7, -3))
+  @clean_test.assert_eq(4, @clean_test.add(-7, 11))
+  @clean_test.assert_eq(100, @clean_test.add(50, 50))
+}
+
+test "greet_international_characters" {
+  // 测试问候函数的国际字符支持
+  @clean_test.assert_eq_string("Hello, 世界!", @clean_test.greet("世界"))
+  @clean_test.assert_eq_string("Hello, café!", @clean_test.greet("café"))
+  @clean_test.assert_eq_string("Hello, 🚀!", @clean_test.greet("🚀"))
+  @clean_test.assert_eq_string("Hello, empty!", @clean_test.greet("empty"))
+}
+
+test "mathematical_distributive_law" {
+  // 验证数学分配律: a * (b + c) = a * b + a * c
+  let a = 6
+  let b = 4
+  let c = 3
+  
+  let left_side = @clean_test.multiply(a, @clean_test.add(b, c))
+  let right_side = @clean_test.add(
+    @clean_test.multiply(a, b),
+    @clean_test.multiply(a, c)
+  )
+  
+  @clean_test.assert_eq(left_side, right_side)  // 6*(4+3) = 6*4 + 6*3 = 42
+}
+
+test "real_world_packaging_calculation" {
+  // 真实世界包装计算场景
+  let total_items = 47
+  let items_per_box = 12
+  
+  // 计算需要的箱子数量
+  let mut boxes_needed = total_items / items_per_box
+  if total_items % items_per_box > 0 {
+    boxes_needed = boxes_needed + 1
+  }
+  
+  // 计算总容量
+  let total_capacity = @clean_test.multiply(boxes_needed, items_per_box)
+  
+  // 验证结果
+  @clean_test.assert_eq(4, boxes_needed)  // ceil(47/12) = 4
+  @clean_test.assert_eq(48, total_capacity)  // 4 * 12 = 48
+}
