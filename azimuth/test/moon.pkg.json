@@ -185,6 +185,7 @@
   "simple_new_test.mbt",
   "azimuth_new_unit_tests.mbt",
   "azimuth_standard_test_cases_new.mbt",
-  "high_quality_test_cases.mbt"
+  "high_quality_test_cases.mbt",
+  "standard_quality_test_cases.mbt"
   ]
 }
