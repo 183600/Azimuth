@@ -1,119 +1,191 @@
-// Azimuth 综合测试套件 - 标准 MoonBit 测试用例
-// 测试核心功能的各种场景和边界情况
+// Azimuth 库综合测试套件
+// 包含10个高质量的标准 MoonBit 测试用例
 
-test "mathematical_series_sum" {
-  // 测试数学级数求和：计算 1+2+3+...+n 的和
-  let n = 10
-  let sum = multiply(divide_with_ceil(multiply(n, add(n, 1)), 2), 1)
-  assert_eq(55, sum)  // 10*11/2 = 55
+test "add_function_comprehensive" {
+  // 全面测试加法函数
+  // 基本功能测试
+  assert_eq(8, add(3, 5))
+  assert_eq(0, add(0, 0))
+  assert_eq(-2, add(-5, 3))
+  
+  // 边界值测试
+  assert_eq(1000000, add(500000, 500000))
+  assert_eq(-1000000, add(-500000, -500000))
+  assert_eq(1, add(2147483647, -2147483646))
+  
+  // 数学性质验证
+  let x = 42
+  assert_eq(x, add(x, 0))  // 加法单位元
+  assert_eq(add(x, 5), add(5, x))  // 交换律
 }
 
-test "temperature_conversion" {
-  // 模拟温度转换计算
-  let celsius = 25
-  let fahrenheit = add(divide_with_ceil(multiply(celsius, 9), 5), 32)
-  assert_eq(77, fahrenheit)  // 25*9/5 + 32 = 45 + 32 = 77
+test "multiply_function_comprehensive" {
+  // 全面测试乘法函数
+  // 基本功能测试
+  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(0, 123))
+  assert_eq(-12, multiply(-3, 4))
+  
+  // 边界值测试
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(1, multiply(-1, -1))
+  assert_eq(-1, multiply(1, -1))
+  
+  // 数学性质验证
+  let x = 17
+  assert_eq(x, multiply(x, 1))  // 乘法单位元
+  assert_eq(0, multiply(x, 0))  // 零元素性质
+  assert_eq(multiply(x, 7), multiply(7, x))  // 交换律
 }
 
-test "banking_interest_calculation" {
-  // 银行利息计算（简化版）
+test "divide_with_ceil_function_comprehensive" {
+  // 全面测试向上取整除法函数
+  // 正数除法测试
+  assert_eq(4, divide_with_ceil(10, 3))  // 3.333... -> 4
+  assert_eq(3, divide_with_ceil(9, 3))   // 整除
+  assert_eq(1, divide_with_ceil(1, 100)) // 小数
+  
+  // 负数除法测试
+  assert_eq(-3, divide_with_ceil(-10, 3))   // -3.333... -> -3
+  assert_eq(4, divide_with_ceil(-10, -3))   // 3.333... -> 4
+  assert_eq(-4, divide_with_ceil(-11, 3))   // -3.666... -> -4
+  
+  // 边界情况测试
+  assert_eq(0, divide_with_ceil(5, 0))    // 除数为零
+  assert_eq(0, divide_with_ceil(0, 5))    // 被除数为零
+  assert_eq(1, divide_with_ceil(100, 100)) // 相等数
+}
+
+test "greet_function_comprehensive" {
+  // 全面测试问候函数
+  // 基本功能测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  
+  // 特殊字符测试
+  assert_eq_string("Hello, !", greet(""))  // 空字符串
+  assert_eq_string("Hello, 123!", greet("123"))  // 数字
+  assert_eq_string("Hello, 世界!", greet("世界"))  // 中文
+  assert_eq_string("Hello, 🚀!", greet("🚀"))  // Emoji
+  
+  // 复杂字符串测试
+  assert_eq_string("Hello, John Doe!", greet("John Doe"))
+  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
+}
+
+test "mathematical_distributive_law" {
+  // 验证数学分配律: a * (b + c) = a * b + a * c
+  let a = 6
+  let b = 8
+  let c = 12
+  
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  
+  assert_eq(left_side, right_side)  // 6 * (8 + 12) = 6 * 8 + 6 * 12 = 120
+}
+
+test "real_world_shopping_cart_calculation" {
+  // 真实世界购物车计算场景
+  let apple_price = 5
+  let apple_qty = 6
+  let banana_price = 3
+  let banana_qty = 8
+  let shipping_fee = 12
+  
+  // 计算商品总价
+  let apple_total = multiply(apple_price, apple_qty)
+  let banana_total = multiply(banana_price, banana_qty)
+  let subtotal = add(apple_total, banana_total)
+  
+  // 计算最终总价
+  let total = add(subtotal, shipping_fee)
+  
+  assert_eq(30, apple_total)  // 5 * 6
+  assert_eq(24, banana_total)  // 3 * 8
+  assert_eq(54, subtotal)     // 30 + 24
+  assert_eq(66, total)        // 54 + 12
+}
+
+test "inventory_packaging_optimization" {
+  // 库存包装优化场景
+  let total_products = 157
+  let box_capacity = 24
+  let warehouse_sections = 3
+  
+  // 计算需要的箱子数量
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  
+  // 计算每个仓库区域的箱子数量
+  let boxes_per_section = divide_with_ceil(boxes_needed, warehouse_sections)
+  
+  assert_eq(7, boxes_needed)      // ceil(157/24) = 7
+  assert_eq(3, boxes_per_section) // ceil(7/3) = 3
+}
+
+test "project_resource_allocation" {
+  // 项目资源分配场景
+  let team_members = 8
+  let tasks_per_member = 5
+  let overtime_tasks = 7
+  let bonus_tasks = 3
+  
+  // 计算基础任务量
+  let base_tasks = multiply(team_members, tasks_per_member)
+  
+  // 计算总任务量
+  let total_tasks = add(add(base_tasks, overtime_tasks), bonus_tasks)
+  
+  // 计算需要的额外人手（假设每人最多处理6个任务）
+  let additional_staff = divide_with_ceil(total_tasks, 6) - team_members
+  
+  assert_eq(40, base_tasks)        // 8 * 5
+  assert_eq(50, total_tasks)       // 40 + 7 + 3
+  assert_eq(1, additional_staff)   // ceil(50/6) - 8 = 9 - 8 = 1
+}
+
+test "complex_financial_calculation" {
+  // 复杂金融计算场景
   let principal = 10000
-  let rate_percent = 5
-  let _years = 3  // 使用下划线前缀标记未使用的变量
+  let interest_rate = 8  // 8%
+  let years = 3
+  let monthly_fee = 25
   
-  let year1_interest = divide_with_ceil(multiply(principal, rate_percent), 100)
-  let year2_interest = divide_with_ceil(multiply(add(principal, year1_interest), rate_percent), 100)
-  let year3_interest = divide_with_ceil(multiply(add(add(principal, year1_interest), year2_interest), rate_percent), 100)
+  // 计算年利息
+  let annual_interest = divide_with_ceil(multiply(principal, interest_rate), 100)
   
-  let total_amount = add(add(add(principal, year1_interest), year2_interest), year3_interest)
-  assert_eq(11576, total_amount)
+  // 计算总利息（简化为单利）
+  let total_interest = multiply(annual_interest, years)
+  
+  // 计算总费用
+  let total_fees = multiply(monthly_fee, multiply(years, 12))
+  
+  // 计算最终金额
+  let final_amount = add(add(principal, total_interest), total_fees)
+  
+  assert_eq(800, annual_interest)   // ceil(10000 * 8 / 100)
+  assert_eq(2400, total_interest)   // 800 * 3
+  assert_eq(900, total_fees)        // 25 * 3 * 12
+  assert_eq(13300, final_amount)    // 10000 + 2400 + 900
 }
 
-test "digital_storage_conversion" {
-  // 数字存储单位转换
-  let megabytes = 1024
-  let kilobytes = multiply(megabytes, 1024)
-  let bytes = multiply(kilobytes, 1024)
+test "error_handling_and_edge_cases" {
+  // 错误处理和边界情况测试
+  // 测试除零安全性
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
   
-  assert_eq(1048576, kilobytes)
-  assert_eq(1073741824, bytes)
-}
-
-test "work_scheduling" {
-  // 工作排班计算
-  let total_tasks = 87
-  let tasks_per_person = 8
-  let people_needed = divide_with_ceil(total_tasks, tasks_per_person)
+  // 测试极值运算
+  assert_eq(0, add(2147483647, -2147483647))
+  assert_eq(4294967294, add(2147483647, 2147483647))
   
-  assert_eq(11, people_needed)  // ceil(87/8) = 11
-}
-
-test "geometric_progression" {
-  // 几何级数计算
-  let first_term = 2
-  let ratio = 3
-  let _terms = 5  // 使用下划线前缀标记未使用的变量
+  // 测试字符串边界情况
+  assert_eq_string("Hello,   !", greet("   "))  // 空格字符串
+  assert_eq_string("Hello, A!", greet("A"))     // 单字符
   
-  let term1 = first_term
-  let term2 = multiply(term1, ratio)
-  let term3 = multiply(term2, ratio)
-  let term4 = multiply(term3, ratio)
-  let term5 = multiply(term4, ratio)
-  
-  let sum = add(add(add(add(term1, term2), term3), term4), term5)
-  assert_eq(242, sum)  // 2 + 6 + 18 + 54 + 162 = 242
-}
-
-test "greeting_with_special_formatting" {
-  // 测试特殊格式的问候
-  let formal_name = "Dr. Smith"
-  let informal_name = "Alice"
-  let emoji_name = "🚀"
-  
-  assert_eq_string("Hello, Dr. Smith!", greet(formal_name))
-  assert_eq_string("Hello, Alice!", greet(informal_name))
-  assert_eq_string("Hello, 🚀!", greet(emoji_name))
-}
-
-test "resource_allocation_optimization" {
-  // 资源分配优化计算
-  let total_budget = 5000
-  let critical_projects = multiply(800, 3)
-  let remaining_budget = add(total_budget, 0 - critical_projects)  // 使用 0 - x 代替 -x
-  let small_projects = divide_with_ceil(remaining_budget, 300)
-  
-  assert_eq(2400, critical_projects)
-  assert_eq(2600, remaining_budget)
-  assert_eq(9, small_projects)  // ceil(2600/300) = 9
-}
-
-test "time_zone_conversion" {
-  // 时区转换计算（简化版）
-  let local_time = 14  // 2 PM
-  let time_difference = 8  // 与目标时区相差8小时
-  
-  let target_time = add(local_time, time_difference)
-  let adjusted_time = if target_time >= 24 {
-    add(target_time, 0 - 24)  // 使用 0 - x 代替 -x
-  } else {
-    target_time
-  }
-  
-  assert_eq(22, adjusted_time)  // 14 + 8 = 22 (10 PM)
-}
-
-test "inventory_reorder_calculation" {
-  // 库存重新订购计算
-  let current_stock = 45
-  let daily_usage = 7
-  let lead_time_days = 5
-  let safety_stock = 20
-  
-  let usage_during_lead = multiply(daily_usage, lead_time_days)
-  let reorder_point = add(usage_during_lead, safety_stock)
-  let days_until_reorder = divide_with_ceil(add(current_stock, 0 - reorder_point), daily_usage)
-  
-  assert_eq(35, usage_during_lead)
-  assert_eq(55, reorder_point)
-  assert_eq(-2, days_until_reorder)  // 需要立即订购
+  // 测试数学运算的一致性
+  let x = 100
+  let y = 25
+  assert_eq(multiply(x, divide_with_ceil(y, 5)), multiply(x, 5))  // 100 * ceil(25/5) = 100 * 5
 }
