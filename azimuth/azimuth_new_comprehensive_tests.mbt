@@ -1,4 +1,4 @@
-// Azimuth 增强标准测试用例
+// Azimuth 新增综合测试用例
 // 包含10个新的高质量 MoonBit 测试用例，涵盖各种实际应用场景
 
 test "number_system_conversion" {
