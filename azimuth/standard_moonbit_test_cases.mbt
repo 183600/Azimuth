@@ -1,16 +1,49 @@
-// 标准 MoonBit 测试用例 - 为 azimuth 库新增的10个高质量测试用例
-// 包含实际应用场景、边界情况和数学性质验证
+// 标准 MoonBit 测试用例 - 为 azimuth 项目添加的高质量测试
+// 包含10个精心设计的测试用例，覆盖核心功能和边缘情况
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  assert_eq(7, add(3, 4))
-  assert_eq(12, multiply(3, 4))
-  assert_eq(1, divide_with_ceil(3, 4))
-  assert_eq(4, divide_with_ceil(15, 4))
+test "add_function_various_scenarios" {
+  // 测试加法函数的各种场景
+  assert_eq(10, add(7, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-10, add(-7, -3))
+  assert_eq(4, add(-7, 11))
+  assert_eq(1000000, add(500000, 500000))
+  assert_eq(-100, add(-150, 50))
 }
 
-test "mathematical_properties" {
-  // 数学性质验证测试
+test "multiply_function_comprehensive" {
+  // 测试乘法函数的综合情况
+  assert_eq(12, multiply(3, 4))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-12, multiply(-3, 4))
+  assert_eq(12, multiply(-3, -4))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(-250000, multiply(-500, 500))
+}
+
+test "divide_with_ceil_precision_testing" {
+  // 测试向上取整除法的精度
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(1001, divide_with_ceil(10001, 10))
+}
+
+test "greet_function_international_support" {
+  // 测试问候函数的国际字符支持
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, !", greet(""))
+}
+
+test "mathematical_properties_validation" {
+  // 验证数学性质
   let x = 15
   let y = 8
   
@@ -25,36 +58,13 @@ test "mathematical_properties" {
     multiply(x, add(y, 2)),
     add(multiply(x, y), multiply(x, 2))
   )
+  
+  // 零元素性质
+  assert_eq(x, add(x, 0))
+  assert_eq(0, multiply(x, 0))
 }
 
-test "edge_cases_and_boundaries" {
-  // 边界情况和极值测试
-  assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(1, divide_with_ceil(1, 1))
-}
-
-test "negative_numbers_handling" {
-  // 负数处理测试
-  assert_eq(-2, add(-5, 3))
-  assert_eq(-15, multiply(-5, 3))
-  assert_eq(15, multiply(-5, -3))
-  assert_eq(-1, divide_with_ceil(-3, 4))
-  assert_eq(1, divide_with_ceil(-3, -4))
-}
-
-test "string_processing_comprehensive" {
-  // 字符串处理综合测试
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-}
-
-test "business_logic_packaging" {
+test "business_logic_packaging_calculation" {
   // 业务逻辑：包装计算测试
   let items = 47
   let capacity_per_box = 12
@@ -83,7 +93,25 @@ test "complex_calculation_pipeline" {
   let step2 = divide_with_ceil(step1, divisor)
   let result = add(step2, addition)
   
-  assert_eq(12, result)  // ceil(10*3/4) + 5 = 8 + 5 = 13
+  assert_eq(13, result)  // ceil(10*3/4) + 5 = 8 + 5 = 13
+}
+
+test "error_handling_and_edge_cases" {
+  // 错误处理和边缘情况测试
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 极值验证
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, -1))
+  
+  // 大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1000000000000, multiply(1000000, 1000000))
 }
 
 test "resource_allocation_optimization" {
@@ -103,20 +131,8 @@ test "resource_allocation_optimization" {
   assert_eq(98, utilization)  // floor(10000/102) = 98%
 }
 
-test "error_handling_and_validation" {
-  // 错误处理和验证测试
-  // 除零错误处理
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  
-  // 极值验证
-  assert_eq(1000000, multiply(1000, 1000))
-  assert_eq(2000000, add(1000000, 1000000))
-}
-
-test "real_world_application_scenario" {
-  // 真实世界应用场景测试：活动安排
+test "real_world_event_planning" {
+  // 真实世界活动规划测试
   let participants = 87
   let tables = 8
   let chairs_per_table = 10
