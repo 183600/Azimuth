@@ -1,154 +1,108 @@
-// Enhanced unit tests for azimuth library
-// 高质量单元测试用例
+// Azimuth 增强单元测试 - 10个标准 MoonBit 测试用例
+// 测试覆盖：数学运算、边界条件、实际应用场景
 
-test "enhanced_temperature_conversion" {
-  // 温度转换测试：摄氏度到华氏度 (F = C * 9/5 + 32)
-  let celsius = 25
-  let fahrenheit = add(divide_with_ceil(multiply(celsius, 9), 5), 32)
-  assert_eq(77, fahrenheit)  // 25°C = 77°F
+test "bitwise_operations_simulation" {
+  // 模拟位运算：通过乘法和除法实现左移和右移
+  let value = 5
+  let shift_left_by_2 = multiply(value, 4)  // 5 * 2^2 = 20
+  let shift_right_by_1 = divide_with_ceil(value, 2)  // ceil(5/2) = 3
   
-  // 华氏度到摄氏度 (C = (F - 32) * 5/9) - 使用加法代替减法
-  let fahrenheit_back = 77
-  let celsius_back = divide_with_ceil(multiply(add(fahrenheit_back, -32), 5), 9)
-  assert_eq(25, celsius_back)
+  assert_eq(20, shift_left_by_2)
+  assert_eq(3, shift_right_by_1)
 }
 
-test "enhanced_loan_calculation" {
-  // 贷款计算测试
-  let principal = 100000
-  let annual_rate = 5
+test "compound_interest_calculation" {
+  // 复利计算：本金1000，年利率5%，3年
+  let principal = 1000
+  let rate_percent = 5
   let years = 3
   
-  // 简化的单利计算
-  let total_interest = divide_with_ceil(multiply(multiply(principal, annual_rate), years), 100)
-  let total_payment = add(principal, total_interest)
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
   
-  assert_eq(15000, total_interest)
-  assert_eq(115000, total_payment)
+  assert_eq(1158, year3)  // 1000 -> 1050 -> 1103 -> 1158
 }
 
-test "enhanced_data_structure_simulation" {
-  // 模拟数据结构操作
-  let array_size = 10
-  let element_size = 4
+test "array_index_calculation" {
+  // 数组索引计算：模拟二维数组转一维数组的索引计算
+  let row = 3
+  let col = 4
+  let cols_per_row = 5
   
-  // 计算数组总大小
-  let total_size = multiply(array_size, element_size)
-  
-  // 计算需要的页数（每页16字节）
-  let page_size = 16
-  let pages_needed = divide_with_ceil(total_size, page_size)
-  
-  assert_eq(40, total_size)
-  assert_eq(3, pages_needed)
+  let linear_index = add(multiply(row, cols_per_row), col)
+  assert_eq(19, linear_index)  // 3*5 + 4 = 19
 }
 
-test "enhanced_time_zone_conversion" {
-  // 时区转换测试
-  let local_time = 14  // 下午2点
-  let time_difference = 8  // 与UTC时差8小时
+test "circular_buffer_index" {
+  // 循环缓冲区索引计算
+  let buffer_size = 8
+  let current_position = 6
+  let steps_forward = 5
   
-  // 转换为UTC时间
-  let utc_time = add(local_time, -time_difference)
-  // 简化处理，不使用if语句
-  assert_eq(6, utc_time)  // 下午2点 - 8小时 = 上午6点
+  let new_position = add(current_position, steps_forward) % buffer_size
+  assert_eq(3, new_position)  // (6 + 5) % 8 = 3
 }
 
-test "enhanced_percentage_calculations" {
-  // 百分比计算测试
-  let original_value = 250
-  let increase_percentage = 20
-  let decrease_percentage = 15
+test "temperature_range_analysis" {
+  // 温度范围分析：计算一周的平均温度（向上取整）
+  let temps = [15, 18, 22, 20, 17, 19, 21]
+  let sum = add(add(add(add(add(add(temps[0], temps[1]), temps[2]), temps[3]), temps[4]), temps[5]), temps[6])
+  let average = divide_with_ceil(sum, 7)
   
-  // 计算增长后的值
-  let increase_amount = divide_with_ceil(multiply(original_value, increase_percentage), 100)
-  let increased_value = add(original_value, increase_amount)
-  
-  // 计算减少后的值
-  let decrease_amount = divide_with_ceil(multiply(increased_value, decrease_percentage), 100)
-  let final_value = add(increased_value, -decrease_amount)
-  
-  assert_eq(50, increase_amount)
-  assert_eq(300, increased_value)
-  assert_eq(45, decrease_amount)
-  assert_eq(255, final_value)
+  assert_eq(19, average)  // ceil(132/7) = 19
 }
 
-test "enhanced_batch_processing" {
-  // 批处理计算测试
-  let batch_size = 150
-  let total_items = 1000
+test "resource_allocation_optimization" {
+  // 资源分配优化：将资源均匀分配给项目
+  let total_resources = 47
+  let num_projects = 5
+  let resources_per_project = divide_with_ceil(total_resources, num_projects)
+  let total_allocated = multiply(resources_per_project, num_projects)
+  let unused_resources = add(total_allocated, -total_resources)
   
-  // 计算需要的批次数
-  let batches_needed = divide_with_ceil(total_items, batch_size)
-  
-  // 简化处理，直接计算最后一批的项目数
-  let full_batches = total_items / batch_size  // 使用整数除法
-  let last_batch_size = total_items - multiply(full_batches, batch_size)
-  
-  assert_eq(7, batches_needed)
-  assert_eq(100, last_batch_size)
+  assert_eq(10, resources_per_project)  // ceil(47/5) = 10
+  assert_eq(50, total_allocated)  // 10 * 5 = 50
+  assert_eq(3, unused_resources)  // 50 - 47 = 3
 }
 
-test "enhanced_memory_allocation" {
-  // 内存分配模拟测试
-  let object_size = 24
-  let alignment = 8  // 8字节对齐
+test "pagination_calculation" {
+  // 分页计算：计算总页数
+  let total_items = 123
+  let items_per_page = 10
+  let total_pages = divide_with_ceil(total_items, items_per_page)
   
-  // 计算对齐后的大小
-  let aligned_size = multiply(divide_with_ceil(object_size, alignment), alignment)
-  
-  // 计算可以分配的对象数量（给定总内存）
-  let total_memory = 1024
-  let object_count = total_memory / aligned_size  // 使用整数除法
-  
-  assert_eq(24, aligned_size)
-  assert_eq(42, object_count)
+  assert_eq(13, total_pages)  // ceil(123/10) = 13
 }
 
-test "enhanced_network_protocol" {
-  // 网络协议计算测试
-  let packet_header_size = 20
-  let max_payload_size = 1472
-  let data_size = 5000
+test "load_balancing_simulation" {
+  // 负载均衡模拟：将任务分配给服务器
+  let total_requests = 75
+  let num_servers = 4
+  let base_requests_per_server = divide_with_ceil(total_requests, num_servers)
+  let total_handled = multiply(base_requests_per_server, num_servers)
   
-  // 计算需要的包数量
-  let payload_per_packet = max_payload_size
-  let packets_needed = divide_with_ceil(data_size, payload_per_packet)
-  
-  // 计算总传输大小（包括头部）
-  let total_transfer_size = add(multiply(packets_needed, packet_header_size), data_size)
-  
-  assert_eq(4, packets_needed)
-  assert_eq(5080, total_transfer_size)
+  assert_eq(19, base_requests_per_server)  // ceil(75/4) = 19
+  assert_eq(76, total_handled)  // 19 * 4 = 76
 }
 
-test "enhanced_cryptography_simulation" {
-  // 密码学模拟测试
-  let message_block_size = 64
-  let message_length = 150
+test "game_score_calculation" {
+  // 游戏得分计算：基础分 + 连击奖励
+  let base_score = 100
+  let combo_multiplier = 3
+  let combo_bonus = multiply(base_score, combo_multiplier)
+  let final_score = add(base_score, combo_bonus)
   
-  // 计算需要的块数
-  let blocks_needed = divide_with_ceil(message_length, message_block_size)
-  
-  // 计算填充长度
-  let padding_length = add(multiply(blocks_needed, message_block_size), -message_length)
-  
-  assert_eq(3, blocks_needed)
-  assert_eq(42, padding_length)
+  assert_eq(400, final_score)  // 100 + 100*3 = 400
 }
 
-test "enhanced_greeting_templates" {
-  // 高级问候模板测试
-  let user_name = "Alice"
-  let location = "Beijing"
+test "network_packet_fragmentation" {
+  // 网络数据包分片计算
+  let data_size = 1500
+  let mtu = 512  // 最大传输单元
+  let num_fragments = divide_with_ceil(data_size, mtu)
+  let last_fragment_size = data_size % mtu
   
-  // 简化处理，只测试基本的问候功能
-  let simple_greeting = greet(user_name + " from " + location)
-  
-  assert_eq_string("Hello, Alice from Beijing!", simple_greeting)
-  
-  // 测试不同的用户名和位置组合
-  let greeting2 = greet("Bob" + " from " + "Shanghai")
-  assert_eq_string("Hello, Bob from Shanghai!", greeting2)
+  assert_eq(3, num_fragments)  // ceil(1500/512) = 3
+  assert_eq(476, last_fragment_size)  // 1500 % 512 = 476
 }
