@@ -4,6 +4,7 @@
   ],
   "export": [],
   "test": [
+    "standard_moonbit_test_suite.mbt",
     "quality_test_cases.mbt",
     "essential_core_tests.mbt",
     "simple_quality_tests.mbt",
