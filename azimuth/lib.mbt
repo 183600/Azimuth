@@ -3326,6 +3326,116 @@ test "business_workflow_simulation" {
   let shipping_cost_percentage = divide_with_ceil(multiply(total_shipping_cost, 100), total_order_value)
   assert_eq(11, shipping_cost_percentage)  // ceil(122*100/1175) = 11%
 }
+
+// Azimuth 高质量测试套件 - 新增8个精心设计的测试用例
+test "add_function_comprehensive_coverage" {
+  // 全面测试加法函数的各种场景
+  assert_eq(8, add(3, 5))              // 基本正数加法
+  assert_eq(0, add(0, 0))              // 零值加法
+  assert_eq(-8, add(-3, -5))           // 负数加法
+  assert_eq(2, add(-3, 5))             // 混合符号加法
+  assert_eq(1000000, add(500000, 500000))  // 大数加法
+}
+
+test "multiply_function_mathematical_properties" {
+  // 测试乘法函数的数学性质
+  assert_eq(15, multiply(3, 5))         // 基本正数乘法
+  assert_eq(0, multiply(5, 0))          // 零乘法特性
+  assert_eq(-15, multiply(-3, 5))       // 负数乘法
+  assert_eq(15, multiply(-3, -5))       // 负负得正
+  assert_eq(5, multiply(5, 1))          // 单位元特性
+}
+
+test "greet_function_internationalization_support" {
+  // 测试问候函数的国际化支持
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, !", greet(""))  // 空字符串处理
+}
+
+test "divide_with_ceil_business_logic_packaging" {
+  // 业务逻辑：包装计算场景测试
+  let products = 47
+  let box_capacity = 12
+  let boxes_needed = divide_with_ceil(products, box_capacity)
+  
+  assert_eq(4, boxes_needed)  // ceil(47/12) = 4
+  
+  // 验证总容量计算
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(48, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, products)
+  assert_eq(1, remaining_space)
+}
+
+test "complex_calculation_pipeline_project_management" {
+  // 复杂计算流水线：项目管理场景
+  let team_members = 5
+  let tasks_per_member = 8
+  let working_days = 6
+  let tasks_per_day = divide_with_ceil(
+    multiply(team_members, tasks_per_member), 
+    working_days
+  )
+  
+  assert_eq(7, tasks_per_day)  // ceil(40/6) = 7
+  
+  // 验证总任务完成能力
+  let total_capacity = multiply(tasks_per_day, working_days)
+  assert_eq(42, total_capacity)
+}
+
+test "mathematical_laws_verification" {
+  // 数学定律验证测试
+  let x = 12
+  let y = 7
+  
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
+  
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 分配律验证
+  let distributive_left = multiply(x, add(y, 3))
+  let distributive_right = add(multiply(x, y), multiply(x, 3))
+  assert_eq(distributive_left, distributive_right)
+}
+
+test "error_handling_and_boundary_conditions" {
+  // 错误处理和边界条件测试
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 边界值测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(-1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 100))
+}
+
+test "real_world_scenario_event_planning" {
+  // 真实世界场景：活动规划测试
+  let participants = 87
+  let tables_available = 10
+  let chairs_per_table = 8
+  
+  // 计算需要的桌子数量
+  let tables_needed = divide_with_ceil(participants, chairs_per_table)
+  assert_eq(11, tables_needed)  // ceil(87/8) = 11
+  
+  // 验证桌子是否足够
+  let total_seats_available = multiply(tables_available, chairs_per_table)
+  assert_eq(80, total_seats_available)
+  
+  // 计算缺少的座位数
+  let seats_shortage = subtract(participants, total_seats_available)
+  assert_eq(7, seats_shortage)
 }
 
 
