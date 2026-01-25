@@ -1,6 +1,9 @@
 // 标准 MoonBit 测试用例 - Azimuth 库
 // 包含10个高质量测试用例，覆盖核心功能和边界情况
 
+// 导入必要的内置包
+use moonbitlang/core
+
 test "add_function_basic" {
   // 测试加法函数的基本功能
   assert_eq(5, add(2, 3))
