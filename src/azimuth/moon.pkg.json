@@ -8,6 +8,9 @@
     "azimuth"
   ],
   "test": [
+    "standard_moonbit_new_tests.mbt",
+    "simple_new_test.mbt",
+    "unique_azimuth_tests_2024.mbt",
     "standard_comprehensive_test_suite.mbt",
     "new_standard_moonbit_tests.mbt",
     "standard_moonbit_test_suite.mbt",
@@ -62,6 +65,7 @@
   "files": [
     "azimuth_new_supplementary_tests.mbt",
     "simple_new_test_file.mbt",
+    "unique_azimuth_tests_2024.mbt",
     "quality_moonbit_tests.mbt",
     "minimal_test.mbt",
     "simple_enhanced_tests.mbt",
@@ -124,7 +128,6 @@
       "azimuth_simple_test_suite.mbt",
     "azimuth_enhanced_edge_case_tests.mbt",
     "comprehensive_standard_tests.mbt",
-    "standard_moonbit_new_tests.mbt",
     "new_standard_tests.mbt",
     "additional_moonbit_standard_tests.mbt",
     "azimuth_standard_enhanced_tests.mbt",

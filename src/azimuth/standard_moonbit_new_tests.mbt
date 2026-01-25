@@ -1,136 +1,104 @@
-// 新增的 MoonBit 标准测试用例
-// 针对 azimuth 库核心功能的高质量测试
+// 标准 MoonBit 测试用例 - 新增10个测试
+// 针对 azimuth 库的核心功能进行全面测试
 
-test "arithemtic_sequence_sum" {
-  // 测试等差数列求和
-  // 计算 1 + 2 + 3 + ... + 10 的和
-  let first_term = 1
-  let last_term = 10
-  let number_of_terms = 10
-  let sum = divide_with_ceil(multiply(number_of_terms, add(first_term, last_term)), 2)
-  assert_eq(55, sum)  // 10 * (1 + 10) / 2 = 55
+test "add_function_commutative_property" {
+  // 测试加法交换律
+  @azimuth.assert_eq(15, @azimuth.add(8, 7))
+  @azimuth.assert_eq(15, @azimuth.add(7, 8))
+  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
+  @azimuth.assert_eq(0, @azimuth.add(5, -5))
 }
 
-test "temperature_conversion" {
-  // 测试温度转换计算
-  // 摄氏度转华氏度：F = C * 9/5 + 32，使用整数运算近似
-  let celsius = 25
-  let fahrenheit = add(divide_with_ceil(multiply(celsius, 9), 5), 32)
-  assert_eq(77, fahrenheit)  // ceil(25 * 9 / 5) + 32 = ceil(45) + 32 = 77
-  
-  // 零下温度测试
-  let celsius_negative = -10
-  let fahrenheit_negative = add(divide_with_ceil(multiply(celsius_negative, 9), 5), 32)
-  assert_eq(14, fahrenheit_negative)  // ceil(-10 * 9 / 5) + 32 = ceil(-18) + 32 = 14
+test "multiply_function_distributive_property" {
+  // 测试乘法分配律 a * (b + c) = a * b + a * c
+  let a = 3
+  let b = 4
+  let c = 5
+  let left_side = @azimuth.multiply(a, @azimuth.add(b, c))
+  let right_side = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
+  @azimuth.assert_eq(left_side, right_side)
 }
 
-test "batch_processing_calculation" {
-  // 测试批处理计算
-  // 计算处理一批文件所需的时间
-  let files_per_batch = 7
-  let total_files = 45
-  let time_per_batch = 5  // 分钟
-  let batches_needed = divide_with_ceil(total_files, files_per_batch)
-  let total_time = multiply(batches_needed, time_per_batch)
-  assert_eq(35, total_time)  // ceil(45/7) * 5 = 7 * 5 = 35 分钟
+test "divide_with_ceil_precision_test" {
+  // 测试向上取整除法的精度
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(3, 2))  // 1.5 -> 2
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(8, 3))  // 2.666... -> 3
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100))  // 0.01 -> 1
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 100))  // 0/100 = 0
 }
 
-test "resource_allocation_optimization" {
-  // 测试资源分配优化
-  // 将资源分配给不同项目，确保每个项目获得足够的资源
-  let total_resources = 100
-  let project1_needs = 23
-  let project2_needs = 31
-  let project3_needs = 19
-  
-  let allocated1 = project1_needs
-  let allocated2 = project2_needs
-  let allocated3 = project3_needs
-  let total_allocated = add(add(allocated1, allocated2), allocated3)
-  let remaining = add(total_resources, -total_allocated)
-  
-  assert_eq(73, total_allocated)  // 23 + 31 + 19 = 73
-  assert_eq(27, remaining)  // 100 - 73 = 27
+test "greet_function_edge_cases" {
+  // 测试问候函数的边界情况
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))  // 空字符串
+  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))  // 单字符
+  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))  // 数字字符串
 }
 
-test "multi_level_marketing_calculation" {
-  // 测试多级营销计算
-  // 计算三级分销的佣金
-  let base_commission = 100
-  let level1_multiplier = 2  // 一级2倍
-  let level2_multiplier = 3  // 二级3倍
-  let level3_multiplier = 5  // 三级5倍
+test "complex_business_calculation" {
+  // 复杂业务计算：订单总价
+  let unit_price = 25
+  let quantity = 8
+  let tax_rate = 8
+  let shipping = 15
   
-  let level1_commission = multiply(base_commission, level1_multiplier)
-  let level2_commission = multiply(base_commission, level2_multiplier)
-  let level3_commission = multiply(base_commission, level3_multiplier)
-  let total_commission = add(add(level1_commission, level2_commission), level3_commission)
+  let subtotal = @azimuth.multiply(unit_price, quantity)
+  let tax = @azimuth.divide_with_ceil(@azimuth.multiply(subtotal, tax_rate), 100)
+  let total = @azimuth.add(@azimuth.add(subtotal, tax), shipping)
   
-  assert_eq(1000, total_commission)  // 100*2 + 100*3 + 100*5 = 200 + 300 + 500 = 1000
+  @azimuth.assert_eq(200, subtotal)
+  @azimuth.assert_eq(16, tax)
+  @azimuth.assert_eq(231, total)
 }
 
-test "international_greeting_formats" {
-  // 测试国际化问候格式
-  // 测试不同语言和特殊字符的问候
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
-  assert_eq_string("Hello, 北京!", greet("北京"))
-  assert_eq_string("Hello, München!", greet("München"))
+test "mathematical_series_sum" {
+  // 数学级数求和：等差数列前n项和
+  let first_term = 3
+  let common_diff = 2
+  let n_terms = 5
+  
+  // 使用公式：S = n/2 * (2a + (n-1)d)
+  let sum = @azimuth.divide_with_ceil(
+    @azimuth.multiply(n_terms, @azimuth.add(@azimuth.multiply(2, first_term), @azimuth.multiply(n_terms - 1, common_diff))),
+    2
+  )
+  
+  @azimuth.assert_eq(35, sum)  // 3 + 5 + 7 + 9 + 11 = 35
 }
 
-test "inventory_restock_calculation" {
-  // 测试库存补货计算
-  // 根据当前库存和销量计算需要补货的数量
-  let current_stock = 45
-  let daily_sales = 12
-  let days_to_cover = 7  // 需要覆盖7天
-  let safety_stock = 20  // 安全库存
+test "resource_allocation_scenario" {
+  // 资源分配场景
+  let total_budget = 1000
+  let project_cost = 150
+  let max_projects = @azimuth.divide_with_ceil(total_budget, project_cost)
   
-  let needed_for_sales = multiply(daily_sales, days_to_cover)
-  let total_needed = add(needed_for_sales, safety_stock)
-  let restock_quantity = add(total_needed, -current_stock)
-  
-  assert_eq(59, restock_quantity)  // 12*7 + 20 - 45 = 84 + 20 - 45 = 59
+  @azimuth.assert_eq(7, max_projects)  // ceil(1000/150) = 7
 }
 
-test "project_timeline_planning" {
-  // 测试项目时间线规划
-  // 计算项目完成时间和里程碑
-  let total_tasks = 67
-  let tasks_per_week = 15
-  let weeks_needed = divide_with_ceil(total_tasks, tasks_per_week)
-  let buffer_weeks = 2  // 缓冲时间
-  let total_timeline = add(weeks_needed, buffer_weeks)
+test "time_management_calculation" {
+  // 时间管理计算
+  let tasks_per_day = 6
+  let total_tasks = 35
+  let days_needed = @azimuth.divide_with_ceil(total_tasks, tasks_per_day)
+  let total_hours = @azimuth.multiply(days_needed, 8)  // 每天8小时工作
   
-  assert_eq(7, total_timeline)  // ceil(67/15) + 2 = 5 + 2 = 7 周
+  @azimuth.assert_eq(6, days_needed)  // ceil(35/6) = 6
+  @azimuth.assert_eq(48, total_hours)  // 6 * 8 = 48
 }
 
-test "financial_compound_interest" {
-  // 测试金融复利计算（简化版）
-  // 计算简化的复利增长
-  let principal = 1000
-  let interest_rate_percent = 8
-  let years = 3
-  
-  let year1_amount = add(principal, divide_with_ceil(multiply(principal, interest_rate_percent), 100))
-  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, interest_rate_percent), 100))
-  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, interest_rate_percent), 100))
-  
-  assert_eq(1260, year3_amount)  // 使用向上取整的复利计算
+test "negative_number_division" {
+  // 负数除法测试
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))   // -10/3 = -3.333... -> -3
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(-10, -3))   // -10/-3 = 3.666... -> 4
+  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-6, 3))    // -6/3 = -2 -> -2
 }
 
-test "complex_shipping_calculation" {
-  // 测试复杂运输计算
-  // 计算不同重量包裹的运费
-  let base_rate = 10
-  let weight_per_kg_rate = 3
-  let package_weights = [5, 8, 12, 3]  // 四个包裹的重量
-  let total_weight = add(add(add(package_weights[0], package_weights[1]), package_weights[2]), package_weights[3])
-  let weight_cost = multiply(total_weight, weight_per_kg_rate)
-  let packages_needed = divide_with_ceil(total_weight, 10)  // 每箱最多10kg
-  let packaging_cost = multiply(packages_needed, 5)  // 每个箱子5元
-  let total_shipping_cost = add(add(base_rate, weight_cost), packaging_cost)
+test "string_processing_with_greet" {
+  // 字符串处理与问候函数结合
+  let first_name = "张"
+  let last_name = "三"
+  let full_name = first_name + last_name
+  let greeting = @azimuth.greet(full_name)
   
-  assert_eq(114, total_shipping_cost)  // 10 + 28*3 + ceil(28/10)*5 = 10 + 84 + 15 = 109
+  @azimuth.assert_eq_string("Hello, 张三!", greeting)
+  @azimuth.assert_eq_string("Hello, a@b.com!", @azimuth.greet("a@b.com"))
 }
