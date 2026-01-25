@@ -8,6 +8,7 @@
     "azimuth"
   ],
   "test": [
+    "simple_quality_tests.mbt",
     "azimuth_enhanced_unit_tests.mbt",
     "simple_test_new.mbt",
     "azimuth_concise_test_suite.mbt",
