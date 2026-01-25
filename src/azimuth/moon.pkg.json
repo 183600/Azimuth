@@ -253,5 +253,6 @@
       "standard_azimuth_new_tests.mbt",
       "enhanced_algorithmic_tests.mbt",
     "azimuth_simple_tests.mbt",
-    "enhanced_azimuth_core_tests.mbt"
+    "enhanced_azimuth_core_tests.mbt",
+    "our_new_tests.mbt"
                                                                                                                                                 ]}
