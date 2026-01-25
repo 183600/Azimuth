@@ -4352,3 +4352,146 @@ test "inventory_management_scenario" {
   assert_eq(42, boxes_large)
   assert_eq(58, total_boxes)
 }
+
+// 新增的10个标准 MoonBit 测试用例
+
+test "algorithm_binary_search_simulation" {
+  // 模拟二分查找算法的索引计算
+  let low = 0
+  let high = 15
+  let mid = divide_with_ceil(add(low, high), 2)
+  
+  // 模拟查找过程
+  let new_low = add(mid, 1)
+  let new_mid = divide_with_ceil(add(new_low, high), 2)
+  
+  assert_eq(8, mid)
+  assert_eq(12, new_mid)
+}
+
+test "data_structure_stack_operations" {
+  // 模拟栈操作（使用数值表示栈状态）
+  let stack_empty = 0
+  let push_1 = add(stack_empty, 100)  // 推入100
+  let push_2 = add(push_1, 200)       // 推入200
+  let peek = push_2                    // 查看栈顶
+  let pop = add(push_2, -200)         // 弹出200
+  
+  assert_eq(300, push_2)
+  assert_eq(300, peek)
+  assert_eq(100, pop)
+}
+
+test "performance_cache_simulation" {
+  // 模拟缓存命中率和性能计算
+  let total_requests = 1000
+  let cache_hits = 750
+  let cache_misses = add(total_requests, -cache_hits)
+  
+  // 计算命中率（百分比）
+  let hit_rate = divide_with_ceil(multiply(cache_hits, 100), total_requests)
+  let miss_rate = divide_with_ceil(multiply(cache_misses, 100), total_requests)
+  
+  assert_eq(250, cache_misses)
+  assert_eq(75, hit_rate)
+  assert_eq(25, miss_rate)
+}
+
+test "error_handling_boundary_validation" {
+  // 错误处理的边界验证测试
+  let max_allowed = 100
+  let min_allowed = 1
+  
+  // 测试边界值
+  let at_max = max_allowed
+  let at_min = min_allowed
+  let over_max = add(max_allowed, 1)
+  let under_min = add(min_allowed, -1)
+  
+  // 模拟验证结果（1表示有效，0表示无效）
+  let valid_max = if at_max <= max_allowed { 1 } else { 0 }
+  let valid_min = if at_min >= min_allowed { 1 } else { 0 }
+  let valid_over = if over_max <= max_allowed { 1 } else { 0 }
+  let valid_under = if under_min >= min_allowed { 1 } else { 0 }
+  
+  assert_eq(1, valid_max)
+  assert_eq(1, valid_min)
+  assert_eq(0, valid_over)
+  assert_eq(0, valid_under)
+}
+
+test "algorithm_sorting_comparison" {
+  // 模拟排序算法的比较次数计算
+  let array_size = 16
+  let bubble_sort_comparisons = multiply(array_size, add(array_size, -1)) / 2
+  let selection_sort_comparisons = multiply(array_size, add(array_size, -1)) / 2
+  let linear_search_comparisons = divide_with_ceil(add(array_size, 1), 2)
+  
+  assert_eq(120, bubble_sort_comparisons)
+  assert_eq(120, selection_sort_comparisons)
+  assert_eq(8, linear_search_comparisons)
+}
+
+test "memory_allocation_simulation" {
+  // 模拟内存分配计算
+  let block_size = 64
+  let requested_size = 250
+  let blocks_needed = divide_with_ceil(requested_size, block_size)
+  let actual_allocated = multiply(blocks_needed, block_size)
+  let waste = add(actual_allocated, -requested_size)
+  
+  assert_eq(4, blocks_needed)
+  assert_eq(256, actual_allocated)
+  assert_eq(6, waste)
+}
+
+test "network_packet_fragmentation" {
+  // 模拟网络数据包分片计算
+  let data_size = 1500
+  let mtu = 512  // 最大传输单元
+  let full_packets = divide_with_ceil(data_size, mtu)
+  let last_packet_size = add(data_size, -multiply(add(full_packets, -1), mtu))
+  
+  assert_eq(3, full_packets)
+  assert_eq(476, last_packet_size)
+}
+
+test "database_pagination_calculation" {
+  // 数据库分页计算
+  let total_records = 258
+  let page_size = 50
+  let requested_page = 4
+  
+  let total_pages = divide_with_ceil(total_records, page_size)
+  let offset = multiply(add(requested_page, -1), page_size)
+  let records_on_last_page = add(total_records, -multiply(add(total_pages, -1), page_size))
+  
+  assert_eq(6, total_pages)
+  assert_eq(150, offset)
+  assert_eq(8, records_on_last_page)
+}
+
+test "string_greeting_with_escape_sequences" {
+  // 测试包含转义字符的字符串问候
+  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))
+  assert_eq_string("Hello, \\backslash\\!", greet("\\backslash\\"))
+  assert_eq_string("Hello, \nnewline\n!", greet("\nnewline\n"))
+  assert_eq_string("Hello, \ttab\t!", greet("\ttab\t"))
+}
+
+test "complex_resource_scheduling" {
+  // 复杂资源调度计算
+  let total_tasks = 45
+  let parallel_workers = 4
+  let task_duration = 3
+  let setup_time = 2
+  
+  // 计算批次和总时间
+  let batches = divide_with_ceil(total_tasks, parallel_workers)
+  let batch_time = add(task_duration, setup_time)
+  let total_time = multiply(batches, batch_time)
+  
+  assert_eq(12, batches)
+  assert_eq(5, batch_time)
+  assert_eq(60, total_time)
+}
