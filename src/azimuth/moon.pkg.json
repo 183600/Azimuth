@@ -59,7 +59,8 @@
     "azimuth_quality_test_suite.mbt",
     "standard_enhanced_test_suite.mbt",
     "azimuth_new_supplementary_tests.mbt",
-    "simple_new_test_file.mbt"
+    "simple_new_test_file.mbt",
+    "standard_enhanced_tests.mbt"
   ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [

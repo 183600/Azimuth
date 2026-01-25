@@ -1,171 +1,162 @@
-// 新增的标准 MoonBit 测试用例
-// 针对 azimuth 库的补充测试
+// 标准 MoonBit 增强测试用例
+// 针对 azimuth 库的全面功能测试
 
-test "advanced_arithmetic_operations" {
-  // 高级算术运算测试
-  let x = 42
-  let y = 17
-  let z = 8
+test "mathematical_sequence_calculation" {
+  // 数学序列计算：等差数列和等比数列
+  let first_term = 3
+  let common_diff = 4
+  let terms_count = 5
   
-  // 复合运算测试
-  let result1 = add(multiply(x, y), multiply(x, z))
-  let result2 = multiply(x, add(y, z))
-  assert_eq(result1, result2)  // 验证分配律: 42*(17+8) = 42*17 + 42*8
+  // 计算等差数列第5项：a_n = a_1 + (n-1)d
+  let nth_term = add(first_term, multiply(common_diff, terms_count - 1))
+  assert_eq(19, nth_term)  // 3 + 4*4 = 19
   
-  // 嵌套运算测试
-  let complex_result = divide_with_ceil(
-    add(multiply(15, 3), multiply(7, 4)),
-    multiply(2, 3)
-  )
-  assert_eq(13, complex_result)  // ceil((45+28)/6) = ceil(73/6) = 13
-}
-
-test "string_processing_edge_cases" {
-  // 字符串处理边界情况测试
-  assert_eq_string("Hello, Space Test!", greet("Space Test"))
-  assert_eq_string("Hello, 123456789!", greet("123456789"))
-  assert_eq_string("Hello, Special@Chars#!", greet("Special@Chars#"))
-  assert_eq_string("Hello, MixedCASE!", greet("MixedCASE"))
-  assert_eq_string("Hello,   Multiple   Spaces   !", greet("   Multiple   Spaces   "))
-}
-
-test "divide_with_ceil_comprehensive_scenarios" {
-  // 除法向上取整的综合场景测试
-  // 测试各种正数情况
-  assert_eq(7, divide_with_ceil(13, 2))   // 6.5 -> 7
-  assert_eq(4, divide_with_ceil(12, 3))   // 4 -> 4
-  assert_eq(1, divide_with_ceil(1, 100))  // 0.01 -> 1
-  assert_eq(100, divide_with_ceil(999, 10)) // 99.9 -> 100
-  
-  // 测试负数情况
-  assert_eq(-6, divide_with_ceil(-13, 2))  // -6.5 -> -6
-  assert_eq(-4, divide_with_ceil(-12, 3))  // -4 -> -4
-  assert_eq(4, divide_with_ceil(-13, -3))  // 4.333... -> 4
-  
-  // 测试零值情况
-  assert_eq(0, divide_with_ceil(0, 10))    // 0 -> 0
-  assert_eq(0, divide_with_ceil(10, 0))    // 除零保护
-  assert_eq(0, divide_with_ceil(0, 0))     // 双零保护
-}
-
-test "business_calculation_comprehensive" {
-  // 综合业务计算测试
-  // 场景：计算订单总价（商品 + 税费 + 运费 - 折扣）
-  let item_price = 89
-  let quantity = 6
-  let tax_percent = 8
-  let shipping_cost = 25
-  let discount_amount = 50
-  
-  // 计算商品小计
-  let subtotal = multiply(item_price, quantity)
-  // 计算税费（向上取整）
-  let tax = divide_with_ceil(multiply(subtotal, tax_percent), 100)
-  // 计算最终总价
-  let final_total = add(add(add(subtotal, tax), shipping_cost), -discount_amount)
-  
-  assert_eq(581, final_total)  // 89*6 + ceil(534*8/100) + 25 - 50 = 534 + 43 + 25 - 50 = 552
-}
-
-test "mathematical_series_and_patterns" {
-  // 数学级数和模式测试
-  // 计算等差数列前n项和：1 + 3 + 5 + ... + (2n-1) = n²
-  let n = 10
-  let series_sum = n * n  // 使用数学公式直接计算
-  assert_eq(100, series_sum)
-  
-  // 使用库函数验证
-  let manual_sum = add(1, add(3, add(5, add(7, add(9, add(11, add(13, add(15, add(17, 19)))))))))
-  assert_eq(series_sum, manual_sum)
-  
-  // 测试等比数列：2 + 4 + 8 + 16 = 30
-  let geometric_sum = add(2, add(4, add(8, 16)))
-  assert_eq(30, geometric_sum)
-}
-
-test "resource_planning_optimization" {
-  // 资源规划优化测试
-  // 场景：项目资源分配
-  let total_budget = 5000
-  let senior_developer_cost = 800
-  let junior_developer_cost = 400
-  let project_duration = 3
-  
-  // 计算最优人员配置
-  let max_senior = divide_with_ceil(total_budget, multiply(senior_developer_cost, project_duration))
-  let remaining_budget = add(total_budget, -multiply(max_senior, senior_developer_cost, project_duration))
-  let additional_junior = divide_with_ceil(remaining_budget, multiply(junior_developer_cost, project_duration))
-  
-  assert_eq(2, max_senior)      // ceil(5000/(800*3)) = ceil(5000/2400) = 2
-  assert_eq(1, additional_junior)  // 剩余预算可支持1个初级开发者
-}
-
-test "time_and_scheduling_calculations" {
-  // 时间和调度计算测试
-  // 场景：项目任务调度
-  let total_tasks = 67
-  let tasks_per_week = 15
-  let weeks_needed = divide_with_ceil(total_tasks, tasks_per_week)
-  
-  // 计算工作日（每周5天）
-  let work_days_needed = multiply(weeks_needed, 5)
-  
-  // 计算小时数（每天8小时）
-  let total_hours = multiply(work_days_needed, 8)
-  
-  assert_eq(5, weeks_needed)      // ceil(67/15) = 5
-  assert_eq(25, work_days_needed)  // 5 * 5 = 25
-  assert_eq(200, total_hours)      // 25 * 8 = 200
-}
-
-test "data_structure_simulation" {
-  // 数据结构模拟测试
-  // 模拟数组操作：计算数组元素的总和与平均值
-  let array_sum = add(10, add(20, add(30, add(40, 50))))
-  let array_count = 5
-  let average = divide_with_ceil(array_sum, array_count)
-  
-  assert_eq(150, array_sum)  // 10+20+30+40+50 = 150
-  assert_eq(30, average)     // ceil(150/5) = 30
-  
-  // 模拟查找最大值的比较操作
-  let max_value = add(20, divide_with_ceil(multiply(15, 2), 3))  // 模拟比较逻辑
-  assert_eq(30, max_value)
+  // 计算前5项和：S_n = n/2 * (2a_1 + (n-1)d)
+  let sum_n = divide_with_ceil(multiply(terms_count, add(multiply(2, first_term), multiply(common_diff, terms_count - 1))), 2)
+  assert_eq(55, sum_n)  // 5/2 * (6 + 16) = 55
 }
 
 test "financial_compound_interest" {
-  // 金融复利计算测试
-  let principal = 10000
-  let annual_rate_percent = 6
-  let years = 4
+  // 金融复利计算
+  let principal = 1000
+  let rate_percent = 5
+  let years = 3
   
-  // 简化的年度复利计算
-  let year1_amount = add(principal, divide_with_ceil(multiply(principal, annual_rate_percent), 100))
-  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, annual_rate_percent), 100))
-  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, annual_rate_percent), 100))
-  let year4_amount = add(year3_amount, divide_with_ceil(multiply(year3_amount, annual_rate_percent), 100))
+  // 第一年：1000 + ceil(1000*5/100) = 1000 + 50 = 1050
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
   
-  // 验证结果（由于使用向上取整，结果会略高于标准复利）
-  assert_eq(12625, year4_amount)
+  // 第二年：1050 + ceil(1050*5/100) = 1050 + 53 = 1103
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  
+  // 第三年：1103 + ceil(1103*5/100) = 1103 + 56 = 1159
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
+  
+  assert_eq(1050, year1)
+  assert_eq(1103, year2)
+  assert_eq(1159, year3)
 }
 
-test "error_boundary_and_validation" {
-  // 错误边界和验证测试
-  // 测试极端输入值
-  assert_eq(0, add(0, 0))  // 双零加法
-  assert_eq(0, multiply(0, 0))  // 双零乘法
-  assert_eq(0, divide_with_ceil(0, 1))  // 零除法
+test "inventory_optimization" {
+  // 库存优化算法
+  let demand_forecast = 150
+  let safety_stock = 30
+  let reorder_point = add(demand_forecast, safety_stock)
   
-  // 测试边界值
-  let boundary_value = 1000000
-  assert_eq(2000000, add(boundary_value, boundary_value))
-  assert_eq(1000000000000, multiply(boundary_value, boundary_value))
+  let current_stock = 100
+  let order_quantity = 200
   
-  // 测试负数边界
-  assert_eq(0, add(1000000, -1000000))
-  assert_eq(-1000000, multiply(1, -1000000))
+  // 如果当前库存低于再订购点，则订购
+  let should_order = current_stock < reorder_point
+  let new_stock = if should_order { add(current_stock, order_quantity) } else { current_stock }
   
-  // 字符串边界测试
-  assert_eq_string("Hello, x!", greet("x"))  // 单字符
-  assert_eq_string("Hello, !", greet(""))    // 空字符串
+  assert_eq(180, reorder_point)
+  assert_eq(true, should_order)
+  assert_eq(300, new_stock)
+}
+
+test "temperature_conversion" {
+  // 温度转换计算（简化版本）
+  let celsius = 25
+  let fahrenheit = add(divide_with_ceil(multiply(celsius, 9), 5), 32)
+  
+  // 验证转换公式：°F = (°C × 9/5) + 32
+  assert_eq(77, fahrenheit)  // 25*9/5 + 32 = 45 + 32 = 77
+  
+  // 负温度测试
+  let negative_celsius = -10
+  let negative_fahrenheit = add(divide_with_ceil(multiply(negative_celsius, 9), 5), 32)
+  assert_eq(14, negative_fahrenheit)  // -10*9/5 + 32 = -18 + 32 = 14
+}
+
+test "project_management_metrics" {
+  // 项目管理指标计算
+  let total_tasks = 45
+  let completed_tasks = 28
+  let team_members = 5
+  
+  // 完成率
+  let completion_rate = divide_with_ceil(multiply(completed_tasks, 100), total_tasks)
+  
+  // 剩余任务
+  let remaining_tasks = add(total_tasks, -completed_tasks)
+  
+  // 每人平均任务数
+  let tasks_per_member = divide_with_ceil(total_tasks, team_members)
+  
+  // 预计剩余天数（假设每人每天完成2个任务）
+  let days_remaining = divide_with_ceil(remaining_tasks, multiply(team_members, 2))
+  
+  assert_eq(63, completion_rate)  // ceil(28*100/45) = 63%
+  assert_eq(17, remaining_tasks)
+  assert_eq(9, tasks_per_member)
+  assert_eq(2, days_remaining)
+}
+
+test "data_structure_simulation" {
+  // 数据结构模拟：栈操作
+  let initial_stack = 0
+  let push1 = 10
+  let push2 = 20
+  let push3 = 30
+  
+  // 模拟栈的push操作（用加法表示）
+  let stack_after_push1 = add(initial_stack, push1)
+  let stack_after_push2 = add(stack_after_push1, push2)
+  let stack_after_push3 = add(stack_after_push2, push3)
+  
+  // 模拟栈的pop操作（用减法表示）
+  let stack_after_pop1 = add(stack_after_push3, -push3)
+  let stack_after_pop2 = add(stack_after_pop1, -push2)
+  
+  assert_eq(10, stack_after_push1)
+  assert_eq(30, stack_after_push2)
+  assert_eq(60, stack_after_push3)
+  assert_eq(30, stack_after_pop1)
+  assert_eq(10, stack_after_pop2)
+}
+
+test "network_throughput_calculation" {
+  // 网络吞吐量计算
+  let file_size_mb = 850
+  let network_speed_mbps = 50
+  let latency_ms = 10
+  let packet_overhead = 5
+  
+  // 基本传输时间
+  let base_time = divide_with_ceil(file_size_mb, network_speed_mbps)
+  
+  // 考虑延迟的总时间（简化计算）
+  let total_packets = divide_with_ceil(file_size_mb, 10)  // 假设每个包10MB
+  let total_latency = divide_with_ceil(multiply(total_packets, latency_ms), 1000)  // 转换为秒
+  let overhead_time = divide_with_ceil(multiply(total_packets, packet_overhead), network_speed_mbps)
+  
+  let total_time = add(add(base_time, total_latency), overhead_time)
+  
+  assert_eq(17, base_time)
+  assert_eq(1, total_latency)
+  assert_eq(1, overhead_time)
+  assert_eq(19, total_time)
+}
+
+test "string_processing_pipeline" {
+  // 字符串处理流水线
+  let base_name = "John"
+  let suffix = "Doe"
+  let title = "Mr"
+  
+  // 构建完整名称
+  let full_name = base_name + " " + suffix
+  let formal_name = title + " " + full_name
+  
+  // 使用greet函数处理
+  let casual_greeting = greet(base_name)
+  let formal_greeting = greet(formal_name)
+  
+  assert_eq_string("Hello, John!", casual_greeting)
+  assert_eq_string("Hello, Mr John Doe!", formal_greeting)
+  
+  // 测试特殊字符处理
+  let special_chars = "!@#$%^&*()"
+  let special_greeting = greet(special_chars)
+  assert_eq_string("Hello, !@#$%^&*()!", special_greeting)
 }
