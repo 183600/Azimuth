@@ -8,6 +8,8 @@
     "azimuth"
   ],
   "test": [
+    "simple_test_new.mbt",
+    "azimuth_concise_test_suite.mbt",
     "azimuth_new_standard_tests.mbt",
     "test/my_new_unit_tests.mbt",
     "test/quality_comprehensive_tests.mbt",
@@ -68,6 +70,8 @@
   ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [
+    "simple_test_new.mbt",
+    "azimuth_concise_test_suite.mbt",
     "azimuth_new_supplementary_tests.mbt",
     "simple_new_test_file.mbt",
     "unique_azimuth_tests_2024.mbt",
