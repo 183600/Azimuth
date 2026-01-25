@@ -1,98 +1,86 @@
-// 标准 MoonBit 测试用例 - 为 azimuth 库添加的高质量测试
-// 包含基础功能、边界条件和实际应用场景测试
+// 标准 MoonBit 测试用例 - 10个核心功能测试
+// 测试 azimuth 库的主要功能
 
-test "add_function_positive_numbers" {
-  // 测试正数加法
-  assert_eq(8, add(3, 5))
-  assert_eq(100, add(50, 50))
+test "add_function_basic" {
+  // 测试基本加法功能
+  assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(10, add(7, 3))
 }
 
-test "multiply_function_zero_cases" {
-  // 测试乘法的零情况
-  assert_eq(0, multiply(0, 10))
-  assert_eq(0, multiply(10, 0))
-  assert_eq(0, multiply(0, 0))
+test "multiply_function_basic" {
+  // 测试基本乘法功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(15, multiply(5, 3))
 }
 
-test "greet_function_special_chars" {
-  // 测试问候函数的特殊字符处理
+test "greet_function_basic" {
+  // 测试基本问候功能
+  assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
   assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, @#$!", greet("@#$"))
 }
 
-test "divide_with_ceil_basic_functionality" {
-  // 测试向上取整除法的基本功能
-  assert_eq(3, divide_with_ceil(8, 3))
-  assert_eq(2, divide_with_ceil(4, 2))
+test "divide_with_ceil_positive" {
+  // 测试正数向上取整除法
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(2, divide_with_ceil(3, 2))
+}
+
+test "divide_with_ceil_negative" {
+  // 测试负数向上取整除法
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
   assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
 }
 
-test "add_function_negative_numbers" {
-  // 测试负数加法
-  assert_eq(-2, add(-5, 3))
-  assert_eq(-8, add(-5, -3))
-  assert_eq(0, add(-5, 5))
+test "mathematical_commutative" {
+  // 测试数学交换律
+  assert_eq(add(7, 13), add(13, 7))
+  assert_eq(multiply(7, 13), multiply(13, 7))
+  assert_eq(add(-5, 10), add(10, -5))
+  assert_eq(multiply(-4, 5), multiply(5, -4))
 }
 
-test "multiply_function_negative_cases" {
-  // 测试乘法的负数情况
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(0, multiply(-3, 0))
+test "zero_element_properties" {
+  // 测试零元素性质
+  assert_eq(5, add(5, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-7, add(-7, 0))
+  assert_eq(0, multiply(-7, 0))
 }
 
-test "divide_with_ceil_negative_dividend" {
-  // 测试向上取整除法的负被除数
-  assert_eq(-2, divide_with_ceil(-7, 3))
-  assert_eq(-1, divide_with_ceil(-2, 3))
-  assert_eq(0, divide_with_ceil(0, 3))
-}
-
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景
-  // 场景：计算项目资源需求
-  let items = 25
-  let boxes = divide_with_ceil(items, 6)  // 需要5个盒子
-  let total_capacity = multiply(boxes, 6)  // 总容量30
-  let remaining = subtract(total_capacity, items)  // 剩余5个位置
+test "complex_arithmetic" {
+  // 测试复杂算术运算
+  let result = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
   
-  assert_eq(5, boxes)
-  assert_eq(30, total_capacity)
-  assert_eq(5, remaining)
+  let result2 = multiply(add(3, 4), divide_with_ceil(10, 3))
+  assert_eq(28, result2)  // (3+4) * ceil(10/3) = 7 * 4 = 28
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let x = 7
-  let y = 13
+test "packaging_calculation" {
+  // 测试包装计算场景
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
   
-  // 加法交换律
-  assert_eq(add(x, y), add(y, x))
-  
-  // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
-  
-  // 分配律
-  assert_eq(multiply(x, add(y, 2)), add(multiply(x, y), multiply(x, 2)))
+  let total_capacity = multiply(boxes_needed, items_per_box)
+  assert_eq(30, total_capacity)  // 5 * 6 = 30
 }
 
-test "real_world_application" {
-  // 测试真实世界应用场景
-  // 场景：计算运输需求
-  let packages = 47
-  let truck_capacity = 10
-  let trucks_needed = divide_with_ceil(packages, truck_capacity)
-  
-  assert_eq(5, trucks_needed)
-  
-  // 验证总运力
-  let total_capacity = multiply(trucks_needed, truck_capacity)
-  assert_eq(50, total_capacity)
-}
-
-// 辅助函数
-fn subtract(a : Int, b : Int) -> Int {
-  a - b
+test "unicode_greeting" {
+  // 测试Unicode字符支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
 }
