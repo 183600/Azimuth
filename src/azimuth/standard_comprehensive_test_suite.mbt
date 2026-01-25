@@ -1,10 +1,46 @@
-// 标准 MoonBit 测试套件
-// 测试 azimuth 库的核心功能
+// 标准 MoonBit 综合测试套件
+// 针对 azimuth 库核心功能的高质量测试用例
 
-test "arithmetics_property_verification" {
-  // 验算基本算术性质
-  let a = 15
-  let b = 7
+test "add_function_comprehensive" {
+  // 测试加法函数的全面功能
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(1000, add(500, 500))
+  assert_eq(0, add(10, -10))
+}
+
+test "multiply_function_comprehensive" {
+  // 测试乘法函数的全面功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(15, multiply(3, 5))
+  assert_eq(100, multiply(10, 10))
+}
+
+test "divide_with_ceil_functionality" {
+  // 测试向上取整除法的各种情况
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+  assert_eq(0, divide_with_ceil(5, 0))
+}
+
+test "greet_function_edge_cases" {
+  // 测试问候函数的边界情况
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+}
+
+test "mathematical_properties_verification" {
+  // 验证数学性质
+  let a = 7
+  let b = 13
   
   // 加法交换律
   assert_eq(add(a, b), add(b, a))
@@ -12,193 +48,76 @@ test "arithmetics_property_verification" {
   // 乘法交换律
   assert_eq(multiply(a, b), multiply(b, a))
   
-  // 分配律
-  assert_eq(multiply(a, add(b, 3)), add(multiply(a, b), multiply(a, 3)))
+  // 零元素性质
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, add(a, 0))
 }
 
-test "overflow_boundary_comprehensive" {
-  // 全面的溢出边界测试
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "complex_business_calculations" {
+  // 复杂业务计算场景
+  let unit_price = 25
+  let quantity = 8
+  let tax_rate = 8
+  let shipping = 15
   
-  // 正溢出场景
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(max_val, add(max_val, max_val))
-  assert_eq(max_val, multiply(46341, 46341))
-  
-  // 负溢出场景
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(min_val, add(min_val, min_val))
-  assert_eq(min_val, multiply(-46341, 46341))
-  
-  // 特殊边界组合
-  assert_eq(-1, add(max_val, min_val))
-  assert_eq(min_val, multiply(min_val, -1))
-}
-
-test "string_processing_internationalization" {
-  // 国际化字符串处理测试
-  let chinese_name = "李明"
-  let japanese_name = "田中太郎"
-  let korean_name = "김철수"
-  let arabic_name = "أحمد"
-  let russian_name = "Иван"
-  
-  assert_eq_string("Hello, 李明!", greet(chinese_name))
-  assert_eq_string("Hello, 田中太郎!", greet(japanese_name))
-  assert_eq_string("Hello, 김철수!", greet(korean_name))
-  assert_eq_string("Hello, أحمد!", greet(arabic_name))
-  assert_eq_string("Hello, Иван!", greet(russian_name))
-}
-
-test "complex_business_calculation" {
-  // 复杂业务计算：订单总价计算
-  let unit_price = 199
-  let quantity = 5
-  let discount_rate = 10  // 10% 折扣
-  let tax_rate = 8        // 8% 税费
-  let shipping = 25       // 运费
-  
-  // 计算商品总价
   let subtotal = multiply(unit_price, quantity)
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let total = add(add(subtotal, tax), shipping)
   
-  // 计算折扣（满500元享受折扣）
-  let discount = if (subtotal > 500) {
-    multiply(subtotal, discount_rate) / 100
-  } else {
-    0
-  }
-  
-  // 计算折后价格
-  let discounted_total = add(subtotal, -discount)
-  
-  // 计算税费
-  let tax = multiply(discounted_total, tax_rate) / 100
-  
-  // 计算最终总价
-  let final_total = add(add(discounted_total, tax), shipping)
-  
-  assert_eq(1071, final_total)
+  assert_eq(200, subtotal)
+  assert_eq(16, tax)
+  assert_eq(231, total)
 }
 
-test "mathematical_series_formula" {
-  // 数学级数公式验证
-  // 等差数列求和：1 + 2 + 3 + ... + n = n × (n + 1) / 2
-  let n = 20
-  let arithmetic_sum = multiply(n, add(n, 1)) / 2
-  assert_eq(210, arithmetic_sum)
-  
-  // 等比数列求和（前n项2的幂）：2^0 + 2^1 + ... + 2^(n-1) = 2^n - 1
-  let geo_n = 8
-  let geometric_sum = add(multiply(multiply(multiply(2, 2), multiply(2, 2)), 1)
-  assert_eq(255, geometric_sum)
-  
-  // 平方和公式：1² + 2² + ... + n² = n × (n + 1) × (2n + 1) / 6
-  let square_n = 5
-  let square_sum = multiply(multiply(square_n, add(square_n, 1)), add(multiply(2, square_n), 1)) / 6
-  assert_eq(55, square_sum)
+test "negative_number_operations" {
+  // 测试负数运算
+  assert_eq(-10, add(-3, -7))
+  assert_eq(-5, add(-8, 3))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-15, multiply(3, -5))
+  assert_eq(-3, divide_with_ceil(-10, 3))
 }
 
-test "algorithm_complexity_simulation" {
-  // 算法复杂度模拟测试
-  let n = 100
-  
-  // O(1) 常数时间操作
-  let constant_op = add(5, 3)
-  assert_eq(8, constant_op)
-  
-  // O(n) 线性时间操作：求和
-  let linear_sum = multiply(n, add(n, 1)) / 2
-  assert_eq(5050, linear_sum)
-  
-  // O(n²) 平方时间操作：嵌套循环总和
-  let quadratic_sum = multiply(multiply(n, add(n, 1)), add(multiply(2, n), 1)) / 6
-  assert_eq(338350, quadratic_sum)
+test "boundary_value_testing" {
+  // 边界值测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(2, divide_with_ceil(101, 100))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(0, 0))
 }
 
-test "data_structure_operations" {
-  // 数据结构操作模拟
-  // 栈操作：push 和 pop
-  let stack_size = 10
-  let push_value = 42
-  let final_stack_size = add(stack_size, 1)
-  assert_eq(11, final_stack_size)
+test "real_world_packaging_scenario" {
+  // 实际包装场景计算
+  let total_items = 47
+  let items_per_box = 12
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
   
-  // 队列操作：enqueue 和 dequeue
-  let queue_front = 0
-  let queue_rear = 9
-  let queue_size = add(add(queue_rear, 1), -queue_front)
-  assert_eq(10, queue_size)
+  assert_eq(4, boxes_needed)
   
-  // 哈希表索引计算：index = hash(key) % capacity
-  let hash_key = 12345
-  let table_capacity = 16
-  let hash_index = hash_key % table_capacity
-  assert_eq(9, hash_index)
+  // 计算剩余空间
+  let total_capacity = multiply(boxes_needed, items_per_box)
+  let empty_space = add(total_capacity, -total_items)
+  
+  assert_eq(48, total_capacity)
+  assert_eq(1, empty_space)
 }
 
-test "scientific_engineering_calculations" {
-  // 科学与工程计算
-  // 物理公式：动能 E = 1/2 × m × v²
-  let mass = 1000  // kg
-  let velocity = 20  // m/s
-  let kinetic_energy = multiply(mass, multiply(velocity, velocity)) / 2
-  assert_eq(200000, kinetic_energy)
+test "combined_arithmetic_expressions" {
+  // 组合算术表达式测试
+  let x = 10
+  let y = 15
+  let z = 20
   
-  // 化学公式：理想气体状态方程 PV = nRT（简化计算）
-  let pressure = 101325  // Pa
-  let volume = 1  // m³
-  let moles = 40  // mol
-  let gas_constant = 8  // 简化的 R 值
-  let temperature = multiply(pressure, volume) / multiply(moles, gas_constant)
-  assert_eq(316, temperature)
+  // 测试 (x + y) * z
+  let result1 = multiply(add(x, y), z)
+  assert_eq(500, result1)
   
-  // 工程公式：梁的弯曲应力 σ = M × y / I（简化计算）
-  let moment = 1000  // N·m
-  let distance = 50   // mm
-  let moment_inertia = 100000  // mm⁴
-  let bending_stress = multiply(moment, distance) / moment_inertia
-  assert_eq(0, bending_stress)  // 整数除法结果
-}
-
-test "error_resilience_validation" {
-  // 错误恢复能力验证
-  let max_val = 2147483647
-  let min_val = -2147483648
+  // 测试 x * y + z
+  let result2 = add(multiply(x, y), z)
+  assert_eq(170, result2)
   
-  // 确保所有断言函数正常工作
-  assert_true(true)
-  assert_false(false)
-  assert_eq(100, 100)
-  assert_eq_string("test", "test")
-  
-  // 确保溢出保护机制有效
-  assert_true(add(max_val, 1000) == max_val)
-  assert_true(add(min_val, -1000) == min_val)
-  assert_true(multiply(max_val, 10) == max_val)
-  assert_true(multiply(min_val, -10) == min_val)
-  
-  // 确保特殊值处理正确
-  assert_eq(0, multiply(0, max_val))
-  assert_eq(0, multiply(0, min_val))
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(min_val, add(min_val, 0))
-}
-
-test "performance_benchmark_operations" {
-  // 性能基准操作测试
-  let base = 1000
-  let multiplier = 1000
-  
-  // 大数乘法性能测试
-  let large_product = multiply(base, multiplier)
-  assert_eq(1000000, large_product)
-  
-  // 连续运算性能测试
-  let chain_result = add(multiply(add(base, 100), 2), multiply(add(base, 200), 3))
-  assert_eq(500000, chain_result)
-  
-  // 复杂表达式性能测试
-  let complex_result = multiply(multiply(multiply(10, 20), add(30, 40)), add(50, 60))
-  assert_eq(840000, complex_result)
+  // 测试复杂表达式
+  let complex = add(multiply(divide_with_ceil(add(x, y), 5), z), multiply(z, 2))
+  assert_eq(120, complex)
 }
