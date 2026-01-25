@@ -1,145 +1,246 @@
-// Enhanced test suite for Azimuth library
-// 标准MoonBit测试语法，包含10个测试用例
+// 新增的高质量 MoonBit 测试用例
+// 针对 azimuth 库核心功能的全面测试
 
-// 导入azimuth库
-use azimuth
-
-test "enhanced_mathematical_series" {
-  // 数学级数计算：计算等比数列的前n项和
-  let first_term = 2
-  let common_ratio = 3
-  let number_of_terms = 5
+test "add_function_mathematical_properties" {
+  // 测试加法的数学性质
+  // 交换律测试
+  assert_eq(add(7, 13), add(13, 7))
+  assert_eq(add(-5, 10), add(10, -5))
   
-  // 计算等比数列和：a * (r^n - 1) / (r - 1)
-  let sum_manual = add(add(add(add(first_term, multiply(first_term, common_ratio)), 
-    multiply(first_term, multiply(common_ratio, common_ratio))), 
-    multiply(first_term, multiply(common_ratio, multiply(common_ratio, common_ratio)))), 
-    multiply(first_term, multiply(common_ratio, multiply(common_ratio, multiply(common_ratio, common_ratio)))))
+  // 结合律测试
+  assert_eq(add(add(2, 3), 5), add(2, add(3, 5)))
   
-  assert_eq(242, sum_manual)  // 2 + 6 + 18 + 54 + 162 = 242
+  // 单位元测试
+  assert_eq(42, add(42, 0))
+  assert_eq(-17, add(-17, 0))
+  
+  // 相反数测试
+  assert_eq(0, add(15, -15))
+  assert_eq(0, add(-8, 8))
 }
 
-test "enhanced_temperature_conversion" {
-  // 温度转换计算：摄氏度到华氏度
-  let celsius = 25
-  let fahrenheit = add(multiply(divide_with_ceil(multiply(celsius, 9), 5), 1), 32)
+test "multiply_function_comprehensive" {
+  // 测试乘法的全面功能
+  // 交换律测试
+  assert_eq(multiply(6, 7), multiply(7, 6))
+  assert_eq(multiply(-3, 8), multiply(8, -3))
   
-  assert_eq(77, fahrenheit)  // (25 * 9/5) + 32 = 45 + 32 = 77
+  // 结合律测试
+  assert_eq(multiply(multiply(2, 3), 4), multiply(2, multiply(3, 4)))
+  
+  // 分配律测试
+  assert_eq(multiply(5, add(3, 2)), add(multiply(5, 3), multiply(5, 2)))
+  
+  // 零元素测试
+  assert_eq(0, multiply(0, 123))
+  assert_eq(0, multiply(-456, 0))
+  
+  // 单位元测试
+  assert_eq(25, multiply(25, 1))
+  assert_eq(-17, multiply(-17, 1))
 }
 
-test "enhanced_loan_calculation" {
-  // 贷款计算：计算月供
-  let principal = 200000
-  let annual_rate = 6
-  let years = 30
+test "divide_with_ceil_advanced_scenarios" {
+  // 测试向上取整除法的高级场景
+  // 正数除法测试
+  assert_eq(4, divide_with_ceil(11, 3))  // 3.666... -> 4
+  assert_eq(7, divide_with_ceil(13, 2))  // 6.5 -> 7
+  assert_eq(1, divide_with_ceil(1, 100)) // 0.01 -> 1
   
-  // 简化计算：总利息 + 本金 / 月数
-  let total_interest = divide_with_ceil(multiply(principal, annual_rate * years), 100)
-  let total_payment = add(principal, total_interest)
-  let monthly_payment = divide_with_ceil(total_payment, years * 12)
+  // 负数除法测试
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -3.333... -> -3
+  assert_eq(-2, divide_with_ceil(-4, 2))   // -2 -> -2
+  assert_eq(4, divide_with_ceil(-11, -3))  // 3.666... -> 4
   
-  assert_eq(833, monthly_payment)  // ceil((200000 + 360000) / 360) = 833
+  // 边界情况测试
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(100, 0))  // 除数为零的安全处理
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(100, divide_with_ceil(999, 10))  // 99.9 -> 100
 }
 
-test "enhanced_digital_storage_conversion" {
-  // 数字存储转换：GB到MB
-  let gigabytes = 5
-  let megabytes = multiply(gigabytes, 1024)
+test "greet_function_unicode_and_special_chars" {
+  // 测试问候函数的 Unicode 和特殊字符处理
+  // Unicode 字符测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
   
-  assert_eq(5120, megabytes)  // 5 * 1024 = 5120
+  // 特殊字符测试
+  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, A+B=C!", greet("A+B=C"))
+  assert_eq_string("Hello, spaced name!", greet("spaced name"))
+  
+  // 边界情况测试
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
 }
 
-test "enhanced_fitness_tracking" {
-  // 健身追踪：计算卡路里消耗
-  let calories_per_minute = 8
-  let exercise_minutes = 45
-  let rest_minutes = 10
-  let total_session_time = add(exercise_minutes, rest_minutes)
+test "real_world_business_calculations" {
+  // 测试真实世界的业务计算场景
+  // 订单总价计算
+  let unit_price = 85
+  let quantity = 12
+  let tax_rate = 8  // 8%
+  let shipping = 25
   
-  let total_calories = multiply(calories_per_minute, exercise_minutes)
-  let session_efficiency = divide_with_ceil(multiply(total_calories, 100), total_session_time)
+  let subtotal = multiply(unit_price, quantity)
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let total = add(add(subtotal, tax_amount), shipping)
   
-  assert_eq(360, total_calories)  // 8 * 45 = 360
-  assert_eq(69, session_efficiency)  // ceil(360 * 100 / 55) = 69
+  assert_eq(1020, subtotal)
+  assert_eq(82, tax_amount)  // ceil(1020 * 8 / 100) = ceil(81.6) = 82
+  assert_eq(1127, total)
+  
+  // 折扣计算
+  let discount_threshold = 1000
+  let discount_amount = 50
+  let final_total = if total > discount_threshold {
+    add(total, -discount_amount)
+  } else {
+    total
+  }
+  
+  assert_eq(1077, final_total)
 }
 
-test "enhanced_cooking_recipe_scaling" {
-  // 烹饪食谱缩放
-  let original_servings = 4
-  let desired_servings = 7
-  let flour_per_serving = 150
-  let sugar_per_serving = 50
+test "inventory_and_packaging_optimization" {
+  // 测试库存和包装优化计算
+  let product_a_qty = 150
+  let product_b_qty = 87
+  let product_c_qty = 234
   
-  let scaling_factor = divide_with_ceil(desired_servings, original_servings)
-  let total_flour = multiply(flour_per_serving, scaling_factor)
-  let total_sugar = multiply(sugar_per_serving, scaling_factor)
+  let box_capacity = 25
   
-  assert_eq(2, scaling_factor)  // ceil(7/4) = 2
-  assert_eq(300, total_flour)   // 150 * 2 = 300
-  assert_eq(100, total_sugar)   // 50 * 2 = 100
+  // 计算每种产品需要的包装箱数量
+  let boxes_a = divide_with_ceil(product_a_qty, box_capacity)
+  let boxes_b = divide_with_ceil(product_b_qty, box_capacity)
+  let boxes_c = divide_with_ceil(product_c_qty, box_capacity)
+  
+  assert_eq(6, boxes_a)   // ceil(150/25) = 6
+  assert_eq(4, boxes_b)   // ceil(87/25) = 4
+  assert_eq(10, boxes_c)  // ceil(234/25) = 10
+  
+  // 计算总箱数和剩余容量
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  let total_capacity = multiply(total_boxes, box_capacity)
+  let total_items = add(add(product_a_qty, product_b_qty), product_c_qty)
+  let unused_capacity = add(total_capacity, -total_items)
+  
+  assert_eq(20, total_boxes)
+  assert_eq(500, total_capacity)
+  assert_eq(471, total_items)
+  assert_eq(29, unused_capacity)
 }
 
-test "enhanced_travel_planning" {
-  // 旅行计划：计算总时间和费用
-  let distance_km = 450
-  let speed_kmh = 90
-  let fuel_consumption_per_100km = 8
-  let fuel_price_per_liter = 6
+test "energy_consumption_analysis" {
+  // 测试能源消耗分析计算
+  let daily_consumption_kwh = 120
+  let days_in_month = 30
+  let peak_hours_percentage = 40
+  let off_peak_rate = 8
+  let peak_rate = 15
   
-  let travel_hours = divide_with_ceil(multiply(distance_km, 60), speed_kmh * 60)
-  let fuel_needed = divide_with_ceil(multiply(distance_km, fuel_consumption_per_100km), 100)
-  let total_fuel_cost = multiply(fuel_needed, fuel_price_per_liter)
+  // 计算月度总消耗
+  let monthly_consumption = multiply(daily_consumption_kwh, days_in_month)
   
-  assert_eq(5, travel_hours)      // ceil(450/90) = 5
-  assert_eq(36, fuel_needed)      // ceil(450*8/100) = 36
-  assert_eq(216, total_fuel_cost) // 36 * 6 = 216
+  // 计算峰值和非峰值的消耗量
+  let peak_consumption = divide_with_ceil(multiply(monthly_consumption, peak_hours_percentage), 100)
+  let off_peak_consumption = add(monthly_consumption, -peak_consumption)
+  
+  // 计算电费
+  let peak_cost = multiply(peak_consumption, peak_rate)
+  let off_peak_cost = multiply(off_peak_consumption, off_peak_rate)
+  let total_cost = add(peak_cost, off_peak_cost)
+  
+  assert_eq(3600, monthly_consumption)
+  assert_eq(1440, peak_consumption)   // ceil(3600 * 40 / 100) = ceil(1440) = 1440
+  assert_eq(2160, off_peak_consumption)
+  assert_eq(21600, peak_cost)         // 1440 * 15
+  assert_eq(17280, off_peak_cost)     // 2160 * 8
+  assert_eq(38880, total_cost)
 }
 
-test "enhanced_data_analysis" {
-  // 数据分析：计算统计指标
-  let data_points = [15, 22, 18, 25, 20, 17, 23]
-  let sum = add(add(add(add(add(add(15, 22), 18), 25), 20), 17), 23)
-  let count = 7
-  let mean = divide_with_ceil(sum, count)
+test "mathematical_sequence_calculations" {
+  // 测试数学序列计算
+  // 等差数列求和：1 + 3 + 5 + ... + 19 (10个奇数)
+  let first_term = 1
+  let common_difference = 2
+  let number_of_terms = 10
   
-  // 计算方差（简化版）
-  let variance_sum = add(add(add(add(add(add(multiply(15 - mean, 15 - mean), 
-    multiply(22 - mean, 22 - mean)), multiply(18 - mean, 18 - mean)), 
-    multiply(25 - mean, 25 - mean)), multiply(20 - mean, 20 - mean)), 
-    multiply(17 - mean, 17 - mean)), multiply(23 - mean, 23 - mean))
-  let variance = divide_with_ceil(variance_sum, count)
+  // 使用公式：S = n/2 * (2a + (n-1)d)
+  let sum_formula = divide_with_ceil(
+    multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference))),
+    2
+  )
   
-  assert_eq(140, sum)   // 15 + 22 + 18 + 25 + 20 + 17 + 23 = 140
-  assert_eq(20, mean)   // ceil(140/7) = 20
+  // 验证结果：1 + 3 + 5 + 7 + 9 + 11 + 13 + 15 + 17 + 19 = 100
+  assert_eq(100, sum_formula)
+  
+  // 等比数列求和：2 + 4 + 8 + 16 + 32
+  let geometric_sum = add(add(add(add(2, 4), 8), 16), 32)
+  assert_eq(62, geometric_sum)
+  
+  // 阶乘计算：5! = 5 * 4 * 3 * 2 * 1
+  let factorial_5 = multiply(5, multiply(4, multiply(3, multiply(2, 1))))
+  assert_eq(120, factorial_5)
 }
 
-test "enhanced_communication_cost" {
-  // 通信费用计算
-  let base_minutes = 100
-  let additional_minutes = 45
-  let base_rate = 30
-  let additional_rate = 2
+test "error_handling_and_boundary_conditions" {
+  // 测试错误处理和边界条件
+  // 极值测试
+  let large_positive = 1000000
+  let large_negative = -1000000
   
-  let total_minutes = add(base_minutes, additional_minutes)
-  let base_cost = base_rate
-  let additional_cost = multiply(additional_minutes, additional_rate)
-  let total_cost = add(base_cost, additional_cost)
+  assert_eq(2000000, add(large_positive, large_positive))
+  assert_eq(-2000000, add(large_negative, large_negative))
+  assert_eq(0, add(large_positive, large_negative))
   
-  assert_eq(145, total_minutes)  // 100 + 45 = 145
-  assert_eq(120, additional_cost) // 45 * 2 = 90
-  assert_eq(120, total_cost)     // 30 + 90 = 120
+  assert_eq(1000000000000, multiply(large_positive, large_positive))
+  assert_eq(1000000000000, multiply(large_negative, large_negative))
+  assert_eq(-1000000000000, multiply(large_positive, large_negative))
+  
+  // 除法的边界情况
+  assert_eq(0, divide_with_ceil(0, 100))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1000000, divide_with_ceil(large_positive, 1))
+  
+  // 字符串边界测试
+  assert_eq_string("Hello, A!", greet("A"))  // 单字符
+  let very_long_name = "This is a very long name that might cause issues in some systems"
+  assert_eq_string("Hello, " + very_long_name + "!", greet(very_long_name))
 }
 
-test "enhanced_greeting_with_context" {
-  // 带上下文的问候功能
-  let time_of_day = "morning"
-  let user_name = "Alice"
-  let context = " on this beautiful " + time_of_day
-  let full_greeting = greet(user_name + context)
+test "performance_and_efficiency_metrics" {
+  // 测试性能和效率指标计算
+  let base_operations = 1000
+  let optimization_factor = 3
+  let overhead_percentage = 15
+  let target_improvement = 250
   
-  assert_eq_string("Hello, Alice on this beautiful morning!", full_greeting)
+  // 计算优化后的性能
+  let optimized_operations = multiply(base_operations, optimization_factor)
   
-  // 测试不同时区的问候
-  let timezone_greeting = greet("Bob" + " from Tokyo")
-  assert_eq_string("Hello, Bob from Tokyo!", timezone_greeting)
+  // 计算系统开销
+  let system_overhead = divide_with_ceil(multiply(optimized_operations, overhead_percentage), 100)
+  
+  // 计算实际性能
+  let actual_performance = add(optimized_operations, -system_overhead)
+  
+  // 计算性能改进百分比
+  let improvement_percentage = divide_with_ceil(multiply(actual_performance - base_operations, 100), base_operations)
+  
+  // 验证是否达到目标
+  let target_met = if actual_performance >= target_improvement { 1 } else { 0 }
+  
+  assert_eq(3000, optimized_operations)
+  assert_eq(450, system_overhead)  // ceil(3000 * 15 / 100) = 450
+  assert_eq(2550, actual_performance)
+  assert_eq(155, improvement_percentage)  // ceil((2550-1000) * 100 / 1000) = 155
+  assert_eq(1, target_met)  // 目标达成
 }
