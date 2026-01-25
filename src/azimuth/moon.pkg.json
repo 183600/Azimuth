@@ -66,7 +66,8 @@
     "standard_enhanced_test_suite.mbt",
     "azimuth_new_supplementary_tests.mbt",
     "simple_new_test_file.mbt",
-    "standard_enhanced_tests.mbt"
+    "standard_enhanced_tests.mbt",
+    "core_enhanced_test_cases.mbt"
   ],
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
   "files": [
@@ -261,5 +262,6 @@
     "enhanced_algorithmic_tests.mbt",
     "azimuth_simple_tests.mbt",
     "enhanced_azimuth_core_tests.mbt",
-    "our_new_tests.mbt"
+    "our_new_tests.mbt",
+    "core_enhanced_test_cases.mbt"
                                                                                                                                                 ]}
