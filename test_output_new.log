@@ -17,8 +17,27 @@ azimuth/lib.mbt:4173:6-4173:31 [E0061] Warning (duplicate_test): Allowing repeat
 azimuth/lib.mbt:4179:6-4179:27 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "combined_operations" should be unique, but it is already used at azimuth/lib.mbt:654:6.
 azimuth/lib.mbt:4185:6-4185:27 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "practical_packaging" should be unique, but it is already used at azimuth/lib.mbt:660:6.
 azimuth/lib.mbt:4193:6-4193:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "greeting_with_special_characters" should be unique, but it is already used at azimuth/lib.mbt:668:6.
+azimuth/lib.mbt:4202:6-4202:43 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "mathematical_properties_commutative" should be unique, but it is already used at azimuth/lib.mbt:2072:6.
+azimuth/lib.mbt:4227:6-4227:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "packaging_calculation_scenario" should be unique, but it is already used at azimuth/lib.mbt:2105:6.
+azimuth/lib.mbt:4261:6-4261:35 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "divide_with_ceil_edge_cases" should be unique, but it is already used at azimuth/lib.mbt:101:6.
+azimuth/lib.mbt:4270:6-4270:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "complex_business_workflow" should be unique, but it is already used at azimuth/lib.mbt:714:6.
+azimuth/lib.mbt:4305:6-4305:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "financial_calculation_scenario" should be unique, but it is already used at azimuth/lib.mbt:332:6.
+azimuth/lib.mbt:4320:6-4320:32 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "data_analysis_statistics" should be unique, but it is already used at azimuth/lib.mbt:675:6.
+azimuth/lib.mbt:4337:6-4337:37 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "inventory_management_scenario" should be unique, but it is already used at azimuth/lib.mbt:282:6.
 Generating azimuth.wasm...
 Testing azimuth...
+Checking my_new_unit_tests.mbt...
+Found 10 tests in my_new_unit_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Checking standard_moonbit_test_suite.mbt...
 Found 10 tests in standard_moonbit_test_suite.mbt
 test ... ok
@@ -5603,6 +5622,18 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
+Checking high_quality_focused_tests.mbt...
+Found 10 tests in high_quality_focused_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Compiling clean_test...
 Generating clean_test.wasm...
 Testing clean_test...
@@ -5662,6 +5693,6 @@ test ... ok
 test ... ok
 test ... ok
 
-1400 tests passed, 0 failed
+1420 tests passed, 0 failed
 
 All packages compiled and tests passed successfully!

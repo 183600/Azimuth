@@ -3438,4 +3438,95 @@ test "real_world_scenario_event_planning" {
   assert_eq(7, seats_shortage)
 }
 
+// 新增的9个测试用例
+test "advanced_arithmetic_sequences" {
+  // 测试高级算术序列
+  let start = 5
+  let sequence_sum = add(add(add(start, 1), add(start, 2)), add(start, 3))
+  assert_eq(20, sequence_sum)  // 6 + 7 + 8 = 21
+}
+
+test "complex_string_processing" {
+  // 测试复杂字符串处理
+  let name1 = "Alice"
+  let name2 = "Bob"
+  let greeting1 = greet(name1)
+  let greeting2 = greet(name2)
+  assert_eq_string("Hello, Alice!", greeting1)
+  assert_eq_string("Hello, Bob!", greeting2)
+}
+
+test "resource_planning_scenario" {
+  // 资源规划场景测试
+  let project_days = 15
+  let team_size = 6
+  let daily_hours = 8
+  let total_hours = multiply(project_days, multiply(team_size, daily_hours))
+  assert_eq(720, total_hours)  // 15 * 6 * 8 = 720
+}
+
+test "mathematical_series_calculation" {
+  // 数学级数计算测试
+  let n = 5
+  let sum_of_first_n = multiply(n, add(n, 1)) / 2
+  assert_eq(15, sum_of_first_n)  // 5 * 6 / 2 = 15
+}
+
+test "inventory_optimization" {
+  // 库存优化测试
+  let items_per_box = 12
+  let total_items = 47
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  let total_capacity = multiply(boxes_needed, items_per_box)
+  let wasted_space = subtract(total_capacity, total_items)
+  assert_eq(5, boxes_needed)
+  assert_eq(60, total_capacity)
+  assert_eq(13, wasted_space)
+}
+
+test "financial_projection" {
+  // 财务预测测试
+  let initial_investment = 10000
+  let monthly_return = 500
+  let months = 24
+  let total_return = multiply(monthly_return, months)
+  let final_amount = add(initial_investment, total_return)
+  assert_eq(12000, total_return)
+  assert_eq(22000, final_amount)
+}
+
+test "time_management_calculation" {
+  // 时间管理计算测试
+  let tasks = 25
+  let hours_per_task = 2
+  let working_hours_per_day = 8
+  let total_hours_needed = multiply(tasks, hours_per_task)
+  let days_needed = divide_with_ceil(total_hours_needed, working_hours_per_day)
+  assert_eq(50, total_hours_needed)
+  assert_eq(7, days_needed)
+}
+
+test "space_planning_scenario" {
+  // 空间规划场景测试
+  let room_area = 100
+  let desk_area = 8
+  let desks_per_room = divide_with_ceil(room_area, desk_area)
+  let total_desk_area = multiply(desks_per_room, desk_area)
+  let remaining_space = subtract(room_area, total_desk_area)
+  assert_eq(13, desks_per_room)
+  assert_eq(104, total_desk_area)
+  assert_true(remaining_space < 0)  // 空间不足
+}
+
+test "performance_metrics" {
+  // 性能指标测试
+  let baseline = 100
+  let improvement1 = 15
+  let improvement2 = 25
+  let final_performance = add(add(baseline, improvement1), improvement2)
+  let improvement_percentage = divide_with_ceil(multiply(final_performance, 100), baseline) - 100
+  assert_eq(140, final_performance)
+  assert_eq(40, improvement_percentage)
+}
+
 

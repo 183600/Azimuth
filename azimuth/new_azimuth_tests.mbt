@@ -1,4 +1,4 @@
-// Azimuth 专注测试用例 - 包含9个高质量测试用例
+// 新的 Azimuth 测试用例 - 包含9个高质量测试用例
 // 测试核心功能的边界情况和实际应用场景
 
 test "add_function_comprehensive" {
