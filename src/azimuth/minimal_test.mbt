@@ -1,6 +1,4 @@
-// 简单的测试文件
-test "simple_test" {
-  // 测试基本的加法功能
-  let result = 2 + 3
-  assert_eq(result, 5)
+// 最小的测试文件
+test "minimal_test" {
+  assert_eq(5, add(2, 3))
 }
