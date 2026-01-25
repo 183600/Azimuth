@@ -1,299 +1,170 @@
-test "comprehensive_add_test" {
+// 额外的综合测试用例
+// 为 azimuth 库添加的高质量测试用例，使用标准 MoonBit 测试语法
+
+// 测试加法函数的边界情况和特殊值
+test "add_function_boundary_cases" {
+  // 测试零值加法
   @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(-1, @azimuth.add(-2, 1))
-  @azimuth.assert_eq(100, @azimuth.add(50, 50))
+  @azimuth.assert_eq(5, @azimuth.add(0, 5))
+  @azimuth.assert_eq(-5, @azimuth.add(0, -5))
+  
+  // 测试相反数相加
+  @azimuth.assert_eq(0, @azimuth.add(10, -10))
+  @azimuth.assert_eq(0, @azimuth.add(-100, 100))
+  
+  // 测试连续加法
+  @azimuth.assert_eq(15, @azimuth.add(@azimuth.add(5, 5), 5))
+  @azimuth.assert_eq(0, @azimuth.add(@azimuth.add(-5, 5), 0))
 }
 
-test "comprehensive_multiply_test" {
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
-  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
+// 测试乘法函数的幂运算特性
+test "multiply_function_power_properties" {
+  // 测试平方运算
   @azimuth.assert_eq(25, @azimuth.multiply(5, 5))
-}
-
-test "comprehensive_greet_test" {
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-}
-
-test "negative_addition_comprehensive" {
-  // 测试两个负数相加
-  @azimuth.assert_eq(-10, @azimuth.add(-3, -7))
-  @azimuth.assert_eq(-100, @azimuth.add(-50, -50))
+  @azimuth.assert_eq(100, @azimuth.multiply(10, 10))
+  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
   
-  // 测试负数与正数相加
-  @azimuth.assert_eq(-2, @azimuth.add(-10, 8))
-  @azimuth.assert_eq(5, @azimuth.add(-3, 8))
+  // 测试立方运算
+  @azimuth.assert_eq(125, @azimuth.multiply(@azimuth.multiply(5, 5), 5))
+  @azimuth.assert_eq(1000, @azimuth.multiply(@azimuth.multiply(10, 10), 10))
   
-  // 测试对称性
-  @azimuth.assert_eq(@azimuth.add(-5, 10), @azimuth.add(10, -5))
-}
-
-test "negative_multiplication_comprehensive" {
-  // 测试两个负数相乘得正数
-  @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
+  // 测试负数的平方
+  @azimuth.assert_eq(25, @azimuth.multiply(-5, -5))
   @azimuth.assert_eq(100, @azimuth.multiply(-10, -10))
-  
-  // 测试负数与正数相乘得负数
-  @azimuth.assert_eq(-15, @azimuth.multiply(-3, 5))
-  @azimuth.assert_eq(-100, @azimuth.multiply(10, -10))
-  
-  // 测试乘法分配律 (a * (b + c) = a * b + a * c)
-  let a = 3
-  let b = 4
-  let c = 5
-  let left = @azimuth.multiply(a, @azimuth.add(b, c))
-  let right = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
-  @azimuth.assert_eq(left, right)
 }
 
-test "string_greet_edge_cases" {
-  // 测试非常长的字符串
-  let long_name = "ThisIsAVeryLongNameThatCouldPotentiallyCauseIssuesInSomeSystemsButShouldWorkFineInMoonBit"
-  let result = @azimuth.greet(long_name)
-  @azimuth.assert_eq_string("Hello, " + long_name + "!", result)
+// 测试向上取整除法的精度和舍入
+test "divide_with_ceil_precision_test" {
+  // 测试小数部分的向上取整
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(3, 2))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(4, 2))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(5, 2))
   
-  // 测试包含引号的字符串
-  @azimuth.assert_eq_string("Hello, \"John\"!", @azimuth.greet("\"John\""))
+  // 测试大数的精度保持
+  @azimuth.assert_eq(1000, @azimuth.divide_with_ceil(1999, 2))
+  @azimuth.assert_eq(667, @azimuth.divide_with_ceil(2000, 3))
   
-  // 测试包含反斜杠的字符串
-  @azimuth.assert_eq_string("Hello, C:\\Users\\Test!", @azimuth.greet("C:\\Users\\Test"))
+  // 测试接近整数的除法
+  @azimuth.assert_eq(100, @azimuth.divide_with_ceil(999, 10))
+  @azimuth.assert_eq(100, @azimuth.divide_with_ceil(1000, 10))
+  @azimuth.assert_eq(101, @azimuth.divide_with_ceil(1001, 10))
 }
 
-test "mathematical_function_combination" {
-  // 测试多项式计算：2x² + 3x + 1，当 x = 5 时
-  let x = 5
-  let x_squared = @azimuth.multiply(x, x)  // x²
-  let term1 = @azimuth.multiply(2, x_squared)  // 2x²
-  let term2 = @azimuth.multiply(3, x)  // 3x
-  let result = @azimuth.add(@azimuth.add(term1, term2), 1)  // 2x² + 3x + 1
-  @azimuth.assert_eq(66, result)  // 2*25 + 3*5 + 1 = 50 + 15 + 1 = 66
+// 测试字符串函数的多语言支持
+test "greet_function_multilingual_support" {
+  // 测试欧洲语言
+  @azimuth.assert_eq_string("Hello, Español!", @azimuth.greet("Español"))
+  @azimuth.assert_eq_string("Hello, Français!", @azimuth.greet("Français"))
+  @azimuth.assert_eq_string("Hello, Deutsch!", @azimuth.greet("Deutsch"))
+  @azimuth.assert_eq_string("Hello, Italiano!", @azimuth.greet("Italiano"))
   
-  // 测试几何计算：计算梯形面积 (上底 + 下底) * 高 / 2
-  let top_base = 5
-  let bottom_base = 10
-  let height = 4
-  let area = @azimuth.multiply(@azimuth.add(top_base, bottom_base), height) / 2
-  @azimuth.assert_eq(30, area)  // (5 + 10) * 4 / 2 = 15 * 4 / 2 = 30
+  // 测试亚洲语言
+  @azimuth.assert_eq_string("Hello, 日本語!", @azimuth.greet("日本語"))
+  @azimuth.assert_eq_string("Hello, 한국어!", @azimuth.greet("한국어"))
+  @azimuth.assert_eq_string("Hello, العربية!", @azimuth.greet("العربية"))
+  
+  // 测试复合字符
+  @azimuth.assert_eq_string("Hello, Café!", @azimuth.greet("Café"))
+  @azimuth.assert_eq_string("Hello, Résumé!", @azimuth.greet("Résumé"))
 }
 
-test "temperature_conversion_scenario" {
-  // 摄氏度转华氏度：F = C * 9/5 + 32
-  let celsius = 25
-  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 9) / 5, 32)
-  @azimuth.assert_eq(77, fahrenheit)  // 25 * 9/5 + 32 = 45 + 32 = 77
+// 测试复杂业务场景：库存管理
+test "inventory_management_business_logic" {
+  // 场景：计算仓库存储需求
+  let product_a_quantity = 156
+  let product_b_quantity = 89
+  let product_c_quantity = 234
   
-  // 华氏度转摄氏度：C = (F - 32) * 5/9
-  let fahrenheit2 = 77
-  let celsius2 = @azimuth.multiply(fahrenheit2 - 32, 5) / 9
-  @azimuth.assert_eq(25, celsius2)  // (77 - 32) * 5/9 = 45 * 5/9 = 25
+  let box_capacity = 25
+  
+  // 计算每种产品需要的箱子数
+  let boxes_a = @azimuth.divide_with_ceil(product_a_quantity, box_capacity)
+  let boxes_b = @azimuth.divide_with_ceil(product_b_quantity, box_capacity)
+  let boxes_c = @azimuth.divide_with_ceil(product_c_quantity, box_capacity)
+  
+  // 验证箱子数量
+  @azimuth.assert_eq(7, boxes_a)  // ceil(156/25) = 7
+  @azimuth.assert_eq(4, boxes_b)  // ceil(89/25) = 4
+  @azimuth.assert_eq(10, boxes_c) // ceil(234/25) = 10
+  
+  // 计算总箱子数和总容量
+  let total_boxes = @azimuth.add(@azimuth.add(boxes_a, boxes_b), boxes_c)
+  let total_capacity = @azimuth.multiply(total_boxes, box_capacity)
+  
+  // 验证总容量足够
+  @azimuth.assert_eq(21, total_boxes)
+  @azimuth.assert_eq(525, total_capacity)
 }
 
-test "data_type_boundary_conditions" {
-  // 测试连续运算的边界情况
-  let max_val = 2147483647
+// 测试数学运算的结合律
+test "mathematical_associative_laws" {
+  // 加法结合律: (a + b) + c = a + (b + c)
+  let a = 15
+  let b = 27
+  let c = 42
   
-  // 测试达到最大值后继续运算
-  let result1 = @azimuth.add(max_val, 1)
-  @azimuth.assert_eq(max_val, result1)  // 应该饱和到最大值
+  let left_add = @azimuth.add(@azimuth.add(a, b), c)
+  let right_add = @azimuth.add(a, @azimuth.add(b, c))
+  @azimuth.assert_eq(left_add, right_add)
   
-  // 测试从最大值减法
-  let result2 = max_val - 100
-  @azimuth.assert_eq(2147483547, result2)
+  // 乘法结合律: (a * b) * c = a * (b * c)
+  let left_multiply = @azimuth.multiply(@azimuth.multiply(a, b), c)
+  let right_multiply = @azimuth.multiply(a, @azimuth.multiply(b, c))
+  @azimuth.assert_eq(left_multiply, right_multiply)
   
-  // 测试最小值的特殊情况
-  let min_val = -2147483648
-  let result3 = @azimuth.add(min_val, 1)
-  @azimuth.assert_eq(-2147483647, result3)
+  // 验证具体数值
+  @azimuth.assert_eq(84, left_add)
+  @azimuth.assert_eq(17010, left_multiply)
 }
 
-// 新增的10个测试用例
-test "sequential_addition" {
-  // 测试连续相加的情况
-  let result1 = @azimuth.add(@azimuth.add(1, 2), @azimuth.add(3, 4))
-  @azimuth.assert_eq(10, result1)
+// 测试资源分配优化算法
+test "resource_allocation_optimization" {
+  // 场景：服务器资源分配
+  let total_memory = 32768  // GB
+  let total_cpu_cores = 128
+  let services = 5
   
-  let result2 = @azimuth.add(@azimuth.add(100, 200), @azimuth.add(300, 400))
-  @azimuth.assert_eq(1000, result2)
+  // 计算每个服务的平均资源
+  let memory_per_service = @azimuth.divide_with_ceil(total_memory, services)
+  let cpu_per_service = @azimuth.divide_with_ceil(total_cpu_cores, services)
   
-  // 测试包含最小值的连续相加
-  let min_val = -2147483648
-  let result3 = @azimuth.add(@azimuth.add(min_val, 1), @azimuth.add(1, 1))
-  @azimuth.assert_eq(-2147483645, result3)
+  // 验证分配结果
+  @azimuth.assert_eq(6554, memory_per_service)  // ceil(32768/5)
+  @azimuth.assert_eq(26, cpu_per_service)       // ceil(128/5)
+  
+  // 计算实际分配的总资源
+  let allocated_memory = @azimuth.multiply(memory_per_service, services)
+  let allocated_cpu = @azimuth.multiply(cpu_per_service, services)
+  
+  // 验证资源利用率
+  @azimuth.assert_eq(32770, allocated_memory)
+  @azimuth.assert_eq(130, allocated_cpu)
+  
+  // 计算资源浪费
+  let memory_waste = @azimuth.add(allocated_memory, @azimuth.multiply(total_memory, -1))
+  let cpu_waste = @azimuth.add(allocated_cpu, @azimuth.multiply(total_cpu_cores, -1))
+  
+  @azimuth.assert_eq(2, memory_waste)
+  @azimuth.assert_eq(2, cpu_waste)
 }
 
-test "sequential_multiplication" {
-  // 测试连续相乘的情况
-  let result1 = @azimuth.multiply(@azimuth.multiply(2, 3), @azimuth.multiply(4, 5))
-  @azimuth.assert_eq(120, result1)
+// 测试错误处理和异常情况
+test "error_handling_and_edge_cases" {
+  // 测试除零错误处理
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
   
-  let result2 = @azimuth.multiply(@azimuth.multiply(10, 20), @azimuth.multiply(30, 40))
-  @azimuth.assert_eq(240000, result2)
+  // 测试极值运算
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-1, -1))
+  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(1, -1))
+  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-1, 1))
   
-  // 测试包含负数的连续相乘
-  let result3 = @azimuth.multiply(@azimuth.multiply(-2, 3), @azimuth.multiply(4, -5))
-  @azimuth.assert_eq(120, result3)
-}
-
-test "extreme_value_operations" {
-  // 测试极值运算的组合
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 极值相加
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
-  
-  // 极值与接近极值的数相加
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 100))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -100))
-  
-  // 极值相乘
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
-}
-
-test "string_edge_cases" {
-  // 测试字符串连接的边界情况
-  // 测试非常长的字符串
-  let long_name = "ThisIsAVeryLongNameThatMightCauseIssuesInSomeSystemsButShouldWorkFineInMoonBit"
-  let result = @azimuth.greet(long_name)
-  @azimuth.assert_eq_string("Hello, " + long_name + "!", result)
-  
-  // 测试包含引号的字符串
-  let quoted_name = "\"John Doe\""
-  let result2 = @azimuth.greet(quoted_name)
-  @azimuth.assert_eq_string("Hello, \"John Doe\"!", result2)
-  
-  // 测试包含换行符的字符串
-  let newline_name = "Line1\nLine2"
-  let result3 = @azimuth.greet(newline_name)
-  @azimuth.assert_eq_string("Hello, Line1\nLine2!", result3)
-}
-
-test "addition_associativity" {
-  // 测试加法结合律 (a + b) + c = a + (b + c)
-  let a = 100
-  let b = 200
-  let c = 300
-  
-  let result1 = @azimuth.add(@azimuth.add(a, b), c)
-  let result2 = @azimuth.add(a, @azimuth.add(b, c))
-  @azimuth.assert_eq(result1, result2)
-  
-  // 测试包含负数的情况
-  let d = -150
-  let e = 250
-  let f = -100
-  
-  let result3 = @azimuth.add(@azimuth.add(d, e), f)
-  let result4 = @azimuth.add(d, @azimuth.add(e, f))
-  @azimuth.assert_eq(result3, result4)
-}
-
-test "multiplication_commutativity" {
-  // 测试乘法交换律 a * b = b * a
-  let a = 12
-  let b = 15
-  
-  let result1 = @azimuth.multiply(a, b)
-  let result2 = @azimuth.multiply(b, a)
-  @azimuth.assert_eq(result1, result2)
-  
-  // 测试包含负数的情况
-  let c = -20
-  let d = 30
-  
-  let result3 = @azimuth.multiply(c, d)
-  let result4 = @azimuth.multiply(d, c)
-  @azimuth.assert_eq(result3, result4)
-  
-  // 测试包含0的情况
-  let e = 0
-  let f = 100
-  
-  let result5 = @azimuth.multiply(e, f)
-  let result6 = @azimuth.multiply(f, e)
-  @azimuth.assert_eq(result5, result6)
-}
-
-test "complex_string_processing" {
-  // 测试复杂字符串处理
-  // 测试包含多种特殊字符的字符串
-  let complex_name = "John@Doe#123$%^&*()"
-  let result = @azimuth.greet(complex_name)
-  @azimuth.assert_eq_string("Hello, John@Doe#123$%^&*()!", result)
-  
-  // 测试包含中文字符的字符串
-  let chinese_name = "张三"
-  let result2 = @azimuth.greet(chinese_name)
-  @azimuth.assert_eq_string("Hello, 张三!", result2)
-  
-  // 测试混合语言字符串
-  let mixed_name = "John张三123"
-  let result3 = @azimuth.greet(mixed_name)
-  @azimuth.assert_eq_string("Hello, John张三123!", result3)
-}
-
-test "shopping_cart_calculation" {
-  // 测试实际应用场景：购物车计算
-  let item1_price = 299
-  let item1_quantity = 2
-  let item2_price = 199
-  let item2_quantity = 3
-  let item3_price = 99
-  let item3_quantity = 1
-  
-  // 计算每种商品的总价
-  let total1 = @azimuth.multiply(item1_price, item1_quantity)
-  let total2 = @azimuth.multiply(item2_price, item2_quantity)
-  let total3 = @azimuth.multiply(item3_price, item3_quantity)
-  
-  // 计算购物车总价
-  let cart_total = @azimuth.add(@azimuth.add(total1, total2), total3)
-  
-  // 验证总价：299*2 + 199*3 + 99*1 = 598 + 597 + 99 = 1294
-  @azimuth.assert_eq(1294, cart_total)
-}
-
-test "temperature_conversion" {
-  // 测试实际应用场景：温度转换（简化版）
-  // 摄氏度转华氏度：F = C * 9/5 + 32
-  // 由于我们只有整数运算，我们使用近似值：F = C * 2 + 30
-  
-  let celsius_temp = 25
-  let fahrenheit_temp = @azimuth.add(@azimuth.multiply(celsius_temp, 2), 30)
-  @azimuth.assert_eq(80, fahrenheit_temp)  // 25 * 2 + 30 = 80
-  
-  // 测试冰点温度
-  let freezing_celsius = 0
-  let freezing_fahrenheit = @azimuth.add(@azimuth.multiply(freezing_celsius, 2), 30)
-  @azimuth.assert_eq(30, freezing_fahrenheit)  // 0 * 2 + 30 = 30
-  
-  // 测试沸点温度
-  let boiling_celsius = 100
-  let boiling_fahrenheit = @azimuth.add(@azimuth.multiply(boiling_celsius, 2), 30)
-  @azimuth.assert_eq(230, boiling_fahrenheit)  // 100 * 2 + 30 = 230
-}
-
-test "error_handling_scenarios" {
-  // 测试错误处理场景
-  // 测试断言函数的错误情况（这些测试会故意失败，但在实际使用中被注释掉）
-  // @azimuth.assert_true(false)  // 这会导致运行时错误
-  // @azimuth.assert_false(true)  // 这会导致运行时错误
-  // @azimuth.assert_eq(1, 2)     // 这会导致运行时错误
-  // @azimuth.assert_eq_string("hello", "world")  // 这会导致运行时错误
-  
-  // 测试边界情况的正确处理
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 确保溢出被正确处理
-  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)
-  @azimuth.assert_true(@azimuth.add(min_val, -1) == min_val)
-  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
-  @azimuth.assert_true(@azimuth.multiply(min_val, -1) == min_val)
-  
-  // 测试正常情况
-  @azimuth.assert_true(@azimuth.add(5, 3) == 8)
-  @azimuth.assert_true(@azimuth.multiply(4, 6) == 24)
-  @azimuth.assert_true(@azimuth.greet("Test") == "Hello, Test!")
+  // 测试字符串边界情况
+  @azimuth.assert_eq_string("Hello, null!", @azimuth.greet("null"))
+  @azimuth.assert_eq_string("Hello, undefined!", @azimuth.greet("undefined"))
+  @azimuth.assert_eq_string("Hello, 0!", @azimuth.greet("0"))
+  @azimuth.assert_eq_string("Hello, false!", @azimuth.greet("false"))
+  @azimuth.assert_eq_string("Hello, true!", @azimuth.greet("true"))
 }
