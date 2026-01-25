@@ -1045,6 +1045,142 @@ test "mathematical_commutativity" {
   assert_eq(multiply(5, 7), multiply(7, 5))
 }
 
+// 新增的8个标准 MoonBit 测试用例
+test "mathematical_associative_laws" {
+  // 测试加法和乘法的结合律
+  let a = 2
+  let b = 3
+  let c = 4
+  
+  // 加法结合律: (a + b) + c = a + (b + c)
+  assert_eq(add(add(a, b), c), add(a, add(b, c)))
+  
+  // 乘法结合律: (a * b) * c = a * (b * c)
+  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
+}
+
+test "extreme_boundary_conditions" {
+  // 测试极端边界条件
+  // 大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1000000000000, multiply(1000000, 1000000))
+  
+  // 接近零的运算
+  assert_eq(1, divide_with_ceil(1, 1000000))
+  assert_eq(0, divide_with_ceil(0, 1000000))
+  
+  // 负数极值
+  assert_eq(-2000000, add(-1000000, -1000000))
+  assert_eq(1000000000000, multiply(-1000000, -1000000))
+}
+
+test "real_world_inventory_management" {
+  // 真实世界库存管理场景
+  let total_products = 1234
+  let box_capacity = 45
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  
+  // 验证箱子数量计算
+  assert_eq(28, boxes_needed)  // ceil(1234/45) = 28
+  
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(1260, total_capacity)
+  
+  // 验证剩余空间
+  let unused_space = subtract(total_capacity, total_products)
+  assert_eq(26, unused_space)
+}
+
+test "mathematical_distributive_property_extended" {
+  // 扩展的分配律测试
+  let a = 7
+  let b = 5
+  let c = 3
+  
+  // 完整分配律: a * (b + c) = a * b + a * c
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)
+  
+  // 嵌套分配律
+  let complex_left = multiply(add(a, b), add(c, 2))
+  let complex_right = add(add(multiply(a, c), multiply(a, 2)), add(multiply(b, c), multiply(b, 2)))
+  assert_eq(complex_left, complex_right)
+}
+
+test "error_handling_comprehensive" {
+  // 全面的错误处理测试
+  // 除零的各种情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  
+  // 极小除数
+  assert_eq(2147483647, divide_with_ceil(2147483647, 1))
+  assert_eq(-2147483647, divide_with_ceil(-2147483647, 1))
+}
+
+test "string_processing_advanced" {
+  // 高级字符串处理测试
+  // 测试各种特殊字符组合
+  assert_eq_string("Hello, null!", greet("null"))
+  assert_eq_string("Hello, undefined!", greet("undefined"))
+  assert_eq_string("Hello, 123.45!", greet("123.45"))
+  assert_eq_string("Hello, [object Object]!", greet("[object Object]"))
+  assert_eq_string("Hello, \n\t\r!", greet("\n\t\r"))
+  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))
+  assert_eq_string("Hello, 'single'!", greet("'single'"))
+}
+
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟测试
+  let data_sizes = [10, 100, 1000]
+  let expected_linear = [20, 200, 2000]  // O(n)
+  let expected_logarithmic = [2, 7, 67]  // O(log n) simplified
+  
+  // 模拟线性算法复杂度
+  assert_eq(expected_linear[0], multiply(data_sizes[0], 2))
+  assert_eq(expected_linear[1], multiply(data_sizes[1], 2))
+  assert_eq(expected_linear[2], multiply(data_sizes[2], 2))
+  
+  // 模拟对数算法复杂度（简化为除法）
+  assert_eq(expected_logarithmic[0], divide_with_ceil(data_sizes[0], 5))
+  assert_eq(expected_logarithmic[1], divide_with_ceil(data_sizes[1], 15))
+  assert_eq(expected_logarithmic[2], divide_with_ceil(data_sizes[2], 15))
+}
+
+test "business_calculation_comprehensive" {
+  // 综合业务计算测试
+  // 场景：项目预算和资源分配
+  let project_duration = 18  // 月
+  let team_size = 12
+  let average_salary = 8000  // 每人每月
+  let equipment_cost = 50000
+  let contingency_rate = 15  // 百分比
+  
+  // 计算人力成本
+  let total_person_months = multiply(team_size, project_duration)
+  let labor_cost = multiply(total_person_months, average_salary)
+  
+  // 计算应急资金
+  let contingency_amount = divide_with_ceil(multiply(labor_cost, contingency_rate), 100)
+  
+  // 计算总预算
+  let total_budget = add(add(labor_cost, equipment_cost), contingency_amount)
+  
+  // 验证计算结果
+  assert_eq(216, total_person_months)  // 12 * 18
+  assert_eq(1728000, labor_cost)  // 216 * 8000
+  assert_eq(259200, contingency_amount)  // ceil(1728000 * 15 / 100)
+  assert_eq(2037200, total_budget)  // 1728000 + 50000 + 259200
+  
+  // 计算月度预算分配
+  let monthly_budget = divide_with_ceil(total_budget, project_duration)
+  assert_eq(113178, monthly_budget)  // ceil(2037200 / 18)
+}
+
 // 标准 MoonBit 增强测试用例 - 新增10个高质量测试用例
 test "add_function_commutative_law" {
   // 验证加法交换律
