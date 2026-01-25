@@ -1,202 +1,159 @@
-// Azimuth 项目新增测试用例
-// 包含10个高质量的 MoonBit 标准测试用例
+// Azimuth 新增测试用例 - 标准MoonBit测试语法
+// 包含10个高质量测试用例，覆盖各种功能和场景
 
-// 导入 azimuth 库的功能
-use azimuth
-
-test "subtract_function_basic" {
-  // 测试基本的减法功能
-  assert_eq(5, subtract(10, 5))
-  assert_eq(-5, subtract(5, 10))
-  assert_eq(0, subtract(5, 5))
-  assert_eq(15, subtract(10, -5))
+test "add_function_comprehensive" {
+  // 全面测试加法函数的各种情况
+  assert_eq(15, add(7, 8))
+  assert_eq(0, add(0, 0))
+  assert_eq(-10, add(-3, -7))
+  assert_eq(5, add(-3, 8))
+  assert_eq(2000000, add(1000000, 1000000))
 }
 
-test "absolute_value_function" {
-  // 测试绝对值函数
-  assert_eq(5, absolute_value(-5))
-  assert_eq(5, absolute_value(5))
-  assert_eq(0, absolute_value(0))
-  assert_eq(1000, absolute_value(-1000))
+test "multiply_function_various_cases" {
+  // 测试乘法函数的各种情况
+  assert_eq(21, multiply(3, 7))
+  assert_eq(0, multiply(0, 123))
+  assert_eq(-15, multiply(-3, 5))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(1000000, multiply(1000, 1000))
 }
 
-test "power_function_basic" {
-  // 测试基本的幂运算功能
-  assert_eq(8, power(2, 3))
-  assert_eq(1, power(5, 0))
-  assert_eq(1, power(1, 100))
-  assert_eq(0, power(0, 5))
+test "greet_function_international_support" {
+  // 测试问候函数的国际字符支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, 🌙!", greet("🌙"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, español!", greet("español"))
 }
 
-test "modulo_function_edge_cases" {
-  // 测试取模函数的边缘情况
-  assert_eq(1, modulo(10, 3))
-  assert_eq(0, modulo(9, 3))
-  assert_eq(2, modulo(-7, 3))
-  assert_eq(0, modulo(0, 5))
+test "divide_with_ceil_logistics_scenario" {
+  // 物流场景测试：计算需要的运输车辆
+  let packages = 47
+  let capacity_per_vehicle = 10
+  let vehicles_needed = divide_with_ceil(packages, capacity_per_vehicle)
+  assert_eq(5, vehicles_needed)
+  
+  // 验证总运力
+  let total_capacity = multiply(vehicles_needed, capacity_per_vehicle)
+  assert_eq(50, total_capacity)
+  
+  // 验证剩余空间
+  let unused_space = subtract(total_capacity, packages)
+  assert_eq(3, unused_space)
 }
 
-test "max_function_comprehensive" {
-  // 测试最大值函数的综合情况
-  assert_eq(10, max(5, 10))
-  assert_eq(5, max(5, -10))
-  assert_eq(-5, max(-5, -10))
-  assert_eq(0, max(0, 0))
+test "complex_project_calculation" {
+  // 复杂项目计算场景
+  let team_members = 6
+  let tasks_per_member = 8
+  let total_tasks = multiply(team_members, tasks_per_member)
+  assert_eq(48, total_tasks)
+  
+  let tasks_per_sprint = 15
+  let sprints_needed = divide_with_ceil(total_tasks, tasks_per_sprint)
+  assert_eq(4, sprints_needed)
+  
+  // 验证总处理能力
+  let total_capacity = multiply(sprints_needed, tasks_per_sprint)
+  assert_eq(60, total_capacity)
 }
 
-test "min_function_comprehensive" {
-  // 测试最小值函数的综合情况
-  assert_eq(5, min(5, 10))
-  assert_eq(-10, min(5, -10))
-  assert_eq(-10, min(-5, -10))
-  assert_eq(0, min(0, 0))
+test "mathematical_properties_validation" {
+  // 数学性质验证测试
+  let x = 24
+  let y = 18
+  
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
+  
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 分配律
+  assert_eq(
+    multiply(x, add(y, 5)),
+    add(multiply(x, y), multiply(x, 5))
+  )
+  
+  // 结合律验证
+  assert_eq(
+    add(add(x, y), 5),
+    add(x, add(y, 5))
+  )
 }
 
-test "clamp_function_boundary" {
-  // 测试限制函数的边界情况
-  assert_eq(5, clamp(10, 0, 5))
-  assert_eq(0, clamp(-5, 0, 5))
-  assert_eq(3, clamp(3, 0, 5))
-  assert_eq(5, clamp(5, 0, 5))
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_budget = 15000
+  let departments = 4
+  
+  // 计算每个部门的最大分配
+  let max_allocation = divide_with_ceil(total_budget, departments)
+  assert_eq(3750, max_allocation)
+  
+  // 验证总分配
+  let total_allocated = multiply(max_allocation, departments)
+  assert_eq(15000, total_allocated)
+  
+  // 计算平均分配
+  let average_allocation = total_budget / departments
+  assert_eq(3750, average_allocation)
 }
 
-test "string_length_function" {
-  // 测试字符串长度函数
-  assert_eq(5, string_length("Hello"))
-  assert_eq(0, string_length(""))
-  assert_eq(6, string_length("MoonBit"))
-  assert_eq(3, string_length("世界"))
+test "error_handling_and_edge_cases" {
+  // 错误处理和边界情况测试
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 极值测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(-1, divide_with_ceil(-1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, -1))
 }
 
-test "string_contains_function" {
-  // 测试字符串包含函数
-  assert_true(string_contains("Hello World", "World"))
-  assert_false(string_contains("Hello World", "world"))
-  assert_true(string_contains("Hello", "Hello"))
-  assert_false(string_contains("", "test"))
+test "string_processing_comprehensive" {
+  // 字符串处理综合测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, special@chars!", greet("special@chars"))
+  assert_eq_string("Hello, mixedCASE!", greet("mixedCASE"))
+  assert_eq_string("Hello, space test!", greet("space test"))
 }
 
-test "array_sum_function" {
-  // 测试数组求和函数
-  assert_eq(15, array_sum([1, 2, 3, 4, 5]))
-  assert_eq(0, array_sum([]))
-  assert_eq(-5, array_sum([-1, -2, -3, 1, 0]))
-  assert_eq(100, array_sum([50, 50]))
+test "real_world_event_planning" {
+  // 真实世界活动规划场景
+  let participants = 95
+  let tables_available = 8
+  let chairs_per_table = 12
+  
+  // 计算需要的桌子数量
+  let tables_needed = divide_with_ceil(participants, chairs_per_table)
+  assert_eq(8, tables_needed)
+  
+  // 计算总座位数
+  let total_seats = multiply(tables_needed, chairs_per_table)
+  assert_eq(96, total_seats)
+  
+  // 验证座位充足性
+  assert_true(total_seats >= participants)
+  
+  // 计算剩余座位
+  let remaining_seats = subtract(total_seats, participants)
+  assert_eq(1, remaining_seats)
+  
+  // 验证桌子可用性
+  assert_true(tables_needed <= tables_available)
 }
 
-// 辅助函数定义
+// 辅助函数：减法
 fn subtract(a : Int, b : Int) -> Int {
   a - b
-}
-
-fn absolute_value(x : Int) -> Int {
-  if x < 0 {
-    -x
-  } else {
-    x
-  }
-}
-
-fn power(base : Int, exponent : Int) -> Int {
-  if exponent <= 0 {
-    if base == 0 && exponent == 0 {
-      1  // 0^0 定义为 1
-    } else if exponent == 0 {
-      1
-    } else {
-      0
-    }
-  } else {
-    let result = 1
-    let i = 0
-    while i < exponent {
-      result = result * base
-      i = i + 1
-    }
-    result
-  }
-}
-
-fn modulo(a : Int, b : Int) -> Int {
-  if b == 0 {
-    0  // 避免除零错误
-  } else {
-    let result = a % b
-    if result < 0 && b > 0 {
-      result + b
-    } else if result > 0 && b < 0 {
-      result + b
-    } else {
-      result
-    }
-  }
-}
-
-fn max(a : Int, b : Int) -> Int {
-  if a > b {
-    a
-  } else {
-    b
-  }
-}
-
-fn min(a : Int, b : Int) -> Int {
-  if a < b {
-    a
-  } else {
-    b
-  }
-}
-
-fn clamp(value : Int, min : Int, max : Int) -> Int {
-  if value < min {
-    min
-  } else if value > max {
-    max
-  } else {
-    value
-  }
-}
-
-fn string_length(s : String) -> Int {
-  // 简化的字符串长度计算
-  let len = 0
-  // 在实际实现中，这里会遍历字符串的字符
-  // 为了测试目的，我们使用一个简化的方法
-  if s == "" {
-    0
-  } else if s == "Hello" {
-    5
-  } else if s == "MoonBit" {
-    6
-  } else if s == "世界" {
-    3
-  } else {
-    1  // 默认值
-  }
-}
-
-fn string_contains(s : String, substring : String) -> Bool {
-  // 简化的字符串包含检查
-  if s == "Hello World" && substring == "World" {
-    true
-  } else if s == "Hello World" && substring == "world" {
-    false
-  } else if s == "Hello" && substring == "Hello" {
-    true
-  } else if s == "" {
-    false
-  } else {
-    false
-  }
-}
-
-fn array_sum(arr : Array[Int]) -> Int {
-  let sum = 0
-  let i = 0
-  while i < arr.length() {
-    sum = sum + arr[i]
-    i = i + 1
-  }
-  sum
 }
