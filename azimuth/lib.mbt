@@ -5378,3 +5378,103 @@ test "real_world_application_scenario" {
   // 验证座位充足性
   assert_true(available_seats >= participants)
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "add_function_edge_cases_new" {
+  // 测试加法函数的边缘情况
+  assert_eq(0, add(0, 0))
+  assert_eq(1, add(1, 0))
+  assert_eq(-1, add(-1, 0))
+  assert_eq(1000000, add(500000, 500000))
+  assert_eq(-1000000, add(-500000, -500000))
+}
+
+test "multiply_function_various_cases_new" {
+  // 测试乘法函数的各种情况
+  assert_eq(0, multiply(0, 12345))
+  assert_eq(12345, multiply(1, 12345))
+  assert_eq(-12345, multiply(-1, 12345))
+  assert_eq(12345, multiply(-1, -12345))
+  assert_eq(1000000, multiply(1000, 1000))
+}
+
+test "subtract_function_comprehensive_new" {
+  // 全面测试减法函数
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(10, 10))
+  assert_eq(15, subtract(10, -5))
+  assert_eq(-15, subtract(-10, 5))
+}
+
+test "divide_with_ceil_precision_new" {
+  // 测试向上取整除法的精度
+  assert_eq(1, divide_with_ceil(1, 2))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(1000, divide_with_ceil(1999, 2))
+  assert_eq(666667, divide_with_ceil(2000000, 3))
+  assert_eq(0, divide_with_ceil(0, 100))
+}
+
+test "greet_function_international_support_new" {
+  // 测试问候函数的国际字符支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, 🌙!", greet("🌙"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, empty!", greet("empty"))
+}
+
+test "mathematical_commutative_laws_new" {
+  // 验证数学交换律
+  let a = 42
+  let b = 17
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+}
+
+test "resource_allocation_scenario_new" {
+  // 资源分配场景测试
+  let total_items = 157
+  let containers = 12
+  let items_per_container = divide_with_ceil(total_items, containers)
+  
+  assert_eq(14, items_per_container)  // ceil(157/12) = 14
+  
+  // 验证总容量
+  let total_capacity = multiply(items_per_container, containers)
+  assert_eq(168, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(11, remaining_space)
+}
+
+test "complex_calculation_pipeline_new" {
+  // 复杂计算流水线测试
+  let initial_value = 20
+  
+  // 计算流程：((initial / 3) * 2) + 5
+  let step1 = divide_with_ceil(initial_value, 3)
+  let step2 = multiply(step1, 2)
+  let result = add(step2, 5)
+  
+  assert_eq(19, result)  // ceil(20/3) * 2 + 5 = 7 * 2 + 5 = 19
+}
+
+test "error_handling_boundary_conditions_new" {
+  // 错误处理和边界条件测试
+  // 除零情况
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 极值测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(-1, divide_with_ceil(-1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+}
