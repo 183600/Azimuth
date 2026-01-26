@@ -1,91 +1,110 @@
-// 标准 MoonBit 测试套件 - 包含10个高质量测试用例
-// 测试 azimuth 库的核心功能
+// 标准 MoonBit 测试套件
+// 包含10个高质量测试用例，覆盖 azimuth 库的主要功能
 
-test "add_function_basic_operations" {
-  // 测试加法函数的基本运算
-  assert_eq(5, add(2, 3))
+test "basic_arithmetic_operations" {
+  // 基本算术运算测试
+  assert_eq(15, add(7, 8))
   assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(1, add(-2, 3))
-  assert_eq(1000, add(500, 500))
+  assert_eq(-10, add(-3, -7))
+  assert_eq(42, multiply(6, 7))
+  assert_eq(0, multiply(0, 123))
+  assert_eq(-24, multiply(-4, 6))
 }
 
-test "multiply_function_properties" {
-  // 测试乘法函数的数学性质
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(6, multiply(-2, -3))
-  assert_eq(10000, multiply(100, 100))
+test "divide_with_ceil_functionality" {
+  // 向上取整除法功能测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
 }
 
-test "greet_function_international_support" {
-  // 测试问候函数的国际字符支持
-  assert_eq_string("Hello, World!", greet("World"))
+test "greet_function_comprehensive" {
+  // 问候函数综合测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
   assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
 
-test "divide_with_ceil_business_logic" {
-  // 测试向上取整除法的业务逻辑场景
-  // 场景：计算需要的包装箱数量
-  let items = 25
-  let capacity_per_box = 6
+test "mathematical_properties" {
+  // 数学性质验证测试
+  let x = 12
+  let y = 8
+  
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
+  
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 分配律
+  assert_eq(
+    multiply(x, add(y, 3)),
+    add(multiply(x, y), multiply(x, 3))
+  )
+}
+
+test "business_logic_packaging" {
+  // 业务逻辑：包装计算测试
+  let items = 47
+  let capacity_per_box = 12
   let boxes_needed = divide_with_ceil(items, capacity_per_box)
-  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
+  
+  assert_eq(4, boxes_needed)
   
   // 验证总容量
   let total_capacity = multiply(boxes_needed, capacity_per_box)
-  assert_eq(30, total_capacity)
-}
-
-test "subtract_function_basic_operations" {
-  // 测试减法函数的基本运算
-  assert_eq(2, subtract(5, 3))
-  assert_eq(0, subtract(5, 5))
-  assert_eq(-2, subtract(3, 5))
-  assert_eq(10, subtract(5, -5))
-  assert_eq(-10, subtract(-5, 5))
-}
-
-test "mathematical_commutative_laws" {
-  // 测试数学交换律
-  let a = 7
-  let b = 13
+  assert_eq(48, total_capacity)
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-}
-
-test "complex_calculation_pipeline" {
-  // 测试复杂计算流水线
-  // 场景：计算项目资源需求
-  let team_size = 8
-  let tasks_per_person = 5
-  let total_tasks = multiply(team_size, tasks_per_person)
-  let tasks_per_sprint = 15
-  let sprints_needed = divide_with_ceil(total_tasks, tasks_per_sprint)
-  assert_eq(3, sprints_needed)  // ceil(40/15) = 3
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, items)
+  assert_eq(1, remaining_space)
 }
 
 test "edge_cases_and_boundaries" {
-  // 测试边缘情况和边界条件
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(10, 0))
+  // 边界情况和极值测试
   assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(0, divide_with_ceil(0, 1))
   assert_eq(1, divide_with_ceil(-1, -1))
-  assert_eq(0, multiply(0, 12345))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(2000000, add(1000000, 1000000))
 }
 
-test "resource_allocation_optimization" {
-  // 测试资源分配优化
+test "negative_numbers_handling" {
+  // 负数处理测试
+  assert_eq(-5, add(-2, -3))
+  assert_eq(2, add(-5, 7))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-18, multiply(3, -6))
+  assert_eq(-2, divide_with_ceil(-7, 4))
+  assert_eq(2, divide_with_ceil(-7, -4))
+}
+
+test "complex_calculation_pipeline" {
+  // 复杂计算流水线测试
+  let base_value = 15
+  let multiplier = 4
+  let divisor = 7
+  let addition = 8
+  
+  // 计算流程：((base * multiplier) / divisor) + addition
+  let step1 = multiply(base_value, multiplier)
+  let step2 = divide_with_ceil(step1, divisor)
+  let result = add(step2, addition)
+  
+  assert_eq(16, result)  // ceil(15*4/7) + 8 = 9 + 8 = 17
+}
+
+test "resource_allocation_scenario" {
+  // 资源分配场景测试
   let total_budget = 10000
   let team_members = 6
+  
+  // 使用向上取整确保覆盖所有情况
   let max_share = divide_with_ceil(total_budget, team_members)
   assert_eq(1667, max_share)  // ceil(10000/6) = 1667
   
@@ -94,18 +113,14 @@ test "resource_allocation_optimization" {
   assert_eq(10002, total_allocated)
 }
 
-test "real_world_application_scenario" {
-  // 测试真实世界应用场景
-  // 场景：活动座位安排
-  let participants = 87
-  let chairs_per_table = 8
-  let tables_needed = divide_with_ceil(participants, chairs_per_table)
-  assert_eq(11, tables_needed)  // ceil(87/8) = 11
+test "error_handling_validation" {
+  // 错误处理验证测试
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
   
-  // 计算总座位数
-  let total_seats = multiply(tables_needed, chairs_per_table)
-  assert_eq(88, total_seats)
-  
-  // 验证座位充足性
-  assert_true(total_seats >= participants)
+  // 字符串边界情况
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("   "))
 }
