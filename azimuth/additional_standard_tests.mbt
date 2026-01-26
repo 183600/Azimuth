@@ -1,187 +1,149 @@
 // 额外的标准 MoonBit 测试用例
-// 为 azimuth 库提供更多测试覆盖
+// 为 azimuth 库添加高质量测试覆盖
 
-test "arithmetc_sequence_operations" {
-  // 等差数列操作测试
-  let first_term = 3
-  let common_diff = 2
-  let n_terms = 5
+test "precision_calculations" {
+  // 精度计算测试
+  // 测试大数运算的精度保持
+  let large_num = 1000000
+  let small_num = 3
   
-  // 计算第n项: a_n = a_1 + (n-1)*d
-  let nth_term = add(first_term, multiply(subtract(n_terms, 1), common_diff))
-  assert_eq(11, nth_term)  // 3 + (5-1)*2 = 11
+  // 大数加法精度
+  assert_eq(1000003, add(large_num, small_num))
   
-  // 计算前n项和: S_n = n/2 * (a_1 + a_n)
-  let sum = divide_with_ceil(multiply(n_terms, add(first_term, nth_term)), 2)
-  assert_eq(35, sum)  // 5/2 * (3+11) = 35
+  // 大数乘法精度
+  assert_eq(3000000, multiply(large_num, small_num))
+  
+  // 向上取整除法精度
+  assert_eq(333334, divide_with_ceil(large_num, small_num))
 }
 
-test "time_conversion_calculations" {
-  // 时间转换计算测试
-  let hours = 2
-  let minutes = 45
-  let seconds = 30
-  
-  // 转换为总秒数
-  let total_seconds = add(multiply(hours, 3600), add(multiply(minutes, 60), seconds))
-  assert_eq(9930, total_seconds)  // 2*3600 + 45*60 + 30 = 9930
-  
-  // 计算需要的分钟数（向上取整）
-  let minutes_needed = divide_with_ceil(total_seconds, 60)
-  assert_eq(166, minutes_needed)  // ceil(9930/60) = 166
+test "string_edge_cases" {
+  // 字符串边缘情况测试
+  // 测试各种特殊字符串输入
+  assert_eq_string("Hello, null!", greet("null"))
+  assert_eq_string("Hello, undefined!", greet("undefined"))
+  assert_eq_string("Hello, 0x123!", greet("0x123"))
+  assert_eq_string("Hello, NaN!", greet("NaN"))
+  assert_eq_string("Hello, Infinity!", greet("Infinity"))
 }
 
-test "resource_allocation_fair_division" {
-  // 资源公平分配测试
-  let total_resources = 23
-  let groups = 5
+test "mathematical_identities" {
+  // 数学恒等式测试
+  let x = 42
   
-  // 每组分配的基础资源
-  let base_per_group = divide_with_ceil(total_resources, groups)
-  assert_eq(5, base_per_group)  // ceil(23/5) = 5
+  // 加法恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(0, add(x, -x))
   
-  // 计算总分配量
-  let total_allocated = multiply(base_per_group, groups)
-  assert_eq(25, total_allocated)
+  // 乘法恒等式
+  assert_eq(x, multiply(x, 1))
+  assert_eq(-x, multiply(x, -1))
+  assert_eq(0, multiply(x, 0))
   
-  // 计算剩余资源
-  let remaining = subtract(total_allocated, total_resources)
-  assert_eq(2, remaining)
+  // 除法恒等式（向上取整）
+  assert_eq(1, divide_with_ceil(x, x))
+  assert_eq(0, divide_with_ceil(0, x))
 }
 
-test "geometric_progression_basic" {
-  // 基本等比数列测试
-  let first_term = 2
-  let ratio = 3
-  let n_terms = 4
+test "inventory_management" {
+  // 库存管理业务逻辑测试
+  // 场景：计算仓库存储需求
+  let product_a = 127  // 产品A数量
+  let product_b = 89   // 产品B数量
+  let product_c = 45   // 产品C数量
   
-  // 计算第n项: a_n = a_1 * r^(n-1)
-  let second_term = multiply(first_term, ratio)
-  let third_term = multiply(second_term, ratio)
-  let fourth_term = multiply(third_term, ratio)
+  let box_capacity = 24  // 每箱容量
   
-  assert_eq(6, second_term)   // 2 * 3 = 6
-  assert_eq(18, third_term)   // 6 * 3 = 18
-  assert_eq(54, fourth_term)  // 18 * 3 = 54
-}
-
-test "temperature_conversion" {
-  // 温度转换测试（简化版本）
-  let celsius = 25
+  // 计算各产品需要的箱子数
+  let boxes_a = divide_with_ceil(product_a, box_capacity)  // ceil(127/24) = 6
+  let boxes_b = divide_with_ceil(product_b, box_capacity)  // ceil(89/24) = 4
+  let boxes_c = divide_with_ceil(product_c, box_capacity)  // ceil(45/24) = 2
   
-  // 摄氏度转华氏度: F = C * 9/5 + 32
-  let fahrenheit = add(divide_with_ceil(multiply(celsius, 9), 5), 32)
-  assert_eq(77, fahrenheit)  // 25*9/5 + 32 = 77
-  
-  // 华氏度转摄氏度: C = (F - 32) * 5/9
-  let celsius_back = divide_with_ceil(multiply(subtract(fahrenheit, 32), 5), 9)
-  assert_eq(25, celsius_back)  // (77-32)*5/9 = 25
-}
-
-test "pricing_tier_calculation" {
-  // 定价层级计算测试
-  let units_consumed = 750
-  
-  // 第一层级: 0-100 单位，每单位 10
-  let tier1_units = 100
-  let tier1_cost = multiply(tier1_units, 10)
-  
-  // 第二层级: 101-500 单位，每单位 8
-  let tier2_units = subtract(500, 100)
-  let tier2_cost = multiply(tier2_units, 8)
-  
-  // 第三层级: 501+ 单位，每单位 6
-  let tier3_units = subtract(units_consumed, 500)
-  let tier3_cost = multiply(tier3_units, 6)
-  
-  // 总成本
-  let total_cost = add(add(tier1_cost, tier2_cost), tier3_cost)
-  assert_eq(5500, total_cost)  // 100*10 + 400*8 + 250*6 = 5500
-}
-
-test "load_balancing_simulation" {
-  // 负载均衡模拟测试
-  let total_requests = 47
-  let servers = 4
-  
-  // 每台服务器的基础负载
-  let base_load = divide_with_ceil(total_requests, servers)
-  assert_eq(12, base_load)  // ceil(47/4) = 12
-  
-  // 计算总处理能力
-  let total_capacity = multiply(base_load, servers)
-  assert_eq(48, total_capacity)
-  
-  // 计算剩余处理能力
-  let spare_capacity = subtract(total_capacity, total_requests)
-  assert_eq(1, spare_capacity)
-}
-
-test "compound_interest_simple" {
-  // 简单复利计算测试
-  let principal = 1000
-  let rate_percent = 5
-  let years = 3
-  
-  // 第一年结束
-  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  assert_eq(1050, year1)
-  
-  // 第二年结束
-  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
-  assert_eq(1155, year2)
-  
-  // 第三年结束
-  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
-  assert_eq(1213, year3)
-}
-
-test "batch_job_optimization" {
-  // 批处理作业优化测试
-  let total_jobs = 127
-  let max_batch_size = 15
-  let processing_time_per_batch = 3
-  
-  // 计算需要的批次数
-  let batches_needed = divide_with_ceil(total_jobs, max_batch_size)
-  assert_eq(9, batches_needed)  // ceil(127/15) = 9
-  
-  // 计算总处理时间
-  let total_time = multiply(batches_needed, processing_time_per_batch)
-  assert_eq(27, total_time)
-  
-  // 计算平均每批处理的作业数
-  let avg_jobs_per_batch = divide_with_ceil(total_jobs, batches_needed)
-  assert_eq(15, avg_jobs_per_batch)  // ceil(127/9) = 15
-}
-
-test "storage_optimization_problem" {
-  // 存储优化问题测试
-  let items_small = 23  // 每个占用1单位空间
-  let items_medium = 15  // 每个占用2单位空间
-  let items_large = 8   // 每个占用4单位空间
-  
-  // 计算总空间需求
-  let space_small = items_small
-  let space_medium = multiply(items_medium, 2)
-  let space_large = multiply(items_large, 4)
-  let total_space = add(add(space_small, space_medium), space_large)
-  assert_eq(79, total_space)  // 23 + 15*2 + 8*4 = 79
-  
-  // 计算需要的存储单元数量（每个单元容量为10）
-  let storage_units = divide_with_ceil(total_space, 10)
-  assert_eq(8, storage_units)  // ceil(79/10) = 8
+  // 计算总箱子数
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  assert_eq(12, total_boxes)
   
   // 计算总存储容量
-  let total_capacity = multiply(storage_units, 10)
-  assert_eq(80, total_capacity)
+  let total_capacity = multiply(total_boxes, box_capacity)
+  assert_eq(288, total_capacity)
   
   // 计算剩余空间
-  let remaining_space = subtract(total_capacity, total_space)
-  assert_eq(1, remaining_space)
+  let total_products = add(add(product_a, product_b), product_c)
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(27, remaining_space)
 }
 
-// 辅助函数
-fn subtract(a : Int, b : Int) -> Int {
-  a - b
+test "error_resilience" {
+  // 错误恢复能力测试
+  // 测试各种异常输入的处理
+  
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 极值处理
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(-1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, -1))
+}
+
+test "calculation_pipeline" {
+  // 计算流水线测试
+  // 模拟多步骤计算流程
+  let initial_value = 15
+  
+  // 步骤1：乘以3
+  let step1 = multiply(initial_value, 3)  // 45
+  
+  // 步骤2：加上20
+  let step2 = add(step1, 20)  // 65
+  
+  // 步骤3：除以7向上取整
+  let step3 = divide_with_ceil(step2, 7)  // ceil(65/7) = 10
+  
+  // 步骤4：乘以2
+  let step4 = multiply(step3, 2)  // 20
+  
+  // 步骤5：减去5
+  let final_result = subtract(step4, 5)  // 15
+  
+  assert_eq(15, final_result)
+}
+
+test "internationalization_support" {
+  // 国际化支持测试
+  // 测试各种语言和特殊字符
+  assert_eq_string("Hello, 北京!", greet("北京"))
+  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
+  assert_eq_string("Hello, München!", greet("München"))
+  assert_eq_string("Hello, 🌏!", greet("🌏"))
+  assert_eq_string("Hello, 𝔘𝔫𝔦𝔠𝔬𝔡𝔢!", greet("𝔘𝔫𝔦𝔠𝔬𝔡𝔢"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+  assert_eq_string("Hello, עברית!", greet("עברית"))
+  assert_eq_string("Hello, हिन्दी!", greet("हिन्दी"))
+}
+
+test "resource_optimization" {
+  // 资源优化测试
+  // 场景：计算最优资源分配
+  let total_tasks = 157
+  let team_size = 8
+  let working_days = 5
+  
+  // 计算每人每天需要完成的任务数
+  let total_person_days = multiply(team_size, working_days)  // 40人天
+  let tasks_per_person_day = divide_with_ceil(total_tasks, total_person_days)  // ceil(157/40) = 4
+  
+  // 验证总处理能力
+  let total_capacity = multiply(tasks_per_person_day, total_person_days)  // 4 * 40 = 160
+  assert_eq(160, total_capacity)
+  
+  // 验证能够处理所有任务
+  assert_true(total_capacity >= total_tasks)
+  
+  // 计算效率损失
+  let efficiency = divide_with_ceil(multiply(total_tasks, 100), total_capacity)  // ceil(15700/160) = 99
+  assert_eq(99, efficiency)  // 99%的利用率
 }
