@@ -4,6 +4,7 @@
     "azimuth"
   ],
   "test": [
+    "standard_core_tests.mbt",
     "azimuth_standard_unit_tests.mbt",
     "standard_moonbit_test_suite.mbt",
     "standard_moonbit_tests.mbt",
