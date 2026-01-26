@@ -296,5 +296,6 @@
     "enhanced_azimuth_core_tests.mbt",
     "our_new_tests.mbt",
     "core_enhanced_test_cases.mbt",
-    "standard_azimuth_test_cases.mbt"
+    "standard_azimuth_test_cases.mbt",
+    "new_comprehensive_tests.mbt"
                                                                                                                                                 ]}
