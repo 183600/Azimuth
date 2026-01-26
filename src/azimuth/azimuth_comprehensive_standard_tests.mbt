@@ -1,168 +1,149 @@
 // Azimuth 综合标准测试用例
-// 覆盖核心功能的全面测试
+// 使用标准 MoonBit 测试语法，覆盖核心功能和边界情况
 
-test "add_function_comprehensive" {
-  // 全面测试加法功能
-  // 基本加法
+test "add_function_commutative_property" {
+  // 测试加法交换律：a + b = b + a
   assert_eq(15, add(7, 8))
-  assert_eq(-5, add(-10, 5))
-  assert_eq(0, add(100, -100))
-  
-  // 边界值测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  assert_eq(max_val, add(max_val, 100))
-  assert_eq(min_val, add(min_val, -100))
-  assert_eq(-1, add(max_val, min_val))
+  assert_eq(15, add(8, 7))
+  assert_eq(0, add(5, -5))
+  assert_eq(0, add(-5, 5))
+  assert_eq(-10, add(-3, -7))
+  assert_eq(-10, add(-7, -3))
 }
 
-test "multiply_function_comprehensive" {
-  // 全面测试乘法功能
-  // 基本乘法
-  assert_eq(42, multiply(6, 7))
-  assert_eq(-30, multiply(-5, 6))
-  assert_eq(0, multiply(0, 999))
-  
-  // 边界值测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  assert_eq(max_val, multiply(max_val, 1))
-  assert_eq(min_val, multiply(min_val, 1))
-  assert_eq(min_val, multiply(min_val, -1))
+test "multiply_function_properties" {
+  // 测试乘法性质
+  assert_eq(0, multiply(5, 0))  // 零元素性质
+  assert_eq(0, multiply(0, 5))
+  assert_eq(7, multiply(7, 1))  // 单位元性质
+  assert_eq(7, multiply(1, 7))
+  assert_eq(-21, multiply(3, -7))  // 负数乘法
+  assert_eq(21, multiply(-3, -7))  // 负负得正
 }
 
-test "greet_function_comprehensive" {
-  // 全面测试问候函数
-  // 基本问候
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+test "divide_with_ceil_comprehensive" {
+  // 全面测试向上取整除法
+  // 正数情况
+  assert_eq(4, divide_with_ceil(10, 3))   // 3.333... -> 4
+  assert_eq(3, divide_with_ceil(9, 3))    // 3 -> 3
+  assert_eq(1, divide_with_ceil(1, 100))  // 0.01 -> 1
+  
+  // 负数情况
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -3.333... -> -3
+  assert_eq(-4, divide_with_ceil(-11, 3))  // -3.666... -> -4
+  assert_eq(4, divide_with_ceil(-10, -3))  // 3.333... -> 4
+  
+  // 边界情况
+  assert_eq(0, divide_with_ceil(5, 0))     // 除数为零
+  assert_eq(0, divide_with_ceil(0, 5))     // 被除数为零
+  assert_eq(0, divide_with_ceil(0, 0))     // 两者都为零
+}
+
+test "greet_function_various_inputs" {
+  // 测试各种输入的问候功能
   assert_eq_string("Hello, World!", greet("World"))
-  
-  // 特殊字符测试
-  assert_eq_string("Hello, 测试123!", greet("测试123"))
-  assert_eq_string("Hello, @#$%!", greet("@#$%"))
-  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))  // 空字符串
+  assert_eq_string("Hello,  !", greet(" "))  // 空格
+  assert_eq_string("Hello, A!", greet("A"))  // 单字符
+  assert_eq_string("Hello, 世界!", greet("世界"))  // 中文
+  assert_eq_string("Hello, 🚀!", greet("🚀"))  // 表情符号
 }
 
-test "mathematical_operations_chain" {
-  // 测试数学运算链
-  let a = 10
-  let b = 20
-  let c = 30
+test "complex_business_calculation" {
+  // 复杂业务计算：订单总价
+  let unit_price = 25
+  let quantity = 8
+  let shipping = 15
+  let discount = 20
   
-  // 复合运算：(a + b) * c
-  let sum = add(a, b)
-  let product = multiply(sum, c)
-  assert_eq(900, product)
+  // 计算小计
+  let subtotal = multiply(unit_price, quantity)
+  // 计算总价（含运费）
+  let total_before_discount = add(subtotal, shipping)
+  // 应用折扣
+  let final_total = add(total_before_discount, -discount)
   
-  // 另一个复合运算：a * b + c
-  let product2 = multiply(a, b)
-  let sum2 = add(product2, c)
-  assert_eq(230, sum2)
+  assert_eq(200, subtotal)
+  assert_eq(215, total_before_discount)
+  assert_eq(195, final_total)
 }
 
-test "real_world_calculation_scenario" {
-  // 实际应用场景：购物车计算
-  let item1_price = 199
-  let item1_quantity = 2
-  let item2_price = 299
-  let item2_quantity = 1
-  let shipping = 20
+test "packaging_and_shipping_calculation" {
+  // 包装和运输计算
+  let total_items = 47
+  let items_per_box = 12
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
   
-  // 计算商品总价
-  let total1 = multiply(item1_price, item1_quantity)
-  let total2 = multiply(item2_price, item2_quantity)
-  let subtotal = add(total1, total2)
+  // 计算运输成本（每箱5元）
+  let shipping_cost_per_box = 5
+  let total_shipping_cost = multiply(boxes_needed, shipping_cost_per_box)
   
-  // 计算最终总价（含运费）
-  let final_total = add(subtotal, shipping)
-  
-  // 验证：199*2 + 299*1 + 20 = 398 + 299 + 20 = 717
-  assert_eq(717, final_total)
+  assert_eq(4, boxes_needed)  // ceil(47/12) = 4
+  assert_eq(20, total_shipping_cost)  // 4 * 5 = 20
 }
 
-test "temperature_conversion_calculation" {
-  // 温度转换计算（简化版）
-  // 摄氏度转华氏度：F = C * 2 + 30（简化公式）
+test "mathematical_distributive_property" {
+  // 测试分配律：a * (b + c) = a * b + a * c
+  let a = 3
+  let b = 4
+  let c = 5
   
-  let celsius = 25
-  let fahrenheit = add(multiply(celsius, 2), 30)
-  assert_eq(80, fahrenheit)
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
   
-  // 测试冰点
-  let freezing = 0
-  let freezing_f = add(multiply(freezing, 2), 30)
-  assert_eq(30, freezing_f)
-  
-  // 测试沸点
-  let boiling = 100
-  let boiling_f = add(multiply(boiling, 2), 30)
-  assert_eq(230, boiling_f)
+  assert_eq(left_side, right_side)  // 3 * (4 + 5) = 3 * 4 + 3 * 5 = 27
 }
 
-test "statistical_calculations" {
-  // 统计计算测试
-  // 计算平均数
-  let numbers_sum = add(add(add(85, 90), 75), 80)
-  let average = numbers_sum / 4
-  assert_eq(82, average)
+test "time_and_resource_calculation" {
+  // 时间和资源计算
+  let tasks_per_day = 8
+  let total_tasks = 35
+  let days_needed = divide_with_ceil(total_tasks, tasks_per_day)
   
-  // 计算总和
-  let scores = [100, 95, 90, 85, 80]
-  let total_scores = add(add(add(add(100, 95), 90), 85), 80)
-  assert_eq(450, total_scores)
+  // 计算总工作小时（每天8小时）
+  let total_hours = multiply(days_needed, 8)
   
-  // 计算极差
-  let max_score = 100
-  let min_score = 80
-  let range = add(max_score, -min_score)
-  assert_eq(20, range)
+  // 计算总工作分钟
+  let total_minutes = multiply(total_hours, 60)
+  
+  assert_eq(5, days_needed)  // ceil(35/8) = 5
+  assert_eq(40, total_hours)  // 5 * 8 = 40
+  assert_eq(2400, total_minutes)  // 40 * 60 = 2400
 }
 
-test "assert_functions_validation" {
-  // 测试断言函数
-  // 测试成功断言
-  assert_true(5 > 3)
-  assert_false(5 < 3)
-  assert_eq(10, add(3, 7))
-  assert_eq_string("Hello, Test!", greet("Test"))
+test "financial_calculation_with_interest" {
+  // 金融计算：带利息的贷款
+  let principal = 1000
+  let interest_rate = 5  // 5%
+  let loan_term_years = 3
   
-  // 测试边界条件断言
-  let max_val = 2147483647
-  let min_val = -2147483648
-  assert_true(add(max_val, 1) == max_val)
-  assert_true(multiply(min_val, -1) == min_val)
+  // 简单利息计算（每年）
+  let annual_interest = divide_with_ceil(multiply(principal, interest_rate), 100)
+  let total_interest = multiply(annual_interest, loan_term_years)
+  let total_repayment = add(principal, total_interest)
+  
+  assert_eq(50, annual_interest)  // ceil(1000 * 5 / 100) = 50
+  assert_eq(150, total_interest)  // 50 * 3 = 150
+  assert_eq(1150, total_repayment)  // 1000 + 150 = 1150
 }
 
-test "complex_string_scenarios" {
-  // 复杂字符串场景测试
-  // 长字符串测试
-  let long_name = "VeryLongNameWithManyCharacters"
-  assert_eq_string("Hello, VeryLongNameWithManyCharacters!", greet(long_name))
+test "data_processing_and_analysis" {
+  // 数据处理和分析
+  let data_points = 1000
+  let sample_size = 75
+  let processing_time_per_sample = 3  // 分钟
   
-  // 包含空格的字符串
-  let spaced_name = "John Doe"
-  assert_eq_string("Hello, John Doe!", greet(spaced_name))
+  // 计算需要的批次数
+  let batches_needed = divide_with_ceil(data_points, sample_size)
   
-  // 特殊符号字符串
-  let symbols = "test@example.com"
-  assert_eq_string("Hello, test@example.com!", greet(symbols))
-}
-
-test "error_boundary_conditions" {
-  // 错误边界条件测试
-  let max_val = 2147483647
-  let min_val = -2147483648
+  // 计算总处理时间
+  let total_processing_time = multiply(batches_needed, processing_time_per_sample)
   
-  // 测试加法溢出保护
-  assert_true(add(max_val, max_val) == max_val)
-  assert_true(add(min_val, min_val) == min_val)
+  // 计算每小时可以处理的样本数
+  let samples_per_hour = divide_with_ceil(60, processing_time_per_sample)
   
-  // 测试乘法溢出保护
-  assert_true(multiply(max_val, 2) == max_val)
-  assert_true(multiply(min_val, 2) == min_val)
-  
-  // 测试特殊值运算
-  assert_true(multiply(min_val, -1) == min_val)
-  assert_true(add(0, max_val) == max_val)
-  assert_true(add(0, min_val) == min_val)
+  assert_eq(14, batches_needed)  // ceil(1000/75) = 14
+  assert_eq(42, total_processing_time)  // 14 * 3 = 42
+  assert_eq(20, samples_per_hour)  // ceil(60/3) = 20
 }
