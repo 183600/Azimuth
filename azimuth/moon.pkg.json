@@ -1,7 +1,7 @@
 {
   "name": "azimuth",
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil", "subtract"],
-  "files": ["azimuth_selfcontained_tests.mbt"], "standard_moonbit_enhanced_tests.mbt"]
+  "files": ["lib.mbt", "azimuth_enhanced_test_cases.mbt"],
   "import": ["moonbitlang/core/builtin"],
   "link": {
     "azimuth/test": "self"
