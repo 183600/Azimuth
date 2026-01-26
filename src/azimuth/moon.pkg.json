@@ -80,6 +80,7 @@
     "advanced_test_scenarios.mbt",
     "standard_enhanced_test_cases.mbt",
     "test/standard_moonbit_test_cases.mbt",
+    "test/standard_moonbit_test_cases.mbt",
     "azimuth_standard_core_tests.mbt",
     "azimuth_enhanced_test_cases.mbt",
     "test/user_standard_tests.mbt",
