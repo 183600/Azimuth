@@ -1,7 +1,7 @@
 {
   "name": "azimuth",
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil", "subtract"],
-  "files": ["lib.mbt", "azimuth_enhanced_test_cases.mbt", "simple_standard_tests.mbt", "self_contained_tests.mbt", "standard_azimuth_tests.mbt", "azimuth_simple_test.mbt", "azimuth_simple_advanced_tests.mbt", "standard_test_suite.mbt", "standard_moonbit_tests.mbt", "azimuth_simple_advanced_tests.mbt", "standard_test_cases.mbt", "azimuth_high_quality_tests.mbt", "azimuth_new_standard_tests.mbt", "azimuth_standard_test_cases.mbt", "azimuth_standalone_tests.mbt", "azimuth_new_tests.mbt", "standard_quality_tests.mbt"],
+  "files": ["lib.mbt", "azimuth_enhanced_test_cases.mbt", "simple_standard_tests.mbt", "self_contained_tests.mbt", "standard_azimuth_tests.mbt", "azimuth_simple_test.mbt", "azimuth_simple_advanced_tests.mbt", "standard_test_suite.mbt", "standard_moonbit_tests.mbt", "azimuth_simple_advanced_tests.mbt", "standard_test_cases.mbt", "azimuth_high_quality_tests.mbt", "azimuth_new_standard_tests.mbt", "azimuth_standard_test_cases.mbt", "azimuth_standalone_tests.mbt", "azimuth_new_tests.mbt", "standard_quality_tests.mbt", "azimuth_standard_unit_tests.mbt"],
   "import": ["moonbitlang/core/builtin", "moonbitlang/core"],
   "link": {
     "azimuth/test": "self"
