@@ -33,6 +33,8 @@
     "additional_standard_tests.mbt",
     "simple_verification_test.mbt",
     "standard_azimuth_tests_new.mbt",
-    "azimuth_enhanced_test_cases.mbt"
+    "azimuth_enhanced_test_cases.mbt",
+    "azimuth_standard_test_cases.mbt",
+    "simple_azimuth_test.mbt"
   ]
 }
