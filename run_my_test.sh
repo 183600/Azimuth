@@ -1,3 +1,5 @@
 #!/bin/bash
-echo "Running moon test with specific test file..."
-./moon test test/moonbit_test_cases_final.mbt
+echo "Running azimuth_standard_quality_tests.mbt..."
+cd test
+../moon test azimuth_standard_quality_tests.mbt
+echo "Test completed."
