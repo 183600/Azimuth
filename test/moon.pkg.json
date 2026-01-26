@@ -1,7 +1,8 @@
 {
   "name": "azimuth_test",
   "test-import": [
-    "azimuth"
+    "azimuth",
+    "moonbitlang/core/builtin"
   ],
   "test": [
     "standard_core_functionality_tests.mbt",
@@ -30,6 +31,7 @@
     "standard_moonbit_test_enhancements.mbt",
     "standard_moonbit_test_cases.mbt",
     "additional_standard_tests.mbt",
-    "simple_verification_test.mbt"
+    "simple_verification_test.mbt",
+    "standard_azimuth_tests_new.mbt"
   ]
 }
