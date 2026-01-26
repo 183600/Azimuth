@@ -8,6 +8,7 @@
     "azimuth"
   ],
   "test": [
+    "azimuth_new_standard_test_cases.mbt",
     "quality_enhanced_test_cases.mbt",
     "simple_quality_test_cases.mbt",
     "additional_standard_tests.mbt",
