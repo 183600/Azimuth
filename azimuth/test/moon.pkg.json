@@ -7,6 +7,9 @@
     "moonbitlang/core/builtin"
   ],
   "test": [
+    "single_test.mbt",
+    "new_azimuth_tests.mbt",
+    "simple_test_verification.mbt",
     "standard_moonbit_tests.mbt",
     "concise_standard_tests.mbt",
     "azimuth_concise_tests.mbt",
