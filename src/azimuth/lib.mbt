@@ -5244,3 +5244,170 @@ test "quality_complex_mathematical_expressions" {
   let expr5 = divide_with_ceil(multiply(add(x, multiply(y, 2)), 3), 4)
   assert_eq(30, expr5)  // ceil((10 + 15*2) * 3 / 4) = ceil((10 + 30) * 3 / 4) = ceil(40*3/4) = ceil(120/4) = 30
 }
+
+// 新增的10个标准 MoonBit 测试用例
+
+test "enhanced_boundary_validation" {
+  // 边界验证测试
+  // 测试大数运算（在合理范围内）
+  let large_positive = 100000
+  let large_negative = -100000
+  
+  // 测试大数加法
+  assert_eq(200000, add(large_positive, large_positive))
+  assert_eq(-200000, add(large_negative, large_negative))
+  assert_eq(0, add(large_positive, large_negative))
+  
+  // 测试大数乘法（在合理范围内）
+  assert_eq(100000000, multiply(large_positive, 1000))
+  assert_eq(100000000, multiply(large_negative, -1000))
+  assert_eq(-100000000, multiply(large_positive, -1000))
+}
+
+test "sorting_algorithm_simulation" {
+  // 模拟排序算法的比较操作
+  // 模拟5个元素的数组
+  let array_size = 5
+  
+  // 模拟冒泡排序的比较次数
+  let comparisons = multiply(array_size, array_size - 1) / 2
+  assert_eq(10, comparisons)  // 5 * 4 / 2 = 10
+  
+  // 模拟选择排序的交换次数
+  let swaps = array_size - 1
+  assert_eq(4, swaps)
+  
+  // 计算模拟数组的总和
+  let sum = add(add(add(add(5, 2), 8), 1), 9)
+  assert_eq(25, sum)
+}
+
+test "enhanced_memory_allocation" {
+  // 内存分配模拟测试
+  let block_size = 1024
+  let request_count = 15
+  let total_memory = multiply(block_size, request_count)
+  
+  // 计算需要的页面数量（每页4096字节）
+  let page_size = 4096
+  let pages_needed = divide_with_ceil(total_memory, page_size)
+  
+  assert_eq(15360, total_memory)
+  assert_eq(4, pages_needed)
+}
+
+test "enhanced_string_processing" {
+  // 高级字符串处理测试
+  let input = "MoonBit"
+  
+  // 模拟字符串连接
+  let result = greet(input)
+  assert_eq_string("Hello, MoonBit!", result)
+  
+  // 测试特殊字符和数字组合
+  assert_eq_string("Hello, 2024!", greet("2024"))
+  assert_eq_string("Hello, test@domain.com!", greet("test@domain.com"))
+}
+
+test "enhanced_financial_calculations" {
+  // 金融复利计算测试
+  let principal = 10000
+  let rate_percent = 5
+  
+  // 简化复利计算（使用向上取整）
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
+  
+  assert_eq(10500, year1)  // 10000 + ceil(10000*5/100) = 10000 + 500 = 10500
+  assert_eq(11025, year2)  // 10500 + ceil(10500*5/100) = 10500 + 525 = 11025
+  assert_eq(11576, year3)  // 11025 + ceil(11025*5/100) = 11025 + 551 = 11576
+}
+
+test "enhanced_scientific_calculations" {
+  // 科学计算测试
+  // 模拟物理公式：距离 = 速度 × 时间
+  let velocity = 15  // m/s
+  let time = 8       // s
+  let distance = multiply(velocity, time)
+  assert_eq(120, distance)
+  
+  // 模拟化学公式：摩尔浓度计算
+  let moles = 5
+  let volume_liters = 2
+  let concentration = divide_with_ceil(multiply(moles, 1000), volume_liters)
+  assert_eq(2500, concentration)  // 5*1000/2 = 2500 mol/m³
+}
+
+test "enhanced_game_logic" {
+  // 游戏逻辑模拟测试
+  let player_level = 15
+  let base_hp = 100
+  let hp_per_level = 20
+  
+  // 计算玩家生命值
+  let total_hp = add(base_hp, multiply(player_level, hp_per_level))
+  assert_eq(400, total_hp)  // 100 + 15*20 = 100 + 300 = 400
+  
+  // 计算经验值需求（指数增长模拟）
+  let exp_multiplier = 100
+  let level_multiplier = player_level
+  let exp_needed = multiply(exp_multiplier, multiply(level_multiplier, level_multiplier))
+  assert_eq(22500, exp_needed)  // 100 * 15 * 15 = 22500
+}
+
+test "enhanced_data_structures" {
+  // 数据结构操作模拟测试
+  // 模拟栈操作
+  let stack_capacity = 10
+  let push_operations = 7
+  let pop_operations = 3
+  let remaining_items = add(push_operations, -pop_operations)
+  
+  assert_eq(4, remaining_items)
+  
+  // 模拟队列操作
+  let queue_size = 8
+  let enqueue_count = 12
+  let queue_overflow = divide_with_ceil(enqueue_count, queue_size)
+  
+  assert_eq(2, queue_overflow)  // ceil(12/8) = 2
+  
+  // 验证栈容量
+  let capacity_check = if remaining_items < stack_capacity { 1 } else { 0 }
+  assert_eq(1, capacity_check)
+}
+
+test "enhanced_network_simulation" {
+  // 网络协议模拟测试
+  let packet_size = 1500
+  let data_size = 10000
+  let header_overhead = 20
+  
+  // 计算需要的包数量
+  let packets_needed = divide_with_ceil(data_size, packet_size - header_overhead)
+  
+  // 计算总传输量（包含头部）
+  let total_transferred = multiply(packets_needed, packet_size)
+  
+  assert_eq(7, packets_needed)  // ceil(10000/1480) = 7
+  assert_eq(10500, total_transferred)  // 7 * 1500 = 10500
+}
+
+test "enhanced_optimization_algorithm" {
+  // 优化算法测试
+  let search_space = 1000
+  let iterations = 50
+  let convergence_threshold = 10
+  
+  // 模拟梯度下降的步数计算
+  let steps_per_iteration = divide_with_ceil(search_space, iterations)
+  let total_steps = multiply(steps_per_iteration, iterations)
+  
+  // 模拟收敛判断
+  let convergence_result = if steps_per_iteration < convergence_threshold { 1 } else { 0 }
+  
+  assert_eq(20, steps_per_iteration)  // ceil(1000/50) = 20
+  assert_eq(1000, total_steps)  // 20 * 50 = 1000
+  assert_eq(0, convergence_result)  // 20 >= 10，未收敛
+}
