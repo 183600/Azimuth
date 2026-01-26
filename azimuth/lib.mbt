@@ -4464,4 +4464,239 @@ test "real_world_financial_calculation" {
   assert_eq(1084, monthly_payment)  // ceil(65000/60) = 1084
 }
 
+// 新增的10个标准 MoonBit 测试用例
+test "inventory_management_system" {
+  // 库存管理系统测试：计算补货需求
+  let current_stock = 156
+  let daily_demand = 23
+  let lead_time_days = 7
+  let safety_stock = 50
+  
+  // 计算补货期间的总需求
+  let total_demand = multiply(daily_demand, lead_time_days)
+  assert_eq(161, total_demand)  // 23 * 7 = 161
+  
+  // 计算补货点
+  let reorder_point = add(total_demand, safety_stock)
+  assert_eq(211, reorder_point)  // 161 + 50 = 211
+  
+  // 计算需要补货的数量
+  let reorder_quantity = divide_with_ceil(reorder_point, 100) * 100
+  assert_eq(300, reorder_quantity)  // ceil(211/100) * 100 = 300
+}
+
+test "project_resource_allocation" {
+  // 项目资源分配测试
+  let total_hours = 480
+  let team_members = 8
+  let work_days = 15
+  
+  // 计算每人每天的工作小时数
+  let hours_per_person_per_day = divide_with_ceil(total_hours, multiply(team_members, work_days))
+  assert_eq(4, hours_per_person_per_day)  // ceil(480/(8*15)) = 4
+  
+  // 验证总工时计算
+  let calculated_total = multiply(hours_per_person_per_day, multiply(team_members, work_days))
+  assert_eq(480, calculated_total)
+  
+  // 计算实际可用工时
+  let available_hours = multiply(team_members, multiply(hours_per_person_per_day, work_days))
+  assert_eq(480, available_hours)
+}
+
+test "financial_loan_calculation" {
+  // 金融贷款计算测试
+  let loan_amount = 250000
+  let interest_rate = 6  // 6%
+  let loan_years = 30
+  
+  // 计算总利息（简化计算）
+  let total_interest = divide_with_ceil(multiply(loan_amount, multiply(interest_rate, loan_years)), 100)
+  assert_eq(450000, total_interest)  // ceil(250000 * 6 * 30 / 100) = 450000
+  
+  // 计算总还款额
+  let total_payment = add(loan_amount, total_interest)
+  assert_eq(700000, total_payment)
+  
+  // 计算月供
+  let total_months = multiply(loan_years, 12)
+  let monthly_payment = divide_with_ceil(total_payment, total_months)
+  assert_eq(1945, monthly_payment)  // ceil(700000/360) = 1945
+}
+
+test "event_planning_capacity" {
+  // 活动规划容量测试
+  let expected_guests = 247
+  let tables_per_room = 12
+  let chairs_per_table = 8
+  let rooms_available = 3
+  
+  // 计算每个房间的容量
+  let capacity_per_room = multiply(tables_per_room, chairs_per_table)
+  assert_eq(96, capacity_per_room)  // 12 * 8 = 96
+  
+  // 计算总容量
+  let total_capacity = multiply(capacity_per_room, rooms_available)
+  assert_eq(288, total_capacity)  // 96 * 3 = 288
+  
+  // 计算需要的房间数
+  let rooms_needed = divide_with_ceil(expected_guests, capacity_per_room)
+  assert_eq(3, rooms_needed)  // ceil(247/96) = 3
+  
+  // 验证容量充足
+  assert_true(total_capacity >= expected_guests)
+}
+
+test "manufacturing_production_batch" {
+  // 制造业生产批次测试
+  let daily_target = 1250
+  let machine_capacity_per_hour = 85
+  let working_hours = 8
+  let defect_rate = 3  // 3%
+  
+  // 计算理论日产量
+  let theoretical_daily = multiply(machine_capacity_per_hour, working_hours)
+  assert_eq(680, theoretical_daily)  // 85 * 8 = 680
+  
+  // 计算考虑缺陷率的实际产量
+  let actual_production = subtract(theoretical_daily, divide_with_ceil(multiply(theoretical_daily, defect_rate), 100))
+  assert_eq(660, actual_production)  // 680 - ceil(680*3/100) = 660
+  
+  // 计算需要的机器数量
+  let machines_needed = divide_with_ceil(daily_target, actual_production)
+  assert_eq(2, machines_needed)  // ceil(1250/660) = 2
+  
+  // 计算实际总产量
+  let total_production = multiply(actual_production, machines_needed)
+  assert_eq(1320, total_production)  // 660 * 2 = 1320
+}
+
+test "cloud_resource_scaling" {
+  // 云资源扩展测试
+  let current_users = 5000
+  let expected_growth = 150  // 150%
+  let server_capacity = 1000
+  let buffer_percentage = 20  // 20%
+  
+  // 计算预期用户数
+  let expected_users = add(current_users, divide_with_ceil(multiply(current_users, expected_growth), 100))
+  assert_eq(12500, expected_users)  // 5000 + ceil(5000*150/100) = 12500
+  
+  // 计算基础服务器需求
+  let base_servers = divide_with_ceil(expected_users, server_capacity)
+  assert_eq(13, base_servers)  // ceil(12500/1000) = 13
+  
+  // 计算缓冲服务器
+  let buffer_servers = divide_with_ceil(multiply(base_servers, buffer_percentage), 100)
+  assert_eq(3, buffer_servers)  // ceil(13*20/100) = 3
+  
+  // 计算总服务器数
+  let total_servers = add(base_servers, buffer_servers)
+  assert_eq(16, total_servers)  // 13 + 3 = 16
+}
+
+test "educational_class_scheduling" {
+  // 教育课程安排测试
+  let total_students = 285
+  let max_class_size = 30
+  let teachers_available = 12
+  let subjects_per_student = 6
+  
+  // 计算需要的班级数
+  let classes_needed = divide_with_ceil(total_students, max_class_size)
+  assert_eq(10, classes_needed)  // ceil(285/30) = 10
+  
+  // 计算每个教师的班级负担
+  let classes_per_teacher = divide_with_ceil(classes_needed, teachers_available)
+  assert_eq(1, classes_per_teacher)  // ceil(10/12) = 1
+  
+  // 计算总课时需求
+  let total_class_periods = multiply(classes_needed, subjects_per_student)
+  assert_eq(60, total_class_periods)  // 10 * 6 = 60
+  
+  // 计算每个教师的课时负担
+  let periods_per_teacher = divide_with_ceil(total_class_periods, teachers_available)
+  assert_eq(5, periods_per_teacher)  // ceil(60/12) = 5
+}
+
+test "logistics_delivery_optimization" {
+  // 物流配送优化测试
+  let total_packages = 1847
+  let truck_capacity = 120
+  let delivery_routes = 8
+  let average_delivery_time = 45  // 分钟
+  
+  // 计算需要的卡车数
+  let trucks_needed = divide_with_ceil(total_packages, truck_capacity)
+  assert_eq(16, trucks_needed)  // ceil(1847/120) = 16
+  
+  // 计算每条路线的包裹数
+  let packages_per_route = divide_with_ceil(total_packages, delivery_routes)
+  assert_eq(231, packages_per_route)  // ceil(1847/8) = 231
+  
+  // 计算总配送时间（小时）
+  let total_delivery_time = multiply(delivery_routes, divide_with_ceil(average_delivery_time, 60))
+  assert_eq(8, total_delivery_time)  // 8 * ceil(45/60) = 8
+  
+  // 计算每辆卡车的路线数
+  let routes_per_truck = divide_with_ceil(delivery_routes, trucks_needed)
+  assert_eq(1, routes_per_truck)  // ceil(8/16) = 1
+}
+
+test "healthcare_patient_flow" {
+  // 医疗保健患者流程测试
+  let daily_patients = 145
+  let doctors_available = 8
+  let consultation_time = 20  // 分钟
+  let working_hours = 8
+  
+  // 计算每个医生的患者数
+  let patients_per_doctor = divide_with_ceil(daily_patients, doctors_available)
+  assert_eq(19, patients_per_doctor)  // ceil(145/8) = 19
+  
+  // 计算每个医生的工作时间（分钟）
+  let doctor_time_minutes = multiply(patients_per_doctor, consultation_time)
+  assert_eq(380, doctor_time_minutes)  // 19 * 20 = 380
+  
+  // 计算每个医生的工作时间（小时）
+  let doctor_time_hours = divide_with_ceil(doctor_time_minutes, 60)
+  assert_eq(7, doctor_time_hours)  // ceil(380/60) = 7
+  
+  // 验证工作时间不超过可用时间
+  assert_true(doctor_time_hours <= working_hours)
+  
+  // 计算总诊疗时间
+  let total_consultation_time = multiply(daily_patients, consultation_time)
+  assert_eq(2900, total_consultation_time)  // 145 * 20 = 2900
+}
+
+test "agricultural_harvest_planning" {
+  // 农业收获规划测试
+  let field_area = 450  // 公顷
+  let yield_per_hectare = 2800  // 公斤
+  let storage_capacity = 800000  // 公斤
+  let harvest_days = 15
+  
+  // 计算预期总产量
+  let expected_yield = multiply(field_area, yield_per_hectare)
+  assert_eq(1260000, expected_yield)  // 450 * 2800 = 1260000
+  
+  // 计算需要的存储设施数
+  let storage_facilities = divide_with_ceil(expected_yield, storage_capacity)
+  assert_eq(2, storage_facilities)  // ceil(1260000/800000) = 2
+  
+  // 计算每日收获量
+  let daily_harvest = divide_with_ceil(expected_yield, harvest_days)
+  assert_eq(84000, daily_harvest)  // ceil(1260000/15) = 84000
+  
+  // 计算每日需要的运输能力
+  let daily_transport_capacity = divide_with_ceil(daily_harvest, storage_capacity)
+  assert_eq(1, daily_transport_capacity)  // ceil(84000/800000) = 1
+  
+  // 验证总存储容量充足
+  let total_storage_capacity = multiply(storage_facilities, storage_capacity)
+  assert_eq(1600000, total_storage_capacity)  // 2 * 800000 = 1600000
+  assert_true(total_storage_capacity >= expected_yield)
+}
+
 
