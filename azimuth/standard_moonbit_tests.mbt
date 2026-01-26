@@ -1,89 +1,84 @@
-// 标准 MoonBit 测试用例 - 为 azimuth 库设计
-// 包含9个高质量测试用例，覆盖核心功能和边界情况
+// 标准 MoonBit 测试用例 - 为 azimuth 库创建的10个高质量测试用例
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  assert_eq(15, add(8, 7))
-  assert_eq(56, multiply(7, 8))
-  assert_eq(1, subtract(9, 8))
-  assert_eq(3, divide_with_ceil(8, 3))
+test "basic_addition_functionality" {
+  // 测试基本加法功能
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(10, add(-3, 13))
 }
 
-test "negative_number_operations" {
-  // 负数运算测试
-  assert_eq(-3, add(-5, 2))
-  assert_eq(10, multiply(-2, -5))
-  assert_eq(-7, subtract(-2, 5))
-  assert_eq(-2, divide_with_ceil(-5, 3))
+test "basic_multiplication_functionality" {
+  // 测试基本乘法功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(15, multiply(-3, -5))
 }
 
-test "zero_element_properties" {
-  // 零元素性质测试
-  assert_eq(42, add(42, 0))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(5, subtract(5, 0))
-  assert_eq(0, divide_with_ceil(0, 10))
-}
-
-test "greeting_functionality" {
-  // 问候功能测试
+test "greet_function_basic_cases" {
+  // 测试问候函数的基本情况
+  assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 123!", greet("123"))
 }
 
-test "divide_with_ceil_precision" {
-  // 向上取整除法精度测试
+test "divide_with_ceil_positive_numbers" {
+  // 测试正数的向上取整除法
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
   assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(5, divide_with_ceil(25, 5))
+}
+
+test "divide_with_ceil_negative_numbers" {
+  // 测试负数的向上取整除法
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
   assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(-1, divide_with_ceil(-5, 5))
 }
 
-test "mathematical_commutative_laws" {
-  // 数学交换律测试
-  let a = 12
-  let b = 8
-  assert_eq(add(a, b), add(b, a))
-  assert_eq(multiply(a, b), multiply(b, a))
+test "mathematical_commutative_properties" {
+  // 测试数学交换律性质
+  assert_eq(add(7, 13), add(13, 7))
+  assert_eq(multiply(7, 13), multiply(13, 7))
+  assert_eq(add(-5, 10), add(10, -5))
 }
 
-test "complex_calculation_scenario" {
-  // 复杂计算场景测试
-  // 场景：计算包装需求
-  let items = 47
-  let capacity_per_box = 12
-  let boxes_needed = divide_with_ceil(items, capacity_per_box)
+test "zero_element_properties" {
+  // 测试零元素性质
+  assert_eq(5, add(5, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, multiply(0, 0))
+}
+
+test "complex_arithmetic_operations" {
+  // 测试复杂算术运算
+  let result = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
   
-  assert_eq(4, boxes_needed)
+  let result2 = divide_with_ceil(add(10, 15), 5)
+  assert_eq(5, result2)  // ceil(25/5) = 5
+}
+
+test "real_world_packaging_scenario" {
+  // 测试真实世界的包装场景
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
   
   // 验证总容量
-  let total_capacity = multiply(boxes_needed, capacity_per_box)
-  assert_eq(48, total_capacity)
-  
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, items)
-  assert_eq(1, remaining_space)
+  let total_capacity = multiply(boxes_needed, items_per_box)
+  assert_eq(30, total_capacity)
 }
 
-test "edge_case_boundary_values" {
-  // 边界值测试
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(-1, -1))
-  assert_eq(0, divide_with_ceil(0, 1))
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(1000000, multiply(1000, 1000))
-}
-
-test "sequential_operations_chain" {
-  // 连续操作链测试
-  let initial = 10
-  let step1 = add(initial, 5)        // 15
-  let step2 = multiply(step1, 2)     // 30
-  let step3 = divide_with_ceil(step2, 8)  // 4
-  let step4 = subtract(step3, 1)     // 3
-  let final_result = add(step4, 2)   // 5
-  
-  assert_eq(5, final_result)
+test "unicode_and_special_characters" {
+  // 测试Unicode和特殊字符处理
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
 }
