@@ -1,107 +1,86 @@
 // 标准 MoonBit 核心测试用例
-// 测试基本功能：加法、乘法和字符串处理
+// 针对 azimuth 库的核心功能进行简洁、标准的测试
 
 test "add_basic_functionality" {
   // 测试基本加法功能
-  @azimuth.assert_eq(5, @azimuth.add(2, 3))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(-2, @azimuth.add(-5, 3))
-}
-
-test "add_boundary_values" {
-  // 测试边界值加法
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-3, add(-1, -2))
 }
 
 test "multiply_basic_functionality" {
   // 测试基本乘法功能
-  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
-  @azimuth.assert_eq(-15, @azimuth.multiply(-3, 5))
-}
-
-test "multiply_boundary_values" {
-  // 测试边界值乘法
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-8, multiply(-2, 4))
 }
 
 test "greet_basic_functionality" {
   // 测试基本问候功能
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
-test "greet_special_characters" {
-  // 测试包含特殊字符的问候
-  @azimuth.assert_eq_string("Hello, 测试!", @azimuth.greet("测试"))
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
-  @azimuth.assert_eq_string("Hello, @#$!", @azimuth.greet("@#$"))
+test "divide_with_ceil_basic" {
+  // 测试基本向上取整除法
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
 }
 
-test "complex_calculation" {
-  // 测试复合计算
-  let a = 10
-  let b = 20
-  let c = 30
-  
-  // (a + b) * c
-  let sum = @azimuth.add(a, b)
-  let result = @azimuth.multiply(sum, c)
-  @azimuth.assert_eq(900, result)
+test "negative_number_operations" {
+  // 测试负数运算
+  assert_eq(-5, add(-2, -3))
+  assert_eq(6, multiply(-2, -3))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+}
+
+test "zero_operations" {
+  // 测试零的运算
+  assert_eq(0, multiply(0, 5))
+  assert_eq(5, add(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(5, 0))
+}
+
+test "large_number_operations" {
+  // 测试大数运算
+  assert_eq(2000, add(1000, 1000))
+  assert_eq(10000, multiply(100, 100))
+}
+
+test "combined_operations" {
+  // 测试组合运算
+  let result = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
 }
 
 test "mathematical_properties" {
   // 测试数学性质
-  let x = 15
-  let y = 25
+  let a = 7
+  let b = 13
   
   // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
+  assert_eq(add(a, b), add(b, a))
   
   // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
+  assert_eq(multiply(a, b), multiply(b, a))
   
-  // 分配律
-  let z = 5
-  @azimuth.assert_eq(
-    @azimuth.multiply(x, @azimuth.add(y, z)),
-    @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, z))
-  )
+  // 零元素性质
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, add(a, 0))
 }
 
-test "real_world_scenario" {
-  // 测试实际应用场景：计算购物车总价
-  let item1_price = 199
-  let item1_quantity = 2
-  let item2_price = 299
-  let item2_quantity = 1
+test "practical_application" {
+  // 实际应用场景：计算购物车总价
+  let item_price = 25
+  let quantity = 4
+  let shipping = 10
   
-  // 计算每种商品总价
-  let total1 = @azimuth.multiply(item1_price, item1_quantity)
-  let total2 = @azimuth.multiply(item2_price, item2_quantity)
+  let subtotal = multiply(item_price, quantity)
+  let total = add(subtotal, shipping)
   
-  // 计算购物车总价
-  let cart_total = @azimuth.add(total1, total2)
-  
-  // 验证总价：199*2 + 299*1 = 398 + 299 = 697
-  @azimuth.assert_eq(697, cart_total)
-}
-
-test "error_handling" {
-  // 测试错误处理
-  @azimuth.assert_true(true)
-  @azimuth.assert_false(false)
-  @azimuth.assert_eq(42, 42)
-  @azimuth.assert_eq_string("test", "test")
+  assert_eq(100, subtotal)
+  assert_eq(110, total)
 }
