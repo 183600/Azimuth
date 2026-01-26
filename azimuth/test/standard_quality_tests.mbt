@@ -1,23 +1,109 @@
-// 标准 MoonBit 测试用例 - 质量测试集合
-// 测试 azimuth 库的核心功能
+// 标准 MoonBit 测试用例 - 高质量测试集
+// 为 azimuth 库添加额外的测试覆盖
 
-test "add_function_identity_properties" {
-  // 测试加法恒等式性质
-  @azimuth.assert_eq(42, @azimuth.add(42, 0))
-  @azimuth.assert_eq(42, @azimuth.add(0, 42))
-  @azimuth.assert_eq(-17, @azimuth.add(-17, 0))
-  @azimuth.assert_eq(-17, @azimuth.add(0, -17))
+test "add_function_extended" {
+  // 扩展的加法函数测试
+  @azimuth.assert_eq(10, @azimuth.add(7, 3))
   @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(-10, @azimuth.add(-7, -3))
+  @azimuth.assert_eq(4, @azimuth.add(-7, 11))
+  @azimuth.assert_eq(100, @azimuth.add(50, 50))
 }
 
-test "multiply_function_distributive_property" {
-  // 测试乘法分配律: a * (b + c) = a * b + a * c
-  let a = 7
-  let b = 5
-  let c = 3
+test "multiply_function_extended" {
+  // 扩展的乘法函数测试
+  @azimuth.assert_eq(21, @azimuth.multiply(7, 3))
+  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+  @azimuth.assert_eq(-21, @azimuth.multiply(-7, 3))
+  @azimuth.assert_eq(21, @azimuth.multiply(-7, -3))
+  @azimuth.assert_eq(100, @azimuth.multiply(10, 10))
+}
+
+test "divide_with_ceil_extended" {
+  // 扩展的向上取整除法测试
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
+}
+
+test "greet_function_extended" {
+  // 扩展的问候函数测试
+  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  @azimuth.assert_eq_string("Hello, Test!", @azimuth.greet("Test"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
+}
+
+test "subtract_function_basic" {
+  // 基本的减法函数测试
+  @azimuth.assert_eq(5, @azimuth.subtract(10, 5))
+  @azimuth.assert_eq(-5, @azimuth.subtract(5, 10))
+  @azimuth.assert_eq(0, @azimuth.subtract(10, 10))
+  @azimuth.assert_eq(15, @azimuth.subtract(10, -5))
+  @azimuth.assert_eq(-15, @azimuth.subtract(-10, 5))
+}
+
+test "complex_calculation_pipeline" {
+  // 复杂计算流水线测试
+  let a = @azimuth.add(5, 3)
+  let b = @azimuth.multiply(a, 2)
+  let c = @azimuth.divide_with_ceil(b, 4)
+  @azimuth.assert_eq(4, c)  // ((5+3)*2)/4 = 16/4 = 4
+}
+
+test "mathematical_properties" {
+  // 数学性质测试
+  let x = 10
+  let y = 5
   
-  let left_side = @azimuth.multiply(a, @azimuth.add(b, c))
-  let right_side = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
+  
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
+  
+  // 分配律
+  @azimuth.assert_eq(
+    @azimuth.multiply(x, @azimuth.add(y, 2)),
+    @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, 2))
+  )
+}
+
+test "business_logic_scenario" {
+  // 业务逻辑场景测试
+  let items = 25
+  let box_capacity = 6
+  let boxes_needed = @azimuth.divide_with_ceil(items, box_capacity)
+  @azimuth.assert_eq(5, boxes_needed)  // ceil(25/6) = 5
+  
+  let total_capacity = @azimuth.multiply(boxes_needed, box_capacity)
+  @azimuth.assert_eq(30, total_capacity)  // 5 * 6 = 30
+  
+  let remaining_space = @azimuth.subtract(total_capacity, items)
+  @azimuth.assert_eq(5, remaining_space)  // 30 - 25 = 5
+}
+
+test "error_handling_test" {
+  // 错误处理测试
+  // 除零错误
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-10, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
+}
+
+test "sequential_operations" {
+  // 连续操作测试
+  let initial = 10
+  let step1 = @azimuth.add(initial, 5)        // 15
+  let step2 = @azimuth.multiply(step1, 2)     // 30
+  let step3 = @azimuth.divide_with_ceil(step2, 8)  // 4
+  let step4 = @azimuth.add(step3, 1)          // 5
+  
+  @azimuth.assert_eq(5, step4)
+}
   @azimuth.assert_eq(left_side, right_side)  // 7 * (5 + 3) = 7 * 5 + 7 * 3 = 56
 }
 
