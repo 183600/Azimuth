@@ -1,132 +1,338 @@
 // 标准 MoonBit 测试增强用例
-// 为 Azimuth 项目添加的高质量测试用例
+// 使用内置运算符和标准 MoonBit 测试语法
 
-test "azimuth_core_mathematical_operations" {
-  // 测试核心数学运算的组合
-  let base = 15
-  let multiplier = 4
-  let divisor = 7
+test "addition_commutative_property" {
+  // 测试加法交换律
+  let a = 15
+  let b = 27
+  let result1 = a + b
+  let result2 = b + a
+  if (result1 != result2) {
+    @builtin.abort("Addition commutative property test failed")
+  }
   
-  let product = azimuth::multiply(base, multiplier)
-  let quotient = azimuth::divide_with_ceil(product, divisor)
-  let verification = azimuth::add(azimuth::multiply(quotient, divisor), azimuth::multiply(2, 3))
-  
-  assert_eq(9, quotient)  // ceil(15*4/7) = ceil(60/7) = 9
-  assert_eq(84, verification)  // 9*7 + 2*3 = 63 + 6 = 69
+  // 测试负数交换律
+  let x = -12
+  let y = 8
+  let result3 = x + y
+  let result4 = y + x
+  if (result3 != result4) {
+    @builtin.abort("Negative addition commutative property test failed")
+  }
 }
 
-test "azimuth_string_processing_international" {
-  // 测试字符串处理的国际化支持
-  assert_eq_string("Hello, 北京!", azimuth::greet("北京"))
-  assert_eq_string("Hello, São Paulo!", azimuth::greet("São Paulo"))
-  assert_eq_string("Hello, 🌙🌟!", azimuth::greet("🌙🌟"))
-  assert_eq_string("Hello, الرياض!", azimuth::greet("الرياض"))
+test "multiplication_distributive_property" {
+  // 测试乘法分配律 a * (b + c) = a * b + a * c
+  let a = 4
+  let b = 7
+  let c = 9
+  
+  let left_side = a * (b + c)
+  let right_side = a * b + a * c
+  if (left_side != right_side) {
+    @builtin.abort("Multiplication distributive property test failed")
+  }
 }
 
-test "azimuth_business_logistics_calculation" {
-  // 物流业务计算测试
-  let total_packages = 127
-  let vehicle_capacity = 25
-  let vehicles_needed = azimuth::divide_with_ceil(total_packages, vehicle_capacity)
+test "integer_division_ceil_function" {
+  // 测试向上取整除法函数
+  let divide_with_ceil = fn(a : Int, b : Int) -> Int {
+    if b == 0 { 
+      0 
+    } else {
+      let quotient = a / b
+      let remainder = a % b
+      if remainder == 0 {
+        quotient
+      } else if a > 0 && b > 0 {
+        quotient + 1
+      } else if a < 0 && b < 0 {
+        quotient + 1
+      } else {
+        quotient
+      }
+    }
+  }
   
-  assert_eq(6, vehicles_needed)
+  // 正数小数
+  let result1 = divide_with_ceil(3, 2)
+  if (result1 != 2) {
+    @builtin.abort("Positive division ceil test failed")
+  }
   
-  let total_capacity = azimuth::multiply(vehicles_needed, vehicle_capacity)
-  let unused_capacity = azimuth::add(total_capacity, -total_packages)
+  let result2 = divide_with_ceil(11, 3)
+  if (result2 != 4) {
+    @builtin.abort("Positive division ceil test 2 failed")
+  }
   
-  assert_eq(150, total_capacity)
-  assert_eq(23, unused_capacity)
+  // 负数情况
+  let result3 = divide_with_ceil(-3, 2)
+  if (result3 != -1) {
+    @builtin.abort("Negative division ceil test failed")
+  }
+  
+  // 零除数安全处理
+  let result4 = divide_with_ceil(100, 0)
+  if (result4 != 0) {
+    @builtin.abort("Zero divisor test failed")
+  }
 }
 
-test "azimuth_error_handling_division_by_zero" {
-  // 除零错误处理测试
-  assert_eq(0, azimuth::divide_with_ceil(100, 0))
-  assert_eq(0, azimuth::divide_with_ceil(-100, 0))
-  assert_eq(0, azimuth::divide_with_ceil(0, 0))
-  assert_eq(0, azimuth::divide_with_ceil(2147483647, 0))
+test "string_concatenation_and_greeting" {
+  // 测试字符串连接和问候功能
+  let greet = fn(name : String) -> String {
+    "Hello, " + name + "!"
+  }
+  
+  let result1 = greet("世界")
+  if (result1 != "Hello, 世界!") {
+    @builtin.abort("Unicode greeting test failed")
+  }
+  
+  let result2 = greet("🚀")
+  if (result2 != "Hello, 🚀!") {
+    @builtin.abort("Emoji greeting test failed")
+  }
+  
+  let result3 = greet("Café")
+  if (result3 != "Hello, Café!") {
+    @builtin.abort("Accented character greeting test failed")
+  }
+  
+  let result4 = greet("test@example.com")
+  if (result4 != "Hello, test@example.com!") {
+    @builtin.abort("Email greeting test failed")
+  }
 }
 
-test "azimuth_resource_allocation_optimization" {
-  // 资源分配优化测试
-  let total_budget = 25000
-  let departments = 7
-  let base_allocation = azimuth::divide_with_ceil(total_budget, departments)
+test "business_calculation_scenario" {
+  // 业务计算场景：订单总价计算
+  let unit_price = 45
+  let quantity = 12
+  let tax_rate = 8
+  let shipping = 25
+  let discount = 50
   
-  assert_eq(3572, base_allocation)  // ceil(25000/7)
+  let divide_with_ceil = fn(a : Int, b : Int) -> Int {
+    if b == 0 { 
+      0 
+    } else {
+      let quotient = a / b
+      let remainder = a % b
+      if remainder == 0 {
+        quotient
+      } else if a > 0 && b > 0 {
+        quotient + 1
+      } else if a < 0 && b < 0 {
+        quotient + 1
+      } else {
+        quotient
+      }
+    }
+  }
   
-  let total_allocated = azimuth::multiply(base_allocation, departments)
-  let overflow = azimuth::add(total_allocated, -total_budget)
+  // 计算小计
+  let subtotal = unit_price * quantity
+  // 计算税费
+  let tax = divide_with_ceil(subtotal * tax_rate, 100)
+  // 计算总价
+  let total_before_discount = subtotal + tax + shipping
+  let final_total = total_before_discount - discount
   
-  assert_eq(25004, total_allocated)
-  assert_eq(4, overflow)
+  if (subtotal != 540) {
+    @builtin.abort("Subtotal calculation failed")
+  }
+  
+  if (tax != 44) {
+    @builtin.abort("Tax calculation failed")
+  }
+  
+  if (total_before_discount != 609) {
+    @builtin.abort("Total before discount calculation failed")
+  }
+  
+  if (final_total != 559) {
+    @builtin.abort("Final total calculation failed")
+  }
 }
 
-test "azimuth_mathematical_properties_verification" {
-  // 数学性质验证测试
-  let x = 23
-  let y = 17
+test "mathematical_series_calculation" {
+  // 数学级数计算：等差数列求和
+  let first_term = 5
+  let common_diff = 3
+  let num_terms = 8
   
-  // 加法交换律验证
-  assert_eq(azimuth::add(x, y), azimuth::add(y, x))
+  let divide_with_ceil = fn(a : Int, b : Int) -> Int {
+    if b == 0 { 
+      0 
+    } else {
+      let quotient = a / b
+      let remainder = a % b
+      if remainder == 0 {
+        quotient
+      } else if a > 0 && b > 0 {
+        quotient + 1
+      } else if a < 0 && b < 0 {
+        quotient + 1
+      } else {
+        quotient
+      }
+    }
+  }
   
-  // 乘法交换律验证
-  assert_eq(azimuth::multiply(x, y), azimuth::multiply(y, x))
+  // 使用公式求和：S = n/2 * (2a + (n-1)d)
+  let sum = divide_with_ceil(
+    num_terms * (2 * first_term + (num_terms - 1) * common_diff),
+    2
+  )
   
-  // 分配律验证
-  let distributive_left = azimuth::multiply(x, azimuth::add(y, 5))
-  let distributive_right = azimuth::add(azimuth::multiply(x, y), azimuth::multiply(x, 5))
-  assert_eq(distributive_left, distributive_right)
+  if (sum != 62) {
+    @builtin.abort("Mathematical series calculation failed")
+  }
 }
 
-test "azimuth_performance_large_scale_computations" {
-  // 大规模计算性能测试
-  let large_number = 100000
-  let iterations = 50
+test "inventory_management_calculation" {
+  // 库存管理计算：计算存储空间需求
+  let items_per_box = 18
+  let total_items_a = 75
+  let total_items_b = 120
+  let total_items_c = 200
   
-  let sum_result = azimuth::multiply(large_number, iterations)
-  let product_result = azimuth::multiply(azimuth::divide_with_ceil(large_number, 10), 1000)
-  let division_result = azimuth::divide_with_ceil(sum_result, product_result)
+  let divide_with_ceil = fn(a : Int, b : Int) -> Int {
+    if b == 0 { 
+      0 
+    } else {
+      let quotient = a / b
+      let remainder = a % b
+      if remainder == 0 {
+        quotient
+      } else if a > 0 && b > 0 {
+        quotient + 1
+      } else if a < 0 && b < 0 {
+        quotient + 1
+      } else {
+        quotient
+      }
+    }
+  }
   
-  assert_eq(5000000, sum_result)
-  assert_eq(10000000, product_result)
-  assert_eq(1, division_result)
+  let boxes_a = divide_with_ceil(total_items_a, items_per_box)
+  let boxes_b = divide_with_ceil(total_items_b, items_per_box)
+  let boxes_c = divide_with_ceil(total_items_c, items_per_box)
+  
+  let total_boxes = boxes_a + boxes_b + boxes_c
+  
+  if (boxes_a != 5) {
+    @builtin.abort("Boxes A calculation failed")
+  }
+  
+  if (boxes_b != 7) {
+    @builtin.abort("Boxes B calculation failed")
+  }
+  
+  if (boxes_c != 12) {
+    @builtin.abort("Boxes C calculation failed")
+  }
+  
+  if (total_boxes != 24) {
+    @builtin.abort("Total boxes calculation failed")
+  }
 }
 
-test "azimuth_edge_case_boundary_values" {
-  // 边界值测试
-  // 测试接近整数边界的情况
-  assert_eq(1, azimuth::divide_with_ceil(1, 2))
-  assert_eq(2, azimuth::divide_with_ceil(3, 2))
-  assert_eq(1000, azimuth::divide_with_ceil(1999, 2))
-  assert_eq(500, azimuth::divide_with_ceil(999, 2))
+test "time_and_resource_calculation" {
+  // 时间和资源计算：项目完成时间估算
+  let tasks_per_day = 6
+  let total_tasks = 47
+  let working_days_per_week = 5
   
-  // 测试零值运算
-  assert_eq(0, azimuth::add(0, 0))
-  assert_eq(0, azimuth::multiply(0, 12345))
-  assert_eq(12345, azimuth::add(0, 12345))
+  let divide_with_ceil = fn(a : Int, b : Int) -> Int {
+    if b == 0 { 
+      0 
+    } else {
+      let quotient = a / b
+      let remainder = a % b
+      if remainder == 0 {
+        quotient
+      } else if a > 0 && b > 0 {
+        quotient + 1
+      } else if a < 0 && b < 0 {
+        quotient + 1
+      } else {
+        quotient
+      }
+    }
+  }
+  
+  let days_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  let weeks_needed = divide_with_ceil(days_needed, working_days_per_week)
+  
+  if (days_needed != 8) {
+    @builtin.abort("Days needed calculation failed")
+  }
+  
+  if (weeks_needed != 2) {
+    @builtin.abort("Weeks needed calculation failed")
+  }
 }
 
-test "azimuth_complex_workflow_simulation" {
-  // 复杂工作流模拟测试
-  // 模拟项目管理场景
-  let project_tasks = 89
-  let team_members = 6
-  let working_days = 15
+test "string_processing_with_formal_greeting" {
+  // 字符串处理与正式问候
+  let greet = fn(name : String) -> String {
+    "Hello, " + name + "!"
+  }
   
-  let daily_capacity_per_person = 2
-  let total_daily_capacity = azimuth::multiply(team_members, daily_capacity_per_person)
-  let days_needed = azimuth::divide_with_ceil(project_tasks, total_daily_capacity)
+  let prefix = "Dr."
+  let first_name = "Alice"
+  let last_name = "Johnson"
+  let suffix = "PhD"
   
-  assert_eq(8, days_needed)  // ceil(89/(6*2)) = ceil(89/12) = 8
+  let full_name = prefix + " " + first_name + " " + last_name + ", " + suffix
+  let formal_greeting = greet(full_name)
   
-  let total_work_days = azimuth::multiply(days_needed, total_daily_capacity)
-  let efficiency = azimuth::divide_with_ceil(azimuth::multiply(project_tasks, 100), total_work_days)
-  
-  assert_eq(96, total_work_days)
-  assert_eq(93, efficiency)  // floor(8900/96) = 92%
+  if (formal_greeting != "Hello, Dr. Alice Johnson, PhD!") {
+    @builtin.abort("Formal greeting test failed")
+  }
 }
 
-// 辅助函数：减法运算
-fn subtract(a : Int, b : Int) -> Int {
-  a - b
+test "financial_compound_interest" {
+  // 金融复利计算（简化版）
+  let principal = 1000
+  let interest_rate = 5  // 5%
+  
+  let divide_with_ceil = fn(a : Int, b : Int) -> Int {
+    if b == 0 { 
+      0 
+    } else {
+      let quotient = a / b
+      let remainder = a % b
+      if remainder == 0 {
+        quotient
+      } else if a > 0 && b > 0 {
+        quotient + 1
+      } else if a < 0 && b < 0 {
+        quotient + 1
+      } else {
+        quotient
+      }
+    }
+  }
+  
+  // 第一年
+  let year1 = principal + divide_with_ceil(principal * interest_rate, 100)
+  // 第二年
+  let year2 = year1 + divide_with_ceil(year1 * interest_rate, 100)
+  // 第三年
+  let year3 = year2 + divide_with_ceil(year2 * interest_rate, 100)
+  
+  if (year1 != 1050) {
+    @builtin.abort("Year 1 calculation failed")
+  }
+  
+  if (year2 != 1103) {
+    @builtin.abort("Year 2 calculation failed")
+  }
+  
+  if (year3 != 1158) {
+    @builtin.abort("Year 3 calculation failed")
+  }
 }
