@@ -192,6 +192,7 @@
   "high_quality_test_cases.mbt",
   "standard_quality_test_cases.mbt",
   "standard_moonbit_test_cases.mbt",
+  "standard_moonbit_test_cases_new.mbt",
   "standard_azimuth_tests.mbt",
   "azimuth_standard_tests_new.mbt",
   "standard_moonbit_test_cases.mbt"
