@@ -6148,3 +6148,182 @@ test "azimuth_extreme_values_new" {
   assert_eq(10001, add(large_num, 1))
   assert_eq(9999, add(large_num, -1))
 }
+
+// 新增的 10 个标准 MoonBit 测试用例
+
+test "azimuth_temperature_conversion" {
+  // 温度转换场景：摄氏度到华氏度的近似计算
+  // F = C * 9/5 + 32，使用整数运算近似
+  let celsius = 25
+  let fahrenheit_approx = add(divide_with_ceil(multiply(celsius, 9), 5), 32)
+  assert_eq(77, fahrenheit_approx)
+  
+  // 冰点温度
+  let freezing_c = 0
+  let freezing_f = add(divide_with_ceil(multiply(freezing_c, 9), 5), 32)
+  assert_eq(32, freezing_f)
+}
+
+test "azimuth_batch_processing" {
+  // 批处理场景：计算处理多批数据所需的时间
+  let items_per_batch = 150
+  let number_of_batches = 4
+  let processing_time_per_item = 3  // 分钟
+  
+  let total_items = multiply(items_per_batch, number_of_batches)
+  let total_time = multiply(total_items, processing_time_per_item)
+  let hours_needed = divide_with_ceil(total_time, 60)
+  
+  assert_eq(600, total_items)
+  assert_eq(1800, total_time)
+  assert_eq(30, hours_needed)
+}
+
+test "azimuth_financial_compound_interest" {
+  // 复利计算场景（简化版）
+  let principal = 10000
+  let interest_rate = 5  // 5%
+  let years = 3
+  
+  // 第一年
+  let year1 = add(principal, divide_with_ceil(multiply(principal, interest_rate), 100))
+  // 第二年
+  let year2 = add(year1, divide_with_ceil(multiply(year1, interest_rate), 100))
+  // 第三年
+  let year3 = add(year2, divide_with_ceil(multiply(year2, interest_rate), 100))
+  
+  assert_eq(10500, year1)
+  assert_eq(11025, year2)
+  assert_eq(11576, year3)
+}
+
+test "azimuth_resource_allocation" {
+  // 资源分配场景：将资源均匀分配给多个项目
+  let total_resources = 47
+  let number_of_projects = 8
+  let resources_per_project = divide_with_ceil(total_resources, number_of_projects)
+  
+  // 计算实际分配的资源
+  let allocated_resources = multiply(resources_per_project, number_of_projects)
+  let remaining_resources = add(total_resources, -allocated_resources)
+  
+  assert_eq(6, resources_per_project)
+  assert_eq(48, allocated_resources)
+  assert_eq(-1, remaining_resources)  // 负值表示需要额外资源
+}
+
+test "azimuth_digital_storage" {
+  // 数字存储场景：计算文件存储需求
+  let file_size_mb = 25
+  let number_of_files = 37
+  let storage_capacity_gb = 1
+  
+  // 计算总存储需求（MB）
+  let total_storage_mb = multiply(file_size_mb, number_of_files)
+  // 转换为GB（1GB = 1024MB，简化为1000MB）
+  let total_storage_gb = divide_with_ceil(total_storage_mb, 1000)
+  
+  assert_eq(925, total_storage_mb)
+  assert_eq(1, total_storage_gb)
+  
+  // 检查是否需要额外存储
+  let additional_storage_needed = add(total_storage_gb, -storage_capacity_gb)
+  assert_eq(0, additional_storage_needed)
+}
+
+test "azimuth_travel_planning" {
+  // 旅行规划场景：计算旅行时间和费用
+  let distance_km = 450
+  let average_speed_kmh = 80
+  let fuel_consumption_per_100km = 8
+  let fuel_price_per_liter = 7
+  
+  // 计算旅行时间（小时）
+  let travel_hours = divide_with_ceil(distance_km, average_speed_kmh)
+  
+  // 计算燃油消耗（升）
+  let fuel_consumed = divide_with_ceil(multiply(distance_km, fuel_consumption_per_100km), 100)
+  
+  // 计算燃油费用
+  let fuel_cost = multiply(fuel_consumed, fuel_price_per_liter)
+  
+  assert_eq(6, travel_hours)
+  assert_eq(36, fuel_consumed)
+  assert_eq(252, fuel_cost)
+}
+
+test "azimuth_project_management" {
+  // 项目管理场景：计算项目进度和里程碑
+  let total_tasks = 120
+  let completed_tasks = 45
+  let tasks_per_sprint = 15
+  
+  // 计算完成百分比
+  let completion_percentage = divide_with_ceil(multiply(completed_tasks, 100), total_tasks)
+  
+  // 计算剩余任务数
+  let remaining_tasks = add(total_tasks, -completed_tasks)
+  
+  // 计算需要的冲刺次数
+  let remaining_sprints = divide_with_ceil(remaining_tasks, tasks_per_sprint)
+  
+  assert_eq(38, completion_percentage)
+  assert_eq(75, remaining_tasks)
+  assert_eq(5, remaining_sprints)
+}
+
+test "azimuth_cooking_recipe" {
+  // 烹饪食谱场景：调整配方比例
+  let original_servings = 4
+  let desired_servings = 7
+  let flour_per_serving = 150  // 克
+  let sugar_per_serving = 50   // 克
+  
+  // 计算调整系数
+  let adjustment_factor = divide_with_ceil(multiply(desired_servings, 100), multiply(original_servings, 100))
+  
+  // 计算新配方用量
+  let new_flour = multiply(flour_per_serving, desired_servings)
+  let new_sugar = multiply(sugar_per_serving, desired_servings)
+  
+  assert_eq(2, adjustment_factor)
+  assert_eq(1050, new_flour)
+  assert_eq(350, new_sugar)
+}
+
+test "azimuth_fitness_tracking" {
+  // 健身追踪场景：计算卡路里消耗和目标达成
+  let calories_per_minute_running = 10
+  let calories_per_minute_cycling = 8
+  let running_minutes = 25
+  let cycling_minutes = 40
+  let daily_calorie_goal = 500
+  
+  // 计算消耗的卡路里
+  let running_calories = multiply(calories_per_minute_running, running_minutes)
+  let cycling_calories = multiply(calories_per_minute_cycling, cycling_minutes)
+  let total_calories = add(running_calories, cycling_calories)
+  
+  // 计算目标完成百分比
+  let goal_percentage = divide_with_ceil(multiply(total_calories, 100), daily_calorie_goal)
+  
+  assert_eq(250, running_calories)
+  assert_eq(320, cycling_calories)
+  assert_eq(570, total_calories)
+  assert_eq(114, goal_percentage)
+}
+
+test "azimuth_greeting_variations" {
+  // 问候函数变体测试：测试各种特殊情况和组合
+  // 测试包含特殊字符的名称
+  assert_eq_string("Hello, John-Doe!", greet("John-Doe"))
+  assert_eq_string("Hello, O'Connor!", greet("O'Connor"))
+  
+  // 测试包含数字的名称
+  assert_eq_string("Hello, User123!", greet("User123"))
+  assert_eq_string("Hello, 2024!", greet("2024"))
+  
+  // 测试包含空格的名称
+  assert_eq_string("Hello, John Smith!", greet("John Smith"))
+  assert_eq_string("Hello,   Multiple   Spaces   !", greet("   Multiple   Spaces   "))
+}
