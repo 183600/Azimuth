@@ -119,20 +119,19 @@ test "error_handling_and_validation" {
 test "real_world_application_scenario" {
   // 真实世界应用场景测试：活动安排
   let participants = 87
-  let tables = 8
-  let chairs_per_table = 10
+  let chairs_per_table = 8
   
   // 计算需要的桌子数量
   let tables_needed = divide_with_ceil(participants, chairs_per_table)
-  assert_eq(9, tables_needed)
+  assert_eq(11, tables_needed)
   
   // 计算可用座位数
   let available_seats = multiply(tables_needed, chairs_per_table)
-  assert_eq(90, available_seats)
+  assert_eq(88, available_seats)
   
   // 计算剩余座位
   let remaining_seats = subtract(available_seats, participants)
-  assert_eq(3, remaining_seats)
+  assert_eq(1, remaining_seats)
   
   // 验证座位充足性
   assert_true(available_seats >= participants)
