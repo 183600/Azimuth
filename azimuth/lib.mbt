@@ -3946,3 +3946,93 @@ test "real_world_logistics_scenario" {
 }
 
 
+
+
+// 新增的10个标准 MoonBit 测试用例
+test "basic_arithmetic_operations" {
+  // 基本算术运算测试
+  assert_eq(15, add(7, 8))
+  assert_eq(0, add(0, 0))
+  assert_eq(-10, add(-3, -7))
+  assert_eq(4, add(-5, 9))
+}
+
+test "multiplication_properties" {
+  // 乘法性质测试
+  assert_eq(21, multiply(3, 7))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-12, multiply(-3, 4))
+  assert_eq(12, multiply(-3, -4))
+  assert_eq(100, multiply(10, 10))
+}
+
+test "greet_function_variations" {
+  // 问候函数变化测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+}
+
+test "divide_with_ceil_scenarios" {
+  // 向上取整除法场景测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(2, 2))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(10, 0))
+}
+
+test "negative_number_operations" {
+  // 负数运算测试
+  assert_eq(-5, add(-2, -3))
+  assert_eq(2, add(-5, 7))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-15, multiply(-3, 5))
+  assert_eq(-2, divide_with_ceil(-5, 3))
+}
+
+test "complex_calculation_chain" {
+  // 复杂计算链测试
+  let result = divide_with_ceil(add(multiply(3, 4), multiply(2, 5)), 7)
+  assert_eq(4, result)  // ceil((12 + 10) / 7) = ceil(22/7) = 4
+}
+
+test "business_logic_packaging" {
+  // 业务逻辑：包装计算测试
+  let items = 25
+  let box_capacity = 6
+  let boxes_needed = divide_with_ceil(items, box_capacity)
+  assert_eq(5, boxes_needed)
+  
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  let remaining_space = subtract(total_capacity, items)
+  assert_eq(5, remaining_space)
+}
+
+test "mathematical_commutative_law" {
+  // 数学交换律测试
+  let a = 13
+  let b = 17
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(multiply(a, b), multiply(b, a))
+}
+
+test "resource_allocation_problem" {
+  // 资源分配问题测试
+  let total_resources = 47
+  let teams = 4
+  let resources_per_team = divide_with_ceil(total_resources, teams)
+  assert_eq(12, resources_per_team)
+  
+  let total_allocated = multiply(resources_per_team, teams)
+  assert_eq(48, total_allocated)
+}
+
+test "string_processing_edge_cases" {
+  // 字符串处理边缘情况测试
+  assert_eq_string("Hello, space!", greet("space"))
+  assert_eq_string("Hello, special@chars!", greet("special@chars"))
+  assert_eq_string("Hello, emoji 🌟!", greet("emoji 🌟"))
+  assert_eq_string("Hello, mixedCASE123!", greet("mixedCASE123"))
+}
