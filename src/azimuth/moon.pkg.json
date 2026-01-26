@@ -8,6 +8,7 @@
     "azimuth"
   ],
   "test": [
+    "azimuth_standard_quality_tests.mbt",
     "standard_azimuth_core_tests.mbt",
     "azimuth_comprehensive_standard_tests.mbt",
     "azimuth_simple_new_tests.mbt",
@@ -54,7 +55,6 @@
     "my_standard_azimuth_tests.mbt",
     "simple_new_test.mbt",
     "final_simple_test.mbt",
-    "azimuth_standard_quality_tests.mbt",
     "comprehensive_unit_tests.mbt",
     "azimuth_standard_test_cases.mbt",
     "azimuth_comprehensive_new_tests.mbt",
