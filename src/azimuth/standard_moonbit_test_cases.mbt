@@ -1,82 +1,96 @@
-// 标准 MoonBit 测试用例 - 针对 azimuth 库
-// 使用标准的 MoonBit 测试语法
+// 标准 MoonBit 测试用例
+// 针对 azimuth 库的核心功能进行测试
 
-test "add_function_commutative_property" {
-  // 测试加法交换律
-  let a = 15
-  let b = 27
-  assert_eq(add(a, b), add(b, a))
-  assert_eq(42, add(15, 27))
-  assert_eq(42, add(27, 15))
+test "add_function_basic_functionality" {
+  // 测试加法函数的基本功能
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(10, add(7, 3))
 }
 
-test "multiply_function_distributive_property" {
-  // 测试乘法分配律: a * (b + c) = a * b + a * c
-  let a = 5
-  let b = 8
-  let c = 12
-  let left_side = multiply(a, add(b, c))
-  let right_side = add(multiply(a, b), multiply(a, c))
-  assert_eq(left_side, right_side)
+test "multiply_function_basic_functionality" {
+  // 测试乘法函数的基本功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(15, multiply(3, 5))
 }
 
-test "divide_with_ceil_edge_cases" {
-  // 测试向上取整除法的边界情况
-  assert_eq(1, divide_with_ceil(1, 1))
+test "greet_function_basic_functionality" {
+  // 测试问候函数的基本功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+}
+
+test "divide_with_ceil_function_positive_numbers" {
+  // 测试向上取整除法函数的正数情况
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(2, divide_with_ceil(3, 2))
+}
+
+test "divide_with_ceil_function_negative_numbers" {
+  // 测试向上取整除法函数的负数情况
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+  assert_eq(-2, divide_with_ceil(-4, 2))
   assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "greet_function_unicode_support" {
-  // 测试问候函数的 Unicode 支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, Café!", greet("Café"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
+test "combined_arithmetic_operations" {
+  // 测试组合算术运算
+  let result1 = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result1)  // 2*3 + 4*5 = 6 + 20 = 26
+  
+  let result2 = multiply(add(5, 3), 2)
+  assert_eq(16, result2)  // (5 + 3) * 2 = 8 * 2 = 16
 }
 
-test "complex_business_calculation" {
-  // 复杂业务计算：订单总价
-  let unit_price = 45
-  let quantity = 6
-  let tax_rate = 8
+test "mathematical_properties" {
+  // 测试数学性质
+  let a = 7
+  let b = 13
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 零元素性质
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, add(a, 0))
+}
+
+test "practical_business_scenario" {
+  // 实际业务场景：计算订单总价
+  let unit_price = 25
+  let quantity = 8
   let shipping = 15
   
   let subtotal = multiply(unit_price, quantity)
-  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  let total = add(add(subtotal, tax), shipping)
+  let total = add(subtotal, shipping)
   
-  assert_eq(270, subtotal)
-  assert_eq(22, tax)
-  assert_eq(307, total)
+  assert_eq(200, subtotal)
+  assert_eq(215, total)
 }
 
-test "negative_number_operations" {
-  // 负数运算测试
-  assert_eq(-10, add(-3, -7))
-  assert_eq(-5, add(-8, 3))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(-15, multiply(3, -5))
-  assert_eq(-3, divide_with_ceil(-10, 3))
+test "packaging_calculation_scenario" {
+  // 包装计算场景
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  
+  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
 }
 
-test "large_number_calculations" {
-  // 大数运算测试
-  let big_num = 10000
-  assert_eq(20000, add(big_num, big_num))
-  assert_eq(100000000, multiply(big_num, big_num))
-  assert_eq(33334, divide_with_ceil(1000000, 30))
-}
-
-test "zero_operations_comprehensive" {
-  // 零运算综合测试
-  assert_eq(0, add(0, 0))
-  assert_eq(5, add(5, 0))
-  assert_eq(-5, add(-5, 0))
-  assert_eq(0, multiply(0, 0))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(5, 0))
+test "unicode_and_special_characters" {
+  // 测试 Unicode 和特殊字符
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
 }
