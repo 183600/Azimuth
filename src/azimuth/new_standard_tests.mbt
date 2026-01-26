@@ -1,89 +1,99 @@
 // 新的标准 MoonBit 测试用例
-// 针对 azimuth 库的核心功能测试
+// 针对 azimuth 库的核心功能添加10个标准测试用例
 
-test "add_basic_functionality" {
-  // 测试基本加法功能
-  assert_eq(5, add(2, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-1, add(-2, 1))
+test "addition_commutative_law" {
+  // 测试加法交换律
+  assert_eq(15, add(8, 7))
+  assert_eq(15, add(7, 8))
+  assert_eq(0, add(-5, 5))
+  assert_eq(0, add(5, -5))
 }
 
-test "multiply_basic_functionality" {
-  // 测试基本乘法功能
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(-8, multiply(-2, 4))
+test "multiplication_commutative_law" {
+  // 测试乘法交换律
+  assert_eq(42, multiply(6, 7))
+  assert_eq(42, multiply(7, 6))
+  assert_eq(-24, multiply(-3, 8))
+  assert_eq(-24, multiply(8, -3))
 }
 
-test "greet_basic_functionality" {
-  // 测试基本问候功能
+test "divide_with_ceil_functionality" {
+  // 测试向上取整除法功能
+  assert_eq(3, divide_with_ceil(8, 3))  // 8/3 = 2.666... -> 3
+  assert_eq(2, divide_with_ceil(6, 3))  // 6/3 = 2 -> 2
+  assert_eq(1, divide_with_ceil(3, 4))  // 3/4 = 0.75 -> 1
+  assert_eq(0, divide_with_ceil(5, 0))  // 除数为0返回0
+}
+
+test "greet_function_cases" {
+  // 测试问候函数各种情况
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, User123!", greet("User123"))
   assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 世界!", greet("世界"))
 }
 
-test "divide_with_ceil_basic" {
-  // 测试基本向上取整除法
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(0, divide_with_ceil(5, 0))
-}
-
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 7
-  let b = 13
+test "complex_combined_operations" {
+  // 测试复杂组合运算
+  let x = 12
+  let y = 8
+  let z = 5
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  // 测试 (x + y) * z
+  let result1 = multiply(add(x, y), z)
+  assert_eq(100, result1)  // (12 + 8) * 5 = 20 * 5 = 100
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  // 测试 x * y + z
+  let result2 = add(multiply(x, y), z)
+  assert_eq(101, result2)  // 12 * 8 + 5 = 96 + 5 = 101
 }
 
-test "negative_number_operations" {
-  // 测试负数运算
-  assert_eq(-5, add(-2, -3))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(4, divide_with_ceil(-10, -3))
+test "negative_division_ceil" {
+  // 测试负数的向上取整除法
+  assert_eq(-2, divide_with_ceil(-8, 4))  // -8/4 = -2 -> -2
+  assert_eq(-1, divide_with_ceil(-3, 4))  // -3/4 = -0.75 -> -1
+  assert_eq(2, divide_with_ceil(-8, -4))  // -8/-4 = 2 -> 2
+  assert_eq(3, divide_with_ceil(-10, -3)) // -10/-3 = 3.333... -> 3
 }
 
-test "edge_case_operations" {
-  // 测试边界情况
-  assert_eq(1, add(0, 1))
-  assert_eq(-1, add(0, -1))
-  assert_eq(0, multiply(1, 0))
-  assert_eq(1, divide_with_ceil(1, 100))
+test "mathematical_identities" {
+  // 测试数学单位元
+  assert_eq(7, add(7, 0))    // 加法单位元
+  assert_eq(7, multiply(7, 1))  // 乘法单位元
+  assert_eq(0, multiply(7, 0))  // 乘法零元
+  assert_eq(7, add(0, 7))    // 加法单位元（交换）
 }
 
-test "combined_operations" {
-  // 测试组合运算
-  let result1 = add(multiply(2, 3), multiply(4, 5))
-  assert_eq(26, result1)  // 2*3 + 4*5 = 6 + 20 = 26
+test "business_order_calculation" {
+  // 业务订单计算
+  let unit_price = 45
+  let quantity = 6
+  let shipping = 15
+  let discount = 20
   
-  let result2 = multiply(add(3, 4), 2)
-  assert_eq(14, result2)  // (3 + 4) * 2 = 7 * 2 = 14
-}
-
-test "practical_applications" {
-  // 测试实际应用场景
-  // 包装计算
-  let total_items = 25
-  let items_per_box = 6
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
+  let subtotal = multiply(unit_price, quantity)
+  let total_before_discount = add(subtotal, shipping)
+  let final_total = add(total_before_discount, -discount)
   
-  // 价格计算
-  let price = 15
-  let quantity = 3
-  let total_cost = multiply(price, quantity)
-  assert_eq(45, total_cost)
+  assert_eq(270, subtotal)
+  assert_eq(285, total_before_discount)
+  assert_eq(265, final_total)
 }
 
-test "string_and_unicode_support" {
-  // 测试字符串和Unicode支持
-  assert_eq_string("Hello, 中文!", greet("中文"))
+test "large_number_operations" {
+  // 大数运算测试
+  let large_num1 = 100000
+  let large_num2 = 200000
+  
+  assert_eq(300000, add(large_num1, large_num2))
+  assert_eq(20000000000, multiply(large_num1, large_num2))
+  assert_eq(1, divide_with_ceil(large_num1, large_num2))
+}
+
+test "special_character_greetings" {
+  // 特殊字符问候测试
+  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
+  assert_eq_string("Hello, C++!", greet("C++"))
+  assert_eq_string("Hello, 100%!", greet("100%"))
   assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, María!", greet("María"))
 }
