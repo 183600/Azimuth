@@ -1,117 +1,96 @@
-// 标准 MoonBit 测试用例
-// 针对 azimuth 库核心功能的全面测试
+// 标准 MoonBit 测试用例 - 针对 azimuth 库的核心功能测试
+// 包含基本功能、边界情况和实际应用场景
 
-test "add_function_commutative_property" {
-  // 测试加法交换律
-  assert_eq(15, add(8, 7))
-  assert_eq(15, add(7, 8))
-  assert_eq(0, add(5, -5))
-  assert_eq(0, add(-5, 5))
+test "add_function_basic_functionality" {
+  // 测试加法函数的基本功能
+  @azimuth.assert_eq(5, @azimuth.add(2, 3))
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(-5, @azimuth.add(-2, -3))
+  @azimuth.assert_eq(10, @azimuth.add(7, 3))
 }
 
-test "multiply_function_zero_property" {
-  // 测试乘法零元素性质
-  assert_eq(0, multiply(0, 5))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(0, multiply(0, -10))
-  assert_eq(0, multiply(-10, 0))
+test "multiply_function_basic_functionality" {
+  // 测试乘法函数的基本功能
+  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
+  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
+  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
 }
 
-test "divide_with_ceil_precision_test" {
-  // 测试向上取整除法的精度
-  assert_eq(4, divide_with_ceil(11, 3))  // 3.666... -> 4
-  assert_eq(3, divide_with_ceil(9, 3))   // 3 -> 3
-  assert_eq(1, divide_with_ceil(1, 100)) // 0.01 -> 1
-  assert_eq(-3, divide_with_ceil(-10, 3)) // -3.333... -> -3
+test "greet_function_basic_functionality" {
+  // 测试问候函数的基本功能
+  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
 }
 
-test "greet_function_unicode_support" {
-  // 测试问候函数的Unicode支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, αβγ!", greet("αβγ"))
-  assert_eq_string("Hello, ñáéíóú!", greet("ñáéíóú"))
+test "divide_with_ceil_positive_numbers" {
+  // 测试正数的向上取整除法
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(3, 2))
 }
 
-test "combined_arithmetic_operations" {
-  // 测试组合算术运算
-  let x = 10
-  let y = 15
-  let z = 20
-  
-  // 测试 (x + y) * z
-  let result1 = multiply(add(x, y), z)
-  assert_eq(500, result1)  // (10 + 15) * 20 = 25 * 20 = 500
-  
-  // 测试 x * y + z
-  let result2 = add(multiply(x, y), z)
-  assert_eq(170, result2)  // 10 * 15 + 20 = 150 + 20 = 170
+test "divide_with_ceil_negative_numbers" {
+  // 测试负数的向上取整除法
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(-10, -3))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(5, 0))
+  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-4, 2))
 }
 
-test "negative_number_division_comprehensive" {
-  // 测试负数除法的全面情况
-  assert_eq(-2, divide_with_ceil(-4, 2))   // -4/2 = -2 -> -2
-  assert_eq(-1, divide_with_ceil(-3, 2))   // -3/2 = -1.5 -> -1
-  assert_eq(4, divide_with_ceil(-10, -3))  // -10/-3 = 3.333... -> 4
-  assert_eq(0, divide_with_ceil(5, 0))     // 除数为0返回0
+test "mathematical_properties" {
+  // 测试数学性质
+  let a = 7
+  let b = 13
+  
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
+  
+  // 零元素性质
+  @azimuth.assert_eq(0, @azimuth.multiply(a, 0))
+  @azimuth.assert_eq(a, @azimuth.add(a, 0))
 }
 
-test "large_scale_calculation_test" {
-  // 测试大规模计算
-  let base = 10000
-  let multiplier = 100
-  let addition = 50000
+test "combined_operations" {
+  // 测试组合运算
+  let result1 = @azimuth.add(@azimuth.multiply(2, 3), @azimuth.multiply(4, 5))
+  @azimuth.assert_eq(26, result1)  // 2*3 + 4*5 = 6 + 20 = 26
   
-  // 测试大数乘法
-  let large_product = multiply(base, multiplier)
-  assert_eq(1000000, large_product)
-  
-  // 测试大数加法
-  let large_sum = add(large_product, addition)
-  assert_eq(1050000, large_sum)
-  
-  // 测试大数除法
-  let large_division = divide_with_ceil(large_sum, 10000)
-  assert_eq(105, large_division)
+  let result2 = @azimuth.multiply(@azimuth.add(5, 3), 2)
+  @azimuth.assert_eq(16, result2)  // (5 + 3) * 2 = 8 * 2 = 16
 }
 
-test "real_world_budget_calculation" {
-  // 测试实际世界的预算计算
-  let monthly_income = 5000
-  let rent = 1500
-  let utilities = 200
-  let food = 600
-  let transportation = 300
-  let entertainment = 200
+test "practical_business_scenario" {
+  // 实际业务场景：计算订单总价
+  let unit_price = 25
+  let quantity = 8
+  let shipping = 15
   
-  // 计算总支出
-  let total_expenses = add(add(add(add(rent, utilities), food), transportation), entertainment)
+  let subtotal = @azimuth.multiply(unit_price, quantity)
+  let total = @azimuth.add(subtotal, shipping)
   
-  // 计算剩余预算
-  let remaining_budget = add(monthly_income, -total_expenses)
-  
-  assert_eq(2800, total_expenses)
-  assert_eq(2200, remaining_budget)
+  @azimuth.assert_eq(200, subtotal)
+  @azimuth.assert_eq(215, total)
 }
 
-test "mathematical_distributive_property" {
-  // 测试数学分配律 a * (b + c) = a * b + a * c
-  let a = 5
-  let b = 8
-  let c = 12
+test "packaging_calculation" {
+  // 包装计算场景
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = @azimuth.divide_with_ceil(total_items, items_per_box)
   
-  let left_side = multiply(a, add(b, c))
-  let right_side = add(multiply(a, b), multiply(a, c))
-  
-  assert_eq(left_side, right_side)  // 5 * (8 + 12) = 5 * 8 + 5 * 12 = 100
+  @azimuth.assert_eq(5, boxes_needed)  // ceil(25/6) = 5
 }
 
-test "edge_case_boundary_values" {
-  // 测试边界值情况
-  assert_eq(1, add(0, 1))
-  assert_eq(-1, add(0, -1))
-  assert_eq(0, multiply(1, 0))
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(99, 100))
-  assert_eq_string("Hello, !", greet(""))
+test "unicode_and_special_characters" {
+  // 测试 Unicode 和特殊字符
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
+  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
+  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet("test@example.com"))
 }
