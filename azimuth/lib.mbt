@@ -4293,4 +4293,175 @@ test "business_logic_integration" {
   assert_eq(5125, total_cost)    // 4975 + 150 = 5125
 }
 
+// 新增的10个标准 MoonBit 测试用例
+test "extreme_numerical_values" {
+  // 测试极端数值处理
+  assert_eq(2147483646, add(2147483645, 1))  // 接近Int最大值
+  assert_eq(-2147483647, add(-2147483646, -1))  // 接近Int最小值
+  assert_eq(1, divide_with_ceil(2147483646, 2147483646))
+  assert_eq(0, divide_with_ceil(-2147483647, 2147483647))
+}
+
+test "nested_function_calls" {
+  // 测试嵌套函数调用
+  let result = divide_with_ceil(
+    add(multiply(5, 3), multiply(2, 4)),
+    subtract(10, 2)
+  )
+  assert_eq(3, result)  // ceil((5*3 + 2*4) / (10-2)) = ceil(23/8) = 3
+}
+
+test "error_recovery_scenarios" {
+  // 测试错误恢复场景
+  assert_eq(0, divide_with_ceil(0, 0))  // 0/0错误处理
+  assert_eq(0, divide_with_ceil(100, 0))  // 除零错误处理
+  assert_eq(0, divide_with_ceil(-100, 0))  // 负数除零错误处理
+  
+  // 错误恢复后的连续计算
+  let safe_result = add(divide_with_ceil(10, 0), multiply(5, 2))
+  assert_eq(10, safe_result)  // 0 + 10 = 10
+}
+
+test "performance_related_operations" {
+  // 测试性能相关操作
+  let large_number = 100000
+  let iterations = 100
+  
+  // 批量操作性能测试
+  let batch_sum = add(large_number, multiply(large_number, iterations))
+  assert_eq(10100000, batch_sum)  // 100000 + 100000*100 = 10100000
+  
+  // 分批处理测试
+  let batch_size = 1000
+  let total_items = 10500
+  let batches_needed = divide_with_ceil(total_items, batch_size)
+  assert_eq(11, batches_needed)  // ceil(10500/1000) = 11
+}
+
+test "data_type_compatibility" {
+  // 测试数据类型兼容性
+  // 测试整数边界
+  assert_eq(0, add(2147483647, -2147483647))
+  assert_eq(-1, add(-2147483648, 2147483647))
+  
+  // 测试乘法溢出边界
+  assert_eq(46340, multiply(46340, 1))  // sqrt(2^31-1)的整数部分
+  assert_eq(0, multiply(46340, 0))
+  
+  // 测试除法精度
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(100, divide_with_ceil(199, 2))
+}
+
+test "business_inventory_management" {
+  // 业务场景：库存管理测试
+  let product_a_qty = 156
+  let product_b_qty = 89
+  let product_c_qty = 234
+  let box_capacity = 25
+  
+  // 计算每种产品需要的箱子数量
+  let boxes_a = divide_with_ceil(product_a_qty, box_capacity)  // ceil(156/25) = 7
+  let boxes_b = divide_with_ceil(product_b_qty, box_capacity)  // ceil(89/25) = 4
+  let boxes_c = divide_with_ceil(product_c_qty, box_capacity)  // ceil(234/25) = 10
+  
+  // 计算总箱子数量
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  assert_eq(21, total_boxes)
+  
+  // 计算总存储容量
+  let total_capacity = multiply(total_boxes, box_capacity)
+  assert_eq(525, total_capacity)
+  
+  // 计算剩余空间
+  let total_products = add(add(product_a_qty, product_b_qty), product_c_qty)
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(46, remaining_space)
+}
+
+test "algorithm_efficiency_comparison" {
+  // 算法效率比较测试
+  let input_size = 1000
+  
+  // 模拟O(n)算法
+  let linear_time = multiply(input_size, 5)
+  
+  // 模拟O(log n)算法（简化为向上取整）
+  let log_time = divide_with_ceil(input_size, 10)
+  
+  // 模拟O(n^2)算法
+  let quadratic_time = multiply(input_size, input_size)
+  
+  // 验证算法复杂度特征
+  assert_eq(5000, linear_time)
+  assert_eq(100, log_time)
+  assert_eq(1000000, quadratic_time)
+  
+  // 计算效率比率
+  let linear_to_log_ratio = divide_with_ceil(linear_time, log_time)
+  assert_eq(50, linear_to_log_ratio)
+}
+
+test "advanced_string_operations" {
+  // 高级字符串操作测试
+  // 测试各种特殊字符组合
+  assert_eq_string("Hello, JSON!", greet("JSON"))
+  assert_eq_string("Hello, XML!", greet("XML"))
+  assert_eq_string("Hello, HTTP!", greet("HTTP"))
+  assert_eq_string("Hello, API!", greet("API"))
+  assert_eq_string("Hello, SQL!", greet("SQL"))
+  
+  // 测试数字和字母混合
+  assert_eq_string("Hello, v1.0!", greet("v1.0"))
+  assert_eq_string("Hello, 2023!", greet("2023"))
+  assert_eq_string("Hello, A1B2C3!", greet("A1B2C3"))
+}
+
+test "mathematical_theorems_validation" {
+  // 数学定理验证测试
+  // 验证勾股定理（3-4-5三角形）
+  let a = 3
+  let b = 4
+  let c = 5
+  let a_squared = multiply(a, a)
+  let b_squared = multiply(b, b)
+  let c_squared = multiply(c, c)
+  let pythagorean_sum = add(a_squared, b_squared)
+  assert_eq(pythagorean_sum, c_squared)  // 3^2 + 4^2 = 5^2
+  
+  // 验证等差数列求和公式
+  let first_term = 1
+  let last_term = 100
+  let number_of_terms = 100
+  let arithmetic_sum = divide_with_ceil(
+    multiply(number_of_terms, add(first_term, last_term)),
+    2
+  )
+  assert_eq(5050, arithmetic_sum)  // 100*(1+100)/2 = 5050
+}
+
+test "real_world_financial_calculation" {
+  // 真实世界金融计算测试
+  // 场景：贷款计算和投资回报
+  let principal = 50000
+  let annual_rate = 6  // 6%
+  let years = 5
+  
+  // 计算简单利息
+  let simple_interest = divide_with_ceil(multiply(principal, annual_rate), 100)
+  let yearly_interest = simple_interest
+  let total_interest = multiply(yearly_interest, years)
+  let total_payment = add(principal, total_interest)
+  
+  assert_eq(3000, yearly_interest)  // 50000 * 6% = 3000
+  assert_eq(15000, total_interest)  // 3000 * 5 = 15000
+  assert_eq(65000, total_payment)  // 50000 + 15000 = 65000
+  
+  // 计算月供
+  let total_months = multiply(years, 12)
+  let monthly_payment = divide_with_ceil(total_payment, total_months)
+  assert_eq(1084, monthly_payment)  // ceil(65000/60) = 1084
+}
+
 
