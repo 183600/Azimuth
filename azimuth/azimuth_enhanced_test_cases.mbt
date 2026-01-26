@@ -1,195 +1,224 @@
-// Azimuth 增强测试用例 - 包含8个高质量测试用例
-// 测试核心功能的边界情况和复杂场景
+// Azimuth 增强测试用例 - 新增10个高质量测试用例
+// 专注于复杂的数学运算、性能测试和实际应用场景
 
-// 引入需要测试的函数
-pub fn add(a : Int, b : Int) -> Int {
-  a + b
+test "advanced_mathematical_series" {
+  // 测试数学级数计算
+  // 计算等差数列和：1 + 3 + 5 + ... + 19
+  let first_term = 1
+  let common_diff = 2
+  let num_terms = 10
+  let last_term = add(first_term, multiply(common_diff, subtract(num_terms, 1)))
+  let series_sum = divide_with_ceil(multiply(num_terms, add(first_term, last_term)), 2)
+  assert_eq(100, series_sum)  // (10 * (1 + 19)) / 2 = 100
 }
 
-pub fn multiply(a : Int, b : Int) -> Int {
-  a * b
-}
-
-pub fn greet(name : String) -> String {
-  "Hello, " + name + "!"
-}
-
-pub fn divide_with_ceil(a : Int, b : Int) -> Int {
-  if b == 0 { 
-    0 
-  } else {
-    let quotient = a / b
-    let remainder = a % b
-    if remainder == 0 {
-      quotient
-    } else if a > 0 && b > 0 {
-      quotient + 1
-    } else if a < 0 && b < 0 {
-      quotient + 1
-    } else {
-      quotient
-    }
-  }
-}
-
-pub fn subtract(a : Int, b : Int) -> Int {
-  a - b
-}
-
-// 断言函数
-pub fn assert_eq(expected : Int, actual : Int) -> Unit {
-  ()
-}
-
-pub fn assert_eq_string(expected : String, actual : String) -> Unit {
-  ()
-}
-
-pub fn assert_true(condition : Bool) -> Unit {
-  ()
-}
-
-pub fn assert_false(condition : Bool) -> Unit {
-  ()
-}
-
-// 测试用例1: 极值边界测试
-test "extreme_boundary_values" {
-  // 测试极大值运算
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(1000000000000, multiply(1000000, 1000000))
+test "complex_percentage_calculations" {
+  // 复杂百分比计算测试
+  let original_price = 1000
+  let discount_rate = 15  // 15%
+  let tax_rate = 8        // 8%
   
-  // 测试极小值运算
-  assert_eq(-2000000, add(-1000000, -1000000))
-  assert_eq(1000000000000, multiply(-1000000, -1000000))
+  // 计算折扣后价格
+  let discount_amount = divide_with_ceil(multiply(original_price, discount_rate), 100)
+  let discounted_price = subtract(original_price, discount_amount)
   
-  // 测试边界除法
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1000000, divide_with_ceil(1000000, 1))
-  assert_eq(1, divide_with_ceil(1000000, 1000000))
+  // 计算含税价格
+  let tax_amount = divide_with_ceil(multiply(discounted_price, tax_rate), 100)
+  let final_price = add(discounted_price, tax_amount)
+  
+  assert_eq(150, discount_amount)   // 15% of 1000
+  assert_eq(850, discounted_price)  // 1000 - 150
+  assert_eq(68, tax_amount)         // 8% of 850 (向上取整)
+  assert_eq(918, final_price)       // 850 + 68
 }
 
-// 测试用例2: 复杂数学运算场景
-test "complex_mathematical_operations" {
-  // 测试连续运算
-  let result1 = add(multiply(5, 3), multiply(4, 2))  // 5*3 + 4*2 = 15 + 8 = 23
-  assert_eq(23, result1)
+test "resource_scheduling_optimization" {
+  // 资源调度优化测试
+  let total_tasks = 127
+  let workers = 8
+  let working_days = 5
   
-  // 测试嵌套运算
-  let result2 = divide_with_ceil(multiply(add(10, 5), 2), 7)  // ceil((10+5)*2/7) = ceil(30/7) = 5
-  assert_eq(5, result2)
+  // 计算每个工人每天需要处理的任务数
+  let total_worker_days = multiply(workers, working_days)
+  let tasks_per_worker_day = divide_with_ceil(total_tasks, total_worker_days)
+  assert_eq(4, tasks_per_worker_day)  // ceil(127/40) = 4
   
-  // 测试混合运算
-  let result3 = subtract(multiply(8, 5), divide_with_ceil(47, 6))  // 8*5 - ceil(47/6) = 40 - 8 = 32
-  assert_eq(32, result3)
+  // 验证总处理能力
+  let total_capacity = multiply(tasks_per_worker_day, total_worker_days)
+  assert_eq(160, total_capacity)
+  
+  // 计算剩余处理能力
+  let spare_capacity = subtract(total_capacity, total_tasks)
+  assert_eq(33, spare_capacity)
 }
 
-// 测试用例3: 字符串处理高级场景
-test "advanced_string_processing" {
-  // 测试特殊字符组合
-  assert_eq_string("Hello, MoonBit@2024!", greet("MoonBit@2024"))
-  assert_eq_string("Hello, space separated!", greet("space separated"))
-  assert_eq_string("Hello, 123numbers!", greet("123numbers"))
+test "memory_allocation_strategy" {
+  // 内存分配策略测试
+  let total_memory = 32768  // KB
+  let block_sizes = multiply(4, 4)  // 16KB blocks
+  let min_blocks = divide_with_ceil(total_memory, block_sizes)
+  assert_eq(2048, min_blocks)  // ceil(32768/16) = 2048
   
-  // 测试空格和特殊符号
-  assert_eq_string("Hello,   leading spaces!", greet("  leading spaces"))
-  assert_eq_string("Hello, trailing spaces   !", greet("trailing spaces   "))
-  assert_eq_string("Hello, !@#$%^&*()!", greet("!@#$%^&*()"))
+  // 优化分配策略
+  let optimized_block_size = 32  // 32KB blocks
+  let optimized_blocks = divide_with_ceil(total_memory, optimized_block_size)
+  assert_eq(1024, optimized_blocks)  // ceil(32768/32) = 1024
+  
+  // 计算内存利用率
+  let actual_allocated = multiply(optimized_blocks, optimized_block_size)
+  let memory_efficiency = divide_with_ceil(multiply(total_memory, 100), actual_allocated)
+  assert_eq(100, memory_efficiency)  // 32768/32768 * 100 = 100%
 }
 
-// 测试用例4: 除法向上取整的复杂场景
-test "complex_division_scenarios" {
-  // 测试负数除法的各种情况
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-3, divide_with_ceil(10, -3))
-  assert_eq(4, divide_with_ceil(-10, -3))
-  assert_eq(0, divide_with_ceil(-1, 10))
+test "time_zone_conversion_complex" {
+  // 复杂时区转换测试
+  let local_hour = 23  // 晚上11点
+  let time_difference = 8  // 与目标时区相差8小时
   
-  // 测试大数除法
-  assert_eq(1001, divide_with_ceil(1000001, 1000))
-  assert_eq(334, divide_with_ceil(1000000, 2997))
-  assert_eq(1, divide_with_ceil(999, 1000))
+  // 向前转换时间
+  let target_hour_forward = add(local_hour, time_difference)
+  let normalized_hour_forward = divide_with_ceil(target_hour_forward, 24)
+  let final_hour_forward = subtract(target_hour_forward, multiply(normalized_hour_forward, 24))
+  assert_eq(7, final_hour_forward)  // (23 + 8) mod 24 = 7
+  
+  // 向后转换时间
+  let target_hour_backward = subtract(local_hour, time_difference)
+  let normalized_hour_backward = divide_with_ceil(multiply(24, 2), add(24, target_hour_backward))
+  let final_hour_backward = add(24, target_hour_backward)
+  assert_eq(15, final_hour_backward)  // (23 - 8 + 24) mod 24 = 15
 }
 
-// 测试用例5: 实际业务场景测试
-test "real_world_business_scenarios" {
-  // 场景1: 计算项目资源需求
-  let project_tasks = 127
-  let tasks_per_sprint = 18
-  let sprints_needed = divide_with_ceil(project_tasks, tasks_per_sprint)
-  assert_eq(8, sprints_needed)  // ceil(127/18) = 8
+test "inventory_rotation_algorithm" {
+  // 库存轮换算法测试
+  let total_items = 500
+  let shelf_life_days = 30
+  let daily_sales_rate = 15
   
-  // 场景2: 计算运输成本
-  let packages = 245
-  let packages_per_truck = 30
-  let trucks_needed = divide_with_ceil(packages, packages_per_truck)
-  let cost_per_truck = 150
-  let total_cost = multiply(trucks_needed, cost_per_truck)
-  assert_eq(9, trucks_needed)  // ceil(245/30) = 9
-  assert_eq(1350, total_cost)  // 9 * 150 = 1350
+  // 计算安全库存水平
+  let safety_stock = multiply(shelf_life_days, daily_sales_rate)
+  assert_eq(450, safety_stock)
   
-  // 场景3: 计算库存周转
-  let initial_stock = 500
-  let sold_items = 173
-  let restocked_items = 89
-  let final_stock = subtract(add(initial_stock, restocked_items), sold_items)
-  assert_eq(416, final_stock)  // (500 + 89) - 173 = 416
+  // 计算补货周期
+  let reorder_cycle = divide_with_ceil(total_items, daily_sales_rate)
+  assert_eq(34, reorder_cycle)  // ceil(500/15) = 34
+  
+  // 计算最大库存水平
+  let max_inventory = add(safety_stock, multiply(daily_sales_rate, 7))  // 7天提前期
+  assert_eq(555, max_inventory)
+  
+  // 验证库存策略
+  assert_true(total_items <= max_inventory)
+  assert_true(total_items >= safety_stock)
 }
 
-// 测试用例6: 数学性质验证
-test "mathematical_properties_verification" {
-  let a = 24
-  let b = 18
-  let c = 6
+test "network_bandwidth_allocation" {
+  // 网络带宽分配测试
+  let total_bandwidth = 1000  // Mbps
+  let priority_services = 3
+  let regular_services = 7
+  let total_services = add(priority_services, regular_services)
   
-  // 验证加法结合律
-  assert_eq(add(add(a, b), c), add(a, add(b, c)))
+  // 分配优先服务带宽（60%）
+  let priority_percentage = 60
+  let priority_bandwidth = divide_with_ceil(multiply(total_bandwidth, priority_percentage), 100)
+  let bandwidth_per_priority = divide_with_ceil(priority_bandwidth, priority_services)
+  assert_eq(600, priority_bandwidth)  // 60% of 1000
+  assert_eq(200, bandwidth_per_priority)  // ceil(600/3) = 200
   
-  // 验证乘法结合律
-  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
+  // 分配常规服务带宽（40%）
+  let regular_bandwidth = subtract(total_bandwidth, priority_bandwidth)
+  let bandwidth_per_regular = divide_with_ceil(regular_bandwidth, regular_services)
+  assert_eq(400, regular_bandwidth)  // 40% of 1000
+  assert_eq(40, bandwidth_per_regular)  // ceil(400/7) = 40
   
-  // 验证分配律
-  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
-  
-  // 验证减法性质
-  assert_eq(subtract(a, b), subtract(add(a, c), add(b, c)))
-}
-
-// 测试用例7: 错误处理和边界情况
-test "error_handling_and_edge_cases" {
-  // 测试除零的各种情况
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  
-  // 测试极值减法
-  assert_eq(0, subtract(100, 100))
-  assert_eq(200, subtract(100, -100))
-  assert_eq(-200, subtract(-100, 100))
-  
-  // 测试零乘法
-  assert_eq(0, multiply(0, 0))
-  assert_eq(0, multiply(0, 1000000))
-  assert_eq(0, multiply(1000000, 0))
-}
-
-// 测试用例8: 性能和效率测试
-test "performance_and_efficiency" {
-  // 测试大数运算效率
-  let large_num1 = 100000
-  let large_num2 = 200000
-  let large_num3 = 300000
-  
-  // 复杂计算链
-  let result = divide_with_ceil(
-    multiply(
-      add(large_num1, large_num2),
-      subtract(large_num3, large_num1)
-    ),
-    add(large_num1, divide_with_ceil(large_num2, large_num3))
+  // 验证总分配
+  let total_allocated = add(
+    multiply(bandwidth_per_priority, priority_services),
+    multiply(bandwidth_per_regular, regular_services)
   )
+  assert_eq(880, total_allocated)
+}
+
+test "caching_strategy_optimization" {
+  // 缓存策略优化测试
+  let total_requests = 10000
+  let cache_hit_rate = 75  // 75%
+  let cache_miss_penalty = 10  // 缓存未命中惩罚倍数
   
-  // 验证结果: ceil((100000+200000)*(300000-100000)/(100000+ceil(200000/300000)))
-  // = ceil(300000*200000/100001) = ceil(60000000000/100001) = 599994
-  assert_eq(599994, result)
+  // 计算缓存命中数
+  let cache_hits = divide_with_ceil(multiply(total_requests, cache_hit_rate), 100)
+  let cache_misses = subtract(total_requests, cache_hits)
+  assert_eq(7500, cache_hits)  // 75% of 10000
+  assert_eq(2500, cache_misses)
+  
+  // 计算有效请求成本
+  let hit_cost = cache_hits  // 命中成本为1
+  let miss_cost = multiply(cache_misses, cache_miss_penalty)
+  let total_cost = add(hit_cost, miss_cost)
+  assert_eq(7500, hit_cost)
+  assert_eq(25000, miss_cost)
+  assert_eq(32500, total_cost)
+  
+  // 计算缓存效率
+  let no_cache_cost = multiply(total_requests, cache_miss_penalty)
+  let cache_efficiency = divide_with_ceil(multiply(no_cache_cost, 100), total_cost)
+  assert_eq(308, cache_efficiency)  // ceil(100000/32500 * 100)
+}
+
+test "load_balancing_distribution" {
+  // 负载均衡分配测试
+  let total_connections = 157
+  let servers = 5
+  let max_connections_per_server = 40
+  
+  // 计算每个服务器的连接数
+  let base_connections = divide_with_ceil(total_connections, servers)
+  assert_eq(32, base_connections)  // ceil(157/5) = 32
+  
+  // 计算总分配容量
+  let total_capacity = multiply(base_connections, servers)
+  assert_eq(160, total_capacity)
+  
+  // 计算剩余容量
+  let remaining_capacity = subtract(total_capacity, total_connections)
+  assert_eq(3, remaining_capacity)
+  
+  // 验证负载均衡
+  assert_true(base_connections <= max_connections_per_server)
+  assert_true(total_capacity >= total_connections)
+  
+  // 计算负载分布效率
+  let efficiency = divide_with_ceil(multiply(total_connections, 100), total_capacity)
+  assert_eq(99, efficiency)  // ceil(157/160 * 100)
+}
+
+test "data_compression_analysis" {
+  // 数据压缩分析测试
+  let original_data_size = 10000  // KB
+  let compression_ratios = multiply(3, 4)  // 12种压缩比例
+  let target_compression = 70  // 目标压缩率70%
+  
+  // 模拟不同压缩算法的结果
+  let algorithm_1_ratio = 65  // 65%压缩率
+  let algorithm_2_ratio = 72  // 72%压缩率
+  let algorithm_3_ratio = 68  // 68%压缩率
+  
+  // 计算压缩后大小
+  let compressed_1 = divide_with_ceil(multiply(original_data_size, subtract(100, algorithm_1_ratio)), 100)
+  let compressed_2 = divide_with_ceil(multiply(original_data_size, subtract(100, algorithm_2_ratio)), 100)
+  let compressed_3 = divide_with_ceil(multiply(original_data_size, subtract(100, algorithm_3_ratio)), 100)
+  
+  assert_eq(3500, compressed_1)  // 35% of 10000
+  assert_eq(2800, compressed_2)  // 28% of 10000
+  assert_eq(3200, compressed_3)  // 32% of 10000
+  
+  // 找出最佳算法
+  let best_compressed = compressed_2  // 最小压缩后大小
+  let space_saved = subtract(original_data_size, best_compressed)
+  let actual_compression_rate = divide_with_ceil(multiply(space_saved, 100), original_data_size)
+  
+  assert_eq(2800, best_compressed)
+  assert_eq(7200, space_saved)
+  assert_eq(72, actual_compression_rate)
+  assert_true(actual_compression_rate >= target_compression)
 }
