@@ -6327,3 +6327,186 @@ test "azimuth_greeting_variations" {
   assert_eq_string("Hello, John Smith!", greet("John Smith"))
   assert_eq_string("Hello,   Multiple   Spaces   !", greet("   Multiple   Spaces   "))
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "add_function_edge_cases" {
+  // 测试加法函数的边界情况
+  assert_eq(1000000, add(500000, 500000))
+  assert_eq(-1000000, add(-500000, -500000))
+  assert_eq(0, add(1000000, -1000000))
+  assert_eq(1, add(2147483647, -2147483646))
+}
+
+test "multiply_function_precision" {
+  // 测试乘法函数的精度
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(-1000000, multiply(1000, -1000))
+  assert_eq(0, multiply(2147483647, 0))
+  assert_eq(2147483647, multiply(1, 2147483647))
+}
+
+test "divide_with_ceil_comprehensive" {
+  // 全面测试向上取整除法
+  assert_eq(4, divide_with_ceil(11, 3))  // 11/3 = 3.666... -> 4
+  assert_eq(3, divide_with_ceil(9, 3))   // 9/3 = 3 -> 3
+  assert_eq(1, divide_with_ceil(1, 100)) // 1/100 = 0.01 -> 1
+  assert_eq(-3, divide_with_ceil(-10, 3)) // -10/3 = -3.333... -> -3
+  assert_eq(4, divide_with_ceil(-11, -3)) // -11/-3 = 3.666... -> 4
+  assert_eq(0, divide_with_ceil(100, 0))  // 除数为0的安全处理
+}
+
+test "greet_function_internationalization" {
+  // 测试问候函数的国际化支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌍!", greet("🌍"))
+  assert_eq_string("Hello, Español!", greet("Español"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+}
+
+test "complex_business_workflow" {
+  // 复杂业务工作流测试
+  let product_cost = 120
+  let quantity = 15
+  let tax_rate = 8
+  let shipping_cost_per_item = 5
+  let discount_threshold = 1000
+  let discount_amount = 50
+  
+  // 计算小计
+  let subtotal = multiply(product_cost, quantity)
+  
+  // 计算运费
+  let total_shipping = multiply(shipping_cost_per_item, quantity)
+  
+  // 计算税费
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  
+  // 计算折扣前总价
+  let pre_discount_total = add(add(subtotal, total_shipping), tax_amount)
+  
+  // 应用折扣
+  let final_total = if pre_discount_total > discount_threshold {
+    add(pre_discount_total, -discount_amount)
+  } else {
+    pre_discount_total
+  }
+  
+  assert_eq(1800, subtotal)
+  assert_eq(75, total_shipping)
+  assert_eq(144, tax_amount)
+  assert_eq(2019, pre_discount_total)
+  assert_eq(1969, final_total)
+}
+
+test "mathematical_composition" {
+  // 测试数学函数的组合
+  let x = 12
+  let y = 8
+  let z = 5
+  
+  // 测试分配律: x * (y + z) = x * y + x * z
+  let distributive_left = multiply(x, add(y, z))
+  let distributive_right = add(multiply(x, y), multiply(x, z))
+  assert_eq(distributive_left, distributive_right)
+  
+  // 测试结合律: (x + y) + z = x + (y + z)
+  let associative_left = add(add(x, y), z)
+  let associative_right = add(x, add(y, z))
+  assert_eq(associative_left, associative_right)
+}
+
+test "financial_calculation_scenario" {
+  // 金融计算场景测试
+  let principal = 1000
+  let rate_percent = 5
+  let _years = 3  // 未使用的变量
+  
+  // 简化的复利计算（每年计算一次）
+  let amount_after_year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let amount_after_year2 = add(amount_after_year1, divide_with_ceil(multiply(amount_after_year1, rate_percent), 100))
+  let amount_after_year3 = add(amount_after_year2, divide_with_ceil(multiply(amount_after_year2, rate_percent), 100))
+  
+  assert_eq(1050, amount_after_year1)
+  assert_eq(1103, amount_after_year2)
+  assert_eq(1158, amount_after_year3)
+}
+
+test "inventory_management_system" {
+  // 库存管理系统测试
+  let initial_stock = 500
+  let daily_sales = 25
+  let weekly_restock = 200
+  let days_to_simulate = 14
+  
+  // 计算总销售量
+  let total_sold = multiply(daily_sales, days_to_simulate)
+  
+  // 计算补货次数（每7天补货一次）
+  let restock_times = divide_with_ceil(days_to_simulate, 7)
+  
+  // 计算总补货量
+  let total_restocked = multiply(weekly_restock, restock_times)
+  
+  // 计算最终库存
+  let final_stock = add(add(initial_stock, -total_sold), total_restocked)
+  
+  assert_eq(350, total_sold)
+  assert_eq(2, restock_times)
+  assert_eq(400, total_restocked)
+  assert_eq(550, final_stock)
+}
+
+test "data_processing_pipeline" {
+  // 数据处理管道测试
+  let raw_data_points = 1000
+  let valid_data_ratio = 85
+  let processing_batches = 20
+  let error_rate = 3
+  
+  // 计算有效数据点
+  let valid_data = divide_with_ceil(multiply(raw_data_points, valid_data_ratio), 100)
+  
+  // 计算每批处理的数据点
+  let batch_size = divide_with_ceil(valid_data, processing_batches)
+  
+  // 计算预期错误数
+  let expected_errors = divide_with_ceil(multiply(valid_data, error_rate), 100)
+  
+  // 计算成功处理的数据点
+  let successful_data = add(valid_data, -expected_errors)
+  
+  assert_eq(850, valid_data)
+  assert_eq(43, batch_size)
+  assert_eq(26, expected_errors)
+  assert_eq(824, successful_data)
+}
+
+test "performance_benchmark_simulation" {
+  // 性能基准测试模拟
+  let base_operations = 1000
+  let optimization_factor = 3
+  let overhead_percentage = 15
+  let concurrent_threads = 4
+  
+  // 计算优化后的操作数
+  let optimized_operations = multiply(base_operations, optimization_factor)
+  
+  // 计算开销
+  let overhead = divide_with_ceil(multiply(optimized_operations, overhead_percentage), 100)
+  
+  // 计算实际性能
+  let actual_performance = add(optimized_operations, -overhead)
+  
+  // 计算每线程操作数
+  let operations_per_thread = divide_with_ceil(actual_performance, concurrent_threads)
+  
+  // 计算性能提升倍数
+  let performance_improvement = divide_with_ceil(actual_performance, base_operations)
+  
+  assert_eq(3000, optimized_operations)
+  assert_eq(450, overhead)
+  assert_eq(2550, actual_performance)
+  assert_eq(638, operations_per_thread)
+  assert_eq(3, performance_improvement)
+}
