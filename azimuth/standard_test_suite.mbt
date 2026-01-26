@@ -1,118 +1,107 @@
-// 标准 MoonBit 测试套件
-// 为 azimuth 项目添加的高质量测试用例
+// 标准 MoonBit 测试套件 - 为 azimuth 项目创建的高质量测试用例
+// 包含 8 个全面的测试用例，覆盖所有核心功能
 
-test "arithmeti_sequence_sum" {
-  // 测试等差数列求和
-  let first_term = 3
-  let difference = 2
-  let terms = 5
+test "basic_arithmetic_operations" {
+  // 基本算术运算测试
+  assert_eq(7, add(3, 4))
+  assert_eq(12, multiply(3, 4))
+  assert_eq(4, divide_with_ceil(15, 4))
+  assert_eq(1, divide_with_ceil(3, 4))
+  assert_eq(2, subtract(5, 3))
+}
+
+test "mathematical_properties" {
+  // 数学性质验证测试
+  let x = 15
+  let y = 8
   
-  // 计算 3 + 5 + 7 + 9 + 11 = 35
-  let sum = add(first_term, add(add(first_term + difference, add(first_term + 2*difference, add(first_term + 3*difference, first_term + 4*difference)))))
-  assert_eq(35, sum)
-}
-
-test "geometric_progression" {
-  // 测试等比数列计算
-  let first = 2
-  let ratio = 3
-  let terms = 4
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
   
-  // 计算 2 * 3^3 = 54
-  let result = multiply(first, multiply(ratio, multiply(ratio, ratio)))
-  assert_eq(54, result)
-}
-
-test "factorial_calculation" {
-  // 测试阶乘计算 (5! = 120)
-  let five = 5
-  let factorial = multiply(five, multiply(four, multiply(three, multiply(two, one))))
-  assert_eq(120, factorial)
-}
-
-test "temperature_conversion" {
-  // 测试温度转换场景
-  let celsius = 25
-  // 转换为华氏度: F = C * 9/5 + 32
-  let fahrenheit = add(multiply(celsius, divide_with_ceil(9, 5)), 32)
-  assert_eq(77, fahrenheit)
-}
-
-test "area_calculation" {
-  // 测试面积计算
-  let length = 8
-  let width = 6
-  let area = multiply(length, width)
-  assert_eq(48, area)
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
   
-  // 计算需要多少块 2x2 的地砖
-  let tile_size = 4
-  let tiles_needed = divide_with_ceil(area, tile_size)
-  assert_eq(12, tiles_needed)
+  // 分配律
+  assert_eq(
+    multiply(x, add(y, 2)),
+    add(multiply(x, y), multiply(x, 2))
+  )
 }
 
-test "time_calculation" {
-  // 测试时间计算
-  let hours = 5
-  let minutes = 45
-  let total_minutes = add(multiply(hours, 60), minutes)
-  assert_eq(345, total_minutes)
+test "edge_cases_and_boundaries" {
+  // 边界情况和极值测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(0, subtract(5, 5))
+}
+
+test "negative_numbers_handling" {
+  // 负数处理测试
+  assert_eq(-2, add(-5, 3))
+  assert_eq(-15, multiply(-5, 3))
+  assert_eq(15, multiply(-5, -3))
+  assert_eq(-1, divide_with_ceil(-3, 4))
+  assert_eq(1, divide_with_ceil(-3, -4))
+  assert_eq(-8, subtract(-5, 3))
+}
+
+test "string_processing_comprehensive" {
+  // 字符串处理综合测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+}
+
+test "business_logic_packaging" {
+  // 业务逻辑：包装计算测试
+  let items = 47
+  let capacity_per_box = 12
+  let boxes_needed = divide_with_ceil(items, capacity_per_box)
   
-  // 计算需要多少个 30 分钟的时间段
-  let session_length = 30
-  let sessions = divide_with_ceil(total_minutes, session_length)
-  assert_eq(12, sessions)
-}
-
-test "percentage_calculation" {
-  // 测试百分比计算
-  let total = 200
-  let percentage = 25
-  let result = divide_with_ceil(multiply(total, percentage), 100)
-  assert_eq(50, result)
-}
-
-test "discount_calculation" {
-  // 测试折扣计算
-  let original_price = 120
-  let discount_percentage = 15
-  let discount_amount = divide_with_ceil(multiply(original_price, discount_percentage), 100)
-  let final_price = subtract(original_price, discount_amount)
-  assert_eq(102, final_price)
-}
-
-test "speed_distance_time" {
-  // 测试速度、距离、时间关系
-  let distance = 150
-  let speed = 50
-  let time = divide_with_ceil(distance, speed)
-  assert_eq(3, time)
+  assert_eq(4, boxes_needed)
   
-  // 验证计算
-  let calculated_distance = multiply(speed, time)
-  assert_eq(150, calculated_distance)
-}
-
-test "compound_interest" {
-  // 测试复利计算（简化版）
-  let principal = 1000
-  let rate = 5
-  let years = 3
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, capacity_per_box)
+  assert_eq(48, total_capacity)
   
-  // 简化计算：1000 * (1 + 5/100)^3 ≈ 1158
-  let growth_factor = add(100, rate)
-  let amount = divide_with_ceil(multiply(principal, multiply(growth_factor, multiply(growth_factor, growth_factor))), 10000)
-  assert_eq(1158, amount)
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, items)
+  assert_eq(1, remaining_space)
 }
 
-// 辅助函数定义
-fn subtract(a : Int, b : Int) -> Int {
-  a - b
+test "complex_calculation_pipeline" {
+  // 复杂计算流水线测试
+  let base_value = 10
+  let multiplier = 3
+  let divisor = 4
+  let addition = 5
+  
+  // 计算流程：((base * multiplier) / divisor) + addition
+  let step1 = multiply(base_value, multiplier)
+  let step2 = divide_with_ceil(step1, divisor)
+  let result = add(step2, addition)
+  
+  assert_eq(13, result)  // ceil(10*3/4) + 5 = 8 + 5 = 13
 }
 
-// 辅助常量定义
-let one = 1
-let two = 2
-let three = 3
-let four = 4
-let five = 5
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_resources = 100
+  let teams = 3
+  let min_resources_per_team = divide_with_ceil(total_resources, teams)
+  
+  assert_eq(34, min_resources_per_team)
+  
+  // 验证分配结果
+  let allocated_total = multiply(min_resources_per_team, teams)
+  assert_eq(102, allocated_total)
+  
+  // 验证资源利用率
+  let utilization = divide_with_ceil(multiply(total_resources, 100), allocated_total)
+  assert_eq(98, utilization)  // floor(10000/102) = 98%
+}
