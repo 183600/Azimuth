@@ -1,51 +1,6 @@
-// 标准 MoonBit 测试用例 - 包含10个高质量测试用例
-// 直接在文件中定义需要测试的函数，避免导入问题
+// 高质量 MoonBit 测试套件 - 包含10个标准测试用例
+// 覆盖 azimuth 库的主要功能和各种使用场景
 
-// 定义需要测试的函数
-pub fn add(a : Int, b : Int) -> Int {
-  a + b
-}
-
-pub fn multiply(a : Int, b : Int) -> Int {
-  a * b
-}
-
-pub fn greet(name : String) -> String {
-  "Hello, " + name + "!"
-}
-
-pub fn divide_with_ceil(a : Int, b : Int) -> Int {
-  if b == 0 { 
-    0 
-  } else {
-    let quotient = a / b
-    let remainder = a % b
-    if remainder == 0 {
-      quotient
-    } else if a > 0 && b > 0 {
-      quotient + 1
-    } else if a < 0 && b < 0 {
-      quotient + 1
-    } else {
-      quotient
-    }
-  }
-}
-
-pub fn subtract(a : Int, b : Int) -> Int {
-  a - b
-}
-
-// 断言函数
-pub fn assert_eq(expected : Int, actual : Int) -> Unit {
-  ()
-}
-
-pub fn assert_eq_string(expected : String, actual : String) -> Unit {
-  ()
-}
-
-// 测试用例
 test "basic_arithmetic_operations" {
   // 基本算术运算测试
   assert_eq(8, add(5, 3))
@@ -178,6 +133,7 @@ test "resource_allocation_optimization" {
 test "real_world_application_scenario" {
   // 真实世界应用场景测试：活动安排
   let participants = 87
+  let tables = 8
   let chairs_per_table = 10
   
   // 计算需要的桌子数量
@@ -191,4 +147,10 @@ test "real_world_application_scenario" {
   // 计算剩余座位
   let remaining_seats = subtract(available_seats, participants)
   assert_eq(3, remaining_seats)
+  
+  // 验证座位充足性
+  assert_true(available_seats >= participants)
+  
+  // 验证桌子数量不超过可用桌子
+  assert_true(tables_needed <= tables)
 }
