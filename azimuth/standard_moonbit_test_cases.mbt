@@ -1,145 +1,118 @@
-// 标准 MoonBit 测试用例
-// 为 azimuth 库添加的高质量测试用例
+// 标准 MoonBit 测试用例 - 为 azimuth 库添加的10个高质量测试用例
+// 这些测试用例涵盖了库的主要功能和各种使用场景
 
-test "add_function_basic" {
-  // 测试加法函数的基本功能
-  let result1 = add(2, 3)
-  let result2 = add(0, 0)
-  let result3 = add(-2, -3)
-  let result4 = add(-5, 7)
-  
-  // 验证结果
-  result1 = 5
-  result2 = 0
-  result3 = -5
-  result4 = 2
+test "add_function_positive_numbers" {
+  // 测试加法函数的正数运算
+  assert_eq(15, add(7, 8))
+  assert_eq(100, add(50, 50))
+  assert_eq(0, add(0, 0))
 }
 
-test "multiply_function_comprehensive" {
-  // 测试乘法函数的综合情况
-  let result1 = multiply(3, 4)
-  let result2 = multiply(5, 0)
-  let result3 = multiply(-2, 3)
-  let result4 = multiply(-2, -3)
-  let result5 = multiply(10, 10)
-  
-  // 验证结果
-  result1 = 12
-  result2 = 0
-  result3 = -6
-  result4 = 6
-  result5 = 100
+test "multiply_function_properties" {
+  // 测试乘法函数的数学性质
+  assert_eq(1, multiply(1, 15))
+  assert_eq(0, multiply(0, 25))
+  assert_eq(25, multiply(5, 5))
+  assert_eq(-25, multiply(-5, 5))
 }
 
-test "greet_function_international" {
-  // 测试问候函数的国际字符支持
-  let result1 = greet("World")
-  let result2 = greet("世界")
-  let result3 = greet("café")
-  let result4 = greet("🚀")
-  let result5 = greet("")
-  
-  // 验证结果
-  result1 = "Hello, World!"
-  result2 = "Hello, 世界!"
-  result3 = "Hello, café!"
-  result4 = "Hello, 🚀!"
-  result5 = "Hello, !"
+test "greet_function_various_names" {
+  // 测试问候函数的各种名称输入
+  assert_eq_string("Hello, Alice!", greet("Alice"))
+  assert_eq_string("Hello, Bob123!", greet("Bob123"))
+  assert_eq_string("Hello, space test!", greet("space test"))
 }
 
-test "divide_with_ceil_edge_cases" {
-  // 测试向上取整除法的边缘情况
-  let result1 = divide_with_ceil(10, 3)
-  let result2 = divide_with_ceil(9, 3)
-  let result3 = divide_with_ceil(1, 1)
-  let result4 = divide_with_ceil(0, 5)
-  let result5 = divide_with_ceil(10, 0)
-  
-  // 验证结果
-  result1 = 4
-  result2 = 3
-  result3 = 1
-  result4 = 0
-  result5 = 0
+test "divide_with_ceil_basic_functionality" {
+  // 测试向上取整除法的基本功能
+  assert_eq(3, divide_with_ceil(10, 4))
+  assert_eq(2, divide_with_ceil(8, 4))
+  assert_eq(1, divide_with_ceil(3, 3))
+  assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "negative_numbers_test" {
-  // 测试负数运算
-  let add_result1 = add(-2, -3)
-  let add_result2 = add(-5, 7)
-  let mul_result1 = multiply(-3, -5)
-  let mul_result2 = multiply(-3, 5)
-  let div_result = divide_with_ceil(-5, 3)
-  
-  // 验证结果
-  add_result1 = -5
-  add_result2 = 2
-  mul_result1 = 15
-  mul_result2 = -15
-  div_result = -2
+test "subtract_function_comprehensive" {
+  // 测试减法函数的综合情况
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(15, subtract(10, -5))
 }
 
-test "complex_calculation_chain" {
-  // 测试复杂计算链
-  let step1 = multiply(3, 4)  // 12
-  let step2 = multiply(2, 5)  // 10
-  let step3 = add(step1, step2)  // 22
-  let result = divide_with_ceil(step3, 7)  // 4
+test "mathematical_operations_combination" {
+  // 测试数学运算的组合使用
+  let a = 10
+  let b = 3
+  let c = 2
   
-  // 验证结果
-  result = 4
+  // (a + b) * c
+  let result1 = multiply(add(a, b), c)
+  assert_eq(26, result1)
+  
+  // a * b + c
+  let result2 = add(multiply(a, b), c)
+  assert_eq(32, result2)
 }
 
-test "business_logic_packaging" {
-  // 测试业务逻辑：包装计算
-  let items = 25
-  let box_capacity = 6
-  let boxes_needed = divide_with_ceil(items, box_capacity)  // 5
-  let total_capacity = multiply(boxes_needed, box_capacity)  // 30
-  let remaining_space = subtract(total_capacity, items)  // 5
+test "real_world_packaging_scenario" {
+  // 真实世界包装场景测试
+  let total_items = 47
+  let items_per_package = 6
+  let packages_needed = divide_with_ceil(total_items, items_per_package)
   
-  // 验证结果
-  boxes_needed = 5
-  total_capacity = 30
-  remaining_space = 5
+  assert_eq(8, packages_needed)
+  
+  // 验证总容量
+  let total_capacity = multiply(packages_needed, items_per_package)
+  assert_eq(48, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(1, remaining_space)
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 13
-  let b = 17
-  let add_result1 = add(a, b)
-  let add_result2 = add(b, a)
-  let mul_result1 = multiply(a, b)
-  let mul_result2 = multiply(b, a)
+test "error_handling_edge_cases" {
+  // 错误处理和边缘情况测试
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
   
-  // 验证交换律
-  add_result1 = add_result2
-  mul_result1 = mul_result2
+  // 极值测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(-1, divide_with_ceil(-1, 1))
 }
 
-test "resource_allocation" {
-  // 测试资源分配问题
-  let total_resources = 47
-  let teams = 4
-  let resources_per_team = divide_with_ceil(total_resources, teams)  // 12
-  let total_allocated = multiply(resources_per_team, teams)  // 48
+test "string_and_number_integration" {
+  // 字符串和数字的集成测试
+  let user_name = "MoonBit"
+  let user_id = 2026
+  let greeting = greet(user_name)
   
-  // 验证结果
-  resources_per_team = 12
-  total_allocated = 48
+  assert_eq_string("Hello, MoonBit!", greeting)
+  
+  // 验证用户ID的数学运算
+  let next_year_id = add(user_id, 1)
+  assert_eq(2027, next_year_id)
+  
+  let double_id = multiply(user_id, 2)
+  assert_eq(4052, double_id)
 }
 
-test "string_processing" {
-  // 测试字符串处理
-  let result1 = greet("space")
-  let result2 = greet("special@chars")
-  let result3 = greet("emoji 🌟")
-  let result4 = greet("mixedCASE123")
+test "complex_calculation_workflow" {
+  // 复杂计算工作流测试
+  // 场景：计算项目资源分配
+  let team_members = 8
+  let tasks_per_member = 5
+  let total_tasks = multiply(team_members, tasks_per_member)
   
-  // 验证结果
-  result1 = "Hello, space!"
-  result2 = "Hello, special@chars!"
-  result3 = "Hello, emoji 🌟!"
-  result4 = "Hello, mixedCASE123!"
+  let days_per_task = 2
+  let total_days = multiply(total_tasks, days_per_task)
+  
+  let weeks_needed = divide_with_ceil(total_days, 7)
+  
+  // 验证计算结果
+  assert_eq(40, total_tasks)  // 8 * 5 = 40
+  assert_eq(80, total_days)   // 40 * 2 = 80
+  assert_eq(12, weeks_needed) // ceil(80/7) = 12
 }
