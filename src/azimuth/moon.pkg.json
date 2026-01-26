@@ -8,6 +8,9 @@
     "azimuth"
   ],
   "test": [
+    "working_test_copy.mbt",
+    "simple_test_verify.mbt",
+    "standard_azimuth_test_suite.mbt",
     "simple_verification_tests.mbt",
     "azimuth_high_quality_standard_tests.mbt",
     "azimuth_new_tests.mbt",
