@@ -1,116 +1,106 @@
-// 标准 MoonBit 测试用例 - 新增的10个测试用例
-// 针对 azimuth 库的核心功能进行全面测试
+// 标准 MoonBit 测试用例 - 新增10个测试用例
+// 使用标准的 MoonBit 测试语法，覆盖核心功能
 
-test "addition_commutative_property" {
-  // 测试加法交换律：a + b = b + a
-  let a = 15
-  let b = 27
-  assert_eq(add(a, b), add(b, a))
-  assert_eq(42, add(15, 27))
-  assert_eq(42, add(27, 15))
+test "mathematical_commutativity" {
+  // 测试加法和乘法的交换律
+  assert_eq(add(7, 13), add(13, 7))
+  assert_eq(multiply(4, 9), multiply(9, 4))
 }
 
-test "multiplication_identity_property" {
-  // 测试乘法单位元性质：a * 1 = a
-  let test_values = [0, 1, -1, 10, -10, 100, -100]
-  for value in test_values {
-    assert_eq(value, multiply(value, 1))
-  }
-}
-
-test "divide_with_ceil_fractional_results" {
-  // 测试向上取整除法的小数结果
-  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
-  assert_eq(4, divide_with_ceil(11, 3)) // 3.666... -> 4
-  assert_eq(7, divide_with_ceil(13, 2)) // 6.5 -> 7
-  assert_eq(1, divide_with_ceil(1, 2))  // 0.5 -> 1
-}
-
-test "greet_function_unicode_support" {
-  // 测试问候函数的 Unicode 支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, naïve!", greet("naïve"))
-}
-
-test "complex_arithmetic_combinations" {
-  // 测试复杂的算术组合
-  let x = 8
-  let y = 12
-  let z = 5
-  
-  // 测试 (x + y) * z
-  let result1 = multiply(add(x, y), z)
-  assert_eq(100, result1)  // (8 + 12) * 5 = 20 * 5 = 100
-  
-  // 测试 x * y + x * z
-  let result2 = add(multiply(x, y), multiply(x, z))
-  assert_eq(136, result2)  // 8 * 12 + 8 * 5 = 96 + 40 = 136
-}
-
-test "negative_number_operations_comprehensive" {
-  // 测试负数运算的全面情况
-  assert_eq(-10, add(-3, -7))
-  assert_eq(5, add(-8, 13))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(-15, multiply(3, -5))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-4, divide_with_ceil(-11, 3))
-}
-
-test "boundary_value_testing" {
-  // 测试边界值
-  assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(0, 5))
+test "divide_with_ceil_boundary_cases" {
+  // 测试向上取整除法的边界情况
   assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(100, 100))
+  assert_eq(1, divide_with_ceil(99, 100))
+  assert_eq(100, divide_with_ceil(9999, 100))
   assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(5, 0))
+}
+
+test "string_greeting_variations" {
+  // 测试不同类型的字符串问候
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, a+b!", greet("a+b"))
+  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
+}
+
+test "complex_arithmetic_expressions" {
+  // 测试复杂的算术表达式
+  let x = 10
+  let y = 15
+  let z = 20
+  
+  // (x + y) * z - x / y
+  let result = add(multiply(add(x, y), z), -divide_with_ceil(x, y))
+  assert_eq(499, result)  // (10 + 15) * 20 - ceil(10/15) = 25 * 20 - 1 = 500 - 1 = 499
+}
+
+test "negative_number_division_precision" {
+  // 测试负数除法的精度
+  assert_eq(-2, divide_with_ceil(-4, 2))
+  assert_eq(-1, divide_with_ceil(-3, 2))
+  assert_eq(3, divide_with_ceil(-10, -3))
+  assert_eq(0, divide_with_ceil(-5, 0))
 }
 
 test "real_world_shopping_cart" {
-  // 测试实际购物车计算
-  let item1_price = 25
-  let item1_quantity = 3
-  let item2_price = 15
-  let item2_quantity = 2
-  let shipping_cost = 10
+  // 真实购物车计算场景
+  let apple_price = 3
+  let apple_qty = 4
+  let banana_price = 2
+  let banana_qty = 6
   
-  let subtotal1 = multiply(item1_price, item1_quantity)
-  let subtotal2 = multiply(item2_price, item2_quantity)
-  let total_before_shipping = add(subtotal1, subtotal2)
-  let final_total = add(total_before_shipping, shipping_cost)
+  let apple_total = multiply(apple_price, apple_qty)
+  let banana_total = multiply(banana_price, banana_qty)
+  let cart_total = add(apple_total, banana_total)
   
-  assert_eq(75, subtotal1)      // 25 * 3 = 75
-  assert_eq(30, subtotal2)      // 15 * 2 = 30
-  assert_eq(105, total_before_shipping)  // 75 + 30 = 105
-  assert_eq(115, final_total)   // 105 + 10 = 115
-}
-
-test "packaging_optimization" {
-  // 测试包装优化计算
-  let total_products = 47
-  let box_capacity = 12
-  let boxes_needed = divide_with_ceil(total_products, box_capacity)
-  
-  // 计算剩余空间
-  let total_capacity = multiply(boxes_needed, box_capacity)
-  let empty_spaces = add(total_capacity, -total_products)
-  
-  assert_eq(4, boxes_needed)    // ceil(47/12) = 4
-  assert_eq(48, total_capacity) // 4 * 12 = 48
-  assert_eq(1, empty_spaces)    // 48 - 47 = 1
+  assert_eq(12, apple_total)
+  assert_eq(12, banana_total)
+  assert_eq(24, cart_total)
 }
 
 test "time_management_calculation" {
-  // 测试时间管理计算
+  // 时间管理计算
   let tasks_per_hour = 4
-  let total_tasks = 35
+  let total_tasks = 17
   
   let hours_needed = divide_with_ceil(total_tasks, tasks_per_hour)
-  let minutes_needed = multiply(hours_needed, 60)
+  let total_minutes = multiply(hours_needed, 60)
   
-  assert_eq(9, hours_needed)    // ceil(35/4) = 9
-  assert_eq(540, minutes_needed) // 9 * 60 = 540
+  assert_eq(5, hours_needed)
+  assert_eq(300, total_minutes)
+}
+
+test "financial_interest_calculation" {
+  // 简单利息计算
+  let principal = 1000
+  let rate_percent = 5
+  let years = 2
+  
+  let interest_per_year = divide_with_ceil(multiply(principal, rate_percent), 100)
+  let total_interest = multiply(interest_per_year, years)
+  let final_amount = add(principal, total_interest)
+  
+  assert_eq(50, interest_per_year)
+  assert_eq(100, total_interest)
+  assert_eq(1100, final_amount)
+}
+
+test "unicode_emoji_greetings" {
+  // 测试 Unicode emoji 问候
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, 🎉!", greet("🎉"))
+  assert_eq_string("Hello, 💻!", greet("💻"))
+  assert_eq_string("Hello, 🌍!", greet("🌍"))
+}
+
+test "algorithm_efficiency_simulation" {
+  // 算法效率模拟
+  let base_operations = 100
+  let optimization_factor = 3
+  let overhead = 15
+  
+  let optimized_ops = multiply(base_operations, optimization_factor)
+  let actual_performance = add(optimized_ops, -overhead)
+  
+  assert_eq(300, optimized_ops)
+  assert_eq(285, actual_performance)
 }
