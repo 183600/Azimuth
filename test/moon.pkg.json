@@ -41,6 +41,7 @@
     "azimuth_standard_test_cases.mbt",
     "simple_azimuth_test.mbt",
     "azimuth_enhanced_standard_tests.mbt",
-    "standard_moonbit_additional_tests.mbt"
+    "standard_moonbit_additional_tests.mbt",
+    "new_standard_moonbit_tests.mbt"
   ]
 }
