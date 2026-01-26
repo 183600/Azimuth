@@ -1,156 +1,121 @@
-// 新增的标准 MoonBit 测试用例
-// 测试 azimuth 库的核心功能
+// 新的标准 MoonBit 测试用例
+// 针对 azimuth 库核心功能的全面测试
 
-test "mathematical_properties_commutative_new" {
-  // 测试数学交换律
-  let a = 8
-  let b = 12
+test "basic_arithmetic_operations" {
+  // 测试基本算术运算
+  assert_eq(15, add(8, 7))
+  assert_eq(-2, add(5, -7))
+  assert_eq(24, multiply(6, 4))
+  assert_eq(-18, multiply(-3, 6))
+}
+
+test "divide_with_ceil_edge_cases" {
+  // 测试向上取整除法的边界情况
+  assert_eq(4, divide_with_ceil(11, 3))   // 11/3 = 3.666... -> 4
+  assert_eq(3, divide_with_ceil(9, 3))    // 9/3 = 3 -> 3
+  assert_eq(1, divide_with_ceil(2, 2))    // 2/2 = 1 -> 1
+  assert_eq(0, divide_with_ceil(0, 5))    // 0/5 = 0 -> 0
+  assert_eq(0, divide_with_ceil(10, 0))   // 除数为零返回0
+}
+
+test "greet_function_various_inputs" {
+  // 测试问候函数的各种输入
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+}
+
+test "mathematical_properties" {
+  // 测试数学性质
+  let a = 12
+  let b = 8
   
   // 加法交换律
   assert_eq(add(a, b), add(b, a))
   
   // 乘法交换律
   assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 零元素性质
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, add(a, 0))
 }
 
-test "combined_operations_business_scenario_new" {
-  // 测试组合运算的业务场景
-  let unit_price = 25
-  let quantity = 8
-  let shipping = 15
+test "complex_calculation_scenario" {
+  // 复杂计算场景：订单总价计算
+  let unit_price = 35
+  let quantity = 6
+  let tax_rate = 10
+  let shipping = 20
   
+  // 计算小计
   let subtotal = multiply(unit_price, quantity)
-  let total = add(subtotal, shipping)
+  // 计算税费
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  // 计算总价
+  let total = add(add(subtotal, tax), shipping)
   
-  assert_eq(200, subtotal)
-  assert_eq(215, total)
+  assert_eq(210, subtotal)
+  assert_eq(21, tax)
+  assert_eq(251, total)
 }
 
-test "packaging_calculation_scenario_new" {
-  // 测试包装计算场景
-  let total_items = 35
-  let items_per_box = 8
+test "negative_number_operations" {
+  // 测试负数运算
+  assert_eq(-10, add(-3, -7))
+  assert_eq(2, add(-5, 7))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-12, multiply(3, -4))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+}
+
+test "large_number_operations" {
+  // 测试大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(999999, add(500000, 499999))
+  assert_eq(-2000000, add(-1000000, -1000000))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(100001, divide_with_ceil(200002, 2))
+}
+
+test "practical_packaging_calculation" {
+  // 实际包装计算场景
+  let total_items = 47
+  let items_per_box = 12
   let boxes_needed = divide_with_ceil(total_items, items_per_box)
   
-  assert_eq(5, boxes_needed)
+  assert_eq(4, boxes_needed)  // ceil(47/12) = 4
 }
 
-test "mathematical_identity_properties_new" {
-  // 测试数学单位元性质
-  let x = 42
+test "combined_operations_test" {
+  // 组合运算测试
+  let result1 = add(multiply(3, 4), multiply(5, 6))
+  assert_eq(42, result1)  // 3*4 + 5*6 = 12 + 30 = 42
   
-  // 加法单位元
-  assert_eq(x, add(x, 0))
-  assert_eq(x, add(0, x))
+  let result2 = multiply(add(7, 8), 2)
+  assert_eq(30, result2)  // (7 + 8) * 2 = 15 * 2 = 30
   
-  // 乘法单位元
-  assert_eq(x, multiply(x, 1))
-  assert_eq(x, multiply(1, x))
-  
-  // 乘法零元素
-  assert_eq(0, multiply(x, 0))
-  assert_eq(0, multiply(0, x))
+  let result3 = divide_with_ceil(add(multiply(10, 3), 5), 7)
+  assert_eq(5, result3)  // ceil((10*3 + 5)/7) = ceil(35/7) = 5
 }
 
-test "unicode_and_special_characters_new" {
-  // 测试 Unicode 和特殊字符
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, αβγ!", greet("αβγ"))
-  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
-}
-
-test "divide_with_ceil_edge_cases_new" {
-  // 测试向上取整除法的边界情况
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(2, divide_with_ceil(3, 2))
-  assert_eq(100, divide_with_ceil(9999, 100))
-  assert_eq(1, divide_with_ceil(-1, -1))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-}
-
-test "complex_business_workflow_new" {
-  // 模拟完整的订单处理流程
-  let product_cost = 120
-  let quantity = 15
-  let tax_rate = 8
-  let shipping_cost_per_item = 5
-  let discount_threshold = 1000
-  let discount_amount = 50
+test "string_and_number_integration" {
+  // 字符串和数字集成测试
+  let age = 25
+  let name = "Alice"
+  let greeting = greet(name)
   
-  // 步骤1: 计算商品总价
-  let subtotal = multiply(product_cost, quantity)
+  assert_eq_string("Hello, Alice!", greeting)
   
-  // 步骤2: 计算运费
-  let total_shipping = multiply(shipping_cost_per_item, quantity)
+  // 测试数字字符串
+  assert_eq_string("Hello, 2024!", greet("2024"))
   
-  // 步骤3: 计算税费
-  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  
-  // 步骤4: 计算折扣前总价
-  let pre_discount_total = add(add(subtotal, total_shipping), tax_amount)
-  
-  // 步骤5: 应用折扣（如果满足条件）
-  let final_total = if pre_discount_total > discount_threshold {
-    add(pre_discount_total, -discount_amount)
-  } else {
-    pre_discount_total
-  }
-  
-  assert_eq(1800, subtotal)
-  assert_eq(75, total_shipping)
-  assert_eq(144, tax_amount)
-  assert_eq(2019, pre_discount_total)
-  assert_eq(1969, final_total)
-}
-
-test "financial_calculation_scenario_new" {
-  // 金融计算场景：计算复利
-  let principal = 1000
-  let rate_percent = 5
-  
-  // 计算复利（简化版）
-  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
-  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
-  
-  assert_eq(1050, year1)
-  assert_eq(1103, year2)
-  assert_eq(1158, year3)
-}
-
-test "data_analysis_statistics_new" {
-  // 模拟销售数据分析
-  let sales_q1 = 15000
-  let sales_q2 = 18000
-  let sales_q3 = 22000
-  let sales_q4 = 25000
-  
-  // 计算年度总销售额
-  let annual_sales = add(add(add(sales_q1, sales_q2), sales_q3), sales_q4)
-  
-  // 计算季度平均销售额（向上取整）
-  let quarterly_average = divide_with_ceil(annual_sales, 4)
-  
-  assert_eq(80000, annual_sales)
-  assert_eq(20000, quarterly_average)
-}
-
-test "inventory_management_scenario_new" {
-  // 库存管理场景：计算需要的存储空间
-  let items_per_box = 24
-  let total_items_small = 100
-  let total_items_medium = 250
-  let total_items_large = 1000
-  
-  let boxes_small = divide_with_ceil(total_items_small, items_per_box)
-  let boxes_medium = divide_with_ceil(total_items_medium, items_per_box)
-  let boxes_large = divide_with_ceil(total_items_large, items_per_box)
-  
-  let total_boxes = add(add(boxes_small, boxes_medium), boxes_large)
-  
-  assert_eq(5, boxes_small)
-  assert_eq(11, boxes_medium)
-  assert_eq(42, boxes_large)
-  assert_eq(58, total_boxes)
+  // 测试包含数字的运算
+  let birth_year = 1999
+  let current_year = 2024
+  let calculated_age = add(current_year, -birth_year)
+  assert_eq(25, calculated_age)
 }
