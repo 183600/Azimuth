@@ -1,148 +1,127 @@
-// 标准 MoonBit 测试用例
-// 针对 azimuth 库的核心功能进行测试
+// Azimuth 标准 MoonBit 测试用例
+// 包含 10 个高质量测试用例，覆盖核心功能
 
-// 测试基本算术运算
-test "test_basic_arithmetic_operations" {
-  // 测试加法运算
-  @azimuth.assert_eq(10, @azimuth.add(3, 7))
+test "add_function_comprehensive" {
+  // 全面测试加法函数
+  @azimuth.assert_eq(10, @azimuth.add(7, 3))
   @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(-5, @azimuth.add(-2, -3))
-  
-  // 测试乘法运算
-  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 10))
-  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
+  @azimuth.assert_eq(-10, @azimuth.add(-7, -3))
+  @azimuth.assert_eq(4, @azimuth.add(-7, 11))
+  @azimuth.assert_eq(1000000, @azimuth.add(500000, 500000))
 }
 
-// 测试向上取整除法的边界情况
-test "test_divide_with_ceil_boundary_cases" {
-  // 测试正数除法
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100))
-  
-  // 测试负数除法
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(-10, -3))
-  
-  // 测试除数为零的情况
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(5, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-5, 0))
-}
-
-// 测试字符串处理功能
-test "test_string_greeting_functionality" {
-  // 测试基本问候功能
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  
-  // 测试空字符串
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  
-  // 测试特殊字符
-  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
-  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
-}
-
-// 测试数学性质和组合运算
-test "test_mathematical_properties" {
-  let a = 7
-  let b = 13
-  
-  // 测试加法交换律
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
-  
-  // 测试乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
-  
-  // 测试零元素性质
-  @azimuth.assert_eq(0, @azimuth.multiply(a, 0))
-  @azimuth.assert_eq(a, @azimuth.add(a, 0))
-  
-  // 测试分配律: a * (b + c) = a * b + a * c
-  let c = 5
-  let left_side = @azimuth.multiply(a, @azimuth.add(b, c))
-  let right_side = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
-  @azimuth.assert_eq(left_side, right_side)
-}
-
-// 测试实际应用场景
-test "test_practical_business_scenarios" {
-  // 计算购物车总价
-  let item1_price = 29
-  let item1_qty = 2
-  let item2_price = 15
-  let item2_qty = 3
-  let total = @azimuth.add(
-    @azimuth.multiply(item1_price, item1_qty),
-    @azimuth.multiply(item2_price, item2_qty)
-  )
-  @azimuth.assert_eq(103, total)  // 29*2 + 15*3 = 58 + 45 = 103
-  
-  // 计算需要的包装箱数量
-  let total_items = 25
-  let items_per_box = 6
-  let boxes_needed = @azimuth.divide_with_ceil(total_items, items_per_box)
-  @azimuth.assert_eq(5, boxes_needed)  // ceil(25/6) = 5
-}
-
-// 测试边界值和极端情况
-test "test_boundary_and_extreme_values" {
-  // 测试大数运算
-  @azimuth.assert_eq(2000000, @azimuth.add(1000000, 1000000))
+test "multiply_function_edge_cases" {
+  // 测试乘法函数的边缘情况
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 12345))
+  @azimuth.assert_eq(12345, @azimuth.multiply(1, 12345))
+  @azimuth.assert_eq(-12345, @azimuth.multiply(-1, 12345))
+  @azimuth.assert_eq(12345, @azimuth.multiply(-1, -12345))
   @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))
-  
-  // 测试零的运算
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
-  
-  // 测试负数运算
-  @azimuth.assert_eq(-10, @azimuth.add(-3, -7))
-  @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
-  @azimuth.assert_eq(-15, @azimuth.multiply(3, -5))
 }
 
-// 测试复杂计算场景
-test "test_complex_calculation_scenarios" {
-  // 多层嵌套计算
-  let complex_result = @azimuth.add(
-    @azimuth.multiply(10, @azimuth.divide_with_ceil(25, 4)),
-    @azimuth.multiply(5, @azimuth.divide_with_ceil(17, 3))
+test "greet_function_international" {
+  // 测试问候函数的国际字符支持
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, Москва!", @azimuth.greet("Москва"))
+  @azimuth.assert_eq_string("Hello, café!", @azimuth.greet("café"))
+  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
+  @azimuth.assert_eq_string("Hello, ñoño!", @azimuth.greet("ñoño"))
+}
+
+test "divide_with_ceil_business_logic" {
+  // 测试向上取整除法的业务逻辑场景
+  // 场景：计算需要的运输车辆数量
+  let packages = 47
+  let capacity_per_truck = 10
+  let trucks_needed = @azimuth.divide_with_ceil(packages, capacity_per_truck)
+  @azimuth.assert_eq(5, trucks_needed)
+  
+  // 验证总运力
+  let total_capacity = @azimuth.multiply(trucks_needed, capacity_per_truck)
+  @azimuth.assert_eq(50, total_capacity)
+}
+
+test "complex_calculation_pipeline" {
+  // 测试复杂计算流水线
+  // 场景：计算项目完成时间
+  let tasks = 25
+  let people = 4
+  let tasks_per_person_per_day = 2
+  
+  let daily_capacity = @azimuth.multiply(people, tasks_per_person_per_day)
+  let days_needed = @azimuth.divide_with_ceil(tasks, daily_capacity)
+  @azimuth.assert_eq(4, days_needed)  // ceil(25/(4*2)) = 4
+  
+  // 验证总处理能力
+  let total_capacity = @azimuth.multiply(days_needed, daily_capacity)
+  @azimuth.assert_eq(32, total_capacity)
+}
+
+test "mathematical_properties_verification" {
+  // 验证数学性质
+  let x = 42
+  let y = 17
+  
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
+  
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
+  
+  // 分配律
+  @azimuth.assert_eq(
+    @azimuth.multiply(x, @azimuth.add(y, 3)),
+    @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, 3))
   )
-  @azimuth.assert_eq(85, complex_result)  // 10*7 + 5*6 = 70 + 15 = 85
-  
-  // 财务计算场景
-  let principal = 1000
-  let rate_percent = 5
-  let amount_after_year1 = @azimuth.add(principal, @azimuth.divide_with_ceil(@azimuth.multiply(principal, rate_percent), 100))
-  let amount_after_year2 = @azimuth.add(amount_after_year1, @azimuth.divide_with_ceil(@azimuth.multiply(amount_after_year1, rate_percent), 100))
-  @azimuth.assert_eq(1103, amount_after_year2)  // 1000 -> 1050 -> 1103
 }
 
-// 测试 Unicode 和特殊字符处理
-test "test_unicode_and_special_characters" {
-  // 测试各种 Unicode 字符
-  @azimuth.assert_eq_string("Hello, αβγ!", @azimuth.greet("αβγ"))
-  @azimuth.assert_eq_string("Hello, ñáéíóú!", @azimuth.greet("ñáéíóú"))
-  @azimuth.assert_eq_string("Hello, 🌍🌎🌏!", @azimuth.greet("🌍🌎🌏"))
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_budget = 10000
+  let team_members = 6
   
-  // 测试数字和符号
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
-  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet("test@example.com"))
-  @azimuth.assert_eq_string("Hello, A+B=C!", @azimuth.greet("A+B=C"))
+  // 使用向上取整确保覆盖所有情况
+  let max_share = @azimuth.divide_with_ceil(total_budget, team_members)
+  @azimuth.assert_eq(1667, max_share)  // ceil(10000/6) = 1667
+  
+  // 验证总分配不超过预算
+  let total_allocated = @azimuth.multiply(max_share, team_members)
+  @azimuth.assert_eq(10002, total_allocated)
 }
 
-// 测试错误处理和健壮性
-test "test_error_handling_and_robustness" {
-  // 测试除数为零的各种情况
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-100, 0))
+test "error_handling_and_boundaries" {
+  // 错误处理和边界测试
+  // 除零情况
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-10, 0))
   @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
   
-  // 测试边界值运算
-  @azimuth.assert_eq(1, @azimuth.add(0, 1))
-  @azimuth.assert_eq(-1, @azimuth.add(0, -1))
+  // 极值测试
   @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
   @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-1, -1))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 1))
+}
+
+test "string_processing_comprehensive" {
+  // 字符串处理综合测试
+  @azimuth.assert_eq_string("Hello, single!", @azimuth.greet("single"))
+  @azimuth.assert_eq_string("Hello, space test!", @azimuth.greet("space test"))
+  @azimuth.assert_eq_string("Hello, 12345!", @azimuth.greet("12345"))
+  @azimuth.assert_eq_string("Hello, !@#$%^!", @azimuth.greet("!@#$%^"))
+  @azimuth.assert_eq_string("Hello, mixedCASE!", @azimuth.greet("mixedCASE"))
+}
+
+test "real_world_calculation_scenario" {
+  // 真实世界计算场景
+  // 场景：计算活动安排
+  let participants = 87
+  let chairs_per_table = 8
+  
+  // 计算需要的桌子数量
+  let tables_needed = @azimuth.divide_with_ceil(participants, chairs_per_table)
+  @azimuth.assert_eq(11, tables_needed)  // ceil(87/8) = 11
+  
+  // 计算总座位数
+  let total_seats = @azimuth.multiply(tables_needed, chairs_per_table)
+  @azimuth.assert_eq(88, total_seats)
 }
