@@ -21,6 +21,7 @@
     "simple_azimuth_test.mbt",
     "moonbit_standard_tests.mbt",
     "standard_azimuth_new_tests.mbt",
-    "azimuth_simple_final_tests.mbt"
+    "azimuth_simple_final_tests.mbt",
+    "standard_azimuth_basic_tests.mbt"
   ]
 }
