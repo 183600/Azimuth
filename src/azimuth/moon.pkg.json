@@ -10,6 +10,7 @@
   "test": [
     "test/azimuth_standard_new_tests.mbt",
     "simple_test.mbt",
+    "standard_azimuth_enhanced_tests.mbt",
     "standard_moonbit_test_suite.mbt",
     "azimuth_additional_standard_tests.mbt",
     "working_test_copy.mbt",
