@@ -1,4 +1,4 @@
-// 新增的 MoonBit 测试用例
+// 新增的标准 MoonBit 测试用例
 // 针对 azimuth 库的核心功能进行全面测试
 
 test "add_function_boundary_values" {
@@ -13,6 +13,7 @@ test "add_function_boundary_values" {
 test "multiply_function_large_numbers" {
   // 测试乘法函数的大数运算
   assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(4611686014132420609, multiply(2147483647, 2147483647))  // 最大值平方
   assert_eq(-1000000, multiply(1000, -1000))
   assert_eq(0, multiply(2147483647, 0))  // 零乘法
 }
