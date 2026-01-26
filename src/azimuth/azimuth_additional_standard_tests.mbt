@@ -1,7 +1,7 @@
-// Azimuth 库的额外标准测试用例
-// 包含基本功能测试、边界情况和实际应用场景
+// 额外的标准 MoonBit 测试用例
+// 针对 azimuth 库的核心功能进行测试
 
-test "add_function_commutative_property" {
+test "add_function_commutative" {
   // 测试加法交换律
   assert_eq(15, add(8, 7))
   assert_eq(15, add(7, 8))
@@ -9,85 +9,89 @@ test "add_function_commutative_property" {
   assert_eq(0, add(5, -5))
 }
 
-test "multiply_function_with_zero" {
-  // 测试乘法与零的性质
-  assert_eq(0, multiply(0, 10))
-  assert_eq(0, multiply(10, 0))
-  assert_eq(0, multiply(0, 0))
-  assert_eq(0, multiply(-5, 0))
+test "multiply_function_properties" {
+  // 测试乘法性质
+  assert_eq(0, multiply(0, 123))
+  assert_eq(0, multiply(123, 0))
+  assert_eq(25, multiply(5, 5))
+  assert_eq(-25, multiply(-5, 5))
 }
 
-test "divide_with_ceil_precision_test" {
-  // 测试向上取整除法的精度
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(2, divide_with_ceil(3, 2))
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(7, divide_with_ceil(20, 3))
+test "divide_with_ceil_various_cases" {
+  // 测试向上取整除法的各种情况
+  assert_eq(3, divide_with_ceil(7, 3))  // 7/3 = 2.333... -> 3
+  assert_eq(2, divide_with_ceil(6, 3))  // 6/3 = 2 -> 2
+  assert_eq(1, divide_with_ceil(2, 3))  // 2/3 = 0.666... -> 1
+  assert_eq(0, divide_with_ceil(5, 0))  // 除数为0的情况
 }
 
-test "greet_function_with_special_characters" {
-  // 测试问候函数的特殊字符处理
-  assert_eq_string("Hello, @user!", greet("@user"))
-  assert_eq_string("Hello, test-123!", greet("test-123"))
-  assert_eq_string("Hello, user_name!", greet("user_name"))
+test "greet_function_unicode_support" {
+  // 测试问候函数的 Unicode 支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, ñoño!", greet("ñoño"))
 }
 
-test "complex_calculation_scenario" {
-  // 复杂计算场景：计算折扣后的总价
+test "complex_business_calculation" {
+  // 复杂业务计算：订单总价
   let unit_price = 45
   let quantity = 6
+  let shipping = 12
   let discount = 20
   
   let subtotal = multiply(unit_price, quantity)
-  let final_total = add(subtotal, -discount)
+  let total_before_discount = add(subtotal, shipping)
+  let final_total = add(total_before_discount, -discount)
   
   assert_eq(270, subtotal)
-  assert_eq(250, final_total)
+  assert_eq(282, total_before_discount)
+  assert_eq(262, final_total)
 }
 
-test "negative_number_operations_comprehensive" {
-  // 负数运算的综合测试
-  assert_eq(-8, add(-3, -5))
-  assert_eq(2, add(-3, 5))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(-15, multiply(3, -5))
-  assert_eq(-2, divide_with_ceil(-7, 3))
-}
-
-test "resource_allocation_calculation" {
-  // 资源分配计算
-  let total_resources = 100
-  let team_size = 8
-  let resources_per_team = divide_with_ceil(total_resources, team_size)
+test "packaging_optimization" {
+  // 包装优化计算
+  let total_products = 58
+  let box_capacity = 12
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
   
-  assert_eq(13, resources_per_team)
+  assert_eq(5, boxes_needed)  // ceil(58/12) = 5
 }
 
-test "time_management_scenario" {
-  // 时间管理场景：计算任务完成时间
-  let tasks_per_hour = 4
-  let total_tasks = 25
-  let hours_needed = divide_with_ceil(total_tasks, tasks_per_hour)
+test "mathematical_distributive_law" {
+  // 测试数学分配律: a * (b + c) = a * b + a * c
+  let a = 4
+  let b = 7
+  let c = 9
   
-  assert_eq(7, hours_needed)
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  
+  assert_eq(left_side, right_side)  // 4 * (7 + 9) = 4 * 7 + 4 * 9 = 64
+}
+
+test "time_and_resource_calculation" {
+  // 时间和资源计算
+  let tasks_per_day = 7
+  let total_tasks = 50
+  let days_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  let total_hours = multiply(days_needed, 8)  // 每天8小时
+  
+  assert_eq(8, days_needed)  // ceil(50/7) = 8
+  assert_eq(64, total_hours)  // 8 * 8 = 64
+}
+
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  assert_eq(0, divide_with_ceil(0, 0))  // 0除以0
+  assert_eq(0, divide_with_ceil(100, 0))  // 正数除以0
+  assert_eq(0, divide_with_ceil(-100, 0))  // 负数除以0
+  assert_eq(0, multiply(0, 0))  // 0乘以0
 }
 
 test "string_greeting_edge_cases" {
-  // 字符串问候的边界情况
-  assert_eq_string("Hello, A!", greet("A"))
-  assert_eq_string("Hello, ABCDEFGHIJKLMNOPQRSTUVWXYZ!", greet("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
-  assert_eq_string("Hello, 1234567890!", greet("1234567890"))
-}
-
-test "mathematical_identity_properties" {
-  // 数学恒等性质测试
-  let x = 42
-  
-  // 加法单位元
-  assert_eq(x, add(x, 0))
-  assert_eq(x, add(0, x))
-  
-  // 乘法单位元
-  assert_eq(x, multiply(x, 1))
-  assert_eq(x, multiply(1, x))
+  // 字符串问候边界情况
+  assert_eq_string("Hello, !", greet(""))  // 空字符串
+  assert_eq_string("Hello, A!", greet("A"))  // 单字符
+  assert_eq_string("Hello, 12345!", greet("12345"))  // 数字字符串
+  assert_eq_string("Hello, Space Test!", greet("Space Test"))  // 包含空格
 }

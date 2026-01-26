@@ -28,6 +28,8 @@
     "new_comprehensive_moonbit_tests.mbt",
     "simple_new_tests.mbt",
     "standard_moonbit_test_enhancements.mbt",
-    "standard_moonbit_test_cases.mbt"
+    "standard_moonbit_test_cases.mbt",
+    "additional_standard_tests.mbt",
+    "simple_verification_test.mbt"
   ]
 }

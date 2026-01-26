@@ -1,9 +1,12 @@
-// 简单验证测试文件
-// 验证测试框架是否正常工作
+// 简单的测试文件，验证 MoonBit 测试语法
+test "simple_add_test" {
+  assert_eq(5, add(2, 3))
+}
 
-test "simple_verification" {
-  // 简单的验证测试
-  @assertion(1 + 1 = 2)
-  @assertion(2 * 3 = 6)
-  @assertion("Hello" = "Hello")
+test "simple_multiply_test" {
+  assert_eq(6, multiply(2, 3))
+}
+
+test "simple_greet_test" {
+  assert_eq_string("Hello, World!", greet("World"))
 }
