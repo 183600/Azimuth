@@ -439,10 +439,7 @@ test "project_budget_calculation" {
   assert_eq(5, payment_cycles)  // ceil(48000/10000) = 5
 }
 
-// 辅助函数：减法
-fn subtract(a : Int, b : Int) -> Int {
-  a - b
-}
+
 
 // 新增的标准 MoonBit 测试用例 - 10个高质量测试用例
 test "basic_arithmetic_operations" {
