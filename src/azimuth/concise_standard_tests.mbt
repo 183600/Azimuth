@@ -1,35 +1,35 @@
 // 简洁标准的 MoonBit 测试用例
-// 测试 azimuth 库的核心功能
+// 针对 azimuth 库核心功能的高效测试
 
-test "add_basic_functionality" {
+test "add_function_basic" {
   // 测试基本加法功能
   assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
   assert_eq(-5, add(-2, -3))
 }
 
-test "multiply_basic_functionality" {
+test "multiply_function_basic" {
   // 测试基本乘法功能
   assert_eq(6, multiply(2, 3))
   assert_eq(0, multiply(0, 5))
   assert_eq(-6, multiply(-2, 3))
 }
 
-test "greet_basic_functionality" {
+test "greet_function_basic" {
   // 测试基本问候功能
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
 }
 
-test "divide_with_ceil_positive_numbers" {
+test "divide_with_ceil_positive" {
   // 测试正数的向上取整除法
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
   assert_eq(1, divide_with_ceil(1, 100))
 }
 
-test "divide_with_ceil_negative_numbers" {
+test "divide_with_ceil_negative" {
   // 测试负数的向上取整除法
   assert_eq(-3, divide_with_ceil(-10, 3))
   assert_eq(4, divide_with_ceil(-10, -3))
@@ -37,8 +37,9 @@ test "divide_with_ceil_negative_numbers" {
 }
 
 test "zero_operations" {
-  // 测试零的运算
+  // 测试与零相关的运算
   assert_eq(0, multiply(5, 0))
+  assert_eq(0, multiply(0, 0))
   assert_eq(5, add(5, 0))
   assert_eq(0, divide_with_ceil(0, 5))
 }
@@ -55,7 +56,7 @@ test "combined_operations" {
   assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
 }
 
-test "practical_packaging_calculation" {
+test "practical_packaging" {
   // 实际应用场景：包装计算
   let total_items = 25
   let items_per_box = 6
@@ -63,8 +64,8 @@ test "practical_packaging_calculation" {
   assert_eq(5, boxes_needed)  // ceil(25/6) = 5
 }
 
-test "unicode_greeting_support" {
-  // 测试 Unicode 字符串支持
+test "greeting_with_special_characters" {
+  // 测试特殊字符的问候
   assert_eq_string("Hello, 世界!", greet("世界"))
   assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
