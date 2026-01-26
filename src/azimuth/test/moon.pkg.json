@@ -10,6 +10,7 @@
     "my_new_unit_tests.mbt",
     "standard_moonbit_test_suite.mbt",
     "quality_test_cases.mbt",
+    "quality_test_suite.mbt",
     "essential_core_tests.mbt",
     "simple_quality_tests.mbt",
     "quality_enhanced_test_cases.mbt",
