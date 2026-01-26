@@ -5913,3 +5913,74 @@ test "enhanced_mathematical_series_summation" {
   assert_eq(185, arithmetic_sum)
   assert_eq(242, geometric_sum)
 }
+
+// 新增的10个标准测试用例
+test "core_add_basic_functionality" {
+  // 测试基本加法功能
+  assert_eq(8, add(3, 5))
+  assert_eq(0, add(0, 0))
+  assert_eq(-2, add(-5, 3))
+}
+
+test "core_multiply_basic_functionality" {
+  // 测试基本乘法功能
+  assert_eq(12, multiply(3, 4))
+  assert_eq(0, multiply(7, 0))
+  assert_eq(-15, multiply(-3, 5))
+}
+
+test "core_greet_basic_functionality" {
+  // 测试基本问候功能
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+}
+
+test "core_divide_with_ceil_positive" {
+  // 测试正数向上取整除法
+  assert_eq(3, divide_with_ceil(8, 3))
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+}
+
+test "core_divide_with_ceil_negative" {
+  // 测试负数向上取整除法
+  assert_eq(-2, divide_with_ceil(-8, 3))
+  assert_eq(3, divide_with_ceil(-8, -3))
+  assert_eq(0, divide_with_ceil(5, 0))
+}
+
+test "core_zero_operations" {
+  // 测试零相关运算
+  assert_eq(0, multiply(5, 0))
+  assert_eq(5, add(5, 0))
+  assert_eq(0, divide_with_ceil(0, 10))
+}
+
+test "core_combined_operations" {
+  // 测试组合运算
+  let result = add(multiply(2, 4), multiply(3, 5))
+  assert_eq(23, result)  // 2*4 + 3*5 = 8 + 15 = 23
+}
+
+test "core_practical_packaging" {
+  // 实际包装场景
+  let total_items = 17
+  let items_per_box = 5
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  assert_eq(4, boxes_needed)  // ceil(17/5) = 4
+}
+
+test "core_mathematical_properties" {
+  // 测试数学性质
+  let x = 6
+  let y = 9
+  assert_eq(add(x, y), add(y, x))  // 加法交换律
+  assert_eq(multiply(x, y), multiply(y, x))  // 乘法交换律
+}
+
+test "core_string_edge_cases" {
+  // 测试字符串边界情况
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, A!", greet("A"))
+}
