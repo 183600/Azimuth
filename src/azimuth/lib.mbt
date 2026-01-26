@@ -1170,6 +1170,120 @@ test "enhanced_percentage_calculation" {
   assert_eq(38, result)
 }
 
+// 新增的10个标准 MoonBit 测试用例
+
+test "algorithm_binary_search_simulation" {
+  // 模拟二分查找算法的比较次数计算
+  let array_size = 1000
+  let comparisons_per_level = 2
+  let max_levels = divide_with_ceil(array_size, 2)
+  
+  let total_comparisons = multiply(comparisons_per_level, max_levels)
+  assert_eq(1000, total_comparisons)
+}
+
+test "data_structure_stack_operations" {
+  // 模拟栈操作的压入和弹出计数
+  let push_operations = 25
+  let pop_operations = 18
+  let remaining_items = add(push_operations, -pop_operations)
+  
+  assert_eq(7, remaining_items)
+}
+
+test "conditional_logic_branching" {
+  // 模拟条件逻辑分支计算
+  let condition_true = 15
+  let condition_false = 8
+  let total_branches = add(condition_true, condition_false)
+  let success_rate = divide_with_ceil(multiply(condition_true, 100), total_branches)
+  
+  assert_eq(23, total_branches)
+  assert_eq(65, success_rate)
+}
+
+test "recursive_calculation_simulation" {
+  // 模拟递归计算的深度和操作数
+  let recursion_depth = 6
+  let operations_per_level = 3
+  let total_operations = multiply(recursion_depth, operations_per_level)
+  
+  assert_eq(18, total_operations)
+}
+
+test "statistical_variance_calculation" {
+  // 模拟统计方差计算
+  let values_sum = 150
+  let value_count = 10
+  let mean = divide_with_ceil(values_sum, value_count)
+  
+  let squared_diff_sum = 500
+  let variance = divide_with_ceil(squared_diff_sum, value_count)
+  
+  assert_eq(15, mean)
+  assert_eq(50, variance)
+}
+
+test "optimization_greedy_algorithm" {
+  // 模拟贪心算法的选择过程
+  let total_items = 45
+  let capacity = 10
+  let selected_items = divide_with_ceil(total_items, capacity)
+  
+  let total_value = multiply(selected_items, 100)
+  assert_eq(5, selected_items)
+  assert_eq(500, total_value)
+}
+
+test "graph_theory_path_calculation" {
+  // 模拟图论中的路径计算
+  let vertices = 12
+  let edges_per_vertex = 3
+  let total_edges = divide_with_ceil(multiply(vertices, edges_per_vertex), 2)
+  
+  assert_eq(18, total_edges)
+}
+
+test "memory_allocation_simulation" {
+  // 模拟内存分配计算
+  let block_size = 64
+  let requested_blocks = 17
+  let allocated_memory = multiply(block_size, requested_blocks)
+  
+  let waste_percentage = 20
+  let actual_usage = multiply(allocated_memory, 100 - waste_percentage) / 100
+  
+  assert_eq(1088, allocated_memory)
+  assert_eq(870, actual_usage)
+}
+
+test "caching_strategy_efficiency" {
+  // 模拟缓存策略效率计算
+  let total_requests = 500
+  let cache_hits = 350
+  let hit_rate = divide_with_ceil(multiply(cache_hits, 100), total_requests)
+  
+  let cache_misses = add(total_requests, -cache_hits)
+  let miss_rate = divide_with_ceil(multiply(cache_misses, 100), total_requests)
+  
+  assert_eq(70, hit_rate)
+  assert_eq(30, miss_rate)
+}
+
+test "load_balancing_distribution" {
+  // 模拟负载均衡分配计算
+  let total_requests = 127
+  let server_count = 8
+  let requests_per_server = divide_with_ceil(total_requests, server_count)
+  
+  let total_capacity = multiply(requests_per_server, server_count)
+  let unused_capacity = add(total_capacity, -total_requests)
+  
+  assert_eq(16, requests_per_server)
+  assert_eq(128, total_capacity)
+  assert_eq(1, unused_capacity)
+}
+
 // 新添加的10个简洁测试用例
 test "azimuth_add_basic_functionality" {
   // 测试基本加法功能
