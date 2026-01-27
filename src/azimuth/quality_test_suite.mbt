@@ -1,141 +1,123 @@
-// 高质量测试套件 - 为 azimuth 库新增的测试用例
-// 使用标准的 MoonBit 测试语法
+// 高质量 MoonBit 测试用例
+// 针对 azimuth 库核心功能的综合测试
 
-test "quality_arithmetic_precision" {
-  // 测试算术精度
-  let small_diff = divide_with_ceil(1001, 100)
-  let large_diff = divide_with_ceil(999999, 1000)
-  assert_eq(11, small_diff)  // 1001/100 = 10.01 -> 11
-  assert_eq(1000, large_diff)  // 999999/1000 = 999.999 -> 1000
+test "add_function_comprehensive" {
+  // 全面测试加法功能
+  assert_eq(8, add(3, 5))
+  assert_eq(0, add(0, 0))
+  assert_eq(-2, add(-5, 3))
+  assert_eq(1000, add(500, 500))
+  assert_eq(-100, add(-50, -50))
 }
 
-test "quality_negative_operations" {
-  // 测试负数运算的边界情况
-  let neg_add = add(-1000, 1)
-  let neg_mul = multiply(-50, 2)
-  let neg_div = divide_with_ceil(-15, 4)
-  assert_eq(-999, neg_add)
-  assert_eq(-100, neg_mul)
-  assert_eq(-3, neg_div)  // -15/4 = -3.75 -> -3 (ceil)
+test "multiply_function_comprehensive" {
+  // 全面测试乘法功能
+  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(0, 100))
+  assert_eq(-12, multiply(-3, 4))
+  assert_eq(25, multiply(-5, -5))
+  assert_eq(10000, multiply(100, 100))
 }
 
-test "quality_complex_business_calculation" {
-  // 复杂业务计算：订单处理
-  let unit_price = 125
+test "greet_function_multilingual" {
+  // 测试多语言问候功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, María!", greet("María"))
+}
+
+test "divide_with_ceil_edge_cases" {
+  // 测试向上取整除法的边界情况
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(0, divide_with_ceil(5, 0))
+}
+
+test "mathematical_properties_verification" {
+  // 验证数学性质
+  let a = 7
+  let b = 11
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 零元素性质
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, add(a, 0))
+}
+
+test "complex_business_scenario" {
+  // 复杂业务场景：订单总价计算
+  let unit_price = 25
   let quantity = 8
   let tax_rate = 8
-  let shipping = 25
-  let discount = 50
+  let shipping = 15
   
   let subtotal = multiply(unit_price, quantity)
   let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  let total_before_discount = add(add(subtotal, tax_amount), shipping)
-  let final_total = add(total_before_discount, -discount)
+  let total_cost = add(add(subtotal, tax_amount), shipping)
   
-  assert_eq(1000, subtotal)
-  assert_eq(80, tax_amount)
-  assert_eq(1105, total_before_discount)
-  assert_eq(1055, final_total)
+  assert_eq(200, subtotal)
+  assert_eq(16, tax_amount)
+  assert_eq(231, total_cost)
 }
 
-test "quality_time_management" {
-  // 时间管理计算
-  let tasks_per_hour = 4
-  let total_tasks = 35
-  let work_hours_per_day = 8
-  
-  let hours_needed = divide_with_ceil(total_tasks, tasks_per_hour)
-  let days_needed = divide_with_ceil(hours_needed, work_hours_per_day)
-  
-  assert_eq(9, hours_needed)  // ceil(35/4) = 9
-  assert_eq(2, days_needed)   // ceil(9/8) = 2
-}
-
-test "quality_resource_allocation" {
+test "resource_allocation_calculation" {
   // 资源分配计算
-  let total_budget = 5000
-  let team_members = 12
-  let project_duration_days = 15
+  let total_items = 47
+  let items_per_box = 12
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
   
-  let budget_per_person = divide_with_ceil(total_budget, team_members)
-  let daily_budget_per_person = divide_with_ceil(budget_per_person, project_duration_days)
+  let total_boxes = multiply(boxes_needed, 1)
+  let remaining_space = multiply(total_boxes, items_per_box) - total_items
   
-  assert_eq(417, budget_per_person)        // ceil(5000/12) = 417
-  assert_eq(28, daily_budget_per_person)   // ceil(417/15) = 28
+  assert_eq(4, boxes_needed)
+  assert_eq(4, total_boxes)
+  assert_eq(1, remaining_space)
 }
 
-test "quality_string_processing_unicode" {
-  // Unicode 字符串处理测试
-  let unicode_names = ["张三", "李四", "王五", "John", "María"]
-  let greeting1 = greet(unicode_names[0])
-  let greeting2 = greet(unicode_names[1])
-  let greeting3 = greet(unicode_names[2])
-  let greeting4 = greet(unicode_names[3])
-  let greeting5 = greet(unicode_names[4])
+test "time_management_scenario" {
+  // 时间管理场景
+  let tasks_per_day = 8
+  let total_tasks = 35
+  let work_days_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  let total_hours = multiply(work_days_needed, 8)
   
-  assert_eq_string("Hello, 张三!", greeting1)
-  assert_eq_string("Hello, 李四!", greeting2)
-  assert_eq_string("Hello, 王五!", greeting3)
-  assert_eq_string("Hello, John!", greeting4)
-  assert_eq_string("Hello, María!", greeting5)
+  assert_eq(5, work_days_needed)
+  assert_eq(40, total_hours)
 }
 
-test "quality_financial_compound_interest" {
-  // 复利计算
-  let principal = 10000
-  let rate_percent = 5
-  let years = 3
+test "mathematical_series_calculation" {
+  // 数学级数计算
+  let first_term = 3
+  let common_difference = 2
+  let number_of_terms = 5
   
-  let year1_amount = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, rate_percent), 100))
-  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, rate_percent), 100))
+  // 使用公式计算等差数列和：S = n/2 * (2a + (n-1)d)
+  let series_sum = divide_with_ceil(
+    multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference))),
+    2
+  )
   
-  assert_eq(10500, year1_amount)  // 10000 + 500
-  assert_eq(11025, year2_amount)  // 10500 + 525
-  assert_eq(11576, year3_amount)  // 11025 + 551
+  assert_eq(35, series_sum)
 }
 
-test "quality_inventory_optimization" {
-  // 库存优化计算
-  let monthly_demand = 450
-  let lead_time_days = 14
-  let safety_stock_percentage = 20
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  // 测试除数为零的情况
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
   
-  let daily_demand = divide_with_ceil(monthly_demand, 30)
-  let lead_time_demand = multiply(daily_demand, lead_time_days)
-  let safety_stock = divide_with_ceil(multiply(lead_time_demand, safety_stock_percentage), 100)
-  let reorder_point = add(lead_time_demand, safety_stock)
-  
-  assert_eq(15, daily_demand)        // ceil(450/30) = 15
-  assert_eq(210, lead_time_demand)   // 15 * 14 = 210
-  assert_eq(42, safety_stock)        // ceil(210*20/100) = 42
-  assert_eq(252, reorder_point)      // 210 + 42 = 252
-}
-
-test "quality_performance_metrics" {
-  // 性能指标计算
-  let total_operations = 5000
-  let successful_operations = 4850
-  let failed_operations = add(total_operations, -successful_operations)
-  let success_rate = divide_with_ceil(multiply(successful_operations, 100), total_operations)
-  let failure_rate = divide_with_ceil(multiply(failed_operations, 100), total_operations)
-  
-  assert_eq(150, failed_operations)
-  assert_eq(97, success_rate)   // ceil(4850*100/5000) = 97
-  assert_eq(3, failure_rate)    // ceil(150*100/5000) = 3
-}
-
-test "quality_engineering_tolerances" {
-  // 工程容差计算
-  let nominal_dimension = 100
-  let tolerance_percentage = 5
-  let upper_deviation = divide_with_ceil(multiply(nominal_dimension, tolerance_percentage), 100)
-  let lower_deviation = -upper_deviation
-  let upper_limit = add(nominal_dimension, upper_deviation)
-  let lower_limit = add(nominal_dimension, lower_deviation)
-  
-  assert_eq(5, upper_deviation)    // ceil(100*5/100) = 5
-  assert_eq(-5, lower_deviation)
-  assert_eq(105, upper_limit)      // 100 + 5 = 105
-  assert_eq(95, lower_limit)       // 100 - 5 = 95
+  // 测试极值运算
+  assert_eq(0, multiply(0, 1000000))
+  assert_eq(0, divide_with_ceil(0, 1000000))
+  assert_eq(1000000, add(500000, 500000))
 }
