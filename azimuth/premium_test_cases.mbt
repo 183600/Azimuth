@@ -1,8 +1,8 @@
-// 精选 MoonBit 测试用例
-// 包含8个高质量测试用例，覆盖核心功能
+// Premium MoonBit Test Cases
+// Contains 8 high-quality test cases covering core functionality
 
 test "add_function_comprehensive" {
-  // 全面测试加法函数
+  // Comprehensive test for add function
   assert_eq(10, add(7, 3))
   assert_eq(0, add(0, 0))
   assert_eq(-10, add(-7, -3))
@@ -11,7 +11,7 @@ test "add_function_comprehensive" {
 }
 
 test "multiply_function_edge_cases" {
-  // 测试乘法函数的边缘情况
+  // Test edge cases for multiply function
   assert_eq(0, multiply(0, 12345))
   assert_eq(12345, multiply(1, 12345))
   assert_eq(-12345, multiply(-1, 12345))
@@ -20,7 +20,7 @@ test "multiply_function_edge_cases" {
 }
 
 test "greet_function_international" {
-  // 测试问候函数的国际字符支持
+  // Test international character support for greet function
   assert_eq_string("Hello, 世界!", greet("世界"))
   assert_eq_string("Hello, Москва!", greet("Москва"))
   assert_eq_string("Hello, café!", greet("café"))
@@ -29,21 +29,21 @@ test "greet_function_international" {
 }
 
 test "divide_with_ceil_business_logic" {
-  // 测试向上取整除法的业务逻辑场景
-  // 场景：计算需要的运输车辆数量
+  // Test business logic scenarios for ceil division
+  // Scenario: Calculate required transport vehicles
   let packages = 47
   let capacity_per_truck = 10
   let trucks_needed = divide_with_ceil(packages, capacity_per_truck)
   assert_eq(5, trucks_needed)
   
-  // 验证总运力
+  // Verify total capacity
   let total_capacity = multiply(trucks_needed, capacity_per_truck)
   assert_eq(50, total_capacity)
 }
 
 test "complex_calculation_pipeline" {
-  // 测试复杂计算流水线
-  // 场景：计算项目完成时间
+  // Test complex calculation pipeline
+  // Scenario: Calculate project completion time
   let tasks = 25
   let people = 4
   let tasks_per_person_per_day = 2
@@ -52,23 +52,23 @@ test "complex_calculation_pipeline" {
   let days_needed = divide_with_ceil(tasks, daily_capacity)
   assert_eq(4, days_needed)  // ceil(25/(4*2)) = 4
   
-  // 验证总处理能力
+  // Verify total processing capacity
   let total_capacity = multiply(days_needed, daily_capacity)
   assert_eq(32, total_capacity)
 }
 
 test "mathematical_properties_verification" {
-  // 验证数学性质
+  // Verify mathematical properties
   let x = 42
   let y = 17
   
-  // 加法交换律
+  // Commutative property of addition
   assert_eq(add(x, y), add(y, x))
   
-  // 乘法交换律
+  // Commutative property of multiplication
   assert_eq(multiply(x, y), multiply(y, x))
   
-  // 分配律
+  // Distributive property
   assert_eq(
     multiply(x, add(y, 3)),
     add(multiply(x, y), multiply(x, 3))
@@ -76,27 +76,27 @@ test "mathematical_properties_verification" {
 }
 
 test "resource_allocation_optimization" {
-  // 资源分配优化测试
+  // Resource allocation optimization test
   let total_budget = 10000
   let team_members = 6
   
-  // 使用向上取整确保覆盖所有情况
+  // Use ceil division to ensure coverage of all cases
   let max_share = divide_with_ceil(total_budget, team_members)
   assert_eq(1667, max_share)  // ceil(10000/6) = 1667
   
-  // 验证总分配不超过预算
+  // Verify total allocation doesn't exceed budget significantly
   let total_allocated = multiply(max_share, team_members)
   assert_eq(10002, total_allocated)
 }
 
 test "error_handling_and_boundaries" {
-  // 错误处理和边界测试
-  // 除零情况
+  // Error handling and boundary tests
+  // Division by zero cases
   assert_eq(0, divide_with_ceil(10, 0))
   assert_eq(0, divide_with_ceil(-10, 0))
   assert_eq(0, divide_with_ceil(0, 0))
   
-  // 极值测试
+  // Extreme value tests
   assert_eq(1, divide_with_ceil(1, 1))
   assert_eq(1, divide_with_ceil(-1, -1))
   assert_eq(0, divide_with_ceil(0, 1))
