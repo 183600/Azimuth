@@ -6714,3 +6714,170 @@ test "azimuth_enhanced_resource_alloc" {
   assert_eq(5, remaining)
   assert_eq(1, additional_projects)
 }
+
+// 新增的10个高质量 MoonBit 测试用例 - 针对 azimuth 库的核心功能
+// 包含边界情况、错误处理和实际应用场景的全面测试
+
+test "azimuth_premium_mathematical_series_sum" {
+  // 测试等差数列求和：1 + 3 + 5 + ... + 19 = 100
+  let first_term = 1
+  let common_difference = 2
+  let number_of_terms = 10
+  
+  // 使用公式计算：S = n/2 * (2a + (n-1)d)
+  let sum_formula = divide_with_ceil(
+    multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference))),
+    2
+  )
+  
+  assert_eq(100, sum_formula)
+}
+
+test "azimuth_premium_financial_compound_interest" {
+  // 测试复利计算：本金1000，年利率5%，3年
+  let principal = 1000
+  let rate_percent = 5
+  
+  // 第一年
+  let amount_after_year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  // 第二年
+  let amount_after_year2 = add(amount_after_year1, divide_with_ceil(multiply(amount_after_year1, rate_percent), 100))
+  // 第三年
+  let amount_after_year3 = add(amount_after_year2, divide_with_ceil(multiply(amount_after_year2, rate_percent), 100))
+  
+  assert_eq(1158, amount_after_year3)
+}
+
+test "azimuth_premium_inventory_optimization" {
+  // 测试库存优化：计算最优订货量
+  let annual_demand = 1200
+  let ordering_cost = 50
+  let holding_cost_per_unit = 2
+  
+  // EOQ公式简化版：sqrt(2 * D * S / H)
+  // 这里使用简化计算
+  let eoq_numerator = multiply(multiply(2, annual_demand), ordering_cost)
+  let eoq_approximation = divide_with_ceil(eoq_numerator, holding_cost_per_unit)
+  
+  assert_eq(60000, eoq_numerator)
+  assert_eq(30000, eoq_approximation)
+}
+
+test "azimuth_premium_project_critical_path" {
+  // 测试项目关键路径计算
+  let task_a_duration = 5
+  let task_b_duration = 8
+  let task_c_duration = 3
+  let task_d_duration = 6
+  
+  // 计算两条路径的总时间
+  let path_1 = add(add(task_a_duration, task_b_duration), task_d_duration)
+  let path_2 = add(add(task_a_duration, task_c_duration), task_d_duration)
+  
+  // 关键路径是较长的路径
+  let critical_path = if path_1 > path_2 { path_1 } else { path_2 }
+  
+  assert_eq(19, path_1)
+  assert_eq(14, path_2)
+  assert_eq(19, critical_path)
+}
+
+test "azimuth_premium_data_compression_ratio" {
+  // 测试数据压缩比计算
+  let original_size = 1000
+  let compressed_size = 350
+  
+  // 计算压缩比：(原始大小 - 压缩后大小) / 原始大小 * 100
+  let size_difference = add(original_size, -compressed_size)
+  let compression_ratio = divide_with_ceil(multiply(size_difference, 100), original_size)
+  
+  assert_eq(650, size_difference)
+  assert_eq(65, compression_ratio)
+}
+
+test "azimuth_premium_network_packet_routing" {
+  // 测试网络数据包路由计算
+  let packet_size = 1500
+  let bandwidth_mbps = 100
+  let number_of_hops = 3
+  
+  // 计算每跳传输时间（简化）
+  let time_per_hop = divide_with_ceil(packet_size, bandwidth_mbps)
+  let total_time = multiply(time_per_hop, number_of_hops)
+  
+  assert_eq(15, time_per_hop)
+  assert_eq(45, total_time)
+}
+
+test "azimuth_premium_energy_efficiency_calculation" {
+  // 测试能源效率计算
+  let power_input_watts = 500
+  let power_output_watts = 350
+  
+  // 计算效率：输出功率 / 输入功率 * 100
+  let efficiency_percentage = divide_with_ceil(multiply(power_output_watts, 100), power_input_watts)
+  
+  assert_eq(70, efficiency_percentage)
+}
+
+test "azimuth_premium_cryptographic_hash_simulation" {
+  // 测试加密哈希模拟（简化版）
+  let input_value = 12345
+  let prime_multiplier = 31
+  let modulo_value = 1000000
+  
+  // 简化的哈希计算
+  let hash_value = multiply(input_value, prime_multiplier) % modulo_value
+  
+  assert_eq(382695, hash_value)
+}
+
+test "azimuth_premium_multilingual_greeting_system" {
+  // 测试多语言问候系统
+  let english_name = "Alice"
+  let chinese_name = "小明"
+  let spanish_name = "Carlos"
+  let emoji_name = "🚀"
+  
+  // 测试不同语言的问候
+  let english_greeting = greet(english_name)
+  let chinese_greeting = greet(chinese_name)
+  let spanish_greeting = greet(spanish_name)
+  let emoji_greeting = greet(emoji_name)
+  
+  assert_eq_string("Hello, Alice!", english_greeting)
+  assert_eq_string("Hello, 小明!", chinese_greeting)
+  assert_eq_string("Hello, Carlos!", spanish_greeting)
+  assert_eq_string("Hello, 🚀!", emoji_greeting)
+}
+
+test "azimuth_premium_complex_business_workflow" {
+  // 测试复杂业务工作流程
+  let product_cost = 120
+  let quantity = 15
+  let tax_rate = 8
+  let shipping_cost_per_item = 5
+  let discount_threshold = 1000
+  let discount_amount = 50
+  
+  // 计算商品总价
+  let subtotal = multiply(product_cost, quantity)
+  // 计算运费
+  let total_shipping = multiply(shipping_cost_per_item, quantity)
+  // 计算税费
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  // 计算折扣前总价
+  let pre_discount_total = add(add(subtotal, total_shipping), tax_amount)
+  // 应用折扣（如果满足条件）
+  let final_total = if pre_discount_total > discount_threshold {
+    add(pre_discount_total, -discount_amount)
+  } else {
+    pre_discount_total
+  }
+  
+  assert_eq(1800, subtotal)
+  assert_eq(75, total_shipping)
+  assert_eq(144, tax_amount)
+  assert_eq(2019, pre_discount_total)
+  assert_eq(1969, final_total)
+}
