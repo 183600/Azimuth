@@ -47,6 +47,42 @@ azimuth/lib.mbt:6535:6-6535:36 [E0061] Warning (duplicate_test): Allowing repeat
 azimuth/lib.mbt:6566:6-6566:44 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "mathematical_properties_verification" should be unique, but it is already used at azimuth/lib.mbt:2521:6.
 Generating azimuth.wasm...
 Testing azimuth...
+Checking standard_moonbit_test_cases.mbt...
+Found 10 tests in standard_moonbit_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking lib_test.mbt...
+Found 10 tests in lib_test.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking azimuth_unique_tests.mbt...
+Found 10 tests in azimuth_unique_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Checking concise_azimuth_core_tests.mbt...
 Found 10 tests in concise_azimuth_core_tests.mbt
 test ... ok
@@ -167,6 +203,18 @@ test ... ok
 test ... ok
 Checking simple_quality_tests.mbt...
 Found 10 tests in simple_quality_tests.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+Checking azimuth_standard_test_cases.mbt...
+Found 10 tests in azimuth_standard_test_cases.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -1637,170 +1685,16 @@ test ... ok
 test ... ok
 test ... ok
 Checking enhanced_test_cases.mbt...
-azimuth_test/enhanced_test_cases.mbt:10:3-10:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:10:25-10:28 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:11:25-11:28 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:14:26-14:29 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:15:26-15:29 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:18:3-18:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:18:16-18:19 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:19:3-19:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:19:16-19:24 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:20:3-20:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:20:16-20:24 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:26:16-26:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:27:3-27:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:27:16-27:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:28:3-28:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:28:16-28:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:31:3-31:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:31:17-31:33 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:32:3-32:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:32:17-32:33 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:33:3-33:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:33:16-33:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:36:3-36:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:36:16-36:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:37:3-37:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:37:16-37:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:40:3-40:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:40:16-40:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:41:3-41:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:41:16-41:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:42:3-42:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:42:16-42:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:52:3-52:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:52:13-52:16 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:52:24-52:27 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:55:13-55:21 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:55:29-55:37 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:58:3-58:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:58:13-58:16 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:58:17-58:20 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:58:32-58:35 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:58:39-58:42 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:61:3-61:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:61:13-61:21 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:61:22-61:30 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:61:42-61:50 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:61:54-61:62 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:64:3-64:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:64:13-64:21 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:64:25-64:28 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:64:37-64:40 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:64:41-64:49 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:64:57-64:65 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:67:3-67:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:67:16-67:19 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:68:3-68:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:68:16-68:24 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:71:3-71:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:71:16-71:24 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:81:25-81:41 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:81:42-81:50 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:82:24-82:32 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:83:25-83:28 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:86:25-86:41 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:86:59-86:67 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:88:3-88:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:89:3-89:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:90:3-90:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:91:3-91:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:99:7-99:19 [E0002] Warning (unused_value): Unused variable 'safety_stock'
-azimuth_test/enhanced_test_cases.mbt:104:23-104:31 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:107:22-107:25 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:107:41-107:55 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
-azimuth_test/enhanced_test_cases.mbt:113:26-113:34 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:116:21-116:24 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:118:3-118:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:119:3-119:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:120:3-120:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:121:3-121:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:122:3-122:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:128:3-128:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/enhanced_test_cases.mbt:128:32-128:37 [E4021] The value identifier greet is unbound.
-azimuth_test/enhanced_test_cases.mbt:129:3-129:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/enhanced_test_cases.mbt:129:33-129:38 [E4021] The value identifier greet is unbound.
-azimuth_test/enhanced_test_cases.mbt:130:3-130:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/enhanced_test_cases.mbt:130:34-130:39 [E4021] The value identifier greet is unbound.
-azimuth_test/enhanced_test_cases.mbt:131:3-131:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/enhanced_test_cases.mbt:131:34-131:39 [E4021] The value identifier greet is unbound.
-azimuth_test/enhanced_test_cases.mbt:132:3-132:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/enhanced_test_cases.mbt:132:34-132:39 [E4021] The value identifier greet is unbound.
-azimuth_test/enhanced_test_cases.mbt:135:3-135:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/enhanced_test_cases.mbt:135:33-135:38 [E4021] The value identifier greet is unbound.
-azimuth_test/enhanced_test_cases.mbt:136:3-136:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/enhanced_test_cases.mbt:136:33-136:38 [E4021] The value identifier greet is unbound.
-azimuth_test/enhanced_test_cases.mbt:137:3-137:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/enhanced_test_cases.mbt:137:33-137:38 [E4021] The value identifier greet is unbound.
-azimuth_test/enhanced_test_cases.mbt:140:3-140:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/enhanced_test_cases.mbt:140:34-140:39 [E4021] The value identifier greet is unbound.
-azimuth_test/enhanced_test_cases.mbt:141:3-141:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/enhanced_test_cases.mbt:141:33-141:38 [E4021] The value identifier greet is unbound.
-azimuth_test/enhanced_test_cases.mbt:142:3-142:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/enhanced_test_cases.mbt:142:35-142:40 [E4021] The value identifier greet is unbound.
-azimuth_test/enhanced_test_cases.mbt:143:3-143:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/enhanced_test_cases.mbt:143:38-143:43 [E4021] The value identifier greet is unbound.
-azimuth_test/enhanced_test_cases.mbt:147:3-147:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/enhanced_test_cases.mbt:147:81-147:86 [E4021] The value identifier greet is unbound.
-azimuth_test/enhanced_test_cases.mbt:160:20-160:28 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:163:19-163:27 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:163:31-163:39 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:163:40-163:43 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:166:28-166:31 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:169:22-169:38 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:172:22-172:38 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:174:3-174:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:175:3-175:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:176:3-176:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:177:3-177:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:178:3-178:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:189:30-189:38 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:192:18-192:34 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:192:35-192:43 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:195:28-195:31 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:195:54-195:63 [E4018] Type Unit does not implement trait Neg: no `impl` is defined
-azimuth_test/enhanced_test_cases.mbt:198:27-198:35 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:201:33-201:49 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:203:3-203:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:204:3-204:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:205:3-205:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:206:3-206:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:207:3-207:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:212:7-212:18 [E0002] Warning (unused_value): Unused variable 'data_points'
-azimuth_test/enhanced_test_cases.mbt:216:13-216:16 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:216:17-216:20 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:216:21-216:24 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:216:25-216:28 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:216:29-216:32 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:216:33-216:36 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:219:17-219:33 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:224:15-224:18 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:227:25-227:41 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:229:3-229:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:230:3-230:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:231:3-231:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:232:3-232:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:245:18-245:26 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:248:24-248:32 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:251:20-251:36 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:251:37-251:45 [E4021] The value identifier multiply is unbound.
-azimuth_test/enhanced_test_cases.mbt:254:28-254:31 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:254:32-254:35 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:258:5-258:8 [E4021] The value identifier add is unbound.
-azimuth_test/enhanced_test_cases.mbt:264:31-264:47 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/enhanced_test_cases.mbt:266:3-266:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:267:3-267:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:268:3-268:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:269:3-269:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:270:3-270:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/enhanced_test_cases.mbt:271:3-271:12 [E4021] The value identifier assert_eq is unbound.
-Error: enhanced_test_cases.mbt compilation failed
+Found 9 tests in enhanced_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Checking new_comprehensive_tests.mbt...
 Found 9 tests in new_comprehensive_tests.mbt
 test ... ok
@@ -5010,82 +4904,17 @@ azimuth_test/azimuth_additional_edge_case_tests.mbt:105:22-105:69 [E4014] Expr T
 azimuth_test/azimuth_additional_edge_case_tests.mbt:105:3-105:70 [E4080] This function has type (Int, Int) -> Unit, which requires 2 arguments, but is given 1 arguments.
 Error: azimuth_additional_edge_case_tests.mbt compilation failed
 Checking azimuth_standard_test_cases.mbt...
-azimuth_test/azimuth_standard_test_cases.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:6:16-6:19 [E4021] The value identifier add is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:7:17-7:20 [E4021] The value identifier add is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:8:16-8:19 [E4021] The value identifier add is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:9:18-9:21 [E4021] The value identifier add is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:14:17-14:20 [E4021] The value identifier add is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:15:18-15:21 [E4021] The value identifier add is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:16:16-16:19 [E4021] The value identifier add is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:17:17-17:20 [E4021] The value identifier add is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:22:16-22:24 [E4021] The value identifier multiply is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:23:3-23:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:23:16-23:24 [E4021] The value identifier multiply is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:24:3-24:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:24:17-24:25 [E4021] The value identifier multiply is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:25:3-25:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:25:16-25:24 [E4021] The value identifier multiply is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:26:18-26:26 [E4021] The value identifier multiply is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:31:3-31:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:31:37-31:42 [E4021] The value identifier greet is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:32:3-32:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:32:39-32:44 [E4021] The value identifier greet is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:33:3-33:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:33:36-33:41 [E4021] The value identifier greet is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:34:3-34:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:34:32-34:37 [E4021] The value identifier greet is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:39:16-39:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:40:3-40:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:40:16-40:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:41:3-41:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:41:16-41:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:42:3-42:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:42:16-42:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:43:3-43:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:43:16-43:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:48:3-48:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:48:17-48:33 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:49:3-49:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:49:16-49:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:50:3-50:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:50:17-50:33 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:51:3-51:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:51:16-51:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:60:3-60:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:60:13-60:16 [E4021] The value identifier add is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:60:24-60:27 [E4021] The value identifier add is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:63:3-63:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:63:13-63:21 [E4021] The value identifier multiply is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:63:29-63:37 [E4021] The value identifier multiply is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:70:22-70:38 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:72:3-72:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:75:24-75:32 [E4021] The value identifier multiply is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:76:3-76:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:82:15-82:18 [E4021] The value identifier add is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:83:15-83:23 [E4021] The value identifier multiply is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:84:15-84:31 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:85:16-85:19 [E4021] The value identifier add is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:87:3-87:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:92:3-92:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:92:34-92:39 [E4021] The value identifier greet is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:93:3-93:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:93:33-93:38 [E4021] The value identifier greet is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:94:3-94:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:94:36-94:41 [E4021] The value identifier greet is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:95:3-95:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/azimuth_standard_test_cases.mbt:95:38-95:43 [E4021] The value identifier greet is unbound.
-Error: azimuth_standard_test_cases.mbt compilation failed
+Found 10 tests in azimuth_standard_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Checking user_new_standard_tests.mbt...
 azimuth_test/user_new_standard_tests.mbt:118:22-118:54 [E4080] This function has type (Int, Int) -> Int, which requires 2 arguments, but is given 3 arguments.
 azimuth_test/user_new_standard_tests.mbt:118:22-118:65 [E4014] Expr Type Mismatch
@@ -5698,6 +5527,17 @@ test ... ok
 test ... ok
 test ... ok
 test ... ok
+Checking enhanced_test_cases.mbt...
+Found 9 tests in enhanced_test_cases.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Compiling clean_test...
 Generating clean_test.wasm...
 Testing clean_test...
@@ -5757,6 +5597,6 @@ test ... ok
 test ... ok
 test ... ok
 
-1514 tests passed, 0 failed
+1582 tests passed, 0 failed
 
 All packages compiled and tests passed successfully!
