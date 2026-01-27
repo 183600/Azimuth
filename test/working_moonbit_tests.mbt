@@ -1,5 +1,5 @@
-// 新的标准 MoonBit 测试用例
-// 使用标准 MoonBit 测试语法编写的10个高质量测试用例
+// 工作 MoonBit 测试用例
+// 基于标准 MoonBit 测试语法的10个高质量测试用例
 
 test "subtract_function_basic" {
   // 基本减法函数测试
