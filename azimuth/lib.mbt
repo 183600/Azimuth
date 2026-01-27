@@ -5478,3 +5478,137 @@ test "error_handling_boundary_conditions_new" {
   assert_eq(-1, divide_with_ceil(-1, 1))
   assert_eq(1, divide_with_ceil(-1, -1))
 }
+
+// 新增的标准 MoonBit 测试用例 - 专注于性能和边界情况
+test "performance_large_number_operations" {
+  // 大数运算性能测试
+  let large_num = 1000000
+  assert_eq(2000000, add(large_num, large_num))
+  assert_eq(1000000000000, multiply(large_num, large_num))
+  assert_eq(1, divide_with_ceil(large_num, large_num))
+  assert_eq(2, divide_with_ceil(large_num + 1, large_num))
+}
+
+test "mathematical_distributive_property_verification" {
+  // 数学分配律验证
+  let a = 7
+  let b = 11
+  let c = 13
+  
+  // a * (b + c) = a * b + a * c
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)
+}
+
+test "real_world_inventory_management" {
+  // 真实世界库存管理场景
+  let product_a = 45
+  let product_b = 67
+  let product_c = 23
+  let box_capacity = 20
+  
+  // 计算每种产品需要的箱子数
+  let boxes_a = divide_with_ceil(product_a, box_capacity)
+  let boxes_b = divide_with_ceil(product_b, box_capacity)
+  let boxes_c = divide_with_ceil(product_c, box_capacity)
+  
+  assert_eq(3, boxes_a)  // ceil(45/20) = 3
+  assert_eq(4, boxes_b)  // ceil(67/20) = 4
+  assert_eq(2, boxes_c)  // ceil(23/20) = 2
+  
+  // 计算总箱子数
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  assert_eq(9, total_boxes)
+}
+
+test "string_formatting_edge_cases" {
+  // 字符串格式化边缘情况
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("   "))
+  assert_eq_string("Hello, \\n\\t\\r!", greet("\\n\\t\\r"))
+  assert_eq_string("Hello, 1234567890!", greet("1234567890"))
+  assert_eq_string("Hello, mixedCASE123!", greet("mixedCASE123"))
+}
+
+test "complex_financial_calculation" {
+  // 复杂金融计算场景
+  let principal = 50000
+  let annual_rate = 6  // 6%
+  let years = 5
+  
+  // 计算简单利息
+  let total_interest = multiply(principal, multiply(annual_rate, years))
+  let simple_interest = divide_with_ceil(total_interest, 100)
+  let total_with_simple = add(principal, simple_interest)
+  
+  assert_eq(15000, simple_interest)  // 50000 * 6% * 5 = 15000
+  assert_eq(65000, total_with_simple)
+}
+
+test "data_structure_simulation" {
+  // 数据结构模拟测试
+  // 模拟栈操作
+  let stack_size = 0
+  let push1 = add(stack_size, 1)
+  let push2 = add(push1, 1)
+  let push3 = add(push2, 1)
+  let pop1 = subtract(push3, 1)
+  let pop2 = subtract(pop1, 1)
+  let final_stack = subtract(pop2, 1)
+  
+  assert_eq(3, push3)
+  assert_eq(2, pop1)
+  assert_eq(1, pop2)
+  assert_eq(0, final_stack)
+}
+
+test "algorithm_complexity_comparison" {
+  // 算法复杂度比较测试
+  let input_size = 1000
+  
+  // O(n) 线性算法
+  let linear_ops = multiply(input_size, 3)
+  
+  // O(log n) 对数算法（简化模拟）
+  let log_ops = divide_with_ceil(input_size, 10)
+  
+  // O(n²) 平方算法（简化模拟）
+  let quadratic_ops = divide_with_ceil(multiply(input_size, input_size), 1000)
+  
+  assert_eq(3000, linear_ops)
+  assert_eq(100, log_ops)
+  assert_eq(1000, quadratic_ops)
+}
+
+test "resource_utilization_optimization" {
+  // 资源利用优化测试
+  let total_resources = 1000
+  let projects = 7
+  let min_per_project = divide_with_ceil(total_resources, projects)
+  
+  assert_eq(143, min_per_project)  // ceil(1000/7) = 143
+  
+  // 计算实际分配的资源
+  let allocated = multiply(min_per_project, projects)
+  let waste = subtract(allocated, total_resources)
+  
+  assert_eq(1001, allocated)
+  assert_eq(1, waste)
+}
+
+test "error_boundary_comprehensive" {
+  // 错误边界综合测试
+  // 各种除零情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(1, 0))
+  assert_eq(0, divide_with_ceil(-1, 0))
+  assert_eq(0, divide_with_ceil(1000000, 0))
+  assert_eq(0, divide_with_ceil(-1000000, 0))
+  
+  // 极值运算
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 1000000))
+  assert_eq(1, multiply(1, 1))
+  assert_eq(-1, multiply(-1, 1))
+}
