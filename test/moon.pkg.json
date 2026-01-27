@@ -46,6 +46,7 @@
     "new_standard_moonbit_tests.mbt",
     "enhanced_moonbit_tests.mbt",
     "new_moonbit_standard_tests.mbt",
-    "working_moonbit_tests.mbt"
+    "working_moonbit_tests.mbt",
+    "azimuth_new_standard_test_cases.mbt"
   ]
 }
