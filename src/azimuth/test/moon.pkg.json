@@ -249,5 +249,6 @@
                 "high_quality_focused_tests.mbt",
                 "standard_moonbit_quality_tests.mbt",
                 "standard_moonbit_selfcontained_tests.mbt",
-                "enhanced_test_cases.mbt"
+                "enhanced_test_cases.mbt",
+                "standard_enhanced_moonbit_tests.mbt"
                 ]}

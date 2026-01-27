@@ -204,6 +204,7 @@
   "azimuth_high_quality_test_suite.mbt",
   "user_added_test_2024.mbt",
   "user_simple_test_2024.mbt",
-  "standard_azimuth_enhanced_tests.mbt"
+  "standard_azimuth_enhanced_tests.mbt",
+  "standard_enhanced_moonbit_tests.mbt"
   ]
 }
