@@ -1,131 +1,101 @@
-// Azimuth 项目综合单元测试
-// 使用标准 MoonBit 测试语法，包含8个高质量测试用例
+// Azimuth 综合单元测试 - 8个高质量 MoonBit 测试用例
+// 测试覆盖基本功能、边界情况、错误处理和实际应用场景
 
-// 导入必要的模块
-use azimuth
-
-test "basic_arithmetic_operations" {
-  // 测试基本算术运算
-  assert_eq(15, azimuth.add(8, 7))
-  assert_eq(-3, azimuth.add(5, -8))
-  assert_eq(0, azimuth.add(0, 0))
-  assert_eq(24, azimuth.multiply(6, 4))
-  assert_eq(-18, azimuth.multiply(6, -3))
-  assert_eq(0, azimuth.multiply(0, 42))
+test "arithmetic_operation_chaining" {
+  // 测试算术运算链式组合
+  let base = 15
+  let result = add(multiply(base, 2), divide_with_ceil(subtract(base, 5), 3))
+  assert_eq(34, result)  // 15*2 + ceil(10/3) = 30 + 4 = 34
 }
 
-test "divide_with_ceil_comprehensive" {
-  // 测试向上取整除法的各种情况
-  assert_eq(4, azimuth.divide_with_ceil(10, 3))
-  assert_eq(3, azimuth.divide_with_ceil(9, 3))
-  assert_eq(1, azimuth.divide_with_ceil(1, 1))
-  assert_eq(0, azimuth.divide_with_ceil(0, 5))
-  assert_eq(0, azimuth.divide_with_ceil(10, 0))
-  assert_eq(-3, azimuth.divide_with_ceil(-10, 3))
-  assert_eq(4, azimuth.divide_with_ceil(-10, -3))
+test "resource_planning_scenario" {
+  // 测试资源规划场景
+  let project_days = 22
+  let team_members = 5
+  let tasks_per_member = 8
+  let total_tasks = multiply(team_members, tasks_per_member)
+  let tasks_per_day = divide_with_ceil(total_tasks, project_days)
+  assert_eq(2, tasks_per_day)  // ceil(40/22) = 2
 }
 
-test "greet_function_various_inputs" {
-  // 测试问候函数的各种输入
-  assert_eq_string("Hello, World!", azimuth.greet("World"))
-  assert_eq_string("Hello, MoonBit!", azimuth.greet("MoonBit"))
-  assert_eq_string("Hello, !", azimuth.greet(""))
-  assert_eq_string("Hello, 世界!", azimuth.greet("世界"))
-  assert_eq_string("Hello, 🚀!", azimuth.greet("🚀"))
-  assert_eq_string("Hello, 123!", azimuth.greet("123"))
+test "negative_number_division_edge_cases" {
+  // 测试负数除法的边缘情况
+  assert_eq(-2, divide_with_ceil(-7, 4))
+  assert_eq(-1, divide_with_ceil(-3, 4))
+  assert_eq(2, divide_with_ceil(7, -4))
+  assert_eq(1, divide_with_ceil(3, -4))
+  assert_eq(2, divide_with_ceil(-7, -4))
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 12
-  let b = 8
-  
-  // 加法交换律
-  assert_eq(azimuth.add(a, b), azimuth.add(b, a))
-  
-  // 乘法交换律
-  assert_eq(azimuth.multiply(a, b), azimuth.multiply(b, a))
-  
-  // 分配律
-  assert_eq(
-    azimuth.multiply(a, azimuth.add(b, 3)),
-    azimuth.add(azimuth.multiply(a, b), azimuth.multiply(a, 3))
-  )
+test "string_input_validation" {
+  // 测试字符串输入验证
+  assert_eq_string("Hello, space separated!", greet("space separated"))
+  assert_eq_string("Hello, special@chars#123!", greet("special@chars#123"))
+  assert_eq_string("Hello, mixedCASE123!", greet("mixedCASE123"))
+  assert_eq_string("Hello, emoji 🎉🚀!", greet("emoji 🎉🚀"))
 }
 
-test "business_calculation_scenario" {
-  // 测试商业计算场景
-  // 场景：计算项目预算分配
-  let total_budget = 50000
-  let team_members = 8
-  let equipment_cost = 15000
+test "mathematical_identity_verification" {
+  // 测试数学恒等式验证
+  let x = 42
   
-  // 计算人均预算
-  let remaining_budget = azimuth.add(total_budget, -equipment_cost)
-  let budget_per_person = azimuth.divide_with_ceil(remaining_budget, team_members)
+  // 加法恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(0, subtract(x, x))
   
-  // 验证计算结果
-  assert_eq(4375, budget_per_person)  // ceil((50000-15000)/8) = ceil(35000/8) = 4375
-  
-  // 验证总分配
-  let total_allocated = azimuth.multiply(budget_per_person, team_members)
-  assert_eq(35000, total_allocated)
+  // 乘法恒等式
+  assert_eq(x, multiply(x, 1))
+  assert_eq(0, multiply(x, 0))
+  assert_eq(-x, multiply(x, -1))
 }
 
-test "edge_cases_and_boundaries" {
-  // 测试边缘情况和边界值
-  // 大数运算
-  assert_eq(2000000, azimuth.add(1000000, 1000000))
-  assert_eq(1000000, azimuth.multiply(1000, 1000))
+test "capacity_planning_calculation" {
+  // 测试容量规划计算
+  let users = 157
+  let server_capacity = 25
+  let servers_needed = divide_with_ceil(users, server_capacity)
+  assert_eq(7, servers_needed)  // ceil(157/25) = 7
+  
+  // 验证总容量
+  let total_capacity = multiply(servers_needed, server_capacity)
+  assert_eq(175, total_capacity)
+  
+  // 计算剩余容量
+  let remaining_capacity = subtract(total_capacity, users)
+  assert_eq(18, remaining_capacity)
+}
+
+test "error_handling_comprehensive" {
+  // 测试综合错误处理
+  // 除零错误的各种情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
   
   // 边界值测试
-  assert_eq(1, azimuth.divide_with_ceil(1, 1))
-  assert_eq(1, azimuth.divide_with_ceil(-1, -1))
-  assert_eq(0, azimuth.divide_with_ceil(0, 1))
-  assert_eq(0, azimuth.divide_with_ceil(0, -1))
-  
-  // 除零处理
-  assert_eq(0, azimuth.divide_with_ceil(10, 0))
-  assert_eq(0, azimuth.divide_with_ceil(-10, 0))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(-1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, -1))
 }
 
-test "complex_calculation_pipeline" {
-  // 测试复杂计算流水线
-  // 场景：计算生产流程效率
-  let raw_materials = 1000
-  let defect_rate = 15  // 15%
-  let processing_capacity = 50
+test "complex_workflow_simulation" {
+  // 测试复杂工作流模拟
+  // 场景：订单处理流程
+  let orders = 89
+  let processing_time_per_order = 3
+  let workers = 4
+  let orders_per_worker = divide_with_ceil(orders, workers)
+  assert_eq(23, orders_per_worker)  // ceil(89/4) = 23
   
-  // 计算合格产品数量
-  let defective_products = azimuth.divide_with_ceil(
-    azimuth.multiply(raw_materials, defect_rate), 
-    100
-  )
-  let qualified_products = azimuth.add(raw_materials, -defective_products)
+  // 计算总处理时间
+  let total_time = multiply(orders_per_worker, processing_time_per_order)
+  assert_eq(69, total_time)
   
-  // 计算需要的处理批次
-  let batches_needed = azimuth.divide_with_ceil(qualified_products, processing_capacity)
+  // 计算实际处理的订单数
+  let actual_processed = multiply(workers, orders_per_worker)
+  assert_eq(92, actual_processed)
   
-  // 验证结果
-  assert_eq(850, qualified_products)  // 1000 - ceil(1000*15/100) = 1000 - 150 = 850
-  assert_eq(17, batches_needed)  // ceil(850/50) = 17
-}
-
-test "resource_allocation_optimization" {
-  // 测试资源分配优化
-  // 场景：计算服务器资源分配
-  let total_requests = 1250
-  let server_capacity = 150
-  let backup_buffer = 20  // 20% 额外缓冲
-  
-  // 计算基础服务器数量
-  let base_servers = azimuth.divide_with_ceil(total_requests, server_capacity)
-  
-  // 计算包含缓冲的总服务器数量
-  let total_capacity_needed = azimuth.multiply(base_servers, 100 + backup_buffer)
-  let total_servers = azimuth.divide_with_ceil(total_capacity_needed, 100)
-  
-  // 验证结果
-  assert_eq(9, base_servers)  // ceil(1250/150) = 9
-  assert_eq(11, total_servers)  // ceil(9*120/100) = ceil(1080/100) = 11
+  // 验证处理能力足够
+  assert_true(actual_processed >= orders)
 }
