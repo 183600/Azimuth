@@ -7095,3 +7095,104 @@ test "azimuth_unicode_support" {
   assert_eq_string("Hello, 世界!", greet("世界"))
   assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
+
+// 新增的核心功能测试用例
+test "azimuth_new_add_function_commutative_property" {
+  // 测试加法交换律
+  assert_eq(15, add(7, 8))
+  assert_eq(15, add(8, 7))
+  assert_eq(0, add(-5, 5))
+  assert_eq(0, add(5, -5))
+}
+
+test "azimuth_new_multiply_function_distributive_property" {
+  // 测试乘法分配律
+  let a = 3
+  let b = 4
+  let c = 5
+  
+  // a * (b + c) = a * b + a * c
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)
+}
+
+test "azimuth_new_divide_with_ceil_comprehensive" {
+  // 全面测试向上取整除法
+  assert_eq(4, divide_with_ceil(11, 3))  // 11/3 = 3.666... -> 4
+  assert_eq(3, divide_with_ceil(9, 3))   // 9/3 = 3 -> 3
+  assert_eq(-3, divide_with_ceil(-10, 3)) // -10/3 = -3.333... -> -3
+  assert_eq(0, divide_with_ceil(5, 0))    // 除数为0时的安全处理
+}
+
+test "azimuth_new_complex_business_calculation" {
+  // 复杂业务计算：订单总价
+  let unit_price = 45
+  let quantity = 6
+  let shipping = 12
+  let tax_rate = 8
+  
+  let subtotal = multiply(unit_price, quantity)
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let total = add(add(subtotal, tax), shipping)
+  
+  assert_eq(270, subtotal)
+  assert_eq(22, tax)
+  assert_eq(304, total)
+}
+
+test "azimuth_new_mathematical_series_sum" {
+  // 数学级数求和：等差数列 1+2+3+...+10
+  let n = 10
+  let sum = divide_with_ceil(multiply(n, add(n, 1)), 2)
+  assert_eq(55, sum)
+}
+
+test "azimuth_new_inventory_packaging_optimization" {
+  // 库存包装优化
+  let items_per_box = 12
+  let total_items = 85
+  
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  let unused_space = multiply(boxes_needed, items_per_box) - total_items
+  
+  assert_eq(8, boxes_needed)
+  assert_eq(11, unused_space)
+}
+
+test "azimuth_new_financial_compound_interest" {
+  // 金融复利计算（简化版）
+  let principal = 1000
+  let rate_percent = 5
+  let _years = 3  // 使用下划线前缀表示未使用的变量
+  
+  let amount_year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let amount_year2 = add(amount_year1, divide_with_ceil(multiply(amount_year1, rate_percent), 100))
+  let amount_year3 = add(amount_year2, divide_with_ceil(multiply(amount_year2, rate_percent), 100))
+  
+  assert_eq(1050, amount_year1)
+  assert_eq(1103, amount_year2)
+  assert_eq(1158, amount_year3)
+}
+
+test "azimuth_new_time_management_calculation" {
+  // 时间管理计算
+  let daily_tasks = 8
+  let total_tasks = 35
+  let work_hours_per_day = 8
+  
+  let days_needed = divide_with_ceil(total_tasks, daily_tasks)
+  let total_work_hours = multiply(days_needed, work_hours_per_day)
+  
+  assert_eq(5, days_needed)
+  assert_eq(40, total_work_hours)
+}
+
+test "azimuth_new_error_handling_boundary_cases" {
+  // 错误处理边界情况
+  assert_eq(0, divide_with_ceil(0, 0))    // 0除以0
+  assert_eq(0, divide_with_ceil(100, 0))   // 正数除以0
+  assert_eq(0, divide_with_ceil(-100, 0))  // 负数除以0
+  assert_eq(0, multiply(0, 0))             // 0乘以0
+  assert_eq(0, add(0, 0))                  // 0加0
+}

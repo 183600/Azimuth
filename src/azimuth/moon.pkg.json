@@ -8,6 +8,7 @@
     "azimuth"
   ],
   "test": [
+    "azimuth_core_functionality_tests.mbt",
     "simple_basic_tests.mbt",
     "standard_azimuth_unit_tests.mbt",
     "standard_core_tests.mbt",
