@@ -372,5 +372,7 @@
     "core_enhanced_test_cases.mbt",
     "standard_azimuth_test_cases.mbt",
     "new_comprehensive_tests.mbt",
-    "new_standard_tests.mbt"
+    "new_standard_tests.mbt",
+    "focused_test_cases.mbt",
+    "simple_focused_test.mbt"
                                                                                                                                                 ]}

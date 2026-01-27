@@ -1,4 +1,5 @@
 // 简单的专注测试用例
+// 用于验证测试系统是否正常工作
 
 test "simple_add_test" {
   assert_eq(5, add(2, 3))
@@ -9,5 +10,5 @@ test "simple_multiply_test" {
 }
 
 test "simple_greet_test" {
-  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, Test!", greet("Test"))
 }

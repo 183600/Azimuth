@@ -5,6 +5,9 @@
     "moonbitlang/core/builtin"
   ],
   "test": [
+    "user_new_tests.mbt",
+    "our_final_tests.mbt",
+    "simple_test_example.mbt",
     "azimuth_enhanced_test_cases.mbt",
     "azimuth_standard_basic_tests.mbt",
     "azimuth_additional_standard_tests.mbt",
@@ -56,6 +59,12 @@
     "new_quality_tests.mbt",
     "simple_azimuth_tests_final.mbt",
     "azimuth_comprehensive_new_tests.mbt",
-    "user_enhanced_test_cases.mbt"
+    "user_enhanced_test_cases.mbt",
+    "focused_test_cases.mbt",
+    "our_new_tests.mbt",
+    "our_final_tests.mbt",
+    "simple_test_example.mbt",
+    "simple_azimuth_new_tests.mbt",
+    "azimuth_final_tests.mbt"
   ]
 }
