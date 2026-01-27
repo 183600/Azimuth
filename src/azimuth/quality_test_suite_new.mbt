@@ -1,4 +1,4 @@
-// 高质量增强测试套件 - 针对 azimuth 库的全面测试
+// 高质量测试套件 - 针对 azimuth 库的全面测试
 // 包含边界情况、错误处理和实际应用场景
 
 test "mathematical_identity_properties" {
@@ -21,17 +21,17 @@ test "mathematical_identity_properties" {
 test "divide_with_ceil_comprehensive" {
   // 全面测试向上取整除法
   // 正数情况
-  azimuth::assert_eq(4, azimuth::divide_with_ceil(11, 3))  // 11/3 = 3.666... -> 4
-  azimuth::assert_eq(4, azimuth::divide_with_ceil(12, 3))  // 12/3 = 4 -> 4
-  azimuth::assert_eq(1, azimuth::divide_with_ceil(1, 100))  // 1/100 = 0.01 -> 1
+  azimuth::assert_eq(4, azimuth::divide_with_ceil(11, 3))
+  azimuth::assert_eq(4, azimuth::divide_with_ceil(12, 3))
+  azimuth::assert_eq(1, azimuth::divide_with_ceil(1, 100))
   
   // 负数情况
-  azimuth::assert_eq(-3, azimuth::divide_with_ceil(-10, 3))  // -10/3 = -3.333... -> -3
-  azimuth::assert_eq(4, azimuth::divide_with_ceil(-11, -3))  // -11/-3 = 3.666... -> 4
+  azimuth::assert_eq(-3, azimuth::divide_with_ceil(-10, 3))
+  azimuth::assert_eq(4, azimuth::divide_with_ceil(-11, -3))
   
   // 边界情况
-  azimuth::assert_eq(0, azimuth::divide_with_ceil(0, 5))  // 0/5 = 0 -> 0
-  azimuth::assert_eq(0, azimuth::divide_with_ceil(5, 0))  // 除数为0的安全处理
+  azimuth::assert_eq(0, azimuth::divide_with_ceil(0, 5))
+  azimuth::assert_eq(0, azimuth::divide_with_ceil(5, 0))
 }
 
 test "complex_business_calculations" {
@@ -54,7 +54,7 @@ test "complex_business_calculations" {
   let final_price = azimuth::add(final_total, -discount)
   
   azimuth::assert_eq(356, subtotal)
-  azimuth::assert_eq(29, tax_amount)  // ceil(356 * 8 / 100) = ceil(28.48) = 29
+  azimuth::assert_eq(29, tax_amount)
   azimuth::assert_eq(397, final_total)
   azimuth::assert_eq(377, final_price)
 }
@@ -66,7 +66,7 @@ test "string_processing_internationalization" {
   azimuth::assert_eq_string("Hello, María!", azimuth::greet("María"))
   azimuth::assert_eq_string("Hello, Москва!", azimuth::greet("Москва"))
   azimuth::assert_eq_string("Hello, العربية!", azimuth::greet("العربية"))
-  azimuth::assert_eq_string("Hello, !", azimuth::greet(""))  // 空字符串处理
+  azimuth::assert_eq_string("Hello, !", azimuth::greet(""))
 }
 
 test "algorithm_efficiency_simulation" {
@@ -85,7 +85,7 @@ test "algorithm_efficiency_simulation" {
   let actual_performance = azimuth::add(optimized_ops, -overhead)
   
   azimuth::assert_eq(3000, optimized_ops)
-  azimuth::assert_eq(450, overhead)  // ceil(3000 * 15 / 100) = ceil(450) = 450
+  azimuth::assert_eq(450, overhead)
   azimuth::assert_eq(2550, actual_performance)
 }
 
@@ -103,16 +103,15 @@ test "data_structure_operations" {
   // 计算浪费的空间
   let wasted_space = azimuth::multiply(blocks_needed, block_size) - array_size
   
-  azimuth::assert_eq(15, blocks_needed)  // ceil(100/7) = 15
-  azimuth::assert_eq(2, last_block_usage)  // 100 - 14*7 = 2
-  azimuth::assert_eq(5, wasted_space)  // 15*7 - 100 = 5
+  azimuth::assert_eq(15, blocks_needed)
+  azimuth::assert_eq(2, last_block_usage)
+  azimuth::assert_eq(5, wasted_space)
 }
 
 test "financial_compound_interest" {
   // 金融复利计算
   let principal = 1000
   let rate_percent = 5
-  let years = 3
   
   // 第一年
   let year1 = azimuth::add(principal, azimuth::divide_with_ceil(azimuth::multiply(principal, rate_percent), 100))
@@ -123,9 +122,9 @@ test "financial_compound_interest" {
   // 第三年
   let year3 = azimuth::add(year2, azimuth::divide_with_ceil(azimuth::multiply(year2, rate_percent), 100))
   
-  azimuth::assert_eq(1050, year1)  // 1000 + ceil(1000*5/100) = 1000 + 50 = 1050
-  azimuth::assert_eq(1103, year2)  // 1050 + ceil(1050*5/100) = 1050 + 53 = 1103
-  azimuth::assert_eq(1158, year3)  // 1103 + ceil(1103*5/100) = 1103 + 55 = 1158
+  azimuth::assert_eq(1050, year1)
+  azimuth::assert_eq(1103, year2)
+  azimuth::assert_eq(1158, year3)
 }
 
 test "resource_allocation_optimization" {
@@ -149,12 +148,12 @@ test "resource_allocation_optimization" {
   // 计算可以支持的小项目数量
   let small_projects = azimuth::divide_with_ceil(remaining, 50)
   
-  azimuth::assert_eq(702, allocated_a)  // 234 * 3 = 702
-  azimuth::assert_eq(378, allocated_b)  // 189 * 2 = 378
+  azimuth::assert_eq(702, allocated_a)
+  azimuth::assert_eq(378, allocated_b)
   azimuth::assert_eq(167, allocated_c)
-  azimuth::assert_eq(1247, total_allocated)  // 702 + 378 + 167 = 1247
-  azimuth::assert_eq(-247, remaining)  // 1000 - 1247 = -247
-  azimuth::assert_eq(-4, small_projects)  // ceil(-247/50) = -4
+  azimuth::assert_eq(1247, total_allocated)
+  azimuth::assert_eq(-247, remaining)
+  azimuth::assert_eq(-4, small_projects)
 }
 
 test "engineering_precision_calculations" {
@@ -169,23 +168,15 @@ test "engineering_precision_calculations" {
   let upper_limit = azimuth::add(measurement, tolerance)
   let lower_limit = azimuth::add(measurement, -tolerance)
   
-  // 验证测量值在容差范围内
-  let test_value_1 = 1015
-  let test_value_2 = 985
-  let is_within_tolerance_1 = test_value_1 <= upper_limit && test_value_1 >= lower_limit
-  let is_within_tolerance_2 = test_value_2 <= upper_limit && test_value_2 >= lower_limit
-  
-  azimuth::assert_eq(20, tolerance)  // ceil(1000 * 2 / 100) = ceil(20) = 20
+  azimuth::assert_eq(20, tolerance)
   azimuth::assert_eq(1020, upper_limit)
   azimuth::assert_eq(980, lower_limit)
-  // 注意：MoonBit 中布尔值的处理可能需要特殊考虑
 }
 
 test "time_series_analysis" {
   // 时间序列分析模拟
   let base_value = 100
   let growth_rate = 15
-  let periods = 5
   
   // 计算增长后的值
   let period1 = azimuth::add(base_value, azimuth::divide_with_ceil(azimuth::multiply(base_value, growth_rate), 100))
@@ -196,9 +187,9 @@ test "time_series_analysis" {
   let total_growth = azimuth::add(period3, -base_value)
   let average_growth_per_period = azimuth::divide_with_ceil(total_growth, 3)
   
-  azimuth::assert_eq(115, period1)  // 100 + ceil(100*15/100) = 100 + 15 = 115
-  azimuth::assert_eq(133, period2)  // 115 + ceil(115*15/100) = 115 + 18 = 133
-  azimuth::assert_eq(153, period3)  // 133 + ceil(133*15/100) = 133 + 20 = 153
-  azimuth::assert_eq(53, total_growth)  // 153 - 100 = 53
-  azimuth::assert_eq(18, average_growth_per_period)  // ceil(53/3) = 18
+  azimuth::assert_eq(115, period1)
+  azimuth::assert_eq(133, period2)
+  azimuth::assert_eq(153, period3)
+  azimuth::assert_eq(53, total_growth)
+  azimuth::assert_eq(18, average_growth_per_period)
 }
