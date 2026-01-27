@@ -1328,7 +1328,7 @@ test "binary_conversion_calculation" {
   assert_eq(63, total_weight)
   
   // 验证特定二进制组合
-  let binary_42 = add(add(binary_weight_2), add(binary_weight_4), add(binary_weight_5))  // 101010 = 2 + 8 + 32
+  let binary_42 = add(add(binary_weight_2, binary_weight_4), binary_weight_5)  // 101010 = 2 + 8 + 32
   assert_eq(42, binary_42)
 }
 
@@ -2874,7 +2874,7 @@ test "binary_conversion_calculation" {
   assert_eq(63, total_weight)
   
   // 验证特定二进制组合
-  let binary_42 = add(add(binary_weight_2), add(binary_weight_4), add(binary_weight_5))  // 101010 = 2 + 8 + 32
+  let binary_42 = add(add(binary_weight_2, binary_weight_4), binary_weight_5)  // 101010 = 2 + 8 + 32
   assert_eq(42, binary_42)
 }
 
@@ -3288,7 +3288,7 @@ test "mathematical_series_analysis" {
   let term4 = divide_with_ceil(1000, 4)
   let term5 = divide_with_ceil(1000, 5)
   
-  let partial_sum = add(add(add(add(term1, term2), add(term3, term4)), term5)
+  let partial_sum = add(add(add(add(term1, term2), add(term3, term4)), term5))
   assert_eq(2834, partial_sum)  // 1000 + 500 + 334 + 250 + 200 = 2283 (向上取整)
 }
 
@@ -6300,4 +6300,217 @@ test "assertion_functions_validation" {
   assert_eq_string("Hello, test!", greet("test"))
   assert_true(divide_with_ceil(10, 3) > 3)
   assert_false(divide_with_ceil(10, 0) > 0)
+}
+
+// 新增的10个标准MoonBit测试用例
+test "advanced_arithmetic_operations" {
+  // 高级算术运算测试
+  let base = 100
+  let multiplier = 15
+  let divisor = 7
+  
+  // 复合运算测试
+  let result1 = add(multiply(base, multiplier), divide_with_ceil(base, divisor))
+  let result2 = multiply(add(base, multiplier), divide_with_ceil(base, divisor))
+  
+  assert_eq(1514, result1)  // 100*15 + ceil(100/7) = 1500 + 15 = 1515
+  assert_eq(165, result2)   // (100+15) * ceil(100/7) = 115 * 15 = 1725
+}
+
+test "logistical_optimization_problem" {
+  // 物流优化问题测试
+  let total_packages = 247
+  let truck_capacity = 18
+  let delivery_days = 5
+  
+  // 计算需要的卡车数量
+  let trucks_needed = divide_with_ceil(total_packages, truck_capacity)
+  assert_eq(14, trucks_needed)  // ceil(247/18) = 14
+  
+  // 计算每天需要配送的卡车数量
+  let daily_trucks = divide_with_ceil(trucks_needed, delivery_days)
+  assert_eq(3, daily_trucks)  // ceil(14/5) = 3
+  
+  // 计算实际配送能力
+  let actual_capacity = multiply(trucks_needed, truck_capacity)
+  assert_eq(252, actual_capacity)
+  
+  // 计算剩余容量
+  let remaining_capacity = subtract(actual_capacity, total_packages)
+  assert_eq(5, remaining_capacity)
+}
+
+test "string_processing_edge_cases" {
+  // 字符串处理边缘情况测试
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("   "))
+  assert_eq_string("Hello, newline\n!", greet("newline\n"))
+  assert_eq_string("Hello, tab\t!", greet("tab\t"))
+  assert_eq_string("Hello, quote\"!", greet("quote\""))
+  assert_eq_string("Hello, emoji🎉!", greet("emoji🎉"))
+  assert_eq_string("Hello, mix123ABC!", greet("mix123ABC"))
+}
+
+test "mathematical_series_calculation" {
+  // 数学级数计算测试
+  // 等差数列求和：1 + 2 + 3 + ... + n = n*(n+1)/2
+  let n = 20
+  let series_sum = divide_with_ceil(multiply(n, add(n, 1)), 2)
+  assert_eq(210, series_sum)  // 20*21/2 = 210
+  
+  // 等比数列求和：2^0 + 2^1 + 2^2 + ... + 2^n = 2^(n+1) - 1
+  let power_sum = subtract(multiply(2, multiply(2, multiply(2, multiply(2, 2)))), 1)
+  assert_eq(31, power_sum)  // 2^5 - 1 = 32 - 1 = 31
+}
+
+test "resource_allocation_fairness" {
+  // 资源分配公平性测试
+  let total_resources = 100
+  let groups = 3
+  
+  // 基础分配
+  let base_allocation = divide_with_ceil(total_resources, groups)
+  assert_eq(34, base_allocation)  // ceil(100/3) = 34
+  
+  // 验证分配的公平性
+  let group1 = base_allocation
+  let group2 = base_allocation
+  let group3 = subtract(total_resources, add(group1, group2))
+  
+  assert_eq(34, group1)
+  assert_eq(34, group2)
+  assert_eq(32, group3)
+  
+  // 验证总和
+  let total_allocated = add(add(group1, group2), group3)
+  assert_eq(total_resources, total_allocated)
+}
+
+test "complex_conditional_logic" {
+  // 复杂条件逻辑测试
+  let input_value = 25
+  
+  // 多级条件判断模拟
+  let category = 
+    if input_value < 10 { 
+      "small" 
+    } else if input_value < 20 { 
+      "medium" 
+    } else if input_value < 30 { 
+      "large" 
+    } else { 
+      "extra_large" 
+    }
+  
+  // 根据类别进行不同计算
+  let processed_value = 
+    if category == "small" { 
+      multiply(input_value, 2) 
+    } else if category == "medium" { 
+      multiply(input_value, 3) 
+    } else if category == "large" { 
+      multiply(input_value, 4) 
+    } else { 
+      multiply(input_value, 5) 
+    }
+  
+  assert_eq_string("large", category)
+  assert_eq(100, processed_value)  // 25 * 4 = 100
+}
+
+test "time_based_calculations" {
+  // 基于时间的计算测试
+  let hours_per_day = 24
+  let days_per_week = 7
+  let weeks_per_month = 4
+  
+  // 计算各种时间单位
+  let hours_per_week = multiply(hours_per_day, days_per_week)
+  let hours_per_month = multiply(hours_per_week, weeks_per_month)
+  
+  assert_eq(168, hours_per_week)   // 24 * 7 = 168
+  assert_eq(672, hours_per_month)  // 168 * 4 = 672
+  
+  // 计算项目时间需求
+  let project_hours = 850
+  let weeks_needed = divide_with_ceil(project_hours, hours_per_week)
+  let months_needed = divide_with_ceil(weeks_needed, weeks_per_month)
+  
+  assert_eq(6, weeks_needed)   // ceil(850/168) = 6
+  assert_eq(2, months_needed)  // ceil(6/4) = 2
+}
+
+test "precision_and_accuracy_validation" {
+  // 精度和准确性验证测试
+  // 测试除法精度
+  assert_eq(1, divide_with_ceil(1, 2))
+  assert_eq(1, divide_with_ceil(2, 3))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(34, divide_with_ceil(100, 3))
+  assert_eq(34, divide_with_ceil(101, 3))
+  
+  // 测试大数精度
+  let large_num1 = 1000000
+  let large_num2 = 3
+  let large_division = divide_with_ceil(large_num1, large_num2)
+  
+  assert_eq(333334, large_division)  // ceil(1000000/3)
+  
+  // 验证精度保持
+  let verification = multiply(large_division, large_num2)
+  assert_true(verification >= large_num1)
+}
+
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  // 测试各种除零情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(1, 0))
+  assert_eq(0, divide_with_ceil(-1, 0))
+  assert_eq(0, divide_with_ceil(1000000, 0))
+  assert_eq(0, divide_with_ceil(-1000000, 0))
+  
+  // 测试极值情况
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(-1, divide_with_ceil(1, -1))
+  assert_eq(-1, divide_with_ceil(-1, 1))
+  
+  // 验证系统稳定性
+  let stable_result = add(multiply(10, 5), divide_with_ceil(20, 0))
+  assert_eq(50, stable_result)  // 10*5 + 0 = 50
+}
+
+test "comprehensive_system_integration" {
+  // 综合系统集成测试
+  // 模拟一个完整的业务流程：订单处理
+  
+  // 订单基础信息
+  let order_quantity = 147
+  let price_per_item = 23
+  let items_per_package = 12
+  let packages_per_pallet = 8
+  
+  // 计算包装需求
+  let packages_needed = divide_with_ceil(order_quantity, items_per_package)
+  let pallets_needed = divide_with_ceil(packages_needed, packages_per_pallet)
+  
+  // 计算成本
+  let subtotal = multiply(order_quantity, price_per_item)
+  let packaging_cost = multiply(packages_needed, 5)  // 每个包装5元
+  let shipping_cost = multiply(pallets_needed, 50)  // 每个托盘50元
+  let total_cost = add(add(subtotal, packaging_cost), shipping_cost)
+  
+  // 验证计算结果
+  assert_eq(13, packages_needed)   // ceil(147/12) = 13
+  assert_eq(2, pallets_needed)     // ceil(13/8) = 2
+  assert_eq(3381, subtotal)        // 147 * 23 = 3381
+  assert_eq(65, packaging_cost)    // 13 * 5 = 65
+  assert_eq(100, shipping_cost)    // 2 * 50 = 100
+  assert_eq(3546, total_cost)      // 3381 + 65 + 100 = 3546
+  
+  // 验证业务逻辑
+  assert_true(total_cost > subtotal)
+  assert_true(packages_needed * items_per_package >= order_quantity)
+  assert_true(pallets_needed * packages_per_pallet >= packages_needed)
 }
