@@ -18,6 +18,7 @@
     "quality_test_suite.mbt",
     "essential_core_tests.mbt",
     "simple_quality_tests.mbt",
+    "azimuth_standard_test_cases.mbt",
     "quality_enhanced_test_cases.mbt",
     "standard_core_tests.mbt",
     "standard_core_test_cases.mbt",
