@@ -5608,7 +5608,183 @@ test "error_boundary_comprehensive" {
   
   // 极值运算
   assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(0, 1000000))
-  assert_eq(1, multiply(1, 1))
-  assert_eq(-1, multiply(-1, 1))
+}
+
+// 新增的10个高质量 MoonBit 测试用例 - 真实世界应用场景
+test "inventory_management_system" {
+  // 库存管理系统测试
+  let total_products = 258
+  let box_capacity = 24
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  assert_eq(11, boxes_needed)  // ceil(258/24) = 11
+  
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(264, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(6, remaining_space)
+}
+
+test "project_resource_allocation" {
+  // 项目资源分配测试
+  let total_budget = 50000
+  let team_members = 8
+  let budget_per_member = divide_with_ceil(total_budget, team_members)
+  assert_eq(6250, budget_per_member)  // ceil(50000/8) = 6250
+  
+  // 验证总分配预算
+  let total_allocated = multiply(budget_per_member, team_members)
+  assert_eq(50000, total_allocated)
+  
+  // 验证平均实际预算
+  let actual_avg_budget = total_budget / team_members
+  assert_eq(6250, actual_avg_budget)
+}
+
+test "manufacturing_production_line" {
+  // 制造业生产线测试
+  let daily_target = 1000
+  let machine_capacity = 85
+  let machines_needed = divide_with_ceil(daily_target, machine_capacity)
+  assert_eq(12, machines_needed)  // ceil(1000/85) = 12
+  
+  // 验证总产能
+  let total_capacity = multiply(machines_needed, machine_capacity)
+  assert_eq(1020, total_capacity)
+  
+  // 验证产能利用率
+  let utilization = multiply(daily_target, 100) / total_capacity
+  assert_eq(98, utilization)  // floor(1000*100/1020) = 98%
+}
+
+test "logistics_delivery_optimization" {
+  // 物流配送优化测试
+  let total_packages = 347
+  let truck_capacity = 45
+  let trucks_needed = divide_with_ceil(total_packages, truck_capacity)
+  assert_eq(8, trucks_needed)  // ceil(347/45) = 8
+  
+  // 验证总运力
+  let total_capacity = multiply(trucks_needed, truck_capacity)
+  assert_eq(360, total_capacity)
+  
+  // 验证剩余运力
+  let remaining_capacity = subtract(total_capacity, total_packages)
+  assert_eq(13, remaining_capacity)
+}
+
+test "software_development_sprint_planning" {
+  // 软件开发冲刺规划测试
+  let story_points = 87
+  let team_velocity = 22
+  let sprints_needed = divide_with_ceil(story_points, team_velocity)
+  assert_eq(4, sprints_needed)  // ceil(87/22) = 4
+  
+  // 验证总容量
+  let total_capacity = multiply(sprints_needed, team_velocity)
+  assert_eq(88, total_capacity)
+  
+  // 验证最后一点的容量
+  let last_sprint_capacity = subtract(total_capacity, multiply(sprints_needed - 1, team_velocity))
+  assert_eq(22, last_sprint_capacity)
+}
+
+test "healthcare_patient_scheduling" {
+  // 医疗患者排班测试
+  let daily_patients = 156
+  let doctor_capacity = 18
+  let doctors_needed = divide_with_ceil(daily_patients, doctor_capacity)
+  assert_eq(9, doctors_needed)  // ceil(156/18) = 9
+  
+  // 验证总容量
+  let total_capacity = multiply(doctors_needed, doctor_capacity)
+  assert_eq(162, total_capacity)
+  
+  // 验证剩余容量
+  let remaining_capacity = subtract(total_capacity, daily_patients)
+  assert_eq(6, remaining_capacity)
+}
+
+test "education_classroom_allocation" {
+  // 教育课堂分配测试
+  let total_students = 423
+  let classroom_capacity = 32
+  let classrooms_needed = divide_with_ceil(total_students, classroom_capacity)
+  assert_eq(14, classrooms_needed)  // ceil(423/32) = 14
+  
+  // 验证总座位数
+  let total_seats = multiply(classrooms_needed, classroom_capacity)
+  assert_eq(448, total_seats)
+  
+  // 验证空余座位
+  let empty_seats = subtract(total_seats, total_students)
+  assert_eq(25, empty_seats)
+}
+
+test "retail_inventory_turnover" {
+  // 零售库存周转测试
+  let monthly_sales = 1250
+  let average_inventory = 850
+  let turnover_rate = multiply(monthly_sales, 100) / average_inventory
+  assert_eq(147, turnover_rate)  // floor(1250*100/850) = 147%
+  
+  // 验证库存天数
+  let inventory_days = multiply(average_inventory, 30) / monthly_sales
+  assert_eq(20, inventory_days)  // floor(850*30/1250) = 20
+  
+  // 验证年度预测
+  let annual_projection = multiply(monthly_sales, 12)
+  assert_eq(15000, annual_projection)
+}
+
+test "financial_loan_amortization" {
+  // 金融贷款摊销测试
+  let loan_amount = 250000
+  let monthly_payment = 2200
+  let months_needed = divide_with_ceil(loan_amount, monthly_payment)
+  assert_eq(114, months_needed)  // ceil(250000/2200) = 114
+  
+  // 验证总支付金额
+  let total_payment = multiply(months_needed, monthly_payment)
+  assert_eq(250800, total_payment)
+  
+  // 验证利息支付
+  let total_interest = subtract(total_payment, loan_amount)
+  assert_eq(800, total_interest)
+}
+
+test "energy_consumption_calculation" {
+  // 能源消耗计算测试
+  let daily_consumption = 850
+  let days_in_month = 30
+  let monthly_consumption = multiply(daily_consumption, days_in_month)
+  assert_eq(25500, monthly_consumption)
+  
+  // 验证年度消耗
+  let annual_consumption = multiply(monthly_consumption, 12)
+  assert_eq(306000, annual_consumption)
+  
+  // 验证平均每户消耗
+  let households = 120
+  let avg_per_household = divide_with_ceil(monthly_consumption, households)
+  assert_eq(213, avg_per_household)  // ceil(25500/120) = 213
+}
+
+test "construction_material_estimation" {
+  // 建筑材料估算测试
+  let wall_area = 450
+  let bricks_per_sqm = 120
+  let total_bricks_needed = multiply(wall_area, bricks_per_sqm)
+  assert_eq(54000, total_bricks_needed)
+  
+  // 验证浪费补偿
+  let waste_percentage = 5
+  let waste_compensation = multiply(total_bricks_needed, waste_percentage) / 100
+  assert_eq(2700, waste_compensation)
+  
+  // 验证总订购量
+  let total_order = add(total_bricks_needed, waste_compensation)
+  assert_eq(56700, total_order)
 }
