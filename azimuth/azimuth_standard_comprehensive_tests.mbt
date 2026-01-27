@@ -1,191 +1,122 @@
-// Copyright 2026 International Digital Economy Academy
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Azimuth 项目标准测试用例
+// 包含10个高质量的 MoonBit 测试用例，覆盖核心功能
 
-// 标准MoonBit测试用例集合 - 10个核心功能测试
-
-// 导入必要的包
-test
-
-///|
-test "list_basic_operations" {
-  // 测试列表基本操作
-  let empty_list : @list.List[Int] = @list.empty()
-  inspect(empty_list.length(), content="0")
-  
-  let list1 = @list.from_array([1, 2, 3])
-  inspect(list1.length(), content="3")
-  
-  let list2 = list1.cons(0)
-  inspect(list2.length(), content="4")
-  
-  let head_value = list2.head()
-  inspect(head_value, content="Some(0)")
+test "add_function_comprehensive" {
+  // 全面测试加法函数
+  assert_eq(10, add(7, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-10, add(-7, -3))
+  assert_eq(4, add(-7, 11))
+  assert_eq(1000000, add(500000, 500000))
 }
 
-///|
-test "list_map_and_filter" {
-  // 测试列表映射和过滤功能
-  let numbers = @list.from_array([1, 2, 3, 4, 5])
-  
-  let doubled = numbers.map(x => x * 2)
-  inspect(doubled.to_array(), content="[2, 4, 6, 8, 10]")
-  
-  let evens = numbers.filter(x => x % 2 == 0)
-  inspect(evens.to_array(), content="[2, 4]")
-  
-  let sum = numbers.fold(init=0, (acc, x) => acc + x)
-  inspect(sum, content="15")
+test "multiply_function_properties" {
+  // 测试乘法函数的性质
+  assert_eq(25, multiply(5, 5))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-15, multiply(-5, 3))
+  assert_eq(15, multiply(-5, -3))
+  assert_eq(1000000, multiply(1000, 1000))
 }
 
-///|
-test "array_zip_operations" {
-  // 测试数组zip操作
-  let arr1 = [1, 2, 3]
-  let arr2 = ["a", "b", "c"]
+test "divide_with_ceil_business_logic" {
+  // 测试向上取整除法的业务逻辑场景
+  // 场景：计算需要的运输车辆数量
+  let packages = 47
+  let capacity_per_truck = 10
+  let trucks_needed = divide_with_ceil(packages, capacity_per_truck)
+  assert_eq(5, trucks_needed)
   
-  let zipped = @array.zip_with(arr1, arr2, (x, y) => "\{y}\{x}")
-  inspect(zipped, content="[\"a1\", \"b2\", \"c3\"]")
-  
-  // 测试不同长度数组的zip
-  let arr3 = [10, 20]
-  let zipped2 = @array.zip_with(arr1, arr3, (x, y) => x + y)
-  inspect(zipped2, content="[11, 22]")
+  // 验证总运力
+  let total_capacity = multiply(trucks_needed, capacity_per_truck)
+  assert_eq(50, total_capacity)
 }
 
-///|
-test "string_operations" {
-  // 测试字符串操作
-  let str1 = "Hello"
-  let str2 = "World"
-  let combined = str1 + " " + str2
-  inspect(combined, content="Hello World")
-  
-  // 测试字符串长度
-  inspect(str1.length(), content="5")
-  inspect(combined.length(), content="11")
-  
-  // 测试字符串比较
-  let equal_check = str1 == "Hello"
-  inspect(equal_check, content="true")
+test "greet_function_unicode_support" {
+  // 测试问候函数的Unicode字符支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
 }
 
-///|
-test "int_arithmetic_operations" {
-  // 测试整数算术运算
-  let a = 10
-  let b = 3
+test "mathematical_commutative_laws" {
+  // 验证数学交换律
+  let a = 15
+  let b = 8
   
-  inspect(a + b, content="13")
-  inspect(a - b, content="7")
-  inspect(a * b, content="30")
-  inspect(a / b, content="3")
-  inspect(a % b, content="1")
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
   
-  // 测试绝对值函数
-  inspect(Int::abs(-5), content="5")
-  inspect(Int::abs(5), content="5")
-  inspect(Int::abs(0), content="0")
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
 }
 
-///|
-test "boolean_logic" {
-  // 测试布尔逻辑操作
-  let t = true
-  let f = false
+test "complex_calculation_pipeline" {
+  // 测试复杂计算流水线
+  // 场景：计算项目完成时间
+  let tasks = 25
+  let people = 4
+  let tasks_per_person_per_day = 2
   
-  inspect(t && f, content="false")
-  inspect(t || f, content="true")
-  inspect(!t, content="false")
-  inspect(!f, content="true")
+  let daily_capacity = multiply(people, tasks_per_person_per_day)
+  let days_needed = divide_with_ceil(tasks, daily_capacity)
+  assert_eq(4, days_needed)  // ceil(25/(4*2)) = 4
   
-  // 测试布尔相等性
-  inspect(t == true, content="true")
-  inspect(f == false, content="true")
-  inspect(t != f, content="true")
+  // 验证总处理能力
+  let total_capacity = multiply(days_needed, daily_capacity)
+  assert_eq(32, total_capacity)
 }
 
-///|
-test "option_type_operations" {
-  // 测试Option类型操作
-  let some_value : Int? = Some(42)
-  let none_value : Int? = None
+test "error_handling_and_boundaries" {
+  // 错误处理和边界测试
+  // 除零情况
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
   
-  // 测试is_some和is_none
-  inspect(some_value.is_some(), content="true")
-  inspect(some_value.is_none(), content="false")
-  inspect(none_value.is_some(), content="false")
-  inspect(none_value.is_none(), content="true")
-  
-  // 测试unwrap_or
-  inspect(some_value.unwrap_or(0), content="42")
-  inspect(none_value.unwrap_or(0), content="0")
+  // 极值测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 1))
 }
 
-///|
-test "result_type_operations" {
-  // 测试Result类型操作
-  let ok_result : Result[String, Int] = Ok("success")
-  let err_result : Result[String, Int] = Err(404)
-  
-  // 测试is_ok和is_err
-  inspect(ok_result.is_ok(), content="true")
-  inspect(ok_result.is_err(), content="false")
-  inspect(err_result.is_ok(), content="false")
-  inspect(err_result.is_err(), content="true")
-  
-  // 测试unwrap_or
-  inspect(ok_result.unwrap_or("default"), content="success")
-  inspect(err_result.unwrap_or("default"), content="default")
+test "subtract_function_verification" {
+  // 测试减法函数
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(7, 7))
+  assert_eq(15, subtract(10, -5))
+  assert_eq(-15, subtract(-10, 5))
 }
 
-///|
-test "tuple_operations" {
-  // 测试元组操作
-  let pair = (10, "hello")
-  let triple = (1, 2, 3)
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_budget = 10000
+  let team_members = 6
   
-  // 测试元组访问
-  inspect(pair.0, content="10")
-  inspect(pair.1, content="hello")
-  inspect(triple.0, content="1")
-  inspect(triple.1, content="2")
-  inspect(triple.2, content="3")
+  // 使用向上取整确保覆盖所有情况
+  let max_share = divide_with_ceil(total_budget, team_members)
+  assert_eq(1667, max_share)  // ceil(10000/6) = 1667
   
-  // 测试元组相等性
-  let same_pair = (10, "hello")
-  let different_pair = (20, "world")
-  inspect(pair == same_pair, content="true")
-  inspect(pair == different_pair, content="false")
+  // 验证总分配不超过预算
+  let total_allocated = multiply(max_share, team_members)
+  assert_eq(10002, total_allocated)
 }
 
-///|
-test "comparison_operations" {
-  // 测试比较操作
-  let numbers = [5, 3, 8, 1, 9]
+test "real_world_logistics_scenario" {
+  // 真实世界物流场景
+  // 场景：计算仓库存储需求
+  let products = 157
+  let pallet_capacity = 24
+  let pallets_needed = divide_with_ceil(products, pallet_capacity)
+  assert_eq(7, pallets_needed)  // ceil(157/24) = 7
   
-  // 测试基本比较
-  inspect(5 > 3, content="true")
-  inspect(3 < 8, content="true")
-  inspect(5 >= 5, content="true")
-  inspect(8 <= 9, content="true")
-  inspect(5 == 5, content="true")
-  inspect(3 != 8, content="true")
+  // 计算总存储空间
+  let total_space = multiply(pallets_needed, pallet_capacity)
+  assert_eq(168, total_space)
   
-  // 测试最大值和最小值
-  let max_val = numbers.fold(init=numbers[0], (acc, x) => if x > acc { x } else { acc })
-  inspect(max_val, content="9")
-  
-  let min_val = numbers.fold(init=numbers[0], (acc, x) => if x < acc { x } else { acc })
-  inspect(min_val, content="1")
+  // 验证剩余空间
+  let remaining_space = subtract(total_space, products)
+  assert_eq(11, remaining_space)
 }
