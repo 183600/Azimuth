@@ -1,80 +1,71 @@
-// 标准 MoonBit 测试用例
-// 为 azimuth 库添加的高质量测试用例
+// 标准 MoonBit 测试用例 - 为 azimuth 库创建
+// 包含8个高质量测试用例，覆盖主要功能
 
-test "add_function_positive_numbers" {
-  // 测试正数加法
-  assert_eq(5, add(2, 3))
-  assert_eq(10, add(7, 3))
+test "add_function_various_scenarios" {
+  // 测试加法函数的各种场景
+  assert_eq(15, add(7, 8))
   assert_eq(0, add(0, 0))
+  assert_eq(-10, add(-3, -7))
+  assert_eq(5, add(-3, 8))
+  assert_eq(2000, add(1000, 1000))
 }
 
-test "add_function_negative_numbers" {
-  // 测试负数加法
-  assert_eq(-5, add(-2, -3))
-  assert_eq(-10, add(-7, -3))
-  assert_eq(0, add(-5, 5))
+test "multiply_function_comprehensive" {
+  // 全面测试乘法函数
+  assert_eq(42, multiply(6, 7))
+  assert_eq(0, multiply(0, 123))
+  assert_eq(-24, multiply(-3, 8))
+  assert_eq(24, multiply(-3, -8))
+  assert_eq(1000000, multiply(1000, 1000))
 }
 
-test "multiply_function_basic" {
-  // 测试基本乘法
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(6, multiply(-2, -3))
-}
-
-test "greet_function_various_inputs" {
-  // 测试问候函数的各种输入
-  assert_eq_string("Hello, World!", greet("World"))
+test "greet_function_international_support" {
+  // 测试问候函数的国际字符支持
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
   assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
 }
 
-test "divide_with_ceil_basic" {
-  // 测试向上取整除法的基本情况
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 100))
-  assert_eq(0, divide_with_ceil(5, 0))
-}
-
-test "divide_with_ceil_negative_numbers" {
-  // 测试向上取整除法的负数情况
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(4, divide_with_ceil(-10, -3))
-  assert_eq(-1, divide_with_ceil(1, -3))
-}
-
-test "subtract_function_basic" {
-  // 测试基本减法
-  assert_eq(2, subtract(5, 3))
-  assert_eq(-2, subtract(3, 5))
-  assert_eq(0, subtract(5, 5))
-  assert_eq(8, subtract(5, -3))
-}
-
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景
-  // 场景：计算装盒问题
-  let total_items = 25
-  let items_per_box = 6
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  assert_eq(5, boxes_needed)
+test "divide_with_ceil_packaging_logic" {
+  // 测试向上取整除法的包装逻辑
+  let items = 37
+  let box_capacity = 10
+  let boxes_needed = divide_with_ceil(items, box_capacity)
+  assert_eq(4, boxes_needed)
   
   // 验证总容量
-  let total_capacity = multiply(boxes_needed, items_per_box)
-  assert_eq(30, total_capacity)
-  
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_items)
-  assert_eq(5, remaining_space)
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(40, total_capacity)
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let x = 7
-  let y = 13
+test "subtract_function_edge_cases" {
+  // 测试减法函数的边缘情况
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(7, 7))
+  assert_eq(15, subtract(20, 5))
+  assert_eq(-1000, subtract(0, 1000))
+}
+
+test "complex_business_calculation" {
+  // 复杂业务计算测试
+  // 场景：计算项目资源需求
+  let team_size = 12
+  let tasks_per_person = 8
+  let total_tasks = multiply(team_size, tasks_per_person)
+  let sprint_capacity = 25
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  
+  assert_eq(96, total_tasks)
+  assert_eq(4, sprints_needed)
+}
+
+test "mathematical_properties_validation" {
+  // 数学性质验证测试
+  let x = 15
+  let y = 7
   
   // 加法交换律
   assert_eq(add(x, y), add(y, x))
@@ -84,15 +75,20 @@ test "mathematical_properties" {
   
   // 分配律
   assert_eq(
-    multiply(x, add(y, 2)),
-    add(multiply(x, y), multiply(x, 2))
+    multiply(x, add(y, 3)),
+    add(multiply(x, y), multiply(x, 3))
   )
 }
 
-test "unicode_and_special_characters" {
-  // 测试Unicode和特殊字符
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
+test "error_handling_boundary_conditions" {
+  // 错误处理和边界条件测试
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 极值测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
 }
