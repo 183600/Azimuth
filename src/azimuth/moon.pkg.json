@@ -8,6 +8,7 @@
     "azimuth"
   ],
   "test": [
+    "standard_moonbit_test_examples.mbt",
     "moonbit_standard_tests_new.mbt",
     "simple_test_case.mbt",
     "azimuth_core_test_suite.mbt",
