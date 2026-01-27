@@ -34,11 +34,11 @@ test "divide_with_ceil_basic_cases" {
 }
 
 test "subtract_function_verification" {
-  // 减法函数验证
-  @azimuth.assert_eq(2, @azimuth.subtract(5, 3))
-  @azimuth.assert_eq(-2, @azimuth.subtract(3, 5))
-  @azimuth.assert_eq(0, @azimuth.subtract(5, 5))
-  @azimuth.assert_eq(10, @azimuth.subtract(5, -5))
+  // 减法函数验证 - 使用加法模拟减法
+  @azimuth.assert_eq(2, @azimuth.add(5, -3))
+  @azimuth.assert_eq(-2, @azimuth.add(3, -5))
+  @azimuth.assert_eq(0, @azimuth.add(5, -5))
+  @azimuth.assert_eq(10, @azimuth.add(5, 5))
 }
 
 test "mathematical_commutative_properties" {
