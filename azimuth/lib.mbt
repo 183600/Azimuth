@@ -6136,3 +6136,168 @@ test "user_real_world_application_comprehensive" {
   let budget_per_person = divide_with_ceil(total_budget, participants)
   assert_eq(6, budget_per_person)
 }
+
+// Azimuth 增强标准测试用例
+// 包含10个高质量的 MoonBit 标准测试用例
+
+test "subtract_function_comprehensive" {
+  // 全面测试减法函数
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(15, subtract(10, -5))
+  assert_eq(-15, subtract(-10, 5))
+  assert_eq(0, subtract(0, 0))
+  assert_eq(1000000, subtract(1000001, 1))
+}
+
+test "divide_with_ceil_advanced_cases" {
+  // 测试向上取整除法的高级情况
+  assert_eq(0, divide_with_ceil(0, -1))
+  assert_eq(0, divide_with_ceil(-0, 1))
+  assert_eq(-1, divide_with_ceil(-5, 3))
+  assert_eq(-1, divide_with_ceil(5, -3))
+  assert_eq(2, divide_with_ceil(-5, -3))
+  assert_eq(100001, divide_with_ceil(200001, 2))
+  assert_eq(1, divide_with_ceil(-1, -1))
+}
+
+test "greet_function_edge_cases" {
+  // 测试问候函数的边缘情况
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, \t\n\r!", greet("\t\n\r"))
+  assert_eq_string("Hello, null!", greet("null"))
+  assert_eq_string("Hello, 1234567890!", greet("1234567890"))
+  assert_eq_string("Hello, 🌙🌟🚀!", greet("🌙🌟🚀"))
+}
+
+test "mathematical_properties_advanced" {
+  // 测试高级数学性质
+  let a = 12
+  let b = 8
+  let c = 4
+  
+  // 减法性质：a - b - c = a - (b + c)
+  assert_eq(subtract(subtract(a, b), c), subtract(a, add(b, c)))
+  
+  // 乘法与减法：a * (b - c) = a * b - a * c
+  assert_eq(multiply(a, subtract(b, c)), subtract(multiply(a, b), multiply(a, c)))
+  
+  // 除法与乘法关系（对于能整除的情况）
+  assert_eq(24, multiply(divide_with_ceil(24, 6), 6))
+}
+
+test "error_handling_robustness" {
+  // 测试错误处理的健壮性
+  // 连续除零测试
+  assert_eq(0, divide_with_ceil(divide_with_ceil(10, 0), 5))
+  assert_eq(0, divide_with_ceil(divide_with_ceil(0, 0), 0))
+  
+  // 极值减法测试
+  assert_eq(2147483647, subtract(2147483647, 0))
+  assert_eq(-2147483647, subtract(-2147483647, -1))
+  
+  // 空字符串与特殊字符组合
+  assert_eq_string("Hello, special!", greet("special"))
+}
+
+test "real_world_logistics_scenario" {
+  // 真实世界物流场景测试
+  // 场景：仓库库存管理
+  let initial_stock = 1000
+  let daily_sales = 45
+  let days = 7
+  let restock_threshold = 200
+  
+  // 计算一周后的库存
+  let weekly_sales = multiply(daily_sales, days)
+  let remaining_stock = subtract(initial_stock, weekly_sales)
+  
+  // 计算需要的补货量（每次补货500件）
+  let restock_needed = subtract(restock_threshold, remaining_stock)
+  let restock_batches = divide_with_ceil(restock_needed, 500)
+  
+  assert_eq(315, weekly_sales)  // 45 * 7
+  assert_eq(685, remaining_stock)  // 1000 - 315
+  assert_eq(0, restock_batches)  // 库存充足，无需补货
+}
+
+test "large_scale_computations" {
+  // 大规模计算测试
+  let large_num = 100000
+  let another_large = 99999
+  
+  // 大数运算
+  assert_eq(199999, add(large_num, another_large))
+  assert_eq(999990000, multiply(100000, 9999))
+  assert_eq(-1, subtract(another_large, large_num))
+  assert_eq(2, divide_with_ceil(large_num, another_large))
+  
+  // 连续大数运算
+  let result = multiply(add(large_num, another_large), 10)
+  assert_eq(1999990, result)
+}
+
+test "complex_business_calculations" {
+  // 复杂业务计算测试
+  // 场景：项目预算和时间管理
+  let team_size = 8
+  let hourly_rate = 75
+  let hours_per_day = 8
+  let project_days = 15
+  let contingency_percentage = 10
+  
+  // 计算基础工时和成本
+  let total_hours = multiply(team_size, multiply(hours_per_day, project_days))
+  let base_cost = multiply(total_hours, hourly_rate)
+  
+  // 计算应急预算（向上取整）
+  let contingency_amount = divide_with_ceil(multiply(base_cost, contingency_percentage), 100)
+  let total_budget = add(base_cost, contingency_amount)
+  
+  // 计算每周成本
+  let weekly_cost = divide_with_ceil(multiply(total_budget, 7), project_days)
+  
+  assert_eq(960, total_hours)  // 8 * 8 * 15
+  assert_eq(72000, base_cost)  // 960 * 75
+  assert_eq(7200, contingency_amount)  // ceil(72000 * 10 / 100)
+  assert_eq(79200, total_budget)  // 72000 + 7200
+  assert_eq(36960, weekly_cost)  // ceil(79200 * 7 / 15)
+}
+
+test "internationalization_comprehensive" {
+  // 国际化综合测试
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+  assert_eq_string("Hello, עברית!", greet("עברית"))
+  assert_eq_string("Hello, हिन्दी!", greet("हिन्दी"))
+  assert_eq_string("Hello, ไทย!", greet("ไทย"))
+  assert_eq_string("Hello, 한국어!", greet("한국어"))
+  assert_eq_string("Hello, 日本語!", greet("日本語"))
+  assert_eq_string("Hello, 🇺🇳🇨🇳🇯🇵!", greet("🇺🇳🇨🇳🇯🇵"))
+  assert_eq_string("Hello, 𝔘𝔫𝔦𝔠𝔬𝔡𝔢!", greet("𝔘𝔫𝔦𝔠𝔬𝔡𝔢"))
+}
+
+test "assertion_functions_validation" {
+  // 断言函数验证测试
+  let test_int = 42
+  let test_string = "MoonBit"
+  let test_bool_true = true
+  let test_bool_false = false
+  
+  // 测试各种断言情况
+  assert_eq(test_int, test_int)
+  assert_eq(test_int, add(40, 2))
+  assert_eq_string(test_string, test_string)
+  assert_eq_string(test_string, "Moon" + "Bit")
+  assert_true(test_bool_true)
+  assert_true(test_int > 0)
+  assert_false(test_bool_false)
+  assert_false(test_int < 0)
+  
+  // 测试边界断言
+  assert_eq(0, subtract(5, 5))
+  assert_eq_string("Hello, test!", greet("test"))
+  assert_true(divide_with_ceil(10, 3) > 3)
+  assert_false(divide_with_ceil(10, 0) > 0)
+}
