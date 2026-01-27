@@ -138,7 +138,7 @@
       "azimuth_standard_test_cases.mbt",
       "quality_test_suite.mbt",
         "test/azimuth_concise_quality_tests.mbt",
-        "azimuth_concise_quality_tests_main.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil"],
+        "azimuth_concise_quality_tests_main.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
     "moonbit_standard_tests_new.mbt",
     "azimuth_core_test_suite.mbt",

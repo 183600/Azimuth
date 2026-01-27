@@ -1,272 +1,133 @@
-// 增强测试用例 - 针对 azimuth 库的高质量测试
-// 包含边界值、错误处理、数学性质验证和实际应用场景
+// 增强测试用例 - 专注于边界情况和复杂场景
+// 使用标准 MoonBit 测试语法
 
-test "boundary_value_extremes" {
-  // 测试极端边界值
-  let max_int = 2147483647
-  let min_int = -2147483648
-  
-  // 测试接近最大值的加法
-  assert_eq(2147483646, add(max_int - 1, 0))
-  assert_eq(2147483647, add(max_int - 100, 100))
-  
-  // 测试接近最小值的加法
-  assert_eq(-2147483647, add(min_int + 1, 0))
-  assert_eq(-2147483648, add(min_int + 100, -100))
-  
-  // 测试零的边界情况
-  assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(0, max_int))
-  assert_eq(0, multiply(0, min_int))
+test "add_function_boundary_values" {
+  // 测试加法函数的边界值
+  @azimuth.assert_eq(2147483647, @azimuth.add(2147483646, 1))
+  @azimuth.assert_eq(-2147483648, @azimuth.add(-2147483647, -1))
+  @azimuth.assert_eq(0, @azimuth.add(2147483647, -2147483647))
+  @azimuth.assert_eq(1, @azimuth.add(2147483647, -2147483646))
 }
 
-test "divide_with_ceil_comprehensive" {
-  // 全面测试向上取整除法的各种情况
-  // 正数除法
-  assert_eq(4, divide_with_ceil(11, 3))  // 11/3 = 3.666... -> 4
-  assert_eq(4, divide_with_ceil(12, 3))  // 12/3 = 4 -> 4
-  assert_eq(1, divide_with_ceil(1, 100)) // 1/100 = 0.01 -> 1
-  
-  // 负数除法
-  assert_eq(-3, divide_with_ceil(-10, 3)) // -10/3 = -3.333... -> -3
-  assert_eq(-4, divide_with_ceil(-11, 3)) // -11/3 = -3.666... -> -4
-  assert_eq(3, divide_with_ceil(10, -3))  // 10/-3 = -3.333... -> -3
-  
-  // 负数除负数
-  assert_eq(4, divide_with_ceil(-11, -3)) // -11/-3 = 3.666... -> 4
-  assert_eq(3, divide_with_ceil(-9, -3))  // -9/-3 = 3 -> 3
-  
-  // 除零安全处理
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+test "multiply_function_precision" {
+  // 测试乘法函数的精度和边界情况
+  @azimuth.assert_eq(46340, @azimuth.multiply(215, 215))  // 接近√INT_MAX
+  @azimuth.assert_eq(-46340, @azimuth.multiply(-215, 215))
+  @azimuth.assert_eq(46340, @azimuth.multiply(-215, -215))
+  @azimuth.assert_eq(0, @azimuth.multiply(2147483647, 0))
 }
 
-test "mathematical_properties_verification" {
-  // 验证基本的数学性质
-  let a = 12
-  let b = 8
-  let c = 5
-  
-  // 加法交换律：a + b = b + a
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律：a * b = b * a
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 加法结合律：(a + b) + c = a + (b + c)
-  assert_eq(add(add(a, b), c), add(a, add(b, c)))
-  
-  // 乘法结合律：(a * b) * c = a * (b * c)
-  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
-  
-  // 分配律：a * (b + c) = a * b + a * c
-  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
-  
-  // 零元素性质
-  assert_eq(a, add(a, 0))
-  assert_eq(0, multiply(a, 0))
-  
-  // 单位元性质
-  assert_eq(a, multiply(a, 1))
+test "divide_with_ceil_complex_scenarios" {
+  // 测试向上取整除法的复杂场景
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-1, 1))
+  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(1, -1))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-1, -1))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-1, 2))
+  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-3, 2))
 }
 
-test "real_world_financial_calculation" {
-  // 实际金融计算场景：计算贷款还款
-  let principal = 100000  // 本金
-  let annual_rate = 6     // 年利率6%
-  let years = 5           // 贷款年限
-  
-  // 简化的年利息计算（使用向上取整）
-  let yearly_interest = divide_with_ceil(multiply(principal, annual_rate), 100)
-  let total_interest = multiply(yearly_interest, years)
-  let total_repayment = add(principal, total_interest)
-  
-  // 计算月供（向上取整）
-  let monthly_payment = divide_with_ceil(total_repayment, multiply(years, 12))
-  
-  assert_eq(6000, yearly_interest)   // ceil(100000 * 6 / 100) = 6000
-  assert_eq(30000, total_interest)   // 6000 * 5 = 30000
-  assert_eq(130000, total_repayment) // 100000 + 30000 = 130000
-  assert_eq(2167, monthly_payment)   // ceil(130000 / 60) = 2167
+test "greet_function_encoding_edge_cases" {
+  // 测试问候函数的编码边缘情况
+  @azimuth.assert_eq_string("Hello, \n\r\t!", @azimuth.greet("\n\r\t"))
+  @azimuth.assert_eq_string("Hello, \"quoted\"!", @azimuth.greet("\"quoted\""))
+  @azimuth.assert_eq_string("Hello, 'single'!", @azimuth.greet("'single'"))
+  @azimuth.assert_eq_string("Hello, \\backslash!", @azimuth.greet("\\backslash"))
+  @azimuth.assert_eq_string("Hello, 🏳️‍🌈!", @azimuth.greet("🏳️‍🌈"))
 }
 
-test "complex_inventory_management" {
-  // 复杂库存管理场景
-  let initial_stock = 500
-  let daily_sales = 15
-  let days_per_month = 30
-  let safety_stock = 100
-  let reorder_point = 200
-  let batch_size = 250
+test "complex_financial_calculation" {
+  // 复杂金融计算场景：贷款分期
+  let loan_amount = 150000
+  let monthly_payment = 4500
+  let months_needed = @azimuth.divide_with_ceil(loan_amount, monthly_payment)
   
-  // 计算月销售量
-  let monthly_sales = multiply(daily_sales, days_per_month)
+  @azimuth.assert_eq(34, months_needed)  // ceil(150000/4500) = 34
   
-  // 计算期末库存
-  let ending_stock = add(initial_stock, -monthly_sales)
+  // 验证总支付金额
+  let total_payment = @azimuth.multiply(months_needed, monthly_payment)
+  @azimuth.assert_eq(153000, total_payment)
   
-  // 判断是否需要补货
-  let need_reorder = if ending_stock < reorder_point { 1 } else { 0 }
-  
-  // 计算补货数量
-  let reorder_quantity = multiply(need_reorder, batch_size)
-  
-  // 计算补货后库存
-  let final_stock = add(ending_stock, reorder_quantity)
-  
-  assert_eq(450, monthly_sales)     // 15 * 30 = 450
-  assert_eq(50, ending_stock)       // 500 - 450 = 50
-  assert_eq(1, need_reorder)        // 50 < 200，需要补货
-  assert_eq(250, reorder_quantity)  // 1 * 250 = 250
-  assert_eq(300, final_stock)       // 50 + 250 = 300
+  // 验证最后一个月的实际支付金额
+  let final_payment = @azimuth.add(total_payment, 
+    -@azimuth.multiply(months_needed - 1, monthly_payment))
+  @azimuth.assert_eq(1500, final_payment)
 }
 
-test "string_processing_edge_cases" {
-  // 字符串处理的边界情况
-  // 测试空字符串和特殊字符
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello,  !", greet(" "))
-  assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, \t!", greet("\t"))
-  assert_eq_string("Hello, \n!", greet("\n"))
+test "resource_optimization_problem" {
+  // 资源优化问题：仓库存储
+  // 物品1：37个，每箱容量10
+  let item1_boxes = @azimuth.divide_with_ceil(37, 10)  // 4箱
   
-  // 测试单字符
-  assert_eq_string("Hello, A!", greet("A"))
-  assert_eq_string("Hello, 1!", greet("1"))
-  assert_eq_string("Hello, @!", greet("@"))
+  // 物品2：89个，每箱容量15
+  let item2_boxes = @azimuth.divide_with_ceil(89, 15)  // 6箱
   
-  // 测试Unicode字符
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, αβγ!", greet("αβγ"))
-  assert_eq_string("Hello, ñáéíóú!", greet("ñáéíóú"))
+  // 物品3：156个，每箱容量25
+  let item3_boxes = @azimuth.divide_with_ceil(156, 25)  // 7箱
   
-  // 测试长字符串
-  let long_name = "This is a very long name that contains many words"
-  assert_eq_string("Hello, This is a very long name that contains many words!", greet(long_name))
+  // 计算总箱子数
+  let total_boxes = @azimuth.add(@azimuth.add(item1_boxes, item2_boxes), item3_boxes)
+  @azimuth.assert_eq(17, total_boxes)
+  
+  // 计算总存储容量
+  let item1_capacity = @azimuth.multiply(item1_boxes, 10)  // 40
+  let item2_capacity = @azimuth.multiply(item2_boxes, 15)  // 90
+  let item3_capacity = @azimuth.multiply(item3_boxes, 25)  // 175
+  
+  let total_capacity = @azimuth.add(@azimuth.add(item1_capacity, item2_capacity), item3_capacity)
+  @azimuth.assert_eq(305, total_capacity)
 }
 
-test "engineering_calculations" {
-  // 工程计算场景：计算建筑材料需求
-  let room_length = 12  // 房间长度（米）
-  let room_width = 8    // 房间宽度（米）
-  let room_height = 3   // 房间高度（米）
+test "nested_function_composition" {
+  // 嵌套函数组合测试
+  let base = 12
   
-  let tile_area = 2     // 每块瓷砖面积（平方米）
-  let paint_coverage = 10 // 每升油漆覆盖面积（平方米）
+  // 复杂嵌套计算
+  let result = @azimuth.divide_with_ceil(
+    @azimuth.add(
+      @azimuth.multiply(base, 3),
+      @azimuth.multiply(base, 2)
+    ),
+    @azimuth.add(base, @azimuth.divide_with_ceil(base, 5))
+  )
   
-  // 计算地面面积
-  let floor_area = multiply(room_length, room_width)
-  
-  // 计算墙面面积（四面墙）
-  let wall_area = multiply(2, multiply(add(room_length, room_width), room_height))
-  
-  // 计算总表面积
-  let total_surface_area = add(floor_area, wall_area)
-  
-  // 计算所需瓷砖数量（向上取整）
-  let tiles_needed = divide_with_ceil(floor_area, tile_area)
-  
-  // 计算所需油漆量（向上取整）
-  let paint_needed = divide_with_ceil(wall_area, paint_coverage)
-  
-  assert_eq(96, floor_area)         // 12 * 8 = 96
-  assert_eq(120, wall_area)         // 2 * (12 + 8) * 3 = 120
-  assert_eq(216, total_surface_area)// 96 + 120 = 216
-  assert_eq(48, tiles_needed)       // ceil(96 / 2) = 48
-  assert_eq(12, paint_needed)       // ceil(120 / 10) = 12
+  // 手动计算验证：(12*3 + 12*2) / (12 + ceil(12/5)) = 60 / 15 = 4
+  @azimuth.assert_eq(4, result)
 }
 
-test "performance_benchmark_simulation" {
-  // 性能基准测试模拟
-  let base_operations = 1000
-  let optimization_factor = 3
-  let overhead_percentage = 15
-  let iterations = 100
+test "algorithm_efficiency_comparison" {
+  // 算法效率比较测试
+  let data_size = 1000
   
-  // 计算优化后的操作数
-  let optimized_operations = multiply(base_operations, optimization_factor)
+  // 模拟O(n)算法
+  let linear_ops = @azimuth.multiply(data_size, 3)
   
-  // 计算开销
-  let overhead = divide_with_ceil(multiply(optimized_operations, overhead_percentage), 100)
+  // 模拟O(log n)算法（简化）
+  let log_ops = @azimuth.divide_with_ceil(data_size, 50)
   
-  // 计算实际性能
-  let actual_performance = add(optimized_operations, -overhead)
+  // 模拟O(n²)算法（简化）
+  let quadratic_ops = @azimuth.divide_with_ceil(@azimuth.multiply(data_size, data_size), 1000)
   
-  // 计算迭代后的总性能
-  let total_performance = multiply(actual_performance, iterations)
+  @azimuth.assert_eq(3000, linear_ops)
+  @azimuth.assert_eq(20, log_ops)
+  @azimuth.assert_eq(1000, quadratic_ops)
   
-  // 计算性能提升倍数
-  let performance_improvement = divide_with_ceil(actual_performance, base_operations)
-  
-  assert_eq(3000, optimized_operations)    // 1000 * 3 = 3000
-  assert_eq(450, overhead)                 // ceil(3000 * 15 / 100) = 450
-  assert_eq(2550, actual_performance)      // 3000 - 450 = 2550
-  assert_eq(255000, total_performance)     // 2550 * 100 = 255000
-  assert_eq(3, performance_improvement)    // ceil(2550 / 1000) = 3
+  // 验证效率差异
+  let linear_to_log_ratio = @azimuth.divide_with_ceil(linear_ops, log_ops)
+  @azimuth.assert_eq(150, linear_to_log_ratio)
 }
 
-test "data_analysis_statistics" {
-  // 数据分析统计场景
-  let data_points = [100, 150, 200, 175, 125, 180, 160]
-  let data_count = 7
+test "error_recovery_scenarios" {
+  // 错误恢复场景测试
+  // 除零错误的多种处理
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-100, 0))
   
-  // 计算总和（手动累加）
-  let sum = add(add(add(add(add(add(100, 150), 200), 175), 125), 180), 160)
+  // 极值验证
+  @azimuth.assert_eq(2147483647, @azimuth.divide_with_ceil(2147483647, 1))
+  @azimuth.assert_eq(-2147483648, @azimuth.divide_with_ceil(-2147483648, 1))
   
-  // 计算平均值（向上取整）
-  let average = divide_with_ceil(sum, data_count)
-  
-  // 计算最大值和最小值的差
-  let max_value = 200
-  let min_value = 100
-  let range = add(max_value, -min_value)
-  
-  // 计算中位数的位置（向上取整）
-  let median_position = divide_with_ceil(data_count, 2)
-  
-  assert_eq(1090, sum)              // 100 + 150 + 200 + 175 + 125 + 180 + 160 = 1090
-  assert_eq(156, average)           // ceil(1090 / 7) = 156
-  assert_eq(100, range)             // 200 - 100 = 100
-  assert_eq(4, median_position)     // ceil(7 / 2) = 4
-}
-
-test "complex_business_workflow" {
-  // 复杂业务工作流程：订单处理系统
-  let product_price = 120
-  let quantity = 15
-  let tax_rate = 8
-  let shipping_per_item = 5
-  let discount_threshold = 1500
-  let discount_amount = 100
-  
-  // 步骤1：计算商品总价
-  let subtotal = multiply(product_price, quantity)
-  
-  // 步骤2：计算运费
-  let total_shipping = multiply(shipping_per_item, quantity)
-  
-  // 步骤3：计算税费
-  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  
-  // 步骤4：计算折扣前总价
-  let pre_discount_total = add(add(subtotal, total_shipping), tax_amount)
-  
-  // 步骤5：应用折扣（如果满足条件）
-  let final_total = if pre_discount_total > discount_threshold {
-    add(pre_discount_total, -discount_amount)
-  } else {
-    pre_discount_total
-  }
-  
-  // 步骤6：计算每件商品的平均成本
-  let average_cost_per_item = divide_with_ceil(final_total, quantity)
-  
-  assert_eq(1800, subtotal)           // 120 * 15 = 1800
-  assert_eq(75, total_shipping)       // 5 * 15 = 75
-  assert_eq(144, tax_amount)          // ceil(1800 * 8 / 100) = 144
-  assert_eq(2019, pre_discount_total) // 1800 + 75 + 144 = 2019
-  assert_eq(1919, final_total)        // 2019 - 100 = 1919（满足折扣条件）
-  assert_eq(128, average_cost_per_item)// ceil(1919 / 15) = 128
+  // 极小除数情况
+  @azimuth.assert_eq(2147483647, @azimuth.divide_with_ceil(2147483647, 1))
+  @azimuth.assert_eq(2147483647, @azimuth.divide_with_ceil(2147483646, 1))
 }
