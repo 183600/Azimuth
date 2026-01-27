@@ -8,6 +8,8 @@
     "azimuth"
   ],
   "test": [
+    "simple_basic_tests.mbt",
+    "standard_azimuth_unit_tests.mbt",
     "standard_core_tests.mbt",
     "azimuth_comprehensive_tests.mbt",
     "azimuth_concise_quality_tests.mbt",
@@ -147,6 +149,8 @@
       "quality_test_suite.mbt",
         "quality_test_examples.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
+    "simple_basic_tests.mbt",
+    "standard_azimuth_unit_tests.mbt",
     "quality_test_suite.mbt",
     "standard_core_tests.mbt",
     "azimuth_concise_quality_tests.mbt",
