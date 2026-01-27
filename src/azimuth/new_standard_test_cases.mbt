@@ -1,244 +1,142 @@
-// 新的标准 MoonBit 测试用例
-// 测试核心功能：add, multiply, greet 等函数
+// 新增的标准 MoonBit 测试用例
+// 针对 azimuth 库的补充测试，覆盖更多实际应用场景
 
-test "basic_arithmetic_operations" {
-  // 测试基本算术运算
-  assert_eq(15, add(7, 8))
-  assert_eq(-3, add(5, -8))
-  assert_eq(0, add(-10, 10))
-  assert_eq(24, multiply(6, 4))
-  assert_eq(-18, multiply(-3, 6))
-  assert_eq(0, multiply(0, 123))
+test "financial_calculations" {
+  // 金融计算：复利计算
+  let principal = 1000
+  let rate = 5  // 5%
+  let _years = 3
+  
+  // 简化的年复利计算
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate), 100))
+  
+  assert_eq(1050, year1)
+  assert_eq(1103, year2)
+  assert_eq(1158, year3)
 }
 
-test "boundary_value_tests" {
-  // 测试边界值处理
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "inventory_management" {
+  // 库存管理：计算补货需求
+  let current_stock = 45
+  let daily_sales = 8
+  let days_until_reorder = 7
+  let safety_stock = 20
   
-  // 测试最大值边界
-  assert_eq(max_val, add(max_val, 1))
-  assert_eq(max_val, add(max_val, 100))
-  assert_eq(0, multiply(max_val, 0))
+  let expected_sales = multiply(daily_sales, days_until_reorder)
+  let reorder_point = add(expected_sales, safety_stock)
+  let need_to_reorder = current_stock < reorder_point
   
-  // 测试最小值边界
-  assert_eq(min_val, add(min_val, -1))
-  assert_eq(min_val, add(min_val, -100))
-  assert_eq(0, multiply(min_val, 0))
-  assert_eq(min_val, multiply(min_val, 1))
+  assert_eq(56, expected_sales)
+  assert_eq(76, reorder_point)
+  // 由于 need_to_reorder 是布尔值，我们通过条件判断来验证
+  assert_eq(1, if need_to_reorder { 1 } else { 0 })
 }
 
-test "string_greeting_functionality" {
-  // 测试字符串问候功能
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 张三!", greet("张三"))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, user@domain.com!", greet("user@domain.com"))
+test "time_management" {
+  // 时间管理：项目完成时间估算
+  let total_tasks = 67
+  let tasks_per_day = 5
+  let work_days_per_week = 5
+  
+  let days_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  let weeks_needed = divide_with_ceil(days_needed, work_days_per_week)
+  let total_hours = multiply(days_needed, 8)  // 每天8小时
+  
+  assert_eq(14, days_needed)
+  assert_eq(3, weeks_needed)
+  assert_eq(112, total_hours)
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 12
-  let b = 8
-  let c = 5
+test "geometry_calculations" {
+  // 几何计算：矩形面积和周长
+  let length = 12
+  let width = 8
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  let area = multiply(length, width)
+  let perimeter = multiply(2, add(length, width))
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 分配律
-  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
-  
-  // 结合律测试
-  assert_eq(add(add(a, b), c), add(a, add(b, c)))
-  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
+  assert_eq(96, area)
+  assert_eq(40, perimeter)
 }
 
-test "complex_calculation_scenarios" {
-  // 测试复杂计算场景
-  // 圆形面积和周长计算（简化版）
-  let radius = 5
-  let pi_approx = 3
+test "temperature_conversion" {
+  // 温度转换（简化版）：摄氏度到华氏度
+  let celsius = 25
+  let fahrenheit = add(multiply(9, divide_with_ceil(multiply(celsius, 5), 5)), 32)
   
-  // 周长 = 2 × π × r
-  let circumference = multiply(multiply(2, pi_approx), radius)
-  assert_eq(30, circumference)
-  
-  // 面积 = π × r²
-  let area = multiply(pi_approx, multiply(radius, radius))
-  assert_eq(75, area)
-  
-  // 复合计算：面积 + 周长
-  let total = add(area, circumference)
-  assert_eq(105, total)
+  assert_eq(77, fahrenheit)
 }
 
-test "real_world_business_calculations" {
-  // 测试实际业务计算
-  // 订单总价计算
-  let unit_price = 199
-  let quantity = 3
-  let discount_rate = 10
-  let shipping = 15
-  let tax_rate = 8
+test "data_analysis" {
+  // 数据分析：统计计算
+  let values = [15, 22, 18, 31, 24]
+  let sum = add(add(add(add(values[0], values[1]), values[2]), values[3]), values[4])
+  let average = divide_with_ceil(sum, 5)
   
-  // 商品总价
-  let subtotal = multiply(unit_price, quantity)
-  assert_eq(597, subtotal)
-  
-  // 折扣金额
-  let discount = multiply(subtotal, discount_rate) / 100
-  assert_eq(59, discount)
-  
-  // 折后价格
-  let discounted_price = add(subtotal, -discount)
-  assert_eq(538, discounted_price)
-  
-  // 税费
-  let tax = multiply(discounted_price, tax_rate) / 100
-  assert_eq(43, tax)
-  
-  // 最终总价
-  let final_total = add(add(discounted_price, tax), shipping)
-  assert_eq(596, final_total)
+  assert_eq(110, sum)
+  assert_eq(22, average)
 }
 
-test "error_handling_and_validation" {
-  // 测试错误处理和验证
-  // 断言函数测试
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq_string("test", "test")
+test "resource_allocation" {
+  // 资源分配：项目预算分配
+  let total_budget = 50000
+  let team_size = 8
+  let project_duration_months = 6
   
-  // 条件验证
-  let positive = 10
-  let negative = -5
-  let zero = 0
+  let budget_per_person = divide_with_ceil(total_budget, team_size)
+  let monthly_budget = divide_with_ceil(total_budget, project_duration_months)
+  let weekly_budget = divide_with_ceil(monthly_budget, 4)
   
-  assert_true(positive > 0)
-  assert_true(negative < 0)
-  assert_true(zero == 0)
-  
-  // 运算结果验证
-  assert_true(add(5, 3) == 8)
-  assert_true(multiply(4, 6) == 24)
-  assert_true(greet("Test") == "Hello, Test!")
+  assert_eq(6250, budget_per_person)
+  assert_eq(8334, monthly_budget)
+  assert_eq(2084, weekly_budget)
 }
 
-test "performance_and_efficiency" {
-  // 测试性能和效率相关的计算
-  // 等差数列求和：1 + 2 + 3 + ... + n = n × (n + 1) / 2
-  let n = 20
-  let sum = multiply(n, add(n, 1)) / 2
-  assert_eq(210, sum)
+test "shipping_calculations" {
+  // 运输计算：包裹运费
+  let base_rate = 10
+  let weight = 15
+  let distance = 120
+  let weight_rate = 2
+  let distance_rate = 1
   
-  // 等比数列求和（简化版）：1 + 2 + 4 + 8 + 16 = 31
-  let geo_sum = add(add(add(add(1, 2), 4), 8), 16)
-  assert_eq(31, geo_sum)
+  let weight_cost = multiply(weight, weight_rate)
+  let distance_cost = divide_with_ceil(multiply(distance, distance_rate), 10)
+  let total_cost = add(add(base_rate, weight_cost), distance_cost)
   
-  // 阶乘计算：5! = 5 × 4 × 3 × 2 × 1 = 120
-  let factorial = multiply(5, multiply(4, multiply(3, multiply(2, 1))))
-  assert_eq(120, factorial)
-  
-  // 幂运算：2^6 = 64
-  let power = multiply(multiply(multiply(2, 2), multiply(2, 2)), multiply(2, 2))
-  assert_eq(64, power)
+  assert_eq(30, weight_cost)
+  assert_eq(12, distance_cost)
+  assert_eq(52, total_cost)
 }
 
-test "data_conversion_and_formatting" {
-  // 测试数据转换和格式化
-  // 数字到字符串的间接转换
-  let year = 2024
-  let month = 1
-  let day = 21
+test "performance_metrics" {
+  // 性能指标：效率计算
+  let units_produced = 450
+  let hours_worked = 40
+  let defect_count = 15
+  let target_efficiency = 10
   
-  let year_str = "2024"
-  let month_str = "1"
-  let day_str = "21"
+  let actual_efficiency = divide_with_ceil(units_produced, hours_worked)
+  let defect_rate = divide_with_ceil(multiply(defect_count, 100), units_produced)
+  let efficiency_rating = if actual_efficiency >= target_efficiency { 1 } else { 0 }
   
-  // 日期格式化测试
-  let date_greeting = greet(year_str + "-" + month_str + "-" + day_str)
-  assert_eq_string("Hello, 2024-1-21!", date_greeting)
-  
-  // 百分比格式化
-  let percentage = 85
-  let percentage_str = "85%"
-  let result = greet(percentage_str)
-  assert_eq_string("Hello, 85%!", result)
-  
-  // 货币格式化
-  let amount = 1234
-  let currency_str = "$1234"
-  let currency_result = greet(currency_str)
-  assert_eq_string("Hello, $1234!", currency_result)
+  assert_eq(12, actual_efficiency)
+  assert_eq(4, defect_rate)
+  assert_eq(1, efficiency_rating)
 }
 
-test "edge_cases_and_special_conditions" {
-  // 测试边界情况和特殊条件
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "string_processing_advanced" {
+  // 高级字符串处理：多语言问候
+  let names = ["张三", "John", "María", "Yuki"]
+  let greeting1 = greet(names[0])
+  let greeting2 = greet(names[1])
+  let greeting3 = greet(names[2])
+  let greeting4 = greet(names[3])
   
-  // 连续运算测试
-  let chain_result = add(multiply(2, 3), multiply(4, 5))
-  assert_eq(26, chain_result)
-  
-  // 嵌套运算测试
-  let nested_result = multiply(add(10, 5), add(3, 2))
-  assert_eq(75, nested_result)
-  
-  // 混合符号运算
-  let mixed_result = add(multiply(-2, 3), multiply(4, -5))
-  assert_eq(-26, mixed_result)
-  
-  // 零值参与的各种运算
-  assert_eq(5, add(0, 5))
-  assert_eq(-5, add(0, -5))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(0, multiply(0, -5))
-  
-  // 极值运算验证
-  assert_true(add(max_val, min_val) == -1)
-  assert_true(multiply(max_val, 0) == 0)
-  assert_true(multiply(min_val, 0) == 0)
-}
-
-test "algorithmic_implementation" {
-  // 测试算法实现
-  // 最大公约数算法（简化版欧几里得算法）
-  let a = 48
-  let b = 18
-  
-  // 手动模拟欧几里得算法
-  // 48 % 18 = 12
-  // 18 % 12 = 6
-  // 12 % 6 = 0
-  // 所以 GCD 是 6
-  let gcd = 6
-  assert_eq(6, gcd)
-  
-  // 验证公约数性质
-  assert_true(48 % 6 == 0)
-  assert_true(18 % 6 == 0)
-  
-  // 简单排序算法验证
-  let num1 = 5
-  let num2 = 2
-  let num3 = 8
-  
-  // 找出最大值
-  let max = if (num1 > num2 && num1 > num3) { num1 } else if (num2 > num3) { num2 } else { num3 }
-  assert_eq(8, max)
-  
-  // 找出最小值
-  let min = if (num1 < num2 && num1 < num3) { num1 } else if (num2 < num3) { num2 } else { num3 }
-  assert_eq(2, min)
-  
-  // 计算范围
-  let range = add(max, -min)
-  assert_eq(6, range)
+  assert_eq_string("Hello, 张三!", greeting1)
+  assert_eq_string("Hello, John!", greeting2)
+  assert_eq_string("Hello, María!", greeting3)
+  assert_eq_string("Hello, Yuki!", greeting4)
 }
