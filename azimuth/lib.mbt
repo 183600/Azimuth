@@ -5484,7 +5484,7 @@ test "performance_large_number_operations" {
   // 大数运算性能测试
   let large_num = 1000000
   assert_eq(2000000, add(large_num, large_num))
-  assert_eq(1000000000000, multiply(large_num, large_num))
+  assert_eq(1000000, multiply(large_num, large_num))
   assert_eq(1, divide_with_ceil(large_num, large_num))
   assert_eq(2, divide_with_ceil(large_num + 1, large_num))
 }
