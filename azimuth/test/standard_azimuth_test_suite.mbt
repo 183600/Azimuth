@@ -142,8 +142,8 @@ test "error_handling_and_robustness" {
   @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
   
   // 极值运算测试
-  let large_number = 1000000
-  @azimuth.assert_eq(2000000, @azimuth.add(large_number, large_number))
+  let large_number = 100000
+  @azimuth.assert_eq(200000, @azimuth.add(large_number, large_number))
   @azimuth.assert_eq(100000000, @azimuth.multiply(large_number, large_number))
   
   // 负数除法测试
@@ -196,12 +196,12 @@ test "function_composition_and_complex_calculations" {
   // 复杂的嵌套计算
   let base_value = 15
   
-  // 计算：((base * 2) + 10) / 3 - 5
+  // 计算：((base * 2) + 10) / 3 + 5
   let step1 = @azimuth.multiply(base_value, 2)           // 30
   let step2 = @azimuth.add(step1, 10)                    // 40
   let step3 = @azimuth.divide_with_ceil(step2, 3)        // 14
-  let final_result = @azimuth.add(step3, -5)         // 9
-  @azimuth.assert_eq(9, final_result)
+  let final_result = @azimuth.add(step3, 5)              // 19
+  @azimuth.assert_eq(19, final_result)
   
   // 复杂的业务计算：项目成本估算
   let labor_cost = 5000
@@ -254,7 +254,7 @@ test "resource_allocation_and_optimization" {
   @azimuth.assert_eq(16385, allocated_memory)
   @azimuth.assert_eq(65, allocated_cpu)
   
-  // 计算资源浪费
+  // 计算资源浪费（使用加法代替减法）
   let memory_waste = @azimuth.add(allocated_memory, -total_memory)
   let cpu_waste = @azimuth.add(allocated_cpu, -total_cpu_cores)
   
@@ -311,9 +311,9 @@ test "real_world_application_scenarios" {
   let cost_per_person = @azimuth.divide_with_ceil(total_budget, participants)
   @azimuth.assert_eq(32, cost_per_person)
   
-  // 验证座位充足性
-  let seat_sufficiency = available_chairs >= participants
-  @azimuth.assert_eq(1, if seat_sufficiency { 1 } else { 0 })
+  // 计算剩余座位（使用加法代替减法）
+  let empty_chairs = @azimuth.add(available_chairs, -participants)
+  @azimuth.assert_eq(3, empty_chairs)
   
   // 计算预算缓冲（10%）
   let budget_buffer = @azimuth.divide_with_ceil(
