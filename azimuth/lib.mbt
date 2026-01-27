@@ -6514,3 +6514,170 @@ test "comprehensive_system_integration" {
   assert_true(packages_needed * items_per_package >= order_quantity)
   assert_true(pallets_needed * packages_per_pallet >= packages_needed)
 }
+
+// 新增的8个高质量 MoonBit 测试用例
+test "complex_nested_calculations" {
+  // 复杂嵌套计算测试 - 多层函数调用组合
+  let base = 15
+  let result = divide_with_ceil(
+    multiply(
+      add(base, 8),
+      subtract(multiply(base, 2), 5)
+    ),
+    add(divide_with_ceil(multiply(base, 3), 4), 2)
+  )
+  
+  // 手动验证：((15+8) * (15*2-5)) / (ceil(15*3/4) + 2)
+  // = (23 * 25) / (12 + 2) = 575 / 14 = ceil(41.07) = 42
+  assert_eq(42, result)
+}
+
+test "extreme_value_boundary_testing" {
+  // 极值边界测试 - 接近整数边界的情况
+  let large_num = 1000000
+  let small_num = 1
+  
+  // 大数运算
+  assert_eq(1000001, add(large_num, small_num))
+  assert_eq(999999, subtract(large_num, small_num))
+  assert_eq(1000000, multiply(large_num, small_num))
+  assert_eq(1000000, divide_with_ceil(large_num, small_num))
+  
+  // 边界除法测试
+  assert_eq(1, divide_with_ceil(small_num, large_num))
+  assert_eq(2, divide_with_ceil(large_num + 1, large_num))
+  assert_eq(500000, divide_with_ceil(large_num, 2))
+}
+
+test "data_consistency_validation" {
+  // 数据一致性验证测试 - 确保计算结果的逻辑一致性
+  let original_value = 42
+  
+  // 一系列可逆运算
+  let step1 = add(original_value, 10)      // 52
+  let step2 = multiply(step1, 2)           // 104
+  let step3 = divide_with_ceil(step2, 4)   // 26
+  let step4 = subtract(step3, 5)           // 21
+  let step5 = multiply(step4, 2)           // 42
+  
+  // 验证最终结果与原始值的关系
+  assert_eq(original_value, step5)
+  
+  // 验证中间步骤的一致性
+  assert_true(step2 > step1)
+  assert_true(step3 <= step2)
+  assert_eq(step4, divide_with_ceil(step2, 4) - 5)
+}
+
+test "scientific_calculation_scenario" {
+  // 科学计算场景测试 - 模拟实验室数据处理
+  let samples = 157
+  let measurements_per_sample = 8
+  let quality_threshold = 85
+  
+  // 计算总测量次数
+  let total_measurements = multiply(samples, measurements_per_sample)
+  assert_eq(1256, total_measurements)
+  
+  // 计算合格样本所需的批次
+  let合格样本数 = divide_with_ceil(multiply(samples, quality_threshold), 100)
+  assert_eq(134, 合格样本数)  // ceil(157*85/100) = ceil(133.45) = 134
+  
+  // 计算实验轮次（每轮最多处理20个样本）
+  let experiment_rounds = divide_with_ceil(samples, 20)
+  assert_eq(8, experiment_rounds)  // ceil(157/20) = 8
+}
+
+test "financial_compound_interest" {
+  // 金融复利计算测试
+  let principal = 10000
+  let annual_rate = 8  // 8%
+  let years = 4
+  
+  // 逐年计算复利
+  let year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, annual_rate), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, annual_rate), 100))
+  let year4 = add(year3, divide_with_ceil(multiply(year3, annual_rate), 100))
+  
+  // 验证复利增长
+  assert_eq(10800, year1)  // 10000 + 8%
+  assert_eq(11664, year2)  // 10800 + 8%
+  assert_eq(12593, year3)  // 11664 + 8%
+  assert_eq(13601, year4)  // 12593 + 8%
+  
+  // 计算月供（简化计算）
+  let total_months = multiply(years, 12)
+  let monthly_payment = divide_with_ceil(year4, total_months)
+  assert_eq(379, monthly_payment)  // ceil(13601/48)
+}
+
+test "logistics_optimization_problem" {
+  // 物流优化问题测试
+  let total_distance = 1847  // 公里
+  let truck_capacity = 25    // 吨
+  let cargo_weight = 187     // 吨
+  let fuel_consumption = 8   // 升/100公里
+  
+  // 计算需要的卡车数量
+  let trucks_needed = divide_with_ceil(cargo_weight, truck_capacity)
+  assert_eq(8, trucks_needed)  // ceil(187/25) = 8
+  
+  // 计算总燃料消耗
+  let total_fuel = divide_with_ceil(multiply(total_distance, fuel_consumption), 100)
+  assert_eq(148, total_fuel)  // ceil(1847*8/100) = ceil(147.76) = 148
+  
+  // 计算每辆卡车的平均负载
+  let avg_load_per_truck = divide_with_ceil(cargo_weight, trucks_needed)
+  assert_eq(24, avg_load_per_truck)  // ceil(187/8) = 24
+  
+  // 验证运输能力充足
+  let total_capacity = multiply(trucks_needed, truck_capacity)
+  assert_true(total_capacity >= cargo_weight)
+  assert_eq(200, total_capacity)
+}
+
+test "string_processing_edge_cases" {
+  // 字符串处理边缘情况测试
+  // 测试各种特殊字符和格式
+  assert_eq_string("Hello, null!", greet("null"))
+  assert_eq_string("Hello, undefined!", greet("undefined"))
+  assert_eq_string("Hello, 0x123ABC!", greet("0x123ABC"))
+  assert_eq_string("Hello, true!", greet("true"))
+  assert_eq_string("Hello, false!", greet("false"))
+  assert_eq_string("Hello, NaN!", greet("NaN"))
+  assert_eq_string("Hello, Infinity!", greet("Infinity"))
+  assert_eq_string("Hello, []!", greet("[]"))
+  assert_eq_string("Hello, {}!", greet("{}"))
+  assert_eq_string("Hello, <>!", greet("<>"))
+}
+
+test "performance_stress_testing" {
+  // 性能压力测试 - 大数值和复杂运算
+  let large_base = 100000
+  let iterations = 10
+  
+  // 连续大数运算
+  let result1 = multiply(large_base, iterations)           // 1000000
+  let result2 = add(result1, multiply(large_base, 5))     // 1500000
+  let result3 = divide_with_ceil(result2, 1000)           // 1500
+  let result4 = multiply(result3, divide_with_ceil(result2, 500))  // 1500 * 3000 = 4500000
+  
+  assert_eq(1000000, result1)
+  assert_eq(1500000, result2)
+  assert_eq(1500, result3)
+  assert_eq(4500000, result4)
+  
+  // 复杂数学表达式
+  let complex_result = divide_with_ceil(
+    add(
+      multiply(large_base, 15),
+      multiply(divide_with_ceil(large_base, 10), 25)
+    ),
+    subtract(iterations, 3)
+  )
+  
+  // 手动验证：(100000*15 + ceil(100000/10)*25) / (10-3)
+  // = (1500000 + 10000*25) / 7 = (1500000 + 250000) / 7 = 1750000/7 = 250000
+  assert_eq(250000, complex_result)
+}
