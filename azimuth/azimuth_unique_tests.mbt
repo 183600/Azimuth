@@ -1,4 +1,4 @@
-// 新增标准 MoonBit 测试用例 - 10个高质量测试用例
+// 新增标准 MoonBit 测试用例 - 确保测试名称唯一
 test "azimuth_basic_addition_test" {
   // 测试基本加法功能
   assert_eq(8, add(3, 5))
