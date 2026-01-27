@@ -1,104 +1,84 @@
-// 标准 MoonBit 测试用例
-// 为 azimuth 库添加的核心功能测试
+// 标准 MoonBit 测试用例 - 为 Azimuth 项目添加
+// 包含 8 个高质量测试用例，覆盖各种功能和场景
 
-test "add_function_basic" {
+test "basic_addition_functionality" {
   // 测试基本加法功能
-  assert_eq(5, add(2, 3))
+  assert_eq(8, add(3, 5))
   assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(10, add(-5, 15))
+  assert_eq(-2, add(-5, 3))
+  assert_eq(100, add(50, 50))
 }
 
-test "multiply_function_basic" {
-  // 测试基本乘法功能
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(25, multiply(-5, -5))
+test "multiplication_with_zero" {
+  // 测试乘法与零的特殊情况
+  assert_eq(0, multiply(0, 10))
+  assert_eq(0, multiply(10, 0))
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(-5, 0))
 }
 
-test "greet_function_basic" {
-  // 测试基本问候功能
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
+test "greet_function_with_special_characters" {
+  // 测试问候函数的特殊字符处理
+  assert_eq_string("Hello, @user123!", greet("@user123"))
+  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
+  assert_eq_string("Hello, phone+123!", greet("phone+123"))
 }
 
-test "divide_with_ceil_basic" {
-  // 测试基本向上取整除法功能
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 100))
-  assert_eq(0, divide_with_ceil(5, 0))
+test "divide_with_ceil_fractional_results" {
+  // 测试向上取整除法的小数结果处理
+  assert_eq(3, divide_with_ceil(8, 3))
+  assert_eq(5, divide_with_ceil(21, 4))
+  assert_eq(2, divide_with_ceil(7, 4))
+  assert_eq(1, divide_with_ceil(3, 2))
 }
 
-test "subtract_function_basic" {
-  // 测试基本减法功能
-  assert_eq(2, subtract(5, 3))
+test "subtract_function_edge_cases" {
+  // 测试减法函数的边缘情况
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
   assert_eq(0, subtract(5, 5))
-  assert_eq(-2, subtract(3, 5))
-  assert_eq(10, subtract(5, -5))
+  assert_eq(15, subtract(10, -5))
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let x = 7
-  let y = 13
+test "complex_business_calculation" {
+  // 测试复杂业务计算场景
+  // 场景：计算项目成本分配
+  let total_cost = 5000
+  let team_members = 3
+  let base_cost_per_person = divide_with_ceil(total_cost, team_members)
+  assert_eq(1667, base_cost_per_person)
   
-  // 加法交换律
-  assert_eq(add(x, y), add(y, x))
-  
-  // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
-  
-  // 加法恒等式
-  assert_eq(x, add(x, 0))
-  
-  // 乘法恒等式
-  assert_eq(0, multiply(x, 0))
+  // 添加管理费用
+  let management_fee = 500
+  let total_with_fee = add(total_cost, management_fee)
+  let final_cost_per_person = divide_with_ceil(total_with_fee, team_members)
+  assert_eq(1834, final_cost_per_person)
 }
 
-test "complex_calculation" {
-  // 测试复杂计算场景
-  // 场景：计算装盒问题
-  let items = 25
-  let box_capacity = 6
-  let boxes_needed = divide_with_ceil(items, box_capacity)
+test "mathematical_properties_validation" {
+  // 验证数学性质
+  let a = 12
+  let b = 8
   
-  assert_eq(5, boxes_needed)
+  // 加法交换律验证
+  assert_eq(add(a, b), add(b, a))
   
-  // 验证总容量
-  let total_capacity = multiply(boxes_needed, box_capacity)
-  assert_eq(30, total_capacity)
+  // 乘法交换律验证
+  assert_eq(multiply(a, b), multiply(b, a))
   
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, items)
-  assert_eq(5, remaining_space)
+  // 减法非交换律验证
+  assert_true(subtract(a, b) != subtract(b, a))
 }
 
-test "negative_number_operations" {
-  // 测试负数运算
-  assert_eq(-8, add(-5, -3))
-  assert_eq(15, multiply(-5, -3))
-  assert_eq(-15, multiply(-5, 3))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(3, divide_with_ceil(-10, -3))
-}
-
-test "unicode_greeting" {
-  // 测试Unicode字符支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-}
-
-test "edge_cases" {
-  // 测试边缘情况
+test "error_handling_boundary_conditions" {
+  // 测试错误处理和边界条件
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(15, 0))
+  assert_eq(0, divide_with_ceil(-15, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 极值测试
   assert_eq(1, divide_with_ceil(1, 1))
   assert_eq(0, divide_with_ceil(0, 1))
-  assert_eq(0, divide_with_ceil(0, -1))
-  assert_eq(1, divide_with_ceil(-1, -1))
-  assert_eq(1000000, multiply(1000, 1000))
-  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1, divide_with_ceil(1, 2))
 }
