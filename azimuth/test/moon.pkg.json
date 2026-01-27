@@ -4,7 +4,8 @@
   ],
   "export": [],
   "test-import": [
-    "moonbitlang/core/builtin"
+    "moonbitlang/core/builtin",
+    "azimuth"
   ],
   "test": [
     "azimuth_concise_core_tests.mbt",
@@ -196,6 +197,7 @@
   "standard_azimuth_tests.mbt",
   "azimuth_standard_tests_new.mbt",
   "standard_moonbit_test_cases.mbt",
-  "standard_moonbit_test_cases_new.mbt"
+  "standard_moonbit_test_cases_new.mbt",
+  "azimuth_comprehensive_quality_tests.mbt"
   ]
 }
