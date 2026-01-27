@@ -1,304 +1,219 @@
-// Azimuth 增强测试套件 - 新增10个高质量 MoonBit 测试用例
-// 专注于复杂场景、边界情况和实际应用
+// 高质量 MoonBit 测试用例 - 覆盖核心功能和边界情况
 
-test "time_calculation_scenario" {
-  // 时间计算场景测试
-  // 场景：计算项目完成时间，考虑工作日和周末
-  let total_tasks = 87
-  let tasks_per_day = 8
-  let work_days_per_week = 5
+test "arithmeti_sequence_operations" {
+  // 测试算术序列操作
+  let start = 5
+  let difference = 3
+  let count = 4
   
-  // 计算需要的工作日
-  let work_days_needed = divide_with_ceil(total_tasks, tasks_per_day)
-  assert_eq(11, work_days_needed)  // ceil(87/8) = 11
+  // 计算等差数列的和
+  let term1 = start
+  let term2 = add(term1, difference)
+  let term3 = add(term2, difference)
+  let term4 = add(term3, difference)
   
-  // 计算需要的周数（考虑周末）
-  let weeks_needed = divide_with_ceil(work_days_needed, work_days_per_week)
-  assert_eq(3, weeks_needed)  // ceil(11/5) = 3
+  let sum = add(add(add(term1, term2), term3), term4)
+  assert_eq(32, sum)  // 5 + 8 + 11 + 14 = 38
   
-  // 计算总天数（包括周末）
-  let total_days = multiply(weeks_needed, 7)
-  assert_eq(21, total_days)
-  
-  // 验证实际工作日
-  let actual_work_days = multiply(weeks_needed - 1, work_days_per_week)
-  let final_week_days = subtract(work_days_needed, actual_work_days)
-  assert_eq(11, add(actual_work_days, final_week_days))
+  // 计算平均值（使用向上取整除法）
+  let average = divide_with_ceil(sum, count)
+  assert_eq(8, average)  // ceil(32/4) = 8
 }
 
-test "memory_allocation_simulation" {
-  // 内存分配模拟测试
-  // 场景：模拟内存块分配
-  let total_memory = 1024  // KB
-  let block_sizes = [128, 256, 64, 512, 32]  // 不同大小的内存块
+test "inventory_management_optimization" {
+  // 库存管理优化测试
+  let product_a = 23
+  let product_b = 47
+  let product_c = 31
+  let box_capacity = 15
   
-  // 计算每个块需要的分配次数
-  let blocks_128 = divide_with_ceil(total_memory, block_sizes[0])
-  let blocks_256 = divide_with_ceil(total_memory, block_sizes[1])
-  let blocks_64 = divide_with_ceil(total_memory, block_sizes[2])
-  let blocks_512 = divide_with_ceil(total_memory, block_sizes[3])
-  let blocks_32 = divide_with_ceil(total_memory, block_sizes[4])
+  // 计算每种产品需要的箱子数量
+  let boxes_a = divide_with_ceil(product_a, box_capacity)
+  let boxes_b = divide_with_ceil(product_b, box_capacity)
+  let boxes_c = divide_with_ceil(product_c, box_capacity)
   
-  // 验证计算结果
-  assert_eq(8, blocks_128)   // ceil(1024/128)
-  assert_eq(4, blocks_256)   // ceil(1024/256)
-  assert_eq(16, blocks_64)   // ceil(1024/64)
-  assert_eq(2, blocks_512)   // ceil(1024/512)
-  assert_eq(32, blocks_32)   // ceil(1024/32)
+  assert_eq(2, boxes_a)  // ceil(23/15) = 2
+  assert_eq(4, boxes_b)  // ceil(47/15) = 4
+  assert_eq(3, boxes_c)  // ceil(31/15) = 3
   
-  // 计算总分配次数
-  let total_allocations = add(add(blocks_128, blocks_256), add(add(blocks_64, blocks_512), blocks_32))
-  assert_eq(62, total_allocations)
+  // 计算总箱子数和总容量
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  let total_capacity = multiply(total_boxes, box_capacity)
+  
+  assert_eq(9, total_boxes)
+  assert_eq(135, total_capacity)
+  
+  // 计算剩余空间
+  let total_items = add(add(product_a, product_b), product_c)
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(34, remaining_space)  // 135 - 101 = 34
 }
 
-test "network_packet_processing" {
-  // 网络数据包处理测试
-  // 场景：计算网络传输所需的包数量
-  let data_size = 5000  // 字节
-  let max_packet_size = 1500  // 字节（MTU考虑）
-  let header_size = 20  // 字节（IP头部）
+test "string_processing_pipeline" {
+  // 字符串处理流水线测试
+  let input1 = "MoonBit"
+  let input2 = "2024"
+  let input3 = "测试"
   
-  // 实际可用载荷
-  let effective_payload = subtract(max_packet_size, header_size)
-  assert_eq(1480, effective_payload)
+  // 处理各种字符串输入
+  let greeting1 = greet(input1)
+  let greeting2 = greet(input2)
+  let greeting3 = greet(input3)
   
-  // 计算需要的包数量
-  let packets_needed = divide_with_ceil(data_size, effective_payload)
-  assert_eq(4, packets_needed)  // ceil(5000/1480)
+  assert_eq_string("Hello, MoonBit!", greeting1)
+  assert_eq_string("Hello, 2024!", greeting2)
+  assert_eq_string("Hello, 测试!", greeting3)
   
-  // 计算总传输量（包括头部）
-  let total_transmitted = multiply(packets_needed, max_packet_size)
-  assert_eq(6000, total_transmitted)
-  
-  // 计算传输效率
-  let efficiency = divide_with_ceil(multiply(data_size, 100), total_transmitted)
-  assert_eq(84, efficiency)  // floor(500000/6000) = 83%
+  // 测试空字符串和特殊字符
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, @#$%!", greet("@#$%"))
+  assert_eq_string("Hello,   !", greet("   "))
 }
 
-test "inventory_turnover_calculation" {
-  // 库存周转率计算测试
-  // 场景：计算库存周转率和补货计划
-  let annual_sales = 12000
-  let average_inventory = 3000
-  let lead_time_days = 14
-  let safety_stock = 500
-  
-  // 计算周转率
-  let turnover_rate = divide_with_ceil(annual_sales, average_inventory)
-  assert_eq(4, turnover_rate)  // ceil(12000/3000)
-  
-  // 计算日平均销售
-  let daily_sales = divide_with_ceil(annual_sales, 365)
-  assert_eq(33, daily_sales)  // ceil(12000/365)
-  
-  // 计算补货期间的需求
-  let lead_time_demand = multiply(daily_sales, lead_time_days)
-  assert_eq(462, lead_time_demand)  // 33 * 14
-  
-  // 计算再订货点
-  let reorder_point = add(lead_time_demand, safety_stock)
-  assert_eq(962, reorder_point)
-  
-  // 计算经济订货量（简化版本）
-  let eoq = divide_with_ceil(multiply(2, annual_sales), turnover_rate)
-  assert_eq(6000, eoq)  // ceil(24000/4)
-}
-
-test "cpu_scheduling_simulation" {
-  // CPU调度模拟测试
-  // 场景：模拟时间片轮转调度
-  let total_processes = 15
-  let time_quantum = 5  // 毫秒
-  let average_burst_time = 22  // 毫秒
-  
-  // 计算每个进程需要的时间片数
-  let time_slices_per_process = divide_with_ceil(average_burst_time, time_quantum)
-  assert_eq(5, time_slices_per_process)  // ceil(22/5)
-  
-  // 计算总时间片数
-  let total_time_slices = multiply(total_processes, time_slices_per_process)
-  assert_eq(75, total_time_slices)
-  
-  // 计算总执行时间
-  let total_execution_time = multiply(total_time_slices, time_quantum)
-  assert_eq(375, total_execution_time)
-  
-  // 计算上下文切换开销（假设每次切换1毫秒）
-  let context_switches = subtract(total_time_slices, total_processes)
-  let overhead = multiply(context_switches, 1)
-  assert_eq(60, overhead)
-  
-  // 计算实际完成时间
-  let actual_time = add(total_execution_time, overhead)
-  assert_eq(435, actual_time)
-}
-
-test "financial_compound_interest" {
-  // 金融复利计算测试
-  // 场景：计算复利投资回报
+test "financial_calculation_scenario" {
+  // 金融计算场景测试
   let principal = 10000
-  let annual_rate = 8  // 8%
-  let compounding_frequency = 4  // 季度复利
-  let years = 5
+  let rate1 = 5  // 5%
+  let rate2 = 3  // 3%
+  let years = 2
   
-  // 计算每期利率
-  let periodic_rate = divide_with_ceil(annual_rate, compounding_frequency)
-  assert_eq(2, periodic_rate)  // ceil(8/4)
+  // 第一年利息
+  let interest1 = divide_with_ceil(multiply(principal, rate1), 100)
+  let amount1 = add(principal, interest1)
   
-  // 计算总期数
-  let total_periods = multiply(years, compounding_frequency)
-  assert_eq(20, total_periods)
+  // 第二年利息（基于新的本金）
+  let interest2 = divide_with_ceil(multiply(amount1, rate2), 100)
+  let amount2 = add(amount1, interest2)
   
-  // 简化的复利计算（逐期计算）
-  let amount_1 = add(principal, divide_with_ceil(multiply(principal, periodic_rate), 100))
-  let amount_2 = add(amount_1, divide_with_ceil(multiply(amount_1, periodic_rate), 100))
-  let amount_3 = add(amount_2, divide_with_ceil(multiply(amount_2, periodic_rate), 100))
-  let amount_4 = add(amount_3, divide_with_ceil(multiply(amount_3, periodic_rate), 100))
-  let amount_5 = add(amount_4, divide_with_ceil(multiply(amount_4, periodic_rate), 100))
+  assert_eq(500, interest1)  // 10000 * 5% = 500
+  assert_eq(10500, amount1)  // 10000 + 500 = 10500
+  assert_eq(315, interest2)  // ceil(10500 * 3%) = 315
+  assert_eq(10815, amount2)  // 10500 + 315 = 10815
   
-  // 验证增长
-  assert_eq(10200, amount_1)  // 第1季度
-  assert_eq(10404, amount_2)  // 第2季度
-  assert_eq(10612, amount_3)  // 第3季度
-  assert_eq(10824, amount_4)  // 第4季度
-  assert_eq(11040, amount_5)  // 第5季度（第1年）
-  
-  // 计算总收益
-  let total_return = subtract(amount_5, principal)
-  assert_eq(1040, total_return)
+  // 计算月供（简化计算）
+  let months = multiply(years, 12)
+  let monthly_payment = divide_with_ceil(amount2, months)
+  assert_eq(451, monthly_payment)  // ceil(10815/24) = 451
 }
 
-test "database_pagination_calculation" {
-  // 数据库分页计算测试
-  // 场景：计算数据库查询分页参数
-  let total_records = 2547
-  let page_size = 50
-  let requested_page = 23
+test "resource_allocation_efficiency" {
+  // 资源分配效率测试
+  let total_resources = 1000
+  let projects = 7
+  let min_resources_per_project = divide_with_ceil(total_resources, projects)
   
-  // 计算总页数
-  let total_pages = divide_with_ceil(total_records, page_size)
-  assert_eq(52, total_pages)  // ceil(2547/50)
+  assert_eq(143, min_resources_per_project)  // ceil(1000/7) = 143
   
-  // 验证请求页数是否有效
-  assert_true(requested_page <= total_pages)
+  // 计算实际分配的资源
+  let allocated_resources = multiply(min_resources_per_project, projects)
+  let waste = subtract(allocated_resources, total_resources)
   
-  // 计算偏移量
-  let offset = multiply(requested_page - 1, page_size)
-  assert_eq(1100, offset)  // (23-1)*50
+  assert_eq(1001, allocated_resources)  // 143 * 7 = 1001
+  assert_eq(1, waste)  // 1001 - 1000 = 1
   
-  // 计算当前页的记录数
-  let remaining_records = subtract(total_records, offset)
-  let current_page_records = remaining_records >= page_size ? page_size : remaining_records
-  assert_eq(50, current_page_records)
-  
-  // 计算最后一页的记录数
-  let last_page_offset = multiply(total_pages - 1, page_size)
-  let last_page_records = subtract(total_records, last_page_offset)
-  assert_eq(47, last_page_records)  // 2547 - 51*50
+  // 计算资源利用率
+  let utilization = multiply(100, divide_with_ceil(multiply(total_resources, 100), allocated_resources))
+  assert_eq(99, utilization)  // floor(100000/1001) = 99%
 }
 
-test "load_balancing_distribution" {
-  // 负载均衡分配测试
-  // 场景：计算服务器负载分配
-  let total_requests = 10000
-  let server_count = 7
-  let max_requests_per_server = 1500
+test "mathematical_series_calculation" {
+  // 数学级数计算测试
+  let n = 5
   
-  // 平均分配
-  let avg_requests_per_server = divide_with_ceil(total_requests, server_count)
-  assert_eq(1429, avg_requests_per_server)  // ceil(10000/7)
+  // 计算平方和：1² + 2² + 3² + 4² + 5²
+  let square1 = multiply(1, 1)
+  let square2 = multiply(2, 2)
+  let square3 = multiply(3, 3)
+  let square4 = multiply(4, 4)
+  let square5 = multiply(5, 5)
   
-  // 验证每台服务器不超过最大限制
-  assert_true(avg_requests_per_server <= max_requests_per_server)
+  let sum_of_squares = add(add(add(add(square1, square2), square3), square4), square5)
+  assert_eq(55, sum_of_squares)  // 1 + 4 + 9 + 16 + 25 = 55
   
-  // 计算总处理能力
-  let total_capacity = multiply(server_count, max_requests_per_server)
-  assert_eq(10500, total_capacity)
+  // 计算阶乘：5! = 5 * 4 * 3 * 2 * 1
+  let factorial = multiply(multiply(multiply(multiply(5, 4), 3), 2), 1)
+  assert_eq(120, factorial)
   
-  // 计算剩余处理能力
-  let remaining_capacity = subtract(total_capacity, total_requests)
-  assert_eq(500, remaining_capacity)
-  
-  // 计算利用率
-  let utilization = divide_with_ceil(multiply(total_requests, 100), total_capacity)
-  assert_eq(95, utilization)  // floor(1000000/10500)
-  
-  // 如果需要增加服务器来处理更多请求
-  let additional_requests = 2000
-  let new_total_requests = add(total_requests, additional_requests)
-  let new_server_count = divide_with_ceil(new_total_requests, max_requests_per_server)
-  assert_eq(8, new_server_count)  // ceil(12000/1500)
+  // 计算平均值
+  let average = divide_with_ceil(sum_of_squares, n)
+  assert_eq(11, average)  // ceil(55/5) = 11
 }
 
-test "caching_strategy_optimization" {
-  // 缓存策略优化测试
-  // 场景：计算缓存命中率和存储需求
-  let total_requests = 50000
-  let cache_size = 1000
-  let hit_rate_improvement = 15  // 百分比
-  let base_hit_rate = 70  // 百分比
+test "complex_conditional_calculations" {
+  // 复杂条件计算测试
+  let base_value = 100
+  let multiplier_a = 2
+  let multiplier_b = 3
+  let threshold = 250
   
-  // 计算当前命中数
-  let current_hits = divide_with_ceil(multiply(total_requests, base_hit_rate), 100)
-  assert_eq(35000, current_hits)
+  // 计算两种方案的结果
+  let result_a = multiply(base_value, multiplier_a)
+  let result_b = multiply(base_value, multiplier_b)
   
-  // 计算改进后的命中率
-  let improved_hit_rate = add(base_hit_rate, hit_rate_improvement)
-  assert_eq(85, improved_hit_rate)
+  assert_eq(200, result_a)
+  assert_eq(300, result_b)
   
-  // 计算改进后的命中数
-  let improved_hits = divide_with_ceil(multiply(total_requests, improved_hit_rate), 100)
-  assert_eq(42500, improved_hits)
+  // 根据阈值选择方案
+  let chosen_result = result_a
+  let meets_threshold = chosen_result >= threshold
+  let alternative = result_b
   
-  // 计算增加的命中数
-  let additional_hits = subtract(improved_hits, current_hits)
-  assert_eq(7500, additional_hits)
+  assert_false(meets_threshold)  // 200 < 250
   
-  // 计算每个缓存项的平均请求次数
-  let requests_per_cache_item = divide_with_ceil(total_requests, cache_size)
-  assert_eq(50, requests_per_cache_item)
+  // 如果不满足阈值，使用备选方案
+  let final_result = meets_threshold ? chosen_result : alternative
+  assert_eq(300, final_result)
   
-  // 计算缓存效率
-  let cache_efficiency = divide_with_ceil(multiply(improved_hits, 100), total_requests)
-  assert_eq(85, cache_efficiency)
+  // 计算需要的资源块数
+  let resource_blocks = divide_with_ceil(final_result, 80)
+  assert_eq(4, resource_blocks)  // ceil(300/80) = 4
 }
 
-test "compression_ratio_analysis" {
-  // 压缩率分析测试
-  // 场景：计算数据压缩效果
-  let original_size = 25000  // KB
-  let compression_ratios = [60, 70, 80, 85, 90]  // 不同的压缩率
-  let storage_cost_per_gb = 50  // 美元
-  let transfer_cost_per_gb = 10  // 美元
+test "data_transformation_pipeline" {
+  // 数据转换流水线测试
+  let raw_data = 12345
+  let factor1 = 3
+  let factor2 = 7
+  let divisor = 4
   
-  // 计算不同压缩率下的存储大小
-  let compressed_60 = divide_with_ceil(multiply(original_size, compression_ratios[0]), 100)
-  let compressed_70 = divide_with_ceil(multiply(original_size, compression_ratios[1]), 100)
-  let compressed_80 = divide_with_ceil(multiply(original_size, compression_ratios[2]), 100)
-  let compressed_85 = divide_with_ceil(multiply(original_size, compression_ratios[3]), 100)
-  let compressed_90 = divide_with_ceil(multiply(original_size, compression_ratios[4]), 100)
+  // 数据处理步骤
+  let step1 = add(raw_data, factor1)        // 12345 + 3 = 12348
+  let step2 = multiply(step1, factor2)      // 12348 * 7 = 86436
+  let step3 = divide_with_ceil(step2, divisor)  // ceil(86436/4) = 21609
+  let step4 = subtract(step3, raw_data)     // 21609 - 12345 = 9264
   
-  // 验证压缩结果
-  assert_eq(15000, compressed_60)  // 60% 压缩率
-  assert_eq(17500, compressed_70)  // 70% 压缩率
-  assert_eq(20000, compressed_80)  // 80% 压缩率
-  assert_eq(21250, compressed_85)  // 85% 压缩率
-  assert_eq(22500, compressed_90)  // 90% 压缩率
+  assert_eq(12348, step1)
+  assert_eq(86436, step2)
+  assert_eq(21609, step3)
+  assert_eq(9264, step4)
   
-  // 计算存储节省（以90%压缩率为例）
-  let storage_savings = subtract(original_size, compressed_90)
-  assert_eq(2500, storage_savings)
+  // 验证数据完整性
+  let verification = add(step4, raw_data)
+  assert_eq(step3, verification)
+}
+
+test "error_boundary_and_recovery" {
+  // 错误边界和恢复测试
+  // 测试各种除零情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
   
-  // 计算存储成本节省
-  let original_gb = divide_with_ceil(original_size, 1024)
-  let compressed_gb = divide_with_ceil(compressed_90, 1024)
-  let original_cost = multiply(original_gb, storage_cost_per_gb)
-  let compressed_cost = multiply(compressed_gb, storage_cost_per_gb)
-  let cost_savings = subtract(original_cost, compressed_cost)
+  // 测试极值运算
+  let large_num = 1000000
+  let small_num = 1
   
-  assert_eq(25, original_gb)      // ceil(25000/1024)
-  assert_eq(22, compressed_gb)    // ceil(22500/1024)
-  assert_eq(1250, original_cost)  // 25 * 50
-  assert_eq(1100, compressed_cost)  // 22 * 50
-  assert_eq(150, cost_savings)    // 1250 - 1100
+  assert_eq(1000000, divide_with_ceil(large_num, small_num))
+  assert_eq(1, divide_with_ceil(small_num, large_num))
+  assert_eq(1000000, divide_with_ceil(large_num, large_num))
+  
+  // 测试负数边界情况
+  assert_eq(-1, divide_with_ceil(-1, 1))
+  assert_eq(1, divide_with_ceil(1, -1))
+  assert_eq(-1, divide_with_ceil(-1, -1))
+  
+  // 测试运算恢复
+  let error_result = divide_with_ceil(50, 0)
+  let recovery_value = add(error_result, 100)
+  assert_eq(100, recovery_value)
 }
