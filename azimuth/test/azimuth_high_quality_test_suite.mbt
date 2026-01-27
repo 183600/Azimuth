@@ -1,16 +1,26 @@
 // Azimuth 高质量测试套件 - 10个标准 MoonBit 测试用例
 // 覆盖核心功能的各种场景和边界情况
 
-test "arithmetic_operations_comprehensive" {
+test "arith metic_operations_comprehensive" {
+
   // 综合算术运算测试
-  assert_eq(15, add(7, 8))
-  assert_eq(-1, add(5, -6))
-  assert_eq(0, add(-3, 3))
-  assert_eq(100, multiply(10, 10))
-  assert_eq(-30, multiply(-5, 6))
-  assert_eq(0, multiply(0, 123))
-  assert_eq(5, subtract(10, 5))
-  assert_eq(-5, subtract(5, 10))
+
+  @azimuth.assert_eq(15, @azimuth.add(7, 8))
+
+  @azimuth.assert_eq(-1, @azimuth.add(5, -6))
+
+  @azimuth.assert_eq(0, @azimuth.add(-3, 3))
+
+  @azimuth.assert_eq(100, @azimuth.multiply(10, 10))
+
+  @azimuth.assert_eq(-30, @azimuth.multiply(-5, 6))
+
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 123))
+
+  @azimuth.assert_eq(5, @azimuth.subtract(10, 5))
+
+  @azimuth.assert_eq(-5, @azimuth.subtract(5, 10))
+
 }
 
 test "divide_with_ceil_edge_cases" {

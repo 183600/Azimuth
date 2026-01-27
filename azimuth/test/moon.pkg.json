@@ -198,6 +198,11 @@
   "azimuth_standard_tests_new.mbt",
   "standard_moonbit_test_cases.mbt",
   "standard_moonbit_test_cases_new.mbt",
-  "azimuth_comprehensive_quality_tests.mbt"
+  "azimuth_comprehensive_quality_tests.mbt",
+  "test_english_only.mbt",
+  "simple_test_final.mbt",
+  "azimuth_high_quality_test_suite.mbt",
+  "user_added_test_2024.mbt",
+  "user_simple_test_2024.mbt"
   ]
 }
