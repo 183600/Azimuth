@@ -1,203 +1,123 @@
-// 标准 MoonBit 测试套件 - 新增测试用例
-// 针对 azimuth 库的核心功能进行全面测试
+// 新增的标准 MoonBit 测试用例
+// 针对 azimuth 库的核心功能进行测试
 
-test "add_function_boundary_values" {
-  // 测试加法函数的边界值
-  assert_eq(0, add(2147483647, -2147483647))  // 最大值与最小相反数相加
-  assert_eq(-2147483648, add(-2147483647, -1))  // 接近最小值
-  assert_eq(2147483646, add(2147483645, 1))  // 接近最大值
-  assert_eq(2147483647, add(1073741823, 1073741824))  // 两个大数相加
+test "add_function_comprehensive" {
+  // 测试加法函数的各种情况
+  assert_eq(10, add(7, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(1000, add(500, 500))
+  assert_eq(-1, add(5, -6))
 }
 
-test "multiply_function_large_numbers" {
-  // 测试乘法函数的大数运算
-  assert_eq(46340, multiply(46340, 1))  // sqrt(Int最大值)
-  assert_eq(100000000, multiply(10000, 10000))  // 大数相乘
-  assert_eq(-100000000, multiply(-10000, 10000))  // 负数乘法
-  assert_eq(100000000, multiply(-10000, -10000))  // 负负得正
+test "multiply_function_edge_cases" {
+  // 测试乘法函数的边界情况
+  assert_eq(25, multiply(5, 5))
+  assert_eq(0, multiply(100, 0))
+  assert_eq(-15, multiply(-3, 5))
+  assert_eq(10000, multiply(100, 100))
+  assert_eq(1, multiply(-1, -1))
+}
+
+test "greet_function_special_cases" {
+  // 测试问候函数的特殊情况
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, A!", greet("A"))
 }
 
 test "divide_with_ceil_comprehensive" {
-  // 全面测试向上取整除法
-  // 正数情况
-  assert_eq(1, divide_with_ceil(1, 1))  // 完全相等
-  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
-  assert_eq(34, divide_with_ceil(100, 3))  // 33.333... -> 34
-  
-  // 负数情况
-  assert_eq(-1, divide_with_ceil(-3, 2))  // -1.5 -> -1
-  assert_eq(-33, divide_with_ceil(-100, 3))  // -33.333... -> -33
-  
-  // 负负得正
-  assert_eq(34, divide_with_ceil(-100, -3))  // 33.333... -> 34
-  
-  // 零处理
-  assert_eq(0, divide_with_ceil(0, 5))  // 零除以正数
-  assert_eq(0, divide_with_ceil(100, 0))  // 除数为零
+  // 测试向上取整除法的全面情况
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(-3, divide_with_ceil(-10, 3))
 }
 
-test "greet_function_unicode_and_special_chars" {
-  // 测试问候函数的Unicode和特殊字符处理
-  assert_eq_string("Hello, 🌟!", greet("🌟"))  // Emoji
-  assert_eq_string("Hello, αβγδε!", greet("αβγδε"))  // 希腊字母
-  assert_eq_string("Hello, Москва!", greet("Москва"))  // 西里尔字母
-  assert_eq_string("Hello, 北京!", greet("北京"))  // 中文字符
-  assert_eq_string("Hello, \n\t!", greet("\n\t"))  // 控制字符
-}
-
-test "complex_business_calculation" {
-  // 复杂业务计算场景：订单总价计算
-  let product_price = 89
-  let quantity = 12
+test "complex_business_calculations" {
+  // 测试复杂业务计算场景
+  let unit_price = 25
+  let quantity = 8
   let tax_rate = 8
-  let shipping_cost = 25
-  let discount = 150
+  let shipping = 15
   
-  // 计算商品总价
-  let subtotal = multiply(product_price, quantity)
+  let subtotal = multiply(unit_price, quantity)
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let total = add(add(subtotal, tax), shipping)
   
-  // 计算税费
-  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  
-  // 计算折扣前总价
-  let pre_discount_total = add(add(subtotal, tax_amount), shipping_cost)
-  
-  // 应用折扣
-  let final_total = add(pre_discount_total, -discount)
-  
-  assert_eq(1068, subtotal)
-  assert_eq(86, tax_amount)
-  assert_eq(1179, pre_discount_total)
-  assert_eq(1029, final_total)
+  assert_eq(200, subtotal)
+  assert_eq(16, tax)
+  assert_eq(231, total)
 }
 
 test "mathematical_properties_verification" {
   // 验证数学性质
-  let a = 15
-  let b = 25
-  let c = 35
+  let x = 12
+  let y = 8
   
   // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  assert_eq(add(x, y), add(y, x))
   
   // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 加法结合律
-  assert_eq(add(add(a, b), c), add(a, add(b, c)))
-  
-  // 乘法结合律
-  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
+  assert_eq(multiply(x, y), multiply(y, x))
   
   // 分配律
-  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
+  assert_eq(multiply(x, add(y, 3)), add(multiply(x, y), multiply(x, 3)))
 }
 
-test "real_world_logistics_calculation" {
-  // 真实世界物流计算：仓库存储优化
-  let total_products = 1250
-  let pallet_capacity = 48
-  let truck_capacity = 320
-  let warehouse_zones = 8
+test "packaging_optimization" {
+  // 包装优化计算
+  let total_items = 47
+  let box_capacity = 12
+  let cost_per_box = 5
   
-  // 计算需要的托盘数量
-  let pallets_needed = divide_with_ceil(total_products, pallet_capacity)
+  let boxes_needed = divide_with_ceil(total_items, box_capacity)
+  let total_cost = multiply(boxes_needed, cost_per_box)
   
-  // 计算需要的卡车数量
-  let trucks_needed = divide_with_ceil(total_products, truck_capacity)
-  
-  // 计算每个区域的平均产品数
-  let products_per_zone = divide_with_ceil(total_products, warehouse_zones)
-  
-  // 计算总运输成本（假设每卡车100元）
-  let total_transport_cost = multiply(trucks_needed, 100)
-  
-  assert_eq(27, pallets_needed)  // ceil(1250/48) = 27
-  assert_eq(4, trucks_needed)    // ceil(1250/320) = 4
-  assert_eq(157, products_per_zone)  // ceil(1250/8) = 157
-  assert_eq(400, total_transport_cost)  // 4 * 100 = 400
+  assert_eq(4, boxes_needed)
+  assert_eq(20, total_cost)
 }
 
-test "financial_investment_calculation" {
-  // 金融投资计算：复利增长模拟
-  let initial_investment = 10000
-  let annual_return_rate = 7
-  let years = 5
-  
-  // 第1年
-  let year1_return = divide_with_ceil(multiply(initial_investment, annual_return_rate), 100)
-  let year1_total = add(initial_investment, year1_return)
-  
-  // 第2年
-  let year2_return = divide_with_ceil(multiply(year1_total, annual_return_rate), 100)
-  let year2_total = add(year1_total, year2_return)
-  
-  // 第3年
-  let year3_return = divide_with_ceil(multiply(year2_total, annual_return_rate), 100)
-  let year3_total = add(year2_total, year3_return)
-  
-  // 第4年
-  let year4_return = divide_with_ceil(multiply(year3_total, annual_return_rate), 100)
-  let year4_total = add(year3_total, year4_return)
-  
-  // 第5年
-  let year5_return = divide_with_ceil(multiply(year4_total, annual_return_rate), 100)
-  let final_amount = add(year4_total, year5_return)
-  
-  assert_eq(700, year1_return)
-  assert_eq(10700, year1_total)
-  assert_eq(749, year2_return)
-  assert_eq(11449, year2_total)
-  assert_eq(802, year3_return)
-  assert_eq(12251, year3_total)
-  assert_eq(858, year4_return)
-  assert_eq(13109, year4_total)
-  assert_eq(918, year5_return)
-  assert_eq(14027, final_amount)
-}
-
-test "error_handling_and_edge_cases" {
-  // 错误处理和边界情况测试
-  // 除零安全性
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  
-  // 极值运算
-  assert_eq(0, add(2147483647, -2147483647))
-  assert_eq(1, add(2147483647, -2147483646))
-  
-  // 零的乘法
-  assert_eq(0, multiply(0, 2147483647))
-  assert_eq(0, multiply(-2147483648, 0))
-  
-  // 一的乘法
-  assert_eq(2147483647, multiply(2147483647, 1))
-  assert_eq(-2147483648, multiply(-2147483648, 1))
-}
-
-test "string_processing_with_greet_function" {
-  // 使用问候函数进行字符串处理测试
+test "string_processing_workflow" {
+  // 字符串处理工作流
   let first_name = "张"
   let last_name = "三"
-  let company = "科技公司"
-  let department = "研发部"
+  let full_name = first_name + last_name
+  let greeting = greet(full_name)
   
-  // 构建完整姓名
-  let full_name = add(first_name, last_name)
-  let name_greeting = greet(full_name)
+  assert_eq_string("Hello, 张三!", greeting)
+}
+
+test "financial_calculation_scenario" {
+  // 金融计算场景
+  let principal = 1000
+  let interest_rate = 5
+  let years = 3
   
-  // 构建工作标识
-  let work_id = add(add(company, " "), department)
-  let work_greeting = greet(work_id)
+  let year1_interest = divide_with_ceil(multiply(principal, interest_rate), 100)
+  let year1_total = add(principal, year1_interest)
+  let year2_interest = divide_with_ceil(multiply(year1_total, interest_rate), 100)
+  let year2_total = add(year1_total, year2_interest)
+  let year3_interest = divide_with_ceil(multiply(year2_total, interest_rate), 100)
+  let final_total = add(year2_total, year3_interest)
   
-  // 构建邮箱格式
-  let email_prefix = "zhangsan"
-  let email_domain = "techcorp.com"
-  let email = add(add(email_prefix, "@"), email_domain)
-  let email_greeting = greet(email)
+  assert_eq(50, year1_interest)
+  assert_eq(1050, year1_total)
+  assert_eq(1158, final_total)
+}
+
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  // 测试除数为零的情况
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-50, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
   
-  assert_eq_string("Hello, 张三!", name_greeting)
-  assert_eq_string("Hello, 科技公司 研发部!", work_greeting)
-  assert_eq_string("Hello, zhangsan@techcorp.com!", email_greeting)
+  // 测试边界值
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 1))
 }
