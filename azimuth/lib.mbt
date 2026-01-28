@@ -7522,3 +7522,193 @@ test "multi_step_problem_solving" {
   let cost_per_person = divide_with_ceil(total_budget, travelers)
   assert_eq(960, cost_per_person)  // ceil(3840/4) = 960
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "function_composition_pipeline" {
+  // 测试函数组合流水线
+  let initial = 15
+  let step1 = multiply(initial, 2)      // 30
+  let step2 = add(step1, 10)            // 40
+  let step3 = divide_with_ceil(step2, 3) // 14
+  let final_result = multiply(step3, 2) // 28
+  
+  assert_eq(28, final_result)
+}
+
+test "time_calculation_scenario" {
+  // 时间计算场景测试
+  let total_minutes = 157
+  let minutes_per_hour = 60
+  let hours_needed = divide_with_ceil(total_minutes, minutes_per_hour)
+  let remaining_minutes = subtract(total_minutes, multiply(hours_needed - 1, minutes_per_hour))
+  
+  assert_eq(3, hours_needed)  // ceil(157/60) = 3
+  assert_eq(37, remaining_minutes)  // 157 - 2*60 = 37
+}
+
+test "memory_allocation_optimization" {
+  // 内存分配优化测试
+  let total_memory = 1024  // MB
+  let process_count = 7
+  let memory_per_process = divide_with_ceil(total_memory, process_count)
+  
+  assert_eq(147, memory_per_process)  // ceil(1024/7) = 147
+  
+  // 验证总分配内存
+  let total_allocated = multiply(memory_per_process, process_count)
+  let memory_waste = subtract(total_allocated, total_memory)
+  
+  assert_eq(1029, total_allocated)
+  assert_eq(5, memory_waste)
+}
+
+test "string_concatenation_edge_cases" {
+  // 字符串连接边缘情况测试
+  assert_eq_string("Hello, empty!", greet(""))
+  assert_eq_string("Hello, space !", greet(" "))
+  assert_eq_string("Hello, multiple   spaces!", greet("multiple   spaces"))
+  assert_eq_string("Hello, special@#$%chars!", greet("special@#$%chars"))
+  assert_eq_string("Hello, emoji123🎉!", greet("emoji123🎉"))
+}
+
+test "mathematical_series_calculation" {
+  // 数学级数计算测试
+  // 计算等差数列前n项和
+  let n = 10
+  let first_term = 3
+  let common_difference = 2
+  
+  // 使用公式：S_n = n/2 * (2a + (n-1)d)
+  let sum_formula = divide_with_ceil(
+    multiply(n, add(multiply(2, first_term), multiply(n - 1, common_difference))),
+    2
+  )
+  
+  // 手动计算验证
+  let manual_sum = add(add(add(add(add(3, 5), 7), 9), 11), 13) // 前6项
+  
+  assert_eq(130, sum_formula)  // 10/2 * (6 + 18) = 65
+  assert_eq(48, manual_sum)    // 3+5+7+9+11+13 = 48
+}
+
+test "load_balancing_algorithm" {
+  // 负载均衡算法测试
+  let total_requests = 1000
+  let server_count = 7
+  let requests_per_server = divide_with_ceil(total_requests, server_count)
+  
+  assert_eq(143, requests_per_server)  // ceil(1000/7) = 143
+  
+  // 计算实际处理能力
+  let total_capacity = multiply(requests_per_server, server_count)
+  let overflow_capacity = subtract(total_capacity, total_requests)
+  
+  assert_eq(1001, total_capacity)
+  assert_eq(1, overflow_capacity)
+  
+  // 验证负载分布
+  assert_true(requests_per_server >= divide_with_ceil(total_requests, server_count))
+}
+
+test "financial_compound_interest" {
+  // 金融复利计算测试
+  let principal = 10000
+  let rate_percent = 5
+  let years = 4
+  
+  // 简化的年复利计算
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
+  let year4 = add(year3, divide_with_ceil(multiply(year3, rate_percent), 100))
+  
+  assert_eq(10500, year1)   // 10000 + 5%
+  assert_eq(11025, year2)   // 10500 + 5%
+  assert_eq(11576, year3)   // 11025 + 5%
+  assert_eq(12155, year4)   // 11576 + 5%
+  
+  // 计算月供
+  let total_months = multiply(years, 12)
+  let monthly_payment = divide_with_ceil(year4, total_months)
+  assert_eq(338, monthly_payment)  // ceil(12155/48)
+}
+
+test "recursive_calculation_simulation" {
+  // 递归计算模拟测试（使用迭代方式）
+  // 模拟斐波那契数列计算
+  let n = 10
+  let fib1 = 1
+  let fib2 = 1
+  
+  // 手动计算前几项
+  let fib3 = add(fib1, fib2)        // 2
+  let fib4 = add(fib2, fib3)        // 3
+  let fib5 = add(fib3, fib4)        // 5
+  let fib6 = add(fib4, fib5)        // 8
+  let fib7 = add(fib5, fib6)        // 13
+  let fib8 = add(fib6, fib7)        // 21
+  let fib9 = add(fib7, fib8)        // 34
+  let fib10 = add(fib8, fib9)       // 55
+  
+  // 验证计算结果
+  assert_eq(2, fib3)
+  assert_eq(3, fib4)
+  assert_eq(5, fib5)
+  assert_eq(8, fib6)
+  assert_eq(13, fib7)
+  assert_eq(21, fib8)
+  assert_eq(34, fib9)
+  assert_eq(55, fib10)
+  
+  // 计算总和
+  let fib_sum = add(add(add(add(add(add(add(add(add(fib1, fib2), fib3), fib4), fib5), fib6), fib7), fib8), fib9), fib10)
+  assert_eq(143, fib_sum)
+}
+
+test "batch_processing_optimization" {
+  // 批处理优化测试
+  let total_items = 1234
+  let batch_size = 47
+  let batch_count = divide_with_ceil(total_items, batch_size)
+  
+  assert_eq(27, batch_count)  // ceil(1234/47) = 27
+  
+  // 计算实际处理能力
+  let total_capacity = multiply(batch_count, batch_size)
+  let unused_capacity = subtract(total_capacity, total_items)
+  
+  assert_eq(1269, total_capacity)
+  assert_eq(35, unused_capacity)
+  
+  // 计算处理效率
+  let efficiency_percent = divide_with_ceil(
+    multiply(total_items, 100),
+    total_capacity
+  )
+  assert_eq(98, efficiency_percent)  // floor(123400/1269) = 97%
+}
+
+test "resource_scheduling_algorithm" {
+  // 资源调度算法测试
+  let tasks = 25
+  let workers = 4
+  let time_per_task = 3
+  
+  // 计算每个工人的任务数
+  let tasks_per_worker = divide_with_ceil(tasks, workers)
+  assert_eq(7, tasks_per_worker)  // ceil(25/4) = 7
+  
+  // 计算总完成时间
+  let total_time = multiply(tasks_per_worker, time_per_task)
+  assert_eq(21, total_time)  // 7 * 3 = 21
+  
+  // 计算工人利用率
+  let total_task_capacity = multiply(tasks_per_worker, workers)
+  let unused_task_slots = subtract(total_task_capacity, tasks)
+  
+  assert_eq(28, total_task_capacity)
+  assert_eq(3, unused_task_slots)
+  
+  // 验证所有任务都能被处理
+  assert_true(total_task_capacity >= tasks)
+}
