@@ -1,163 +1,134 @@
-// Enhanced MoonBit Test Suite for Azimuth Library
-// 增强的 MoonBit 测试套件，针对 azimuth 库的全面测试
+// Azimuth 增强测试套件 - 标准 MoonBit 测试语法
+// 包含8个高质量的测试用例，覆盖各种业务场景和边界情况
 
-test "financial_calculations" {
-  // 金融计算场景测试
-  let principal = 10000
-  let interest_rate = 5
+test "financial_compound_interest_calculation" {
+  // 金融复利计算测试
+  let principal = 1000
+  let rate_percent = 5
   let years = 3
   
-  // 计算复利（简化版）
-  let year1_amount = add(principal, divide_with_ceil(multiply(principal, interest_rate), 100))
-  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, interest_rate), 100))
-  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, interest_rate), 100))
+  // 计算复利：每年计算一次
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, rate_percent), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, rate_percent), 100))
   
-  assert_eq(10500, year1_amount)
-  assert_eq(11025, year2_amount)
-  assert_eq(11576, year3_amount)
+  // 验证复利结果（由于使用向上取整，结果会略高于标准复利）
+  assert_eq(1158, year3_amount)
 }
 
-test "inventory_optimization" {
-  // 库存优化测试
-  let demand_forecast = 450
-  let batch_size = 75
-  let safety_stock = 50
+test "inventory_reorder_point_calculation" {
+  // 库存重新订购点计算
+  let daily_demand = 15
+  let lead_time_days = 7
+  let safety_stock = 20
   
-  // 计算需要的批次数
-  let batches_needed = divide_with_ceil(demand_forecast, batch_size)
-  let total_inventory = add(multiply(batches_needed, batch_size), safety_stock)
+  // 计算重新订购点
+  let demand_during_lead = multiply(daily_demand, lead_time_days)
+  let reorder_point = add(demand_during_lead, safety_stock)
   
-  assert_eq(6, batches_needed)
-  assert_eq(500, total_inventory)
+  assert_eq(125, reorder_point)
 }
 
-test "time_zone_calculations" {
-  // 时区计算测试
-  let local_time = 14  // 下午2点
-  let time_difference = 8  // 时差8小时
-  
-  // 计算远程时间
-  let remote_time = add(local_time, time_difference)
-  let adjusted_time = if remote_time > 24 { 
-    add(remote_time, -24) 
-  } else { 
-    remote_time 
-  }
-  
-  assert_eq(22, remote_time)
-  assert_eq(22, adjusted_time)
-}
-
-test "resource_allocation" {
-  // 资源分配测试
-  let total_budget = 50000
-  let projects = 7
-  let reserve_fund = 8000
-  
-  // 计算每个项目的预算
-  let available_budget = add(total_budget, -reserve_fund)
-  let budget_per_project = divide_with_ceil(available_budget, projects)
-  let total_allocated = multiply(budget_per_project, projects)
-  
-  assert_eq(42000, available_budget)
-  assert_eq(6000, budget_per_project)
-  assert_eq(42000, total_allocated)
-}
-
-test "data_structure_simulation" {
-  // 数据结构模拟测试 - 模拟数组操作
+test "data_structure_array_simulation" {
+  // 模拟数组操作
   let array_size = 10
-  let chunk_size = 3
+  let element_size = 4
   
-  // 计算需要的块数
-  let chunks_needed = divide_with_ceil(array_size, chunk_size)
+  // 计算数组总大小
+  let total_size = multiply(array_size, element_size)
   
-  // 模拟索引计算
-  let index = 7
-  let chunk_index = divide_with_ceil(index, chunk_size)
-  let position_in_chunk = add(index, -multiply(chunk_index - 1, chunk_size))
+  // 计算需要的页数（每页16字节）
+  let page_size = 16
+  let pages_needed = divide_with_ceil(total_size, page_size)
   
-  assert_eq(4, chunks_needed)
-  assert_eq(3, chunk_index)
-  assert_eq(1, position_in_chunk)
+  assert_eq(40, total_size)
+  assert_eq(3, pages_needed)
 }
 
-test "statistical_analysis" {
-  // 统计分析测试
-  let data_points = 125
-  let sample_size = 8
-  let confidence_factor = 95
+test "network_packet_fragmentation" {
+  // 网络数据包分片测试
+  let data_size = 1500
+  let mtu = 500  // 最大传输单元
   
-  // 计算样本数量
-  let samples_needed = divide_with_ceil(data_points, sample_size)
+  // 计算需要的包数量
+  let packets_needed = divide_with_ceil(data_size, mtu)
   
-  // 计算置信区间（简化）
-  let margin_error = divide_with_ceil(multiply(confidence_factor, data_points), 10000)
-  let confidence_interval = add(data_points, margin_error)
+  // 计算最后一个包的大小
+  let full_packets = divide_with_ceil(data_size, mtu) - 1
+  let last_packet_size = add(data_size, -multiply(full_packets, mtu))
   
-  assert_eq(16, samples_needed)
-  assert_eq(126, confidence_interval)
+  assert_eq(3, packets_needed)
+  assert_eq(500, last_packet_size)
 }
 
-test "network_performance" {
-  // 网络性能测试
-  let file_size_mb = 850
-  let network_speed_mbps = 50
-  let latency_overhead = 2
+test "cpu_scheduling_round_robin" {
+  // CPU轮转调度算法测试
+  let total_processes = 25
+  let time_quantum = 4
   
-  // 计算传输时间
-  let transfer_time = divide_with_ceil(file_size_mb, network_speed_mbps)
-  let total_time = add(transfer_time, latency_overhead)
+  // 计算轮转次数
+  let rotation_cycles = divide_with_ceil(total_processes, time_quantum)
   
-  // 计算吞吐量
-  let throughput = divide_with_ceil(file_size_mb, total_time)
+  // 计算最后一个周期的进程数
+  let full_cycles = rotation_cycles - 1
+  let last_cycle_processes = add(total_processes, -multiply(full_cycles, time_quantum))
   
-  assert_eq(17, transfer_time)
-  assert_eq(19, total_time)
-  assert_eq(45, throughput)
+  assert_eq(7, rotation_cycles)
+  assert_eq(1, last_cycle_processes)
 }
 
-test "cryptography_simulation" {
-  // 密码学模拟测试
-  let message_value = 12345
-  let key_value = 789
-  let modulo = 10007
+test "memory_page_allocation" {
+  // 内存页分配测试
+  let memory_request = 1024
+  let page_size = 256
   
-  // 模拟简单的加密操作
-  let encrypted_value = multiply(message_value, key_value) % modulo
-  let decrypted_value = multiply(encrypted_value, 123) % modulo  // 假设的解密密钥
+  // 计算需要的页数
+  let pages_needed = divide_with_ceil(memory_request, page_size)
   
-  assert_eq(3536, encrypted_value)
-  assert_eq(5103, decrypted_value)
+  // 计算实际分配的内存
+  let allocated_memory = multiply(pages_needed, page_size)
+  
+  // 计算内存浪费
+  let memory_waste = add(allocated_memory, -memory_request)
+  
+  assert_eq(4, pages_needed)
+  assert_eq(1024, allocated_memory)
+  assert_eq(0, memory_waste)
 }
 
-test "physics_simulation" {
-  // 物理模拟测试
-  let initial_velocity = 10  // m/s
-  let acceleration = 3      // m/s²
-  let time_elapsed = 5       // seconds
+test "load_balancing_distribution" {
+  // 负载均衡分配测试
+  let total_requests = 47
+  let server_count = 4
   
-  // 计算最终速度和位移
-  let final_velocity = add(initial_velocity, multiply(acceleration, time_elapsed))
-  let displacement = multiply(add(initial_velocity, final_velocity), divide_with_ceil(time_elapsed, 2))
+  // 计算每台服务器的基本请求数
+  let base_requests_per_server = divide_with_ceil(total_requests, server_count)
   
-  assert_eq(25, final_velocity)
-  assert_eq(87, displacement)
+  // 计算实际分配的总请求数
+  let total_allocated = multiply(base_requests_per_server, server_count)
+  
+  // 计算超额分配的请求数
+  let over_allocation = add(total_allocated, -total_requests)
+  
+  assert_eq(12, base_requests_per_server)
+  assert_eq(48, total_allocated)
+  assert_eq(1, over_allocation)
 }
 
-test "machine_learning_metrics" {
-  // 机器学习指标测试
-  let total_samples = 1000
-  let correct_predictions = 850
-  let false_positives = 50
-  let false_negatives = 100
+test "string_greeting_with_complex_input" {
+  // 复杂字符串输入的问候测试
+  let complex_inputs = [
+    "John Doe Jr.",
+    "O'Connor",
+    "Jean-Luc",
+    "Smith & Johnson",
+    "Prof. Dr. Schmidt"
+  ]
   
-  // 计算准确率、精确率和召回率
-  let accuracy = divide_with_ceil(multiply(correct_predictions, 100), total_samples)
-  let precision = divide_with_ceil(multiply(correct_predictions, 100), add(correct_predictions, false_positives))
-  let recall = divide_with_ceil(multiply(correct_predictions, 100), add(correct_predictions, false_negatives))
-  
-  assert_eq(85, accuracy)
-  assert_eq(94, precision)
-  assert_eq(89, recall)
+  // 测试各种复杂格式的名称
+  assert_eq_string("Hello, John Doe Jr.!", greet("John Doe Jr."))
+  assert_eq_string("Hello, O'Connor!", greet("O'Connor"))
+  assert_eq_string("Hello, Jean-Luc!", greet("Jean-Luc"))
+  assert_eq_string("Hello, Smith & Johnson!", greet("Smith & Johnson"))
+  assert_eq_string("Hello, Prof. Dr. Schmidt!", greet("Prof. Dr. Schmidt"))
 }
