@@ -254,5 +254,6 @@
                 "standard_moonbit_selfcontained_tests.mbt",
                 "enhanced_test_cases.mbt",
                 "standard_enhanced_moonbit_tests.mbt",
-                "new_azimuth_test_suite.mbt"
+                "new_azimuth_test_suite.mbt",
+                "my_standard_tests.mbt"
                 ]}
