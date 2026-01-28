@@ -6986,3 +6986,208 @@ test "extreme_boundary_conditions" {
   assert_eq(1, multiply(small_num_1, small_num_2))
   assert_eq(1, divide_with_ceil(small_num_1, small_num_2))
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "arithmetic_sequence_calculation" {
+  // 等差数列计算测试
+  let first_term = 3
+  let difference = 4
+  let n_terms = 5
+  
+  // 计算第n项：a_n = a_1 + (n-1)*d
+  let nth_term = add(first_term, multiply(difference, subtract(n_terms, 1)))
+  assert_eq(19, nth_term)  // 3 + (5-1)*4 = 19
+  
+  // 计算前n项和：S_n = n*(a_1 + a_n)/2
+  let sum_n = multiply(n_terms, divide_with_ceil(add(first_term, nth_term), 2))
+  assert_eq(55, sum_n)  // 5*(3+19)/2 = 55
+}
+
+test "inventory_turnover_rate" {
+  // 库存周转率测试
+  let annual_sales = 120000
+  let average_inventory = 30000
+  
+  // 计算库存周转率
+  let turnover_rate = divide_with_ceil(annual_sales, average_inventory)
+  assert_eq(4, turnover_rate)  // ceil(120000/30000) = 4
+  
+  // 计算平均销售周期（天）
+  let days_in_year = 365
+  let average_days = divide_with_ceil(days_in_year, turnover_rate)
+  assert_eq(92, average_days)  // ceil(365/4) = 92
+}
+
+test "data_compression_ratio" {
+  // 数据压缩比率测试
+  let original_size = 1000000  // 1MB
+  let compressed_size = 250000  // 250KB
+  
+  // 计算压缩比率
+  let compression_ratio = multiply(100, divide_with_ceil(compressed_size, original_size))
+  assert_eq(25, compression_ratio)  // ceil(250000/1000000)*100 = 25%
+  
+  // 计算节省的空间
+  let space_saved = subtract(original_size, compressed_size)
+  assert_eq(750000, space_saved)
+  
+  // 计算可以存储的压缩文件数量
+  let storage_capacity = 5000000  // 5MB
+  let files_count = divide_with_ceil(storage_capacity, compressed_size)
+  assert_eq(20, files_count)  // ceil(5000000/250000) = 20
+}
+
+test "loan_amortization_schedule" {
+  // 贷款摊销计划测试
+  let loan_amount = 100000
+  let annual_rate = 6  // 6%
+  let loan_term_years = 5
+  
+  // 计算总期数（月）
+  let total_months = multiply(loan_term_years, 12)
+  assert_eq(60, total_months)
+  
+  // 简化的月供计算（不包含复利）
+  let monthly_principal = divide_with_ceil(loan_amount, total_months)
+  assert_eq(1667, monthly_principal)  // ceil(100000/60) = 1667
+  
+  // 计算总利息（简化计算）
+  let total_interest = divide_with_ceil(multiply(loan_amount, annual_rate), 100)
+  let monthly_interest = divide_with_ceil(total_interest, total_months)
+  assert_eq(10000, total_interest)  // 100000 * 6% = 6000
+  assert_eq(167, monthly_interest)  // ceil(6000/60) = 100
+  
+  // 计算总月供
+  let total_monthly_payment = add(monthly_principal, monthly_interest)
+  assert_eq(1767, total_monthly_payment)
+}
+
+test "cryptography_simple_hash" {
+  // 简单哈希算法模拟测试
+  let input_value = 12345
+  let prime_modulus = 9973
+  
+  // 简单哈希函数：hash = (input * prime1 + prime2) mod prime_modulus
+  let prime1 = 31
+  let prime2 = 37
+  let hash_value = multiply(input_value, prime1)
+  let hash_with_offset = add(hash_value, prime2)
+  let final_hash = hash_with_offset % prime_modulus
+  
+  // 验证哈希值在有效范围内
+  assert_true(final_hash >= 0)
+  assert_true(final_hash < prime_modulus)
+  
+  // 测试哈希一致性
+  let hash_again = multiply(input_value, prime1)
+  let hash_again_with_offset = add(hash_again, prime2)
+  let final_hash_again = hash_again_with_offset % prime_modulus
+  assert_eq(final_hash, final_hash_again)
+}
+
+test "cpu_scheduling_algorithm" {
+  // CPU调度算法测试
+  let processes = 5
+  let time_quantum = 10
+  let total_burst_time = 87
+  
+  // 计算需要的轮次
+  let rounds_needed = divide_with_ceil(total_burst_time, multiply(processes, time_quantum))
+  assert_eq(2, rounds_needed)  // ceil(87/(5*10)) = 2
+  
+  // 计算每个进程的平均执行时间
+  let avg_time_per_process = divide_with_ceil(total_burst_time, processes)
+  assert_eq(18, avg_time_per_process)  // ceil(87/5) = 18
+  
+  // 计算总上下文切换次数
+  let context_switches = multiply(rounds_needed, processes)
+  assert_eq(10, context_switches)  // 2 * 5 = 10
+}
+
+test "memory_page_replacement" {
+  // 内存页面替换算法测试
+  let total_pages = 100
+  let page_size = 4096  // 4KB
+  let physical_memory = 16384  // 16KB
+  
+  // 计算物理内存可容纳的页面数
+  let pages_in_memory = divide_with_ceil(physical_memory, page_size)
+  assert_eq(4, pages_in_memory)  // ceil(16384/4096) = 4
+  
+  // 计算需要的页面替换次数
+  let page_replacements = subtract(total_pages, pages_in_memory)
+  assert_eq(96, page_replacements)  // 100 - 4 = 96
+  
+  // 计算页面命中率（简化）
+  let hit_ratio = multiply(100, divide_with_ceil(pages_in_memory, total_pages))
+  assert_eq(4, hit_ratio)  // ceil(4/100)*100 = 4%
+}
+
+test "network_routing_optimization" {
+  // 网络路由优化测试
+  let nodes = 10
+  let connections_per_node = 3
+  let bandwidth_per_connection = 100  // Mbps
+  
+  // 计算总连接数
+  let total_connections = multiply(nodes, connections_per_node)
+  assert_eq(30, total_connections)  // 10 * 3 = 30
+  
+  // 计算总带宽需求
+  let total_bandwidth = multiply(total_connections, bandwidth_per_connection)
+  assert_eq(3000, total_bandwidth)  // 30 * 100 = 3000 Mbps
+  
+  // 计算需要的路由器数量（每路由器最大1000Mbps）
+  let max_bandwidth_per_router = 1000
+  let routers_needed = divide_with_ceil(total_bandwidth, max_bandwidth_per_router)
+  assert_eq(3, routers_needed)  // ceil(3000/1000) = 3
+}
+
+test "database_query_optimization" {
+  // 数据库查询优化测试
+  let table_size = 1000000
+  let index_selectivity = 5  // 5%
+  let query_result_size = 50000
+  
+  // 计算索引扫描的行数
+  let index_scan_rows = divide_with_ceil(multiply(table_size, index_selectivity), 100)
+  assert_eq(50000, index_scan_rows)  // ceil(1000000 * 5%) = 50000
+  
+  // 计算全表扫描与索引扫描的比率
+  let scan_ratio = divide_with_ceil(table_size, index_scan_rows)
+  assert_eq(20, scan_ratio)  // ceil(1000000/50000) = 20
+  
+  // 验证查询结果大小
+  assert_eq(query_result_size, index_scan_rows)
+  
+  // 计算查询性能提升（倍数）
+  let performance_improvement = scan_ratio
+  assert_eq(20, performance_improvement)  // 20倍性能提升
+}
+
+test "machine_learning_model_evaluation" {
+  // 机器学习模型评估测试
+  let total_samples = 10000
+  let correct_predictions = 8500
+  let false_positives = 800
+  let false_negatives = 700
+  
+  // 计算准确率
+  let accuracy = multiply(100, divide_with_ceil(correct_predictions, total_samples))
+  assert_eq(85, accuracy)  // ceil(8500/10000)*100 = 85%
+  
+  // 计算精确率
+  let true_positives = subtract(correct_predictions, false_negatives)
+  let predicted_positives = add(true_positives, false_positives)
+  let precision = multiply(100, divide_with_ceil(true_positives, predicted_positives))
+  assert_eq(91, precision)  // ceil(7800/8600)*100 = 91%
+  
+  // 计算召回率
+  let actual_positives = add(true_positives, false_negatives)
+  let recall = multiply(100, divide_with_ceil(true_positives, actual_positives))
+  assert_eq(92, recall)  // ceil(7800/8500)*100 = 92%
+  
+  // 计算F1分数（简化）
+  let f1_score = divide_with_ceil(add(precision, recall), 2)
+  assert_eq(92, f1_score)  // ceil((91+92)/2) = 92
+}
