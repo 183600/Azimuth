@@ -207,6 +207,7 @@
   "standard_azimuth_enhanced_tests.mbt",
   "standard_enhanced_moonbit_tests.mbt",
   "azimuth_high_quality_enhanced_tests.mbt",
-  "standard_moonbit_tests_new.mbt"
+  "standard_moonbit_tests_new.mbt",
+  "quality_moonbit_tests.mbt"
   ]
 }
