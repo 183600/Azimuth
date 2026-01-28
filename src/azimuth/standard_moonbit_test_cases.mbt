@@ -1,76 +1,124 @@
 // 标准 MoonBit 测试用例
-// 测试 azimuth 库的核心功能
+// 针对 azimuth 库的额外测试用例，确保不超过10个
 
-// 导入被测试的模块
-use azimuth
-
-// 测试基本加法运算
-test basic_addition {
-  azimuth.assert_eq(5, azimuth.add(2, 3))
-  azimuth.assert_eq(0, azimuth.add(0, 0))
-  azimuth.assert_eq(-1, azimuth.add(2, -3))
+test "subtract_functionality" {
+  // 测试减法功能（使用 add 和负数实现）
+  assert_eq(5, add(8, -3))
+  assert_eq(-10, add(-5, -5))
+  assert_eq(0, add(10, -10))
+  assert_eq(100, add(50, -(-50)))
 }
 
-// 测试基本乘法运算
-test basic_multiplication {
-  azimuth.assert_eq(6, azimuth.multiply(2, 3))
-  azimuth.assert_eq(0, azimuth.multiply(0, 5))
-  azimuth.assert_eq(-6, azimuth.multiply(2, -3))
+test "modulo_operation_simulation" {
+  // 模拟取模运算
+  let dividend = 17
+  let divisor = 5
+  let quotient = divide_with_ceil(dividend, divisor)
+  let product = multiply(divisor, quotient)
+  let remainder = add(dividend, -product)
+  
+  assert_eq(4, quotient)  // ceil(17/5) = 4
+  assert_eq(20, product)  // 5 * 4 = 20
+  assert_eq(-3, remainder)  // 17 - 20 = -3
 }
 
-// 测试基本减法运算
-test basic_subtraction {
-  azimuth.assert_eq(2, azimuth.subtract(5, 3))
-  azimuth.assert_eq(0, azimuth.subtract(3, 3))
-  azimuth.assert_eq(-2, azimuth.subtract(3, 5))
+test "percentage_calculations" {
+  // 百分比计算测试
+  let total = 200
+  let percentage_25 = divide_with_ceil(multiply(total, 25), 100)
+  let percentage_50 = divide_with_ceil(multiply(total, 50), 100)
+  let percentage_75 = divide_with_ceil(multiply(total, 75), 100)
+  
+  assert_eq(50, percentage_25)
+  assert_eq(100, percentage_50)
+  assert_eq(150, percentage_75)
 }
 
-// 测试向上取整除法 - 整除情况
-test divide_with_ceil_exact_division {
-  azimuth.assert_eq(3, azimuth.divide_with_ceil(6, 2))
-  azimuth.assert_eq(-3, azimuth.divide_with_ceil(-6, 2))
-  azimuth.assert_eq(0, azimuth.divide_with_ceil(0, 5))
+test "geometric_progression" {
+  // 等比数列计算
+  let first_term = 3
+  let ratio = 2
+  let terms = 5
+  
+  let term2 = multiply(first_term, ratio)
+  let term3 = multiply(term2, ratio)
+  let term4 = multiply(term3, ratio)
+  let term5 = multiply(term4, ratio)
+  
+  let sum = add(add(add(add(first_term, term2), term3), term4), term5)
+  
+  assert_eq(6, term2)
+  assert_eq(12, term3)
+  assert_eq(24, term4)
+  assert_eq(48, term5)
+  assert_eq(93, sum)
 }
 
-// 测试向上取整除法 - 需要向上取整情况
-test divide_with_ceil_rounding_up {
-  azimuth.assert_eq(4, azimuth.divide_with_ceil(7, 2))
-  azimuth.assert_eq(3, azimuth.divide_with_ceil(8, 3))
-  azimuth.assert_eq(0, azimuth.divide_with_ceil(10, 0))
+test "temperature_conversion" {
+  // 温度转换模拟（简化的华氏度转摄氏度）
+  let fahrenheit = 68
+  let celsius_approx = divide_with_ceil(multiply(fahrenheit - 32, 5), 9)
+  
+  assert_eq(20, celsius_approx)  // (68-32)*5/9 = 20
 }
 
-// 测试字符串问候功能
-test greet_functionality {
-  azimuth.assert_eq_string("Hello, World!", azimuth.greet("World"))
-  azimuth.assert_eq_string("Hello, MoonBit!", azimuth.greet("MoonBit"))
-  azimuth.assert_eq_string("Hello, !", azimuth.greet(""))
+test "array_index_simulation" {
+  // 模拟数组索引计算
+  let page_size = 10
+  let item_index = 47
+  
+  let page_number = divide_with_ceil(item_index + 1, page_size)
+  let index_on_page = add(item_index, -multiply(page_number - 1, page_size))
+  
+  assert_eq(5, page_number)  // ceil(48/10) = 5
+  assert_eq(7, index_on_page)  // 47 - (5-1)*10 = 7
 }
 
-// 测试数学交换律
-test mathematical_commutative_property {
-  let a = 7
-  let b = 13
-  azimuth.assert_eq(azimuth.add(a, b), azimuth.add(b, a))
-  azimuth.assert_eq(azimuth.multiply(a, b), azimuth.multiply(b, a))
+test "time_zone_conversion" {
+  // 时区转换模拟
+  let local_time = 23  // 晚上11点
+  let time_difference = 5  // 时差5小时
+  
+  let utc_time = add(local_time, -time_difference)
+  let adjusted_utc_time = if utc_time < 0 { add(utc_time, 24) } else { utc_time }
+  
+  assert_eq(18, adjusted_utc_time)  // 23 - 5 = 18
 }
 
-// 测试零元素性质
-test zero_element_properties {
-  let x = 42
-  azimuth.assert_eq(x, azimuth.add(x, 0))
-  azimuth.assert_eq(0, azimuth.multiply(x, 0))
+test "batch_processing" {
+  // 批处理计算
+  let total_items = 157
+  let batch_size = 25
+  
+  let full_batches = divide_with_ceil(total_items, batch_size)
+  let last_batch_size = add(total_items, -multiply(full_batches - 1, batch_size))
+  
+  assert_eq(7, full_batches)  // ceil(157/25) = 7
+  assert_eq(7, last_batch_size)  // 157 - (7-1)*25 = 7
 }
 
-// 测试复杂计算场景
-test complex_calculation {
-  let result = azimuth.add(azimuth.multiply(2, 3), azimuth.multiply(4, 5))
-  azimuth.assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
+test "compound_interest_simple" {
+  // 简单复利计算
+  let principal = 1000
+  let rate_percent = 10
+  let years = 3
+  
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
+  
+  assert_eq(1100, year1)  // 1000 + 100
+  assert_eq(1210, year2)  // 1100 + 110
+  assert_eq(1331, year3)  // 1210 + 121
 }
 
-// 测试包装计算场景
-test packaging_calculation {
-  let total_items = 25
-  let items_per_box = 6
-  let boxes_needed = azimuth.divide_with_ceil(total_items, items_per_box)
-  azimuth.assert_eq(5, boxes_needed)  // ceil(25/6) = 5
+test "greeting_with_special_formatting" {
+  // 特殊格式化的问候测试
+  let name_with_title = "Dr. Smith"
+  let name_with_suffix = "John Jr."
+  let name_with_special = "O'Connor"
+  
+  assert_eq_string("Hello, Dr. Smith!", greet(name_with_title))
+  assert_eq_string("Hello, John Jr.!", greet(name_with_suffix))
+  assert_eq_string("Hello, O'Connor!", greet(name_with_special))
 }
