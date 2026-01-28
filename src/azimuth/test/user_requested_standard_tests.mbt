@@ -1,4 +1,4 @@
-// 新增标准 MoonBit 测试用例 - 针对 azimuth 库核心功能
+// 用户请求的标准 MoonBit 测试用例 - 针对 azimuth 库核心功能
 // 包含10个简洁、标准的测试用例
 
 test "add_basic_functionality" {
