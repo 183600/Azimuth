@@ -1,226 +1,228 @@
-// Azimuth 高级测试用例 - 8个专业级测试
-// 专注于边界情况、错误处理和复杂业务逻辑场景
+// Azimuth 高级测试套件 - 包含10个高质量的 MoonBit 测试用例
+// 这些测试用例专注于更复杂的场景和边缘情况
 
-// 必要的函数定义
-pub fn add(a : Int, b : Int) -> Int {
-  a + b
-}
-
-pub fn multiply(a : Int, b : Int) -> Int {
-  a * b
-}
-
-pub fn subtract(a : Int, b : Int) -> Int {
-  a - b
-}
-
-pub fn divide_with_ceil(a : Int, b : Int) -> Int {
-  if b == 0 { 
-    0 
-  } else {
-    let quotient = a / b
-    let remainder = a % b
-    if remainder == 0 {
-      quotient
-    } else if a > 0 && b > 0 {
-      quotient + 1
-    } else if a < 0 && b < 0 {
-      quotient + 1
-    } else {
-      quotient
-    }
-  }
-}
-
-pub fn assert_eq(expected : Int, actual : Int) -> Unit {
-  if subtract(expected, actual) != 0 {
-    let _ = "Assertion failed"
-  } else {
-    ()
-  }
-}
-
-pub fn assert_true(condition : Bool) -> Unit {
-  if condition {
-    ()
-  } else {
-    let _ = "Boolean assertion failed"
-  }
-}
-
-test "mathematical_precision_edge_cases" {
-  // 数学精度边缘情况测试
-  // 测试连续运算的精度保持
-  let precision_test = divide_with_ceil(multiply(1000000, 3), 7)
-  assert_eq(428572, precision_test)  // ceil(3000000/7)
+test "advanced_mathematical_series" {
+  // 测试数学级数计算
+  // 计算等差数列前n项和
+  let n = 10
+  let first_term = 3
+  let common_diff = 2
   
-  // 测试极值运算
-  let extreme_positive = add(2147483647, -2147483647)
-  let extreme_negative = multiply(-2147483647, 0)
-  assert_eq(0, extreme_positive)
-  assert_eq(0, extreme_negative)
+  // 使用公式计算：S_n = n/2 * (2a + (n-1)d)
+  let sum_formula = divide_with_ceil(
+    multiply(n, add(multiply(2, first_term), multiply(n - 1, common_diff))),
+    2
+  )
+  
+  // 手动计算验证
+  let manual_sum = add(first_term, add(first_term + common_diff, 
+    add(first_term + multiply(2, common_diff),
+    add(first_term + multiply(3, common_diff),
+    add(first_term + multiply(4, common_diff),
+    add(first_term + multiply(5, common_diff),
+    add(first_term + multiply(6, common_diff),
+    add(first_term + multiply(7, common_diff),
+    add(first_term + multiply(8, common_diff),
+    add(first_term + multiply(9, common_diff), 0)))))))))
+  
+  assert_eq(manual_sum, sum_formula)
 }
 
 test "complex_resource_allocation" {
-  // 复杂资源分配场景测试
+  // 复杂资源分配问题
   // 场景：多项目资源分配优化
   let total_budget = 50000
   let project_a_priority = 3
   let project_b_priority = 2
   let project_c_priority = 1
+  let total_priority = add(project_a_priority, add(project_b_priority, project_c_priority))
   
-  // 按优先级权重分配
-  let total_weight = add(project_a_priority, add(project_b_priority, project_c_priority))
-  let base_unit = divide_with_ceil(total_budget, total_weight)
-  
-  let project_a_budget = multiply(base_unit, project_a_priority)
-  let project_b_budget = multiply(base_unit, project_b_priority)
-  let project_c_budget = multiply(base_unit, project_c_priority)
+  // 按优先级分配资源
+  let budget_per_priority = divide_with_ceil(total_budget, total_priority)
+  let project_a_budget = multiply(project_a_priority, budget_per_priority)
+  let project_b_budget = multiply(project_b_priority, budget_per_priority)
+  let project_c_budget = multiply(project_c_priority, budget_per_priority)
   
   // 验证分配结果
-  assert_eq(15000, project_a_budget)  // 3 * 5000
-  assert_eq(10000, project_b_budget)  // 2 * 5000
-  assert_eq(5000, project_c_budget)   // 1 * 5000
+  let total_allocated = add(project_a_budget, add(project_b_budget, project_c_budget))
+  assert_eq(50000, total_allocated)
+  assert_eq(15000, project_a_budget)
+  assert_eq(10000, project_b_budget)
+  assert_eq(5000, project_c_budget)
 }
 
-test "error_recovery_mechanisms" {
-  // 错误恢复机制测试
-  // 测试各种错误情况的优雅处理
+test "algorithm_efficiency_comparison" {
+  // 算法效率比较测试
+  // 模拟不同算法的时间复杂度
+  let input_size = 1000
   
-  // 除零错误的多重场景
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+  // O(n) 线性算法
+  let linear_time = multiply(input_size, 5)
   
-  // 链式错误恢复
-  let error_input = 0
-  let safe_result = divide_with_ceil(multiply(10, error_input), add(error_input, 1))
-  assert_eq(0, safe_result)
+  // O(n²) 平方算法
+  let quadratic_time = multiply(input_size, input_size)
+  
+  // O(log n) 对数算法（简化模拟）
+  let logarithmic_time = divide_with_ceil(input_size, 100)
+  
+  // 验证复杂度关系
+  assert_true(linear_time < quadratic_time)
+  assert_true(logarithmic_time < linear_time)
+  assert_eq(5000, linear_time)
+  assert_eq(1000000, quadratic_time)
+  assert_eq(10, logarithmic_time)
 }
 
-test "algorithm_complexity_validation" {
-  // 算法复杂度验证测试
-  // 验证不同算法策略的性能特征
+test "error_resilience_comprehensive" {
+  // 综合错误恢复测试
+  // 测试各种异常情况下的系统行为
   
-  // 模拟线性复杂度 O(n)
-  let linear_10 = multiply(10, 5)
-  let linear_100 = multiply(100, 5)
-  let linear_1000 = multiply(1000, 5)
+  // 除零错误的级联处理
+  let result1 = divide_with_ceil(100, 0)
+  let result2 = divide_with_ceil(result1, 5)
+  let result3 = add(result2, 10)
   
-  // 模拟对数复杂度 O(log n) - 简化为除法模拟
-  let logarithmic_10 = divide_with_ceil(10, 2)
-  let logarithmic_100 = divide_with_ceil(100, 10)
-  let logarithmic_1000 = divide_with_ceil(1000, 100)
+  assert_eq(0, result1)
+  assert_eq(0, result2)
+  assert_eq(10, result3)
   
-  // 验证复杂度特征
-  assert_eq(50, linear_10)
-  assert_eq(500, linear_100)
-  assert_eq(5000, linear_1000)
+  // 负数除零的特殊处理
+  let negative_result = divide_with_ceil(-100, 0)
+  let negative_chain = multiply(negative_result, 5)
   
-  assert_eq(5, logarithmic_10)
-  assert_eq(10, logarithmic_100)
-  assert_eq(10, logarithmic_1000)
+  assert_eq(0, negative_result)
+  assert_eq(0, negative_chain)
 }
 
-test "business_logic_inventory_management" {
-  // 业务逻辑：库存管理测试
-  // 场景：多仓库库存分配优化
+test "data_structure_simulation" {
+  // 数据结构操作模拟
+  // 模拟栈和队列的复合操作
   
-  // 产品A：157件，每箱最多24件
-  let product_a_quantity = 157
-  let product_a_box_capacity = 24
-  let product_a_boxes = divide_with_ceil(product_a_quantity, product_a_box_capacity)
+  // 栈操作模拟
+  let stack_capacity = 10
+  let stack_items = 7
+  let stack_remaining = subtract(stack_capacity, stack_items)
+  let can_push = stack_remaining > 0
   
-  // 产品B：89件，每箱最多15件
-  let product_b_quantity = 89
-  let product_b_box_capacity = 15
-  let product_b_boxes = divide_with_ceil(product_b_quantity, product_b_box_capacity)
+  // 队列操作模拟
+  let queue_size = 15
+  let queue_front = 3
+  let queue_rear = 12
+  let queue_items_count = subtract(queue_rear, queue_front)
+  let queue_is_full = queue_items_count >= queue_size
   
-  // 产品C：23件，每箱最多8件
-  let product_c_quantity = 23
-  let product_c_box_capacity = 8
-  let product_c_boxes = divide_with_ceil(product_c_quantity, product_c_box_capacity)
-  
-  // 计算总箱子数和总容量
-  let total_boxes = add(add(product_a_boxes, product_b_boxes), product_c_boxes)
-  assert_eq(21, total_boxes)  // 7 + 6 + 8 = 21
-  
-  // 验证各产品容量计算
-  let capacity_a = multiply(product_a_boxes, product_a_box_capacity)
-  let capacity_b = multiply(product_b_boxes, product_b_box_capacity)
-  let capacity_c = multiply(product_c_boxes, product_c_box_capacity)
-  
-  assert_eq(168, capacity_a)  // 7 * 24
-  assert_eq(90, capacity_b)   // 6 * 15
-  assert_eq(64, capacity_c)   // 8 * 8
+  assert_eq(3, stack_remaining)
+  assert_true(can_push)
+  assert_eq(9, queue_items_count)
+  assert_false(queue_is_full)
 }
 
-test "data_integrity_validation" {
-  // 数据完整性验证测试
-  // 场景：数据转换和验证流程
+test "financial_compound_interest" {
+  // 金融复利计算测试
+  let principal = 10000
+  let annual_rate = 8  // 8%
+  let years = 5
   
-  let raw_data = 12345
-  let checksum_base = 7
+  // 逐年计算复利
+  let year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, annual_rate), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, annual_rate), 100))
+  let year4 = add(year3, divide_with_ceil(multiply(year3, annual_rate), 100))
+  let year5 = add(year4, divide_with_ceil(multiply(year4, annual_rate), 100))
   
-  // 计算校验和（简化算法）
-  let checksum = divide_with_ceil(multiply(raw_data, checksum_base), 10000)
-  assert_eq(9, checksum)  // ceil(12345*7/10000)
+  // 验证复利增长
+  assert_eq(10800, year1)
+  assert_eq(11664, year2)
+  assert_eq(12597, year3)
+  assert_eq(13605, year4)
+  assert_eq(14693, year5)
   
-  // 验证数据一致性
-  let verification = multiply(checksum, 10000)
-  let tolerance = divide_with_ceil(verification, checksum_base)
-  assert_eq(12857, tolerance)  // ceil(9*10000/7)
-  
-  // 验证原始数据在合理范围内
-  let is_valid = raw_data < tolerance
-  assert_true(is_valid)
+  // 计算总收益
+  let total_return = subtract(year5, principal)
+  assert_eq(4693, total_return)
 }
 
-test "performance_optimization_scenarios" {
-  // 性能优化场景测试
-  // 场景：计算策略优化
+test "string_processing_advanced" {
+  // 高级字符串处理测试
+  // 测试各种字符串边界情况和特殊字符
   
-  // 策略1：小批量多次处理
-  let small_batch_time = multiply(10, 4)  // 10批次，每批4单位时间
-  let small_batch_total = divide_with_ceil(small_batch_time, 10)
+  // 空字符串和特殊字符
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("   "))
+  assert_eq_string("Hello, \t\n\r!", greet("\t\n\r"))
   
-  // 策略2：大批量少次处理
-  let large_batch_time = multiply(2, 15)  // 2批次，每批15单位时间
-  let large_batch_total = divide_with_ceil(large_batch_time, 10)
+  // 数字和符号组合
+  assert_eq_string("Hello, 123abc456!", greet("123abc456"))
+  assert_eq_string("Hello, !@#$%^&*()!", greet("!@#$%^&*()"))
   
-  // 策略3：混合策略
-  let hybrid_time = add(multiply(5, 3), multiply(1, 10))  // 5小批 + 1大批
-  let hybrid_total = divide_with_ceil(hybrid_time, 10)
-  
-  // 验证性能计算
-  assert_eq(4, small_batch_total)    // ceil(40/10)
-  assert_eq(3, large_batch_total)    // ceil(30/10)
-  assert_eq(3, hybrid_total)         // ceil(25/10)
-  
-  // 验证混合策略最优
-  assert_true(hybrid_total <= small_batch_total)
-  assert_true(hybrid_total <= large_batch_total)
+  // 引号和转义字符
+  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))
+  assert_eq_string("Hello, 'apostrophe'!", greet("'apostrophe'"))
+  assert_eq_string("Hello, \\backslash!", greet("\\backslash"))
 }
 
-test "mathematical_boundary_conditions" {
-  // 数学边界条件测试
-  // 测试各种数学运算的边界情况
+test "load_balancing_algorithm" {
+  // 负载均衡算法测试
+  // 场景：将任务分配到多个服务器
+  let total_tasks = 157
+  let server_count = 5
+  let max_tasks_per_server = 40
   
-  // 测试零值运算
-  assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(0, 12345))
-  assert_eq(12345, add(12345, 0))
+  // 计算每台服务器的任务数
+  let base_tasks_per_server = divide_with_ceil(total_tasks, server_count)
+  let total_capacity = multiply(server_count, max_tasks_per_server)
   
-  // 测试极值运算
-  let max_safe = 1000000
-  let min_safe = -1000000
-  assert_eq(2000000, add(max_safe, max_safe))
-  assert_eq(0, add(max_safe, min_safe))
-  assert_eq(-2000000, add(min_safe, min_safe))
+  // 验证负载分配
+  assert_eq(32, base_tasks_per_server)  // ceil(157/5) = 32
+  assert_eq(200, total_capacity)
+  assert_true(base_tasks_per_server <= max_tasks_per_server)
   
-  // 测试除法边界
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1000000, divide_with_ceil(1000000, 1))
-  assert_eq(1, divide_with_ceil(1000000, 1000000))
-  assert_eq(0, divide_with_ceil(0, 1000000))
+  // 计算剩余容量
+  let remaining_capacity = subtract(total_capacity, total_tasks)
+  assert_eq(43, remaining_capacity)
+}
+
+test "caching_simulation" {
+  // 缓存机制模拟测试
+  let cache_size = 100
+  let data_items = 250
+  let cache_hit_rate = 75  // 75%
+  
+  // 计算缓存命中和未命中
+  let cache_hits = divide_with_ceil(multiply(data_items, cache_hit_rate), 100)
+  let cache_misses = subtract(data_items, cache_hits)
+  let cache_utilization = divide_with_ceil(multiply(cache_hits, 100), cache_size)
+  
+  // 验证缓存性能
+  assert_eq(188, cache_hits)  // ceil(250 * 75 / 100)
+  assert_eq(62, cache_misses)
+  assert_eq(188, cache_utilization)  // 188% 利用率（表示缓存需要扩展）
+  
+  // 计算需要的缓存大小
+  let optimal_cache_size = divide_with_ceil(cache_hits, 80)  // 80% 目标利用率
+  assert_eq(235, optimal_cache_size)  // ceil(188/80)
+}
+
+test "network_packet_processing" {
+  // 网络数据包处理测试
+  let total_packets = 1024
+  let packet_size = 1500  // bytes
+  let bandwidth_limit = 1000000  // bytes per second
+  let processing_delay = 2  // milliseconds per packet
+  
+  // 计算传输时间和处理时间
+  let total_data_size = multiply(total_packets, packet_size)
+  let transmission_time = divide_with_ceil(total_data_size, bandwidth_limit)
+  let total_processing_time = multiply(total_packets, processing_delay)
+  let total_time = add(transmission_time, total_processing_time)
+  
+  // 验证网络处理性能
+  assert_eq(1536000, total_data_size)
+  assert_eq(2, transmission_time)  // ceil(1536000/1000000)
+  assert_eq(2048, total_processing_time)
+  assert_eq(2050, total_time)
+  
+  // 计算吞吐量
+  let throughput = divide_with_ceil(total_packets, total_time)
+  assert_eq(1, throughput)  // ceil(1024/2050)
 }
