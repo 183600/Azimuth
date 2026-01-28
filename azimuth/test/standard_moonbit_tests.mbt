@@ -1,5 +1,4 @@
-// 标准 MoonBit 测试用例 - 10个高质量测试用例
-// 测试 azimuth 库的核心功能
+// 标准 MoonBit 测试用例 - 包含10个高质量测试用例
 
 test "basic_arithmetic_operations" {
   // 基本算术运算测试
@@ -7,7 +6,7 @@ test "basic_arithmetic_operations" {
   @azimuth.assert_eq(12, @azimuth.multiply(3, 4))
   @azimuth.assert_eq(1, @azimuth.divide_with_ceil(3, 4))
   @azimuth.assert_eq(4, @azimuth.divide_with_ceil(15, 4))
-  @azimuth.assert_eq(2, @azimuth.subtract(5, 3))
+  @azimuth.assert_eq(5, @azimuth.subtract(10, 5))
 }
 
 test "mathematical_properties" {
