@@ -1,4 +1,4 @@
-// Azimuth 新增测试用例
+// Azimuth 标准测试套件
 // 使用标准 MoonBit 测试语法的精选测试用例
 
 test "arithmetic_sequence_calculation" {
@@ -56,7 +56,7 @@ test "compound_interest_simplified" {
   // 简化的复利计算
   let principal = 1000
   let rate_percent = 5
-  let _years = 3
+  let years = 3
   
   // 第一年
   let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
