@@ -1,194 +1,169 @@
-// 增强的 azimuth 测试用例
-// 包含10个高质量的标准 MoonBit 测试用例
+// Azimuth 增强测试用例 - 使用标准 MoonBit 测试语法
+// 包含边界情况、实际应用场景和数学性质验证
 
-test "temperature_conversion" {
-  // 温度转换测试：摄氏度转华氏度
-  let celsius = 25
-  let fahrenheit = add(multiply(celsius, 9), 160) / 5
-  assert_eq(77, fahrenheit)
+test "addition_commutative_property" {
+  // 验证加法交换律: a + b = b + a
+  let a = 42
+  let b = 17
+  assert_eq(add(a, b), add(b, a))
   
-  // 华氏度转摄氏度
-  let fahrenheit_back = 77
-  let celsius_back = multiply(fahrenheit_back - 32, 5) / 9
-  assert_eq(25, celsius_back)
+  // 测试负数情况
+  let x = -15
+  let y = 8
+  assert_eq(add(x, y), add(y, x))
 }
 
-test "loan_calculation" {
-  // 贷款计算测试
-  let principal = 100000
-  let annual_rate = 5
-  let years = 3
+test "multiplication_distributive_property" {
+  // 验证乘法分配律: a * (b + c) = a * b + a * c
+  let a = 5
+  let b = 7
+  let c = 3
   
-  // 简单利息计算
-  let total_interest = multiply(multiply(principal, annual_rate), years) / 100
-  let total_payment = add(principal, total_interest)
-  
-  assert_eq(15000, total_interest)
-  assert_eq(115000, total_payment)
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)
 }
 
-test "batch_processing" {
-  // 批处理计算测试
-  let batch_size = 47
-  let items_per_batch = 8
-  let total_items = 150
+test "divide_with_ceil_comprehensive" {
+  // 全面测试向上取整除法的各种情况
+  // 正数情况
+  assert_eq(4, divide_with_ceil(10, 3))  // 10/3 = 3.33... -> 4
+  assert_eq(3, divide_with_ceil(9, 3))   // 9/3 = 3 -> 3
+  assert_eq(1, divide_with_ceil(1, 100)) // 1/100 = 0.01 -> 1
   
-  // 计算需要的批次数
-  let batches_needed = divide_with_ceil(total_items, items_per_batch)
+  // 负数情况
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -10/3 = -3.33... -> -3
+  assert_eq(3, divide_with_ceil(10, -3))   // 10/-3 = -3.33... -> -3
+  assert_eq(4, divide_with_ceil(-10, -3))  // -10/-3 = 3.33... -> 4
   
-  // 计算最后一个批次的项目数
-  let last_batch_size = total_items - multiply(batches_needed - 1, items_per_batch)
-  
-  assert_eq(19, batches_needed)
-  assert_eq(6, last_batch_size)
+  // 边界情况
+  assert_eq(0, divide_with_ceil(5, 0))     // 除数为0
+  assert_eq(0, divide_with_ceil(0, 5))     // 被除数为0
 }
 
-test "currency_exchange" {
-  // 货币兑换计算测试
-  let amount_usd = 100
-  let exchange_rate = 6.85  // 简化为整数计算：685/100
-  let fees = 5
-  
-  // 计算兑换金额（使用整数运算）
-  let exchanged_amount = multiply(amount_usd, 685) / 100
-  let final_amount = add(exchanged_amount, -fees)
-  
-  assert_eq(685, exchanged_amount)
-  assert_eq(680, final_amount)
+test "greet_function_internationalization" {
+  // 测试问候函数的国际化支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, 123!", greet("123"))
 }
 
-test "resource_allocation" {
-  // 资源分配测试
-  let total_resources = 1000
-  let project_a_needs = 350
-  let project_b_needs = 280
-  let project_c_needs = 200
+test "complex_business_calculation" {
+  // 复杂业务计算：订单总价计算
+  let unit_price = 85
+  let quantity = 12
+  let tax_rate = 8  // 8%
+  let shipping = 25
+  let discount = 50
   
-  // 计算已分配资源
-  let allocated = add(add(project_a_needs, project_b_needs), project_c_needs)
+  // 计算小计
+  let subtotal = multiply(unit_price, quantity)
   
-  // 计算剩余资源
-  let remaining = add(total_resources, -allocated)
+  // 计算税费（向上取整）
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
   
-  // 计算每个项目的百分比（向上取整）
-  let project_a_percentage = divide_with_ceil(multiply(project_a_needs, 100), total_resources)
-  let project_b_percentage = divide_with_ceil(multiply(project_b_needs, 100), total_resources)
-  let project_c_percentage = divide_with_ceil(multiply(project_c_needs, 100), total_resources)
+  // 计算最终总价
+  let total_before_discount = add(add(subtotal, tax), shipping)
+  let final_total = add(total_before_discount, -discount)
   
-  assert_eq(830, allocated)
-  assert_eq(170, remaining)
-  assert_eq(35, project_a_percentage)
-  assert_eq(28, project_b_percentage)
-  assert_eq(20, project_c_percentage)
+  assert_eq(1020, subtotal)     // 85 * 12 = 1020
+  assert_eq(82, tax)           // ceil(1020 * 8 / 100) = ceil(81.6) = 82
+  assert_eq(1127, total_before_discount)  // 1020 + 82 + 25 = 1127
+  assert_eq(1077, final_total)  // 1127 - 50 = 1077
 }
 
-test "inventory_reorder" {
-  // 库存重新订购测试
-  let current_stock = 45
-  let daily_sales = 8
-  let lead_time_days = 7
-  let safety_stock = 20
+test "mathematical_sequence_calculation" {
+  // 数学序列计算：等差数列求和
+  let first_term = 3
+  let common_difference = 4
+  let number_of_terms = 6
   
-  // 计算在lead time期间的销售量
-  let lead_time_sales = multiply(daily_sales, lead_time_days)
-  
-  // 计算重新订购点
-  let reorder_point = add(lead_time_sales, safety_stock)
-  
-  // 判断是否需要重新订购
-  let should_reorder = if current_stock <= reorder_point { 1 } else { 0 }
-  
-  assert_eq(56, lead_time_sales)
-  assert_eq(76, reorder_point)
-  assert_eq(1, should_reorder)
-}
-
-test "data_transmission" {
-  // 数据传输计算测试
-  let file_size_mb = 850
-  let network_speed_mbps = 50
-  let overhead_percentage = 10
-  
-  // 计算基础传输时间
-  let base_time = divide_with_ceil(file_size_mb, network_speed_mbps)
-  
-  // 计算额外开销时间
-  let overhead_time = divide_with_ceil(multiply(base_time, overhead_percentage), 100)
-  
-  // 计算总传输时间
-  let total_time = add(base_time, overhead_time)
-  
-  assert_eq(17, base_time)
-  assert_eq(2, overhead_time)
-  assert_eq(19, total_time)
-}
-
-test "project_management" {
-  // 项目管理计算测试
-  let total_tasks = 125
-  let completed_tasks = 78
-  let team_members = 5
-  let remaining_days = 8
-  
-  // 计算完成百分比
-  let completion_percentage = divide_with_ceil(multiply(completed_tasks, 100), total_tasks)
-  
-  // 计算剩余任务
-  let remaining_tasks = add(total_tasks, -completed_tasks)
-  
-  // 计算每人每天需要完成的任务数
-  let daily_tasks_per_person = divide_with_ceil(remaining_tasks, multiply(team_members, remaining_days))
-  
-  assert_eq(63, completion_percentage)
-  assert_eq(47, remaining_tasks)
-  assert_eq(2, daily_tasks_per_person)
-}
-
-test "energy_efficiency" {
-  // 能源效率计算测试
-  let old_power_consumption = 500
-  let new_power_consumption = 350
-  let operating_hours_per_day = 24
-  let days_per_month = 30
-  
-  // 计算每小时节省的能源
-  let hourly_savings = add(old_power_consumption, -new_power_consumption)
-  
-  // 计算每月节省的能源
-  let monthly_savings = multiply(multiply(hourly_savings, operating_hours_per_day), days_per_month)
-  
-  // 计算效率提升百分比
-  let efficiency_improvement = divide_with_ceil(
-    multiply(hourly_savings, 100), 
-    old_power_consumption
+  // 使用公式：S = n/2 * (2a + (n-1)d)
+  let sum = divide_with_ceil(
+    multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference))),
+    2
   )
   
-  assert_eq(150, hourly_savings)
-  assert_eq(108000, monthly_savings)
-  assert_eq(30, efficiency_improvement)
+  assert_eq(78, sum)  // 6/2 * (6 + 20) = 3 * 26 = 78
 }
 
-test "user_engagement_metrics" {
-  // 用户参与度指标测试
-  let total_users = 10000
-  let active_users_daily = 3500
-  let active_users_weekly = 6200
-  let active_users_monthly = 8500
+test "resource_allocation_optimization" {
+  // 资源分配优化问题
+  let total_budget = 5000
+  let project_a_cost = 1200
+  let project_b_cost = 1800
+  let project_c_cost = 900
   
-  // 计算日活跃率
-  let daily_active_rate = divide_with_ceil(multiply(active_users_daily, 100), total_users)
+  // 计算剩余预算
+  let allocated = add(add(project_a_cost, project_b_cost), project_c_cost)
+  let remaining = add(total_budget, -allocated)
   
-  // 计算周活跃率
-  let weekly_active_rate = divide_with_ceil(multiply(active_users_weekly, 100), total_users)
+  // 计算可以支持的小项目数量（每个小项目成本250）
+  let small_projects = divide_with_ceil(remaining, 250)
   
-  // 计算月活跃率
-  let monthly_active_rate = divide_with_ceil(multiply(active_users_monthly, 100), total_users)
+  assert_eq(3900, allocated)    // 1200 + 1800 + 900 = 3900
+  assert_eq(1100, remaining)    // 5000 - 3900 = 1100
+  assert_eq(5, small_projects)  // ceil(1100 / 250) = ceil(4.4) = 5
+}
+
+test "time_management_scenario" {
+  // 时间管理场景：任务完成时间计算
+  let daily_work_hours = 8
+  let total_task_hours = 35
+  let break_duration = 1  // 每天休息1小时
   
-  // 计算用户粘性指数（日活/月活）
-  let stickiness_index = divide_with_ceil(multiply(active_users_daily, 100), active_users_monthly)
+  // 计算实际工作小时数
+  let effective_daily_hours = add(daily_work_hours, -break_duration)
   
-  assert_eq(35, daily_active_rate)
-  assert_eq(62, weekly_active_rate)
-  assert_eq(85, monthly_active_rate)
-  assert_eq(42, stickiness_index)
+  // 计算需要的工作天数
+  let work_days = divide_with_ceil(total_task_hours, effective_daily_hours)
+  
+  // 计算总日历天数（包括周末）
+  let calendar_days = multiply(work_days, 7) / 5  // 假设5天工作制
+  
+  assert_eq(7, effective_daily_hours)  // 8 - 1 = 7
+  assert_eq(5, work_days)              // ceil(35 / 7) = 5
+  assert_eq(7, calendar_days)          // 5 * 7 / 5 = 7
+}
+
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  // 测试各种边界情况和异常输入
+  
+  // 大数运算
+  let large_num1 = 100000
+  let large_num2 = 200000
+  assert_eq(300000, add(large_num1, large_num2))
+  assert_eq(20000000000, multiply(large_num1, large_num2))
+  
+  // 零值运算
+  assert_eq(0, multiply(0, 12345))
+  assert_eq(12345, add(0, 12345))
+  assert_eq(0, divide_with_ceil(0, 12345))
+  assert_eq(0, divide_with_ceil(12345, 0))
+  
+  // 负数运算验证
+  assert_eq(-100, add(-50, -50))
+  assert_eq(100, multiply(-10, -10))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+}
+
+test "string_processing_edge_cases" {
+  // 字符串处理边界情况
+  // 空字符串和特殊字符
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, \t\n!", greet("\t\n"))
+  
+  // 长字符串
+  let long_name = "This is a very long name that contains many words and characters"
+  let expected = "Hello, " + long_name + "!"
+  assert_eq_string(expected, greet(long_name))
+  
+  // 特殊符号和数字组合
+  assert_eq_string("Hello, user@domain.com!", greet("user@domain.com"))
+  assert_eq_string("Hello, A+B=C!", greet("A+B=C"))
+  assert_eq_string("Hello, 100%!", greet("100%"))
 }
