@@ -8,6 +8,7 @@
     "azimuth"
   ],
   "test": [
+    "quality_azimuth_tests.mbt",
     "azimuth_advanced_scenarios_tests.mbt",
     "single_test.mbt",
     "simple_test_verification.mbt",
