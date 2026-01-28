@@ -5737,7 +5737,7 @@ test "mathematical_distributive_property" {
   assert_eq(left_side, right_side)  // 3 * (4 + 5) = 3 * 4 + 3 * 5 = 27
 }
 
-test "error_handling_robustness" {
+test "azimuth_error_handling_robustness" {
   // 错误处理健壮性测试
   assert_eq(0, divide_with_ceil(100, 0))    // 除零保护
   assert_eq(0, divide_with_ceil(-100, 0))   // 负数除零保护
@@ -7749,4 +7749,195 @@ test "high_quality_comprehensive_application_scenario" {
   assert_eq(898, pre_discount_total)
   assert_eq(90, discount_amount)
   assert_eq(808, final_total)
+}
+
+// 新增的10个标准 MoonBit 测试用例
+// 涵盖递归模式、条件逻辑、性能测试等新场景
+
+test "azimuth_recursive_pattern_simulation" {
+  // 模拟递归模式：计算阶乘 5! = 5×4×3×2×1
+  let n = 5
+  let factorial_5 = multiply(n, multiply(n - 1, multiply(n - 2, multiply(n - 3, n - 4))))
+  assert_eq(120, factorial_5)
+  
+  // 模拟递归模式：计算 2^6 = 2×2×2×2×2×2
+  let base = 2
+  let power = multiply(multiply(multiply(multiply(multiply(base, base), base), base), base), base)
+  assert_eq(64, power)
+}
+
+test "azimuth_conditional_business_logic" {
+  // 条件业务逻辑：会员折扣计算
+  let purchase_amount = 280
+  let is_member = 1  // 1表示是会员，0表示非会员
+  let member_discount_rate = 15
+  let regular_discount_rate = 5
+  
+  let discount_rate = if is_member == 1 { 
+    member_discount_rate 
+  } else { 
+    regular_discount_rate 
+  }
+  
+  let discount_amount = divide_with_ceil(multiply(purchase_amount, discount_rate), 100)
+  let final_price = add(purchase_amount, -discount_amount)
+  
+  assert_eq(15, discount_rate)
+  assert_eq(42, discount_amount)
+  assert_eq(238, final_price)
+}
+
+test "azimuth_performance_benchmark_simulation" {
+  // 性能基准测试模拟：算法效率比较
+  let dataset_size = 1000
+  
+  // 模拟O(n)算法复杂度
+  let linear_time = dataset_size
+  
+  // 模拟O(n²)算法复杂度
+  let quadratic_time = multiply(dataset_size, dataset_size) / 1000  // 缩放以避免过大数字
+  
+  // 模拟O(log n)算法复杂度（简化为除法）
+  let logarithmic_time = divide_with_ceil(dataset_size, 100)
+  
+  assert_eq(1000, linear_time)
+  assert_eq(1000, quadratic_time)
+  assert_eq(10, logarithmic_time)
+}
+
+test "azimuth_data_structure_operations" {
+  // 数据结构操作模拟：栈和队列的基本操作
+  // 模拟栈操作（后进先出）
+  let stack_push_3 = 30
+  let stack_pop = stack_push_3  // 最后进入的元素最先出来
+  
+  // 模拟队列操作（先进先出）
+  let queue_enqueue_1 = 100
+  let queue_dequeue = queue_enqueue_1  // 最先进入的元素最先出来
+  
+  assert_eq(30, stack_pop)
+  assert_eq(100, queue_dequeue)
+}
+
+test "azimuth_search_algorithm_simulation" {
+  // 搜索算法模拟：线性搜索和二分搜索效率比较
+  let array_size = 100
+  
+  // 线性搜索平均比较次数（最坏情况）
+  let linear_comparisons = array_size
+  
+  // 二分搜索最大比较次数
+  let binary_comparisons = divide_with_ceil(array_size, 2)
+  
+  // 搜索效率提升倍数
+  let efficiency_improvement = divide_with_ceil(linear_comparisons, binary_comparisons)
+  
+  assert_eq(100, linear_comparisons)
+  assert_eq(50, binary_comparisons)
+  assert_eq(2, efficiency_improvement)
+}
+
+test "azimuth_memory_allocation_simulation" {
+  // 内存分配模拟：计算不同数据结构的内存使用
+  let integer_size = 4  // 假设整数占4字节
+  let array_length = 50
+  
+  // 一维数组内存使用
+  let array_memory = multiply(integer_size, array_length)
+  
+  // 二维数组内存使用（5x10）
+  let matrix_rows = 5
+  let matrix_cols = 10
+  let matrix_memory = multiply(integer_size, multiply(matrix_rows, matrix_cols))
+  
+  // 内存使用比较
+  let memory_ratio = divide_with_ceil(matrix_memory, array_memory)
+  
+  assert_eq(200, array_memory)
+  assert_eq(200, matrix_memory)
+  assert_eq(1, memory_ratio)
+}
+
+test "azimuth_cache_performance_simulation" {
+  // 缓存性能模拟：计算缓存命中率对性能的影响
+  let total_requests = 1000
+  let cache_hits = 750
+  let cache_misses = add(total_requests, -cache_hits)
+  
+  // 缓存命中率
+  let hit_rate = divide_with_ceil(multiply(cache_hits, 100), total_requests)
+  
+  // 缓存未命中率
+  let miss_rate = divide_with_ceil(multiply(cache_misses, 100), total_requests)
+  
+  // 性能提升因子（假设缓存命中比缓存未命中快10倍）
+  let performance_factor = add(multiply(hit_rate, 10), miss_rate)
+  
+  assert_eq(75, hit_rate)
+  assert_eq(25, miss_rate)
+  assert_eq(775, performance_factor)
+}
+
+test "azimuth_network_latency_calculation" {
+  // 网络延迟计算：数据包传输时间估算
+  let data_size_kb = 500
+  let bandwidth_kbps = 100
+  let latency_ms = 50
+  let packet_count = 10
+  
+  // 传输时间（不包括延迟）
+  let transfer_time_ms = divide_with_ceil(multiply(data_size_kb, 1000), bandwidth_kbps)
+  
+  // 总延迟时间
+  let total_latency_ms = multiply(latency_ms, packet_count)
+  
+  // 总传输时间
+  let total_time_ms = add(transfer_time_ms, total_latency_ms)
+  
+  assert_eq(5000, transfer_time_ms)
+  assert_eq(500, total_latency_ms)
+  assert_eq(5500, total_time_ms)
+}
+
+test "azimuth_database_query_optimization" {
+  // 数据库查询优化模拟：索引对查询性能的影响
+  let table_size = 10000
+  let query_selectivity = 5  // 查询选择性百分比
+  
+  // 全表扫描的记录数
+  let full_scan_records = table_size
+  
+  // 索引扫描的记录数
+  let index_scan_records = divide_with_ceil(multiply(table_size, query_selectivity), 100)
+  
+  // 性能提升倍数
+  let performance_boost = divide_with_ceil(full_scan_records, index_scan_records)
+  
+  assert_eq(10000, full_scan_records)
+  assert_eq(500, index_scan_records)
+  assert_eq(20, performance_boost)
+}
+
+test "azimuth_compression_algorithm_simulation" {
+  // 压缩算法模拟：计算不同压缩比的存储节省
+  let original_size_mb = 100
+  let compression_ratio_1 = 70  // 第一种算法压缩到70%
+  let compression_ratio_2 = 40  // 第二种算法压缩到40%
+  
+  // 压缩后的大小
+  let compressed_size_1 = divide_with_ceil(multiply(original_size_mb, compression_ratio_1), 100)
+  let compressed_size_2 = divide_with_ceil(multiply(original_size_mb, compression_ratio_2), 100)
+  
+  // 存储节省量
+  let savings_1 = add(original_size_mb, -compressed_size_1)
+  let savings_2 = add(original_size_mb, -compressed_size_2)
+  
+  // 压缩效率比较
+  let compression_efficiency = divide_with_ceil(savings_2, savings_1)
+  
+  assert_eq(70, compressed_size_1)
+  assert_eq(40, compressed_size_2)
+  assert_eq(30, savings_1)
+  assert_eq(60, savings_2)
+  assert_eq(2, compression_efficiency)
 }
