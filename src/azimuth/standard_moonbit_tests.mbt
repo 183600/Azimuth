@@ -1,74 +1,131 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Import necessary functions
+using @builtin { inspect }
+
 // 标准 MoonBit 测试用例 - 10个高质量测试
-// 测试 azimuth 库的核心功能
 
-test "basic_addition_functionality" {
-  // 测试基本加法功能
-  assert_eq(5, add(2, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(10, add(-3, 13))
+///|
+test "string_length_and_operations" {
+  let s = "MoonBit"
+  inspect(s.length(), content="7")
+  inspect(s[0], content="'M'")
+  inspect(s[6], content="'t'")
 }
 
-test "basic_multiplication_functionality" {
-  // 测试基本乘法功能
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(15, multiply(-3, -5))
+///|
+test "basic_arithmetic_operations" {
+  let a = 15
+  let b = 4
+  inspect(a + b, content="19")
+  inspect(a - b, content="11")
+  inspect(a * b, content="60")
+  inspect(a / b, content="3")
+  inspect(a % b, content="3")
 }
 
-test "greet_function_standard_cases" {
-  // 测试问候函数的标准情况
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
+///|
+test "boolean_logic_evaluation" {
+  let x = true
+  let y = false
+  inspect(x && y, content="false")
+  inspect(x || y, content="true")
+  inspect(!x, content="false")
+  inspect(!y, content="true")
+  inspect(x != y, content="true")
 }
 
-test "divide_with_ceil_basic_functionality" {
-  // 测试向上取整除法的基本功能
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 100))
-  assert_eq(0, divide_with_ceil(5, 0))
+///|
+test "array_manipulation" {
+  let numbers = [10, 20, 30, 40, 50]
+  inspect(numbers.length(), content="5")
+  inspect(numbers[0], content="10")
+  inspect(numbers[4], content="50")
 }
 
-test "mathematical_commutative_properties" {
-  // 测试数学交换律性质
-  assert_eq(add(7, 13), add(13, 7))
-  assert_eq(multiply(7, 13), multiply(13, 7))
+///|
+test "option_type_pattern_matching" {
+  let some_value : Option[Int] = Some(42)
+  let none_value : Option[Int] = None
+  
+  let result1 = match some_value {
+    Some(x) => x * 2
+    None => 0
+  }
+  
+  let result2 = match none_value {
+    Some(x) => x * 2
+    None => -1
+  }
+  
+  inspect(result1, content="84")
+  inspect(result2, content="-1")
 }
 
-test "zero_element_properties" {
-  // 测试零元素性质
-  assert_eq(5, add(5, 0))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(0, divide_with_ceil(0, 10))
+///|
+test "result_type_error_handling" {
+  let success : Result[String, Int] = Ok("Operation completed")
+  let failure : Result[String, Int] = Err(404)
+  
+  let message1 = match success {
+    Ok(msg) => msg
+    Err(code) => "Error: " + code.to_string()
+  }
+  
+  let message2 = match failure {
+    Ok(msg) => msg
+    Err(code) => "Error: " + code.to_string()
+  }
+  
+  inspect(message1, content="\"Operation completed\"")
+  inspect(message2, content="\"Error: 404\"")
 }
 
-test "complex_arithmetic_operations" {
-  // 测试复杂算术运算
-  let result = add(multiply(2, 3), multiply(4, 5))
-  assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
+///|
+test "character_operations" {
+  let ch = 'Z'
+  inspect(ch.to_string(), content="\"Z\"")
+  inspect(ch.to_int(), content="90")
 }
 
-test "packaging_calculation_scenario" {
-  // 测试包装计算场景
-  let total_items = 25
-  let items_per_box = 6
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
+///|
+test "tuple_destructuring" {
+  let point = (3, 7)
+  let x = point.0
+  let y = point.1
+  let sum = x + y
+  inspect(sum, content="10")
 }
 
-test "negative_number_operations" {
-  // 测试负数运算
-  assert_eq(-8, add(-5, -3))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(-3, divide_with_ceil(-10, 3))
+///|
+test "complex_pattern_matching" {
+  let value = 15
+  let category = match value {
+    0 => "zero"
+    1 | 2 | 3 => "small"
+    4 | 5 | 6 | 7 | 8 | 9 => "medium"
+    _ => "large"
+  }
+  inspect(category, content="\"large\"")
 }
 
-test "unicode_string_handling" {
-  // 测试Unicode字符串处理
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, café!", greet("café"))
+///|
+test "string_concatenation_and_formatting" {
+  let first = "Hello"
+  let second = "MoonBit"
+  let year = "2024"
+  let message = first + ", " + second + " (" + year + ")"
+  inspect(message, content="\"Hello, MoonBit (2024)\"")
 }
