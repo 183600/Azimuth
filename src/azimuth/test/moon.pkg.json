@@ -4,6 +4,9 @@
   ],
   "export": [],
   "test": [
+    "single_test.mbt",
+    "simple_test_verification.mbt",
+    "standard_moonbit_test_additions.mbt",
     "azimuth_quality_test_suite.mbt",
     "standard_moonbit_test_cases.mbt",
     "standard_quality_tests.mbt",

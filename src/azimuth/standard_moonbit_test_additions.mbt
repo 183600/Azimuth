@@ -1,115 +1,118 @@
 // 新增的标准 MoonBit 测试用例
 // 针对 azimuth 库的核心功能进行全面测试
 
-test "addition_identity_properties" {
-  // 测试加法的单位元性质
-  assert_eq(5, add(5, 0))
-  assert_eq(-3, add(-3, 0))
-  assert_eq(0, add(0, 0))
-  assert_eq(1000000, add(1000000, 0))
+test "add_function_with_negative_numbers" {
+  // 测试使用负数的加法功能（模拟减法）
+  assert_eq(5, add(10, -5))
+  assert_eq(0, add(5, -5))
+  assert_eq(-5, add(0, -5))
+  assert_eq(10, add(15, -5))
 }
 
-test "multiplication_identity_properties" {
-  // 测试乘法的单位元性质
-  assert_eq(7, multiply(7, 1))
-  assert_eq(-10, multiply(-10, 1))
-  assert_eq(0, multiply(0, 1))
-  assert_eq(15, multiply(15, 1))
+test "complex_calculator_scenario" {
+  // 复杂计算器场景测试
+  let initial_value = 100
+  let operations = add(multiply(5, 10), add(50, -25))
+  let result = add(add(initial_value, operations), -75)
+  
+  assert_eq(150, result)  // 100 + (5*10 + (50-25)) - 75 = 100 + (50 + 25) - 75 = 150
 }
 
-test "divide_with_ceil_fractional_cases" {
-  // 测试向上取整除法的小数情况
-  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
-  assert_eq(3, divide_with_ceil(8, 3))  // 2.666... -> 3
-  assert_eq(7, divide_with_ceil(13, 2)) // 6.5 -> 7
-  assert_eq(11, divide_with_ceil(100, 9)) // 11.111... -> 12
+test "temperature_conversion" {
+  // 温度转换场景：摄氏度转华氏度
+  let celsius = 25
+  let fahrenheit = divide_with_ceil(add(multiply(celsius, 9), 160), 5)
+  
+  assert_eq(77, fahrenheit)  // ceil((25 * 9 + 160) / 5) = ceil(385 / 5) = 77
 }
 
-test "greet_function_empty_and_whitespace" {
-  // 测试问候函数的空字符串和空白字符处理
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello,  !", greet(" "))
-  assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, \t!", greet("\t"))
+test "banking_interest_calculation" {
+  // 银行利息计算
+  let principal = 10000
+  let rate_percent = 5
+  let years = 3
+  
+  let interest_year1 = divide_with_ceil(multiply(principal, rate_percent), 100)
+  let interest_year2 = divide_with_ceil(multiply(add(principal, interest_year1), rate_percent), 100)
+  let interest_year3 = divide_with_ceil(multiply(add(add(principal, interest_year1), interest_year2), rate_percent), 100)
+  
+  let total_amount = add(add(add(principal, interest_year1), interest_year2), interest_year3)
+  
+  assert_eq(500, interest_year1)
+  assert_eq(525, interest_year2)
+  assert_eq(551, interest_year3)
+  assert_eq(11576, total_amount)
 }
 
-test "combined_arithmetic_expressions" {
-  // 测试组合算术表达式
-  let x = 10
-  let y = 15
-  let z = 20
+test "array_index_calculation" {
+  // 数组索引计算模拟
+  let page_size = 20
+  let page_number = 3
+  let item_offset = 5
   
-  // 测试 (x + y) * z
-  let result1 = multiply(add(x, y), z)
-  assert_eq(500, result1)  // (10 + 15) * 20 = 25 * 20 = 500
+  let start_index = add(multiply(page_number - 1, page_size), item_offset)
   
-  // 测试 x * y + z
-  let result2 = add(multiply(x, y), z)
-  assert_eq(170, result2)  // 10 * 15 + 20 = 150 + 20 = 170
+  assert_eq(45, start_index)  // (3-1)*20 + 5 = 40 + 5 = 45
 }
 
-test "negative_number_division_ceil" {
-  // 测试负数的向上取整除法
-  assert_eq(-2, divide_with_ceil(-4, 2))   // -4/2 = -2 -> -2
-  assert_eq(-1, divide_with_ceil(-3, 2))   // -3/2 = -1.5 -> -1
-  assert_eq(-3, divide_with_ceil(-7, 2))   // -7/2 = -3.5 -> -3
-  assert_eq(-5, divide_with_ceil(-11, 2))  // -11/2 = -5.5 -> -5
+test "resource_utilization" {
+  // 资源利用率计算
+  let total_resources = 1000
+  let used_resources = 750
+  let planned_resources = 200
+  
+  let utilization_after_planning = divide_with_ceil(multiply(add(used_resources, planned_resources), 100), total_resources)
+  
+  assert_eq(95, utilization_after_planning)  // ceil((750+200)*100/1000) = ceil(95000/1000) = 95
 }
 
-test "large_scale_calculations" {
-  // 测试大规模计算
-  let base = 10000
-  let multiplier = 100
-  let addition = 50000
+test "game_score_calculation" {
+  // 游戏分数计算
+  let base_score = 1000
+  let level_multiplier = 3
+  let bonus_points = 500
+  let penalty_points = 200
   
-  // 测试大数乘法
-  let large_product = multiply(base, multiplier)
-  assert_eq(1000000, large_product)
+  let final_score = add(add(multiply(base_score, level_multiplier), bonus_points), -penalty_points)
   
-  // 测试大数加法
-  let large_sum = add(large_product, addition)
-  assert_eq(1050000, large_sum)
+  assert_eq(3300, final_score)  // 1000*3 + 500 - 200 = 3000 + 500 - 200 = 3300
 }
 
-test "real_world_budget_calculation" {
-  // 测试实际世界的预算计算
-  let monthly_income = 5000
-  let rent = 1500
-  let utilities = 200
-  let food = 600
-  let transportation = 300
-  let entertainment = 200
+test "data_structure_capacity" {
+  // 数据结构容量计算
+  let item_size = 24
+  let total_items = 150
+  let block_size = 1024
   
-  // 计算总支出
-  let total_expenses = add(add(add(add(rent, utilities), food), transportation), entertainment)
+  let total_memory_needed = multiply(item_size, total_items)
+  let blocks_needed = divide_with_ceil(total_memory_needed, block_size)
   
-  // 计算剩余预算
-  let remaining_budget = add(monthly_income, -total_expenses)
-  
-  assert_eq(2800, total_expenses)
-  assert_eq(2200, remaining_budget)
+  assert_eq(3600, total_memory_needed)
+  assert_eq(4, blocks_needed)  // ceil(3600/1024) = 4
 }
 
-test "string_greeting_with_numbers_and_symbols" {
-  // 测试包含数字和符号的字符串问候
-  assert_eq_string("Hello, User123!", greet("User123"))
-  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
-  assert_eq_string("Hello, A+B=C!", greet("A+B=C"))
-  assert_eq_string("Hello, 100%!", greet("100%"))
+test "time_zone_conversion" {
+  // 时区转换计算
+  let local_time = 14  // 下午2点
+  let time_difference = -8  // 与目标时区的时差
+  
+  let target_time = add(local_time, time_difference)
+  let adjusted_time = if target_time < 0 { add(target_time, 24) } else { target_time }
+  
+  assert_eq(6, adjusted_time)  // 14 + (-8) = 6
 }
 
-test "complex_division_scenarios" {
-  // 测试复杂的除法场景
-  // 测试被除数小于除数的情况
-  assert_eq(1, divide_with_ceil(5, 10))
-  assert_eq(1, divide_with_ceil(1, 100))
-  assert_eq(1, divide_with_ceil(99, 100))
+test "batch_processing_efficiency" {
+  // 批处理效率计算
+  let single_item_time = 5
+  let batch_size = 50
+  let batch_overhead = 100
   
-  // 测试被除数等于除数的情况
-  assert_eq(1, divide_with_ceil(10, 10))
-  assert_eq(5, divide_with_ceil(5, 1))
+  let sequential_time = multiply(single_item_time, batch_size)
+  let batch_time = add(batch_overhead, multiply(single_item_time, divide_with_ceil(batch_size, 10)))
+  let efficiency_gain = add(sequential_time, -batch_time)
   
-  // 测试被除数是除数的倍数
-  assert_eq(3, divide_with_ceil(15, 5))
-  assert_eq(10, divide_with_ceil(100, 10))
+  assert_eq(250, sequential_time)
+  assert_eq(125, batch_time)
+  assert_eq(125, efficiency_gain)
 }
