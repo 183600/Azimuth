@@ -108,3 +108,46 @@ test "int bit operations" {
   inspect(10 << 2, content="40")
   inspect(10 >> 2, content="2")
 }
+
+///|
+test "int comparison operations" {
+  assert_eq(10 > 5, true)
+  assert_eq(10 < 5, false)
+  assert_eq(10 >= 10, true)
+  assert_eq(10 <= 5, false)
+  assert_eq(10 == 10, true)
+  assert_eq(10 != 5, true)
+}
+
+///|
+test "int type conversions" {
+  inspect(10.to_int64(), content="10")
+  inspect(10.to_uint(), content="10")
+  inspect((-10).to_uint(), content="4294967286")
+  inspect(10.to_double(), content="10.0")
+}
+
+///|
+test "int edge cases" {
+  // Test minimum value operations
+  assert_eq(@int.min_value + 1, -2147483647)
+  assert_eq(@int.min_value - 1, @int.max_value)
+  
+  // Test maximum value operations
+  assert_eq(@int.max_value - 1, 2147483646)
+  assert_eq(@int.max_value + 1, @int.min_value)
+  
+  // Test zero operations
+  assert_eq(0 + @int.max_value, @int.max_value)
+  assert_eq(0 - @int.min_value, @int.min_value)
+  assert_eq(0 * @int.max_value, 0)
+}
+
+///|
+test "int power and exponentiation" {
+  inspect(Int::pow(2, 0), content="1")
+  inspect(Int::pow(2, 1), content="2")
+  inspect(Int::pow(2, 10), content="1024")
+  inspect(Int::pow(3, 3), content="27")
+  inspect(Int::pow(5, 2), content="25")
+}

@@ -78,3 +78,65 @@ test "string comparison enhanced" {
   inspect(str1 < str2, content="true")
   inspect(str2 > str1, content="true")
 }
+
+///|
+test "string slicing operations" {
+  let text = "Hello, MoonBit!"
+  inspect(text.slice(0, 5), content="Hello")
+  inspect(text.slice(7, 14), content="MoonBit")
+  inspect(text.slice(0, text.length()), content="Hello, MoonBit!")
+  inspect(text.slice(5, 5), content="")
+}
+
+///|
+test "string character operations" {
+  let text = "abcdef"
+  inspect(text.char_at(0), content="'a'")
+  inspect(text.char_at(3), content="'d'")
+  inspect(text.contains("cde"), content="true")
+  inspect(text.contains("xyz"), content="false")
+  inspect(text.starts_with("abc"), content="true")
+  inspect(text.ends_with("def"), content="true")
+}
+
+///|
+test "string case conversion" {
+  let lower = "hello world"
+  let upper = "HELLO WORLD"
+  let mixed = "HeLlO WoRlD"
+  
+  // Test case transformations if available
+  inspect(lower.to_upper(), content="HELLO WORLD")
+  inspect(upper.to_lower(), content="hello world")
+}
+
+///|
+test "string trimming" {
+  let spaced = "  hello world  "
+  let newlined = "\nhello world\n"
+  let tabbed = "\thello world\t"
+  
+  inspect(spaced.trim(), content="hello world")
+  inspect(newlined.trim(), content="hello world")
+  inspect(tabbed.trim(), content="hello world")
+}
+
+///|
+test "string splitting and joining" {
+  let csv = "apple,banana,cherry,date"
+  let fruits = csv.split(",")
+  inspect(fruits.length(), content="4")
+  inspect(fruits[0], content="apple")
+  inspect(fruits[3], content="date")
+  
+  let joined = fruits.join("; ")
+  inspect(joined, content="apple; banana; cherry; date")
+}
+
+///|
+test "string format operations" {
+  let name = "MoonBit"
+  let version = "0.1.0"
+  let formatted = "\{name} version \{version}"
+  inspect(formatted, content="MoonBit version 0.1.0")
+}

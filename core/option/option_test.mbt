@@ -243,3 +243,109 @@ test "optional interpolation" {
     1, 2, 3, 10, 4, 5,
   ])
 }
+
+///|
+test "option mapping operations" {
+  let some_int : Int? = Some(5)
+  let none_int : Int? = None
+  
+  let doubled_some = some_int.map(x => x * 2)
+  inspect(doubled_some, content="Some(10)")
+  
+  let doubled_none = none_int.map(x => x * 2)
+  inspect(doubled_none, content="None")
+  
+  let stringified = some_int.map(x => x.to_string())
+  inspect(stringified, content="Some(\"5\")")
+}
+
+///|
+test "option filtering operations" {
+  let some_positive : Int? = Some(5)
+  let some_negative : Int? = Some(-3)
+  let none_value : Int? = None
+  
+  let filtered_positive = some_positive.filter(x => x > 0)
+  inspect(filtered_positive, content="Some(5)")
+  
+  let filtered_negative = some_negative.filter(x => x > 0)
+  inspect(filtered_negative, content="None")
+  
+  let filtered_none = none_value.filter(x => x > 0)
+  inspect(filtered_none, content="None")
+}
+
+///|
+test "option and_then operations" {
+  let some_int : Int? = Some(5)
+  let none_int : Int? = None
+  
+  let safe_divide = (x : Int) => if x == 0 { None } else { Some(100 / x) }
+  
+  let result_some = some_int.and_then(safe_divide)
+  inspect(result_some, content="Some(20)")
+  
+  let result_none = none_int.and_then(safe_divide)
+  inspect(result_none, content="None")
+}
+
+///|
+test "option is_some and is_none" {
+  let some_value : Int? = Some(42)
+  let none_value : Int? = None
+  
+  inspect(some_value.is_some(), content="true")
+  inspect(some_value.is_none(), content="false")
+  inspect(none_value.is_some(), content="false")
+  inspect(none_value.is_none(), content="true")
+}
+
+///|
+test "option unwrap_or and unwrap_or_else" {
+  let some_value : Int? = Some(10)
+  let none_value : Int? = None
+  
+  inspect(some_value.unwrap_or(0), content="10")
+  inspect(none_value.unwrap_or(0), content="0")
+  
+  let expensive_computation = () => 42
+  inspect(some_value.unwrap_or_else(expensive_computation), content="10")
+  inspect(none_value.unwrap_or_else(expensive_computation), content="42")
+}
+
+///|
+test "option equality operations" {
+  let some1 : Int? = Some(5)
+  let some2 : Int? = Some(5)
+  let some3 : Int? = Some(10)
+  let none1 : Int? = None
+  let none2 : Int? = None
+  
+  assert_eq(some1, some2)
+  assert_ne(some1, some3)
+  assert_eq(none1, none2)
+  assert_ne(some1, none1)
+}
+
+///|
+test "option to_array conversion" {
+  let some_value : Int? = Some(42)
+  let none_value : Int? = None
+  
+  let array_from_some = some_value.to_array()
+  inspect(array_from_some, content="[42]")
+  
+  let array_from_none = none_value.to_array()
+  inspect(array_from_none, content="[]")
+}
+
+///|
+test "option nested operations" {
+  let nested_some : Int?? = Some(Some(42))
+  let nested_none_outer : Int?? = None
+  let nested_none_inner : Int?? = Some(None)
+  
+  inspect(nested_some.flatten(), content="Some(42)")
+  inspect(nested_none_outer.flatten(), content="None")
+  inspect(nested_none_inner.flatten(), content="None")
+}
