@@ -169,6 +169,7 @@
     "simple_new_test_file.mbt",
     "standard_enhanced_tests.mbt",
     "azimuth_standard_test_cases.mbt",
+    "standard_moonbit_test_suite_new.mbt",
       "core_enhanced_test_cases.mbt",
       "azimuth_standard_test_cases.mbt",
       "quality_test_suite.mbt",
