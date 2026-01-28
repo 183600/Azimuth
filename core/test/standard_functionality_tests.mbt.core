@@ -1,0 +1,1164 @@
+((Ctop_fn
+  ((binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_0)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let s/0 Hello
+       (Cexpr_sequence
+        ((Cexpr_handle_error
+          (Cexpr_apply $builtin.inspect.inner
+           ((Cexpr_as (Cexpr_prim Pstringlength (Cexpr_var s/0 String ()))
+             Show Int)
+            5 @:standard_functionality_tests.mbt:23:3-23:35
+            (Cexpr_record
+             (((label ((label_name buf))) (pos 0) (is_mut true)
+               (expr
+                (Cexpr_array
+                 ((Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_functionality_tests.mbt:23:11-23:21)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_functionality_tests.mbt:23:31-23:34)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false))))
+                 (FixedArray
+                  (T_constr UnsafeMaybeUninit
+                   ((Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (generic_ false))
+                  (generic_ false)))))
+              ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+             (T_constr Array
+              ((Option (T_constr SourceLoc () (generic_ false))
+                (generic_ false)))
+              (generic_ false))))
+           (Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           (T_error_value_result Unit (T_suberror InspectError)) ())
+          (Return_err Unit) Unit))
+        (Cexpr_apply $builtin.inspect.inner
+         ((Cexpr_as
+           (Cexpr_prim (Pgetstringitem (kind Bounds_check))
+            (Cexpr_var s/0 String ()) 0)
+           Show UInt16)
+          'H' @:standard_functionality_tests.mbt:24:3-24:31
+          (Cexpr_record
+           (((label ((label_name buf))) (pos 0) (is_mut true)
+             (expr
+              (Cexpr_array
+               ((Cexpr_constr (Constr_tag_regular Some)
+                 (@:standard_functionality_tests.mbt:24:11-24:15)
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular Some)
+                 (@:standard_functionality_tests.mbt:24:25-24:30)
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular None) ()
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular None) ()
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false))))
+               (FixedArray
+                (T_constr UnsafeMaybeUninit
+                 ((Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (generic_ false))
+                (generic_ false)))))
+            ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+           (T_constr Array
+            ((Option (T_constr SourceLoc () (generic_ false))
+              (generic_ false)))
+            (generic_ false))))
+         (Normal
+          (((T_trait Show) (Option String (generic_ true))
+            (T_constr SourceLoc () (generic_ false))
+            (T_constr ArgsLoc () (generic_ false)))
+           -> Unit ! (T_suberror InspectError) (generic_ false)))
+         (T_error_value_result Unit (T_suberror InspectError)) ())
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_1)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let a/0 10
+       (Cexpr_let b/1 3
+        (Cexpr_sequence
+         ((Cexpr_handle_error
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as
+              (Cexpr_prim (Parith I32 Add) (Cexpr_var a/0 Int ())
+               (Cexpr_var b/1 Int ()))
+              Show Int)
+             13 @:standard_functionality_tests.mbt:31:3-31:31
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:31:11-31:16)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:31:26-31:30)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (Return_err Unit) Unit)
+          (Cexpr_handle_error
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as
+              (Cexpr_prim (Parith I32 Sub) (Cexpr_var a/0 Int ())
+               (Cexpr_var b/1 Int ()))
+              Show Int)
+             7 @:standard_functionality_tests.mbt:32:3-32:30
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:32:11-32:16)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:32:26-32:29)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (Return_err Unit) Unit)
+          (Cexpr_handle_error
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as
+              (Cexpr_prim (Parith I32 Mul) (Cexpr_var a/0 Int ())
+               (Cexpr_var b/1 Int ()))
+              Show Int)
+             30 @:standard_functionality_tests.mbt:33:3-33:31
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:33:11-33:16)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:33:26-33:30)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (Return_err Unit) Unit)
+          (Cexpr_handle_error
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as
+              (Cexpr_prim (Parith I32 Div) (Cexpr_var a/0 Int ())
+               (Cexpr_var b/1 Int ()))
+              Show Int)
+             3 @:standard_functionality_tests.mbt:34:3-34:30
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:34:11-34:16)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:34:26-34:29)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (Return_err Unit) Unit))
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as
+            (Cexpr_prim (Parith I32 Mod) (Cexpr_var a/0 Int ())
+             (Cexpr_var b/1 Int ()))
+            Show Int)
+           1 @:standard_functionality_tests.mbt:35:3-35:30
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_functionality_tests.mbt:35:11-35:16)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_functionality_tests.mbt:35:26-35:29)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (T_error_value_result Unit (T_suberror InspectError)))
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_2)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let t/0 true
+       (Cexpr_let f/1 false
+        (Cexpr_sequence
+         ((Cexpr_handle_error
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as
+              (Cexpr_and (Cexpr_var t/0 Bool ()) (Cexpr_var t/0 Bool ()))
+              Show Bool)
+             true @:standard_functionality_tests.mbt:42:3-42:34
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:42:11-42:17)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:42:27-42:33)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (Return_err Unit) Unit)
+          (Cexpr_handle_error
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as
+              (Cexpr_or (Cexpr_var t/0 Bool ()) (Cexpr_var f/1 Bool ())) Show
+              Bool)
+             true @:standard_functionality_tests.mbt:43:3-43:34
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:43:11-43:17)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:43:27-43:33)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (Return_err Unit) Unit)
+          (Cexpr_handle_error
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as (Cexpr_prim Pnot (Cexpr_var f/1 Bool ())) Show Bool)
+             true @:standard_functionality_tests.mbt:44:3-44:30
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:44:11-44:13)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:44:23-44:29)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (Return_err Unit) Unit))
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as
+            (Cexpr_apply Eq::not_equal|$default_impl|
+             ((Cexpr_var t/0 Bool ()) (Cexpr_var f/1 Bool ()))
+             (Normal ((Bool Bool) -> Bool (generic_ true))) Bool
+             ((Bool (Eq))))
+            Show Bool)
+           true @:standard_functionality_tests.mbt:45:3-45:34
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_functionality_tests.mbt:45:11-45:17)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_functionality_tests.mbt:45:27-45:33)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (T_error_value_result Unit (T_suberror InspectError)))
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_3)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let arr/0
+       (Cexpr_record
+        (((label ((label_name buf))) (pos 0) (is_mut true)
+          (expr
+           (Cexpr_array (1 2 3)
+            (FixedArray (T_constr UnsafeMaybeUninit (Int) (generic_ false))
+             (generic_ false)))))
+         ((label ((label_name len))) (pos 1) (is_mut true) (expr 3)))
+        (T_constr Array (Int) (generic_ false)))
+       (Cexpr_sequence
+        ((Cexpr_handle_error
+          (Cexpr_apply $builtin.inspect.inner
+           ((Cexpr_as
+             (Cexpr_prim Pfixedarray_length
+              (Cexpr_var arr/0 (T_constr Array (Int) (generic_ false)) ()))
+             Show Int)
+            3 @:standard_functionality_tests.mbt:51:3-51:37
+            (Cexpr_record
+             (((label ((label_name buf))) (pos 0) (is_mut true)
+               (expr
+                (Cexpr_array
+                 ((Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_functionality_tests.mbt:51:11-51:23)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_functionality_tests.mbt:51:33-51:36)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false))))
+                 (FixedArray
+                  (T_constr UnsafeMaybeUninit
+                   ((Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (generic_ false))
+                  (generic_ false)))))
+              ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+             (T_constr Array
+              ((Option (T_constr SourceLoc () (generic_ false))
+                (generic_ false)))
+              (generic_ false))))
+           (Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           (T_error_value_result Unit (T_suberror InspectError)) ())
+          (Return_err Unit) Unit)
+         (Cexpr_handle_error
+          (Cexpr_apply $builtin.inspect.inner
+           ((Cexpr_as
+             (Cexpr_let *bind/1 0
+              (Cexpr_sequence
+               ((Cexpr_if
+                 (Cexpr_or
+                  (Cexpr_prim (Pcomparison I32 Lt) (Cexpr_var *bind/1 Int ())
+                   0)
+                  (Cexpr_prim (Pcomparison I32 Ge) (Cexpr_var *bind/1 Int ())
+                   (Cexpr_field
+                    (Cexpr_var arr/0 (T_constr Array (Int) (generic_ false))
+                     ())
+                    (Label ((label_name len))) 1 Int)))
+                 (Cexpr_prim Ppanic) () Unit))
+               (Cexpr_prim (Pfixedarray_get_item (kind Bounds_verified))
+                (Cexpr_field
+                 (Cexpr_var arr/0 (T_constr Array (Int) (generic_ false)) ())
+                 (Label ((label_name buf))) 0
+                 (FixedArray
+                  (T_constr UnsafeMaybeUninit (Int) (generic_ false))
+                  (generic_ false)))
+                (Cexpr_var *bind/1 Int ()))
+               Int)
+              Int)
+             Show Int)
+            1 @:standard_functionality_tests.mbt:52:3-52:31
+            (Cexpr_record
+             (((label ((label_name buf))) (pos 0) (is_mut true)
+               (expr
+                (Cexpr_array
+                 ((Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_functionality_tests.mbt:52:11-52:17)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_functionality_tests.mbt:52:27-52:30)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false))))
+                 (FixedArray
+                  (T_constr UnsafeMaybeUninit
+                   ((Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (generic_ false))
+                  (generic_ false)))))
+              ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+             (T_constr Array
+              ((Option (T_constr SourceLoc () (generic_ false))
+                (generic_ false)))
+              (generic_ false))))
+           (Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           (T_error_value_result Unit (T_suberror InspectError)) ())
+          (Return_err Unit) Unit))
+        (Cexpr_apply $builtin.inspect.inner
+         ((Cexpr_as
+           (Cexpr_let *bind/2 2
+            (Cexpr_sequence
+             ((Cexpr_if
+               (Cexpr_or
+                (Cexpr_prim (Pcomparison I32 Lt) (Cexpr_var *bind/2 Int ())
+                 0)
+                (Cexpr_prim (Pcomparison I32 Ge) (Cexpr_var *bind/2 Int ())
+                 (Cexpr_field
+                  (Cexpr_var arr/0 (T_constr Array (Int) (generic_ false))
+                   ())
+                  (Label ((label_name len))) 1 Int)))
+               (Cexpr_prim Ppanic) () Unit))
+             (Cexpr_prim (Pfixedarray_get_item (kind Bounds_verified))
+              (Cexpr_field
+               (Cexpr_var arr/0 (T_constr Array (Int) (generic_ false)) ())
+               (Label ((label_name buf))) 0
+               (FixedArray
+                (T_constr UnsafeMaybeUninit (Int) (generic_ false))
+                (generic_ false)))
+              (Cexpr_var *bind/2 Int ()))
+             Int)
+            Int)
+           Show Int)
+          3 @:standard_functionality_tests.mbt:53:3-53:31
+          (Cexpr_record
+           (((label ((label_name buf))) (pos 0) (is_mut true)
+             (expr
+              (Cexpr_array
+               ((Cexpr_constr (Constr_tag_regular Some)
+                 (@:standard_functionality_tests.mbt:53:11-53:17)
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular Some)
+                 (@:standard_functionality_tests.mbt:53:27-53:30)
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular None) ()
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular None) ()
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false))))
+               (FixedArray
+                (T_constr UnsafeMaybeUninit
+                 ((Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (generic_ false))
+                (generic_ false)))))
+            ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+           (T_constr Array
+            ((Option (T_constr SourceLoc () (generic_ false))
+              (generic_ false)))
+            (generic_ false))))
+         (Normal
+          (((T_trait Show) (Option String (generic_ true))
+            (T_constr SourceLoc () (generic_ false))
+            (T_constr ArgsLoc () (generic_ false)))
+           -> Unit ! (T_suberror InspectError) (generic_ false)))
+         (T_error_value_result Unit (T_suberror InspectError)) ())
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_4)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let some_val/0
+       (Cexpr_constr (Constr_tag_regular Some) (42)
+        (Option Int (generic_ false)))
+       (Cexpr_let none_val/1
+        (Cexpr_constr (Constr_tag_regular None) ()
+         (Option Int (generic_ false)))
+        (Cexpr_let result1/2
+         (Cexpr_switch_constr
+          (Cexpr_var some_val/0 (Option Int (generic_ false)) ())
+          (((Constr_tag_regular Some) (*Some/3)
+            (Cexpr_let *x/4
+             (Cexpr_prim
+              (Penum_field (index 0) (tag (Constr_tag_regular Some)))
+              (Cexpr_var *Some/3
+               (T_constr Option.Some (Int) (generic_ false)) ()))
+             (Cexpr_var *x/4 Int ()) Int)))
+          (0) Int)
+         (Cexpr_let result2/5
+          (Cexpr_switch_constr
+           (Cexpr_var none_val/1 (Option Int (generic_ false)) ())
+           (((Constr_tag_regular Some) (*Some/6)
+             (Cexpr_let *x/7
+              (Cexpr_prim
+               (Penum_field (index 0) (tag (Constr_tag_regular Some)))
+               (Cexpr_var *Some/6
+                (T_constr Option.Some (Int) (generic_ false)) ()))
+              (Cexpr_var *x/7 Int ()) Int)))
+           (0) Int)
+          (Cexpr_sequence
+           ((Cexpr_handle_error
+             (Cexpr_apply $builtin.inspect.inner
+              ((Cexpr_as (Cexpr_var result1/2 Int ()) Show Int) 42
+               @:standard_functionality_tests.mbt:68:3-68:33
+               (Cexpr_record
+                (((label ((label_name buf))) (pos 0) (is_mut true)
+                  (expr
+                   (Cexpr_array
+                    ((Cexpr_constr (Constr_tag_regular Some)
+                      (@:standard_functionality_tests.mbt:68:11-68:18)
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular Some)
+                      (@:standard_functionality_tests.mbt:68:28-68:32)
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular None) ()
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular None) ()
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false))))
+                    (FixedArray
+                     (T_constr UnsafeMaybeUninit
+                      ((Option (T_constr SourceLoc () (generic_ false))
+                        (generic_ false)))
+                      (generic_ false))
+                     (generic_ false)))))
+                 ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+                (T_constr Array
+                 ((Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (generic_ false))))
+              (Normal
+               (((T_trait Show) (Option String (generic_ true))
+                 (T_constr SourceLoc () (generic_ false))
+                 (T_constr ArgsLoc () (generic_ false)))
+                -> Unit ! (T_suberror InspectError) (generic_ false)))
+              (T_error_value_result Unit (T_suberror InspectError)) ())
+             (Return_err Unit) Unit))
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as (Cexpr_var result2/5 Int ()) Show Int) 0
+             @:standard_functionality_tests.mbt:69:3-69:32
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:69:11-69:18)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:69:28-69:31)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (T_error_value_result Unit (T_suberror InspectError)))
+          (T_error_value_result Unit (T_suberror InspectError)))
+         (T_error_value_result Unit (T_suberror InspectError)))
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_5)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let ok_val/0
+       (Cexpr_constr (Constr_tag_regular Ok) (42)
+        (Result Int String (generic_ false)))
+       (Cexpr_let err_val/1
+        (Cexpr_constr (Constr_tag_regular Err) (error)
+         (Result Int String (generic_ false)))
+        (Cexpr_let result1/2
+         (Cexpr_switch_constr
+          (Cexpr_var ok_val/0 (Result Int String (generic_ false)) ())
+          (((Constr_tag_regular Ok) (*Ok/3)
+            (Cexpr_let *x/4
+             (Cexpr_prim
+              (Penum_field (index 0) (tag (Constr_tag_regular Ok)))
+              (Cexpr_var *Ok/3
+               (T_constr Result.Ok (Int String) (generic_ false)) ()))
+             (Cexpr_var *x/4 Int ()) Int)))
+          (0) Int)
+         (Cexpr_let result2/5
+          (Cexpr_switch_constr
+           (Cexpr_var err_val/1 (Result Int String (generic_ false)) ())
+           (((Constr_tag_regular Ok) (*Ok/6)
+             (Cexpr_let *x/7
+              (Cexpr_prim
+               (Penum_field (index 0) (tag (Constr_tag_regular Ok)))
+               (Cexpr_var *Ok/6
+                (T_constr Result.Ok (Int String) (generic_ false)) ()))
+              (Cexpr_var *x/7 Int ()) Int)))
+           (-1) Int)
+          (Cexpr_sequence
+           ((Cexpr_handle_error
+             (Cexpr_apply $builtin.inspect.inner
+              ((Cexpr_as (Cexpr_var result1/2 Int ()) Show Int) 42
+               @:standard_functionality_tests.mbt:84:3-84:33
+               (Cexpr_record
+                (((label ((label_name buf))) (pos 0) (is_mut true)
+                  (expr
+                   (Cexpr_array
+                    ((Cexpr_constr (Constr_tag_regular Some)
+                      (@:standard_functionality_tests.mbt:84:11-84:18)
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular Some)
+                      (@:standard_functionality_tests.mbt:84:28-84:32)
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular None) ()
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular None) ()
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false))))
+                    (FixedArray
+                     (T_constr UnsafeMaybeUninit
+                      ((Option (T_constr SourceLoc () (generic_ false))
+                        (generic_ false)))
+                      (generic_ false))
+                     (generic_ false)))))
+                 ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+                (T_constr Array
+                 ((Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (generic_ false))))
+              (Normal
+               (((T_trait Show) (Option String (generic_ true))
+                 (T_constr SourceLoc () (generic_ false))
+                 (T_constr ArgsLoc () (generic_ false)))
+                -> Unit ! (T_suberror InspectError) (generic_ false)))
+              (T_error_value_result Unit (T_suberror InspectError)) ())
+             (Return_err Unit) Unit))
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as (Cexpr_var result2/5 Int ()) Show Int) -1
+             @:standard_functionality_tests.mbt:85:3-85:33
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:85:11-85:18)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_functionality_tests.mbt:85:28-85:32)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (T_error_value_result Unit (T_suberror InspectError)))
+          (T_error_value_result Unit (T_suberror InspectError)))
+         (T_error_value_result Unit (T_suberror InspectError)))
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_6)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let c/0 A
+       (Cexpr_sequence
+        ((Cexpr_handle_error
+          (Cexpr_apply $builtin.inspect.inner
+           ((Cexpr_as
+             (Cexpr_apply Show::to_string|Char| ((Cexpr_var c/0 Char ()))
+              (Normal ((Char) -> String (generic_ false))) String ())
+             Show String)
+            "A" @:standard_functionality_tests.mbt:91:3-91:42
+            (Cexpr_record
+             (((label ((label_name buf))) (pos 0) (is_mut true)
+               (expr
+                (Cexpr_array
+                 ((Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_functionality_tests.mbt:91:11-91:24)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_functionality_tests.mbt:91:34-91:41)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false))))
+                 (FixedArray
+                  (T_constr UnsafeMaybeUninit
+                   ((Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (generic_ false))
+                  (generic_ false)))))
+              ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+             (T_constr Array
+              ((Option (T_constr SourceLoc () (generic_ false))
+                (generic_ false)))
+              (generic_ false))))
+           (Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           (T_error_value_result Unit (T_suberror InspectError)) ())
+          (Return_err Unit) Unit))
+        (Cexpr_apply $builtin.inspect.inner
+         ((Cexpr_as (Cexpr_prim Pidentity (Cexpr_var c/0 Char ())) Show Int)
+          65 @:standard_functionality_tests.mbt:92:3-92:36
+          (Cexpr_record
+           (((label ((label_name buf))) (pos 0) (is_mut true)
+             (expr
+              (Cexpr_array
+               ((Cexpr_constr (Constr_tag_regular Some)
+                 (@:standard_functionality_tests.mbt:92:11-92:21)
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular Some)
+                 (@:standard_functionality_tests.mbt:92:31-92:35)
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular None) ()
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular None) ()
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false))))
+               (FixedArray
+                (T_constr UnsafeMaybeUninit
+                 ((Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (generic_ false))
+                (generic_ false)))))
+            ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+           (T_constr Array
+            ((Option (T_constr SourceLoc () (generic_ false))
+              (generic_ false)))
+            (generic_ false))))
+         (Normal
+          (((T_trait Show) (Option String (generic_ true))
+            (T_constr SourceLoc () (generic_ false))
+            (T_constr ArgsLoc () (generic_ false)))
+           -> Unit ! (T_suberror InspectError) (generic_ false)))
+         (T_error_value_result Unit (T_suberror InspectError)) ())
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_7)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let x/0 5
+       (Cexpr_let result/1
+        (Cexpr_switch_constant (Cexpr_var x/0 Int ())
+         (((Const 1) one) ((Const 5) five)) other String)
+        (Cexpr_apply $builtin.inspect.inner
+         ((Cexpr_as (Cexpr_var result/1 String ()) Show String) "five"
+          @:standard_functionality_tests.mbt:103:3-103:38
+          (Cexpr_record
+           (((label ((label_name buf))) (pos 0) (is_mut true)
+             (expr
+              (Cexpr_array
+               ((Cexpr_constr (Constr_tag_regular Some)
+                 (@:standard_functionality_tests.mbt:103:11-103:17)
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular Some)
+                 (@:standard_functionality_tests.mbt:103:27-103:37)
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular None) ()
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular None) ()
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false))))
+               (FixedArray
+                (T_constr UnsafeMaybeUninit
+                 ((Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (generic_ false))
+                (generic_ false)))))
+            ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+           (T_constr Array
+            ((Option (T_constr SourceLoc () (generic_ false))
+              (generic_ false)))
+            (generic_ false))))
+         (Normal
+          (((T_trait Show) (Option String (generic_ true))
+            (T_constr SourceLoc () (generic_ false))
+            (T_constr ArgsLoc () (generic_ false)))
+           -> Unit ! (T_suberror InspectError) (generic_ false)))
+         (T_error_value_result Unit (T_suberror InspectError)) ())
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_8)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let t/0
+       (Cexpr_tuple (42 hello) (Tproduct (Int String) (generic_ false)))
+       (Cexpr_sequence
+        ((Cexpr_handle_error
+          (Cexpr_apply $builtin.inspect.inner
+           ((Cexpr_as
+             (Cexpr_field
+              (Cexpr_var t/0 (Tproduct (Int String) (generic_ false)) ())
+              (Index (tuple_index 0)) 0 Int)
+             Show Int)
+            42 @:standard_functionality_tests.mbt:109:3-109:29
+            (Cexpr_record
+             (((label ((label_name buf))) (pos 0) (is_mut true)
+               (expr
+                (Cexpr_array
+                 ((Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_functionality_tests.mbt:109:11-109:14)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_functionality_tests.mbt:109:24-109:28)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false))))
+                 (FixedArray
+                  (T_constr UnsafeMaybeUninit
+                   ((Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (generic_ false))
+                  (generic_ false)))))
+              ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+             (T_constr Array
+              ((Option (T_constr SourceLoc () (generic_ false))
+                (generic_ false)))
+              (generic_ false))))
+           (Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           (T_error_value_result Unit (T_suberror InspectError)) ())
+          (Return_err Unit) Unit))
+        (Cexpr_apply $builtin.inspect.inner
+         ((Cexpr_as
+           (Cexpr_field
+            (Cexpr_var t/0 (Tproduct (Int String) (generic_ false)) ())
+            (Index (tuple_index 1)) 1 String)
+           Show String)
+          "hello" @:standard_functionality_tests.mbt:110:3-110:36
+          (Cexpr_record
+           (((label ((label_name buf))) (pos 0) (is_mut true)
+             (expr
+              (Cexpr_array
+               ((Cexpr_constr (Constr_tag_regular Some)
+                 (@:standard_functionality_tests.mbt:110:11-110:14)
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular Some)
+                 (@:standard_functionality_tests.mbt:110:24-110:35)
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular None) ()
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular None) ()
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false))))
+               (FixedArray
+                (T_constr UnsafeMaybeUninit
+                 ((Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (generic_ false))
+                (generic_ false)))))
+            ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+           (T_constr Array
+            ((Option (T_constr SourceLoc () (generic_ false))
+              (generic_ false)))
+            (generic_ false))))
+         (Normal
+          (((T_trait Show) (Option String (generic_ true))
+            (T_constr SourceLoc () (generic_ false))
+            (T_constr ArgsLoc () (generic_ false)))
+           -> Unit ! (T_suberror InspectError) (generic_ false)))
+         (T_error_value_result Unit (T_suberror InspectError)) ())
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false))))

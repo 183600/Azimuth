@@ -1,18 +1,22 @@
 fn __test_746573745f746573745f73696d706c652e6d6274_0 () -> Unit raise Error {
-  let s/4 : String = "Hello"
-  s/4
+  let s/7 : String = "Hello"
+  let len/8 : Int = @stringlength(s/7)
+  len/8 > 0
   @make_value(())
 }
 
 fn __test_746573745f746573745f73696d706c652e6d6274_1 () -> Unit raise Error {
-  let a/2 : String = "1"
-  let b/3 : String = "2"
-  @ccall add_string(a/2, b/3)
+  let a/3 : String = "1"
+  let b/4 : String = "2"
+  let len_a/5 : Int = @stringlength(a/3)
+  let len_b/6 : Int = @stringlength(b/4)
+  len_a/5 == len_b/6
   @make_value(())
 }
 
 fn __test_746573745f746573745f73696d706c652e6d6274_2 () -> Unit raise Error {
   let name/1 : String = "sample"
-  name/1
+  let len/2 : Int = @stringlength(name/1)
+  len/2 > 0
   @make_value(())
 }

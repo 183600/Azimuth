@@ -1,0 +1,460 @@
+fn __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_0 ()
+  -> Unit raise InspectError {
+  let s/22 : String = "Hello"
+  $builtin.inspect.inner(
+    @stringlength(s/22)
+    as
+    &Show,
+    "5",
+    "@:standard_functionality_tests.mbt:23:3-23:35",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:23:11-23:21"),
+        Some("@:standard_functionality_tests.mbt:23:31-23:34"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  ) catch { err => return_err err }
+  $builtin.inspect.inner(
+    s/22[0]
+    as
+    &Show,
+    "'H'",
+    "@:standard_functionality_tests.mbt:24:3-24:31",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:24:11-24:15"),
+        Some("@:standard_functionality_tests.mbt:24:25-24:30"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  )
+}
+
+fn __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_1 ()
+  -> Unit raise InspectError {
+  let a/20 : Int = 10
+  let b/21 : Int = 3
+  $builtin.inspect.inner(
+    a/20 + b/21
+    as
+    &Show,
+    "13",
+    "@:standard_functionality_tests.mbt:31:3-31:31",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:31:11-31:16"),
+        Some("@:standard_functionality_tests.mbt:31:26-31:30"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  ) catch { err => return_err err }
+  $builtin.inspect.inner(
+    a/20 - b/21
+    as
+    &Show,
+    "7",
+    "@:standard_functionality_tests.mbt:32:3-32:30",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:32:11-32:16"),
+        Some("@:standard_functionality_tests.mbt:32:26-32:29"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  ) catch { err => return_err err }
+  $builtin.inspect.inner(
+    a/20 * b/21
+    as
+    &Show,
+    "30",
+    "@:standard_functionality_tests.mbt:33:3-33:31",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:33:11-33:16"),
+        Some("@:standard_functionality_tests.mbt:33:26-33:30"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  ) catch { err => return_err err }
+  $builtin.inspect.inner(
+    a/20 / b/21
+    as
+    &Show,
+    "3",
+    "@:standard_functionality_tests.mbt:34:3-34:30",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:34:11-34:16"),
+        Some("@:standard_functionality_tests.mbt:34:26-34:29"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  ) catch { err => return_err err }
+  $builtin.inspect.inner(
+    a/20 % b/21
+    as
+    &Show,
+    "1",
+    "@:standard_functionality_tests.mbt:35:3-35:30",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:35:11-35:16"),
+        Some("@:standard_functionality_tests.mbt:35:26-35:29"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  )
+}
+
+fn __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_2 ()
+  -> Unit raise InspectError {
+  let t/18 : Bool = true
+  let f/19 : Bool = false
+  $builtin.inspect.inner(
+    t/18 && t/18
+    as
+    &Show,
+    "true",
+    "@:standard_functionality_tests.mbt:42:3-42:34",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:42:11-42:17"),
+        Some("@:standard_functionality_tests.mbt:42:27-42:33"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  ) catch { err => return_err err }
+  $builtin.inspect.inner(
+    t/18 || f/19
+    as
+    &Show,
+    "true",
+    "@:standard_functionality_tests.mbt:43:3-43:34",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:43:11-43:17"),
+        Some("@:standard_functionality_tests.mbt:43:27-43:33"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  ) catch { err => return_err err }
+  $builtin.inspect.inner(
+    !f/19
+    as
+    &Show,
+    "true",
+    "@:standard_functionality_tests.mbt:44:3-44:30",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:44:11-44:13"),
+        Some("@:standard_functionality_tests.mbt:44:23-44:29"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  ) catch { err => return_err err }
+  $builtin.inspect.inner(
+    Eq::not_equal|$default_impl|(t/18, f/19)
+    as
+    &Show,
+    "true",
+    "@:standard_functionality_tests.mbt:45:3-45:34",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:45:11-45:17"),
+        Some("@:standard_functionality_tests.mbt:45:27-45:33"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  )
+}
+
+fn __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_3 ()
+  -> Unit raise InspectError {
+  let arr/17 : Array[Int] = Array[Int]::{
+    buf: FixedArray[UnsafeMaybeUninit[Int]]::[1, 2, 3],
+    len: 3
+  }
+  $builtin.inspect.inner(
+    @fixedarray_length(arr/17)
+    as
+    &Show,
+    "3",
+    "@:standard_functionality_tests.mbt:51:3-51:37",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:51:11-51:23"),
+        Some("@:standard_functionality_tests.mbt:51:33-51:36"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  ) catch { err => return_err err }
+  $builtin.inspect.inner(
+    {
+      let *bind/23 : Int = 0
+      if *bind/23 < 0 || *bind/23 >= arr/17.len { panic }
+      arr/17.buf.[*bind/23]
+    }
+    as
+    &Show,
+    "1",
+    "@:standard_functionality_tests.mbt:52:3-52:31",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:52:11-52:17"),
+        Some("@:standard_functionality_tests.mbt:52:27-52:30"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  ) catch { err => return_err err }
+  $builtin.inspect.inner(
+    {
+      let *bind/24 : Int = 2
+      if *bind/24 < 0 || *bind/24 >= arr/17.len { panic }
+      arr/17.buf.[*bind/24]
+    }
+    as
+    &Show,
+    "3",
+    "@:standard_functionality_tests.mbt:53:3-53:31",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:53:11-53:17"),
+        Some("@:standard_functionality_tests.mbt:53:27-53:30"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  )
+}
+
+fn __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_4 ()
+  -> Unit raise InspectError {
+  let some_val/11 : Option[Int] = Some(42)
+  let none_val/12 : Option[Int] = None()
+  let result1/14 : Int = match some_val/11 {
+    Some as *Some/31 => {
+      let *x/32 : Int = *Some/31.0
+      *x/32
+    }
+    _ => 0
+  }
+  let result2/16 : Int = match none_val/12 {
+    Some as *Some/27 => {
+      let *x/28 : Int = *Some/27.0
+      *x/28
+    }
+    _ => 0
+  }
+  $builtin.inspect.inner(
+    result1/14
+    as
+    &Show,
+    "42",
+    "@:standard_functionality_tests.mbt:68:3-68:33",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:68:11-68:18"),
+        Some("@:standard_functionality_tests.mbt:68:28-68:32"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  ) catch { err => return_err err }
+  $builtin.inspect.inner(
+    result2/16
+    as
+    &Show,
+    "0",
+    "@:standard_functionality_tests.mbt:69:3-69:32",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:69:11-69:18"),
+        Some("@:standard_functionality_tests.mbt:69:28-69:31"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  )
+}
+
+fn __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_5 ()
+  -> Unit raise InspectError {
+  let ok_val/5 : Result[Int, String] = Ok(42)
+  let err_val/6 : Result[Int, String] = Err("error")
+  let result1/8 : Int = match ok_val/5 {
+    Ok as *Ok/41 => {
+      let *x/42 : Int = *Ok/41.0
+      *x/42
+    }
+    _ => 0
+  }
+  let result2/10 : Int = match err_val/6 {
+    Ok as *Ok/36 => {
+      let *x/37 : Int = *Ok/36.0
+      *x/37
+    }
+    _ => -1
+  }
+  $builtin.inspect.inner(
+    result1/8
+    as
+    &Show,
+    "42",
+    "@:standard_functionality_tests.mbt:84:3-84:33",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:84:11-84:18"),
+        Some("@:standard_functionality_tests.mbt:84:28-84:32"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  ) catch { err => return_err err }
+  $builtin.inspect.inner(
+    result2/10
+    as
+    &Show,
+    "-1",
+    "@:standard_functionality_tests.mbt:85:3-85:33",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:85:11-85:18"),
+        Some("@:standard_functionality_tests.mbt:85:28-85:32"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  )
+}
+
+fn __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_6 ()
+  -> Unit raise InspectError {
+  let c/4 : Char = 'A'
+  $builtin.inspect.inner(
+    Show::to_string|Char|(c/4)
+    as
+    &Show,
+    "\"A\"",
+    "@:standard_functionality_tests.mbt:91:3-91:42",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:91:11-91:24"),
+        Some("@:standard_functionality_tests.mbt:91:34-91:41"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  ) catch { err => return_err err }
+  $builtin.inspect.inner(
+    @identity(c/4)
+    as
+    &Show,
+    "65",
+    "@:standard_functionality_tests.mbt:92:3-92:36",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:92:11-92:21"),
+        Some("@:standard_functionality_tests.mbt:92:31-92:35"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  )
+}
+
+fn __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_7 ()
+  -> Unit raise InspectError {
+  let x/2 : Int = 5
+  let result/3 : String = match x/2 {
+    1 => "one"
+    5 => "five"
+    _ => "other"
+  }
+  $builtin.inspect.inner(
+    result/3
+    as
+    &Show,
+    "\"five\"",
+    "@:standard_functionality_tests.mbt:103:3-103:38",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:103:11-103:17"),
+        Some("@:standard_functionality_tests.mbt:103:27-103:37"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  )
+}
+
+fn __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_8 ()
+  -> Unit raise InspectError {
+  let t/1 : Tuple2[Int, String] = (42, "hello")
+  $builtin.inspect.inner(
+    t/1.0
+    as
+    &Show,
+    "42",
+    "@:standard_functionality_tests.mbt:109:3-109:29",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:109:11-109:14"),
+        Some("@:standard_functionality_tests.mbt:109:24-109:28"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  ) catch { err => return_err err }
+  $builtin.inspect.inner(
+    t/1.1
+    as
+    &Show,
+    "\"hello\"",
+    "@:standard_functionality_tests.mbt:110:3-110:36",
+    Array[Option[SourceLoc]]::{
+      buf: FixedArray[UnsafeMaybeUninit[Option[SourceLoc]]]::[
+        Some("@:standard_functionality_tests.mbt:110:11-110:14"),
+        Some("@:standard_functionality_tests.mbt:110:24-110:35"),
+        None(),
+        None()
+      ],
+      len: 4
+    }
+  )
+}

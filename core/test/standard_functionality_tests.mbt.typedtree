@@ -1,0 +1,670 @@
+((Tdecl_using ((label_name builtin))
+  ((Using_value inspect $builtin.inspect)))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_0)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var s/0 String) (Texpr_constant Hello String)
+       (((binder s/0) (binder_typ String)))
+       (Texpr_sequence
+        ((Texpr_apply
+          (Texpr_ident (inspect (target $builtin.inspect)) ()
+           ((_ content? (auto loc) (auto args_loc))) Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          ((Texpr_as
+            (Texpr_apply
+             (Texpr_ident String::length () (Prim Pstringlength)
+              ((String) -> Int (generic_ false)))
+             ((Texpr_ident s/0 () Normal String)) Int Dot)
+            (Tname_trait_object (name Show)) (T_trait Show) true)
+           (TLabelled (Texpr_constant 5 String) ((label_name content))
+            content))
+          Rethrow Unit Normal))
+        (Texpr_apply
+         (Texpr_ident (inspect (target $builtin.inspect)) ()
+          ((_ content? (auto loc) (auto args_loc))) Normal
+          (((T_trait Show) (Option String (generic_ true))
+            (T_constr SourceLoc () (generic_ false))
+            (T_constr ArgsLoc () (generic_ false)))
+           -> Unit ! (T_suberror InspectError) (generic_ false)))
+         ((Texpr_as
+           (Texpr_apply
+            (Texpr_ident (String::op_get (target String::at)) ()
+             (Prim (Pgetstringitem (kind Bounds_check)))
+             ((String Int) -> UInt16 (generic_ false)))
+            ((Texpr_ident s/0 () Normal String) (Texpr_constant 0 Int))
+            UInt16 Dot)
+           (Tname_trait_object (name Show)) (T_trait Show) true)
+          (TLabelled (Texpr_constant 'H' String) ((label_name content))
+           content))
+         Rethrow Unit Normal)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_1)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var a/0 Int) (Texpr_constant 10 Int)
+       (((binder a/0) (binder_typ Int)))
+       (Texpr_let (Tpat_var b/1 Int) (Texpr_constant 3 Int)
+        (((binder b/1) (binder_typ Int)))
+        (Texpr_sequence
+         ((Texpr_apply
+           (Texpr_ident (inspect (target $builtin.inspect)) ()
+            ((_ content? (auto loc) (auto args_loc))) Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           ((Texpr_as
+             (Texpr_apply
+              (Texpr_ident Add::add|Int| () (Prim (Parith I32 Add))
+               ((Int Int) -> Int (generic_ false)))
+              ((Texpr_ident a/0 () Normal Int)
+               (Texpr_ident b/1 () Normal Int))
+              Int Infix)
+             (Tname_trait_object (name Show)) (T_trait Show) true)
+            (TLabelled (Texpr_constant 13 String) ((label_name content))
+             content))
+           Rethrow Unit Normal)
+          (Texpr_apply
+           (Texpr_ident (inspect (target $builtin.inspect)) ()
+            ((_ content? (auto loc) (auto args_loc))) Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           ((Texpr_as
+             (Texpr_apply
+              (Texpr_ident Sub::sub|Int| () (Prim (Parith I32 Sub))
+               ((Int Int) -> Int (generic_ false)))
+              ((Texpr_ident a/0 () Normal Int)
+               (Texpr_ident b/1 () Normal Int))
+              Int Infix)
+             (Tname_trait_object (name Show)) (T_trait Show) true)
+            (TLabelled (Texpr_constant 7 String) ((label_name content))
+             content))
+           Rethrow Unit Normal)
+          (Texpr_apply
+           (Texpr_ident (inspect (target $builtin.inspect)) ()
+            ((_ content? (auto loc) (auto args_loc))) Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           ((Texpr_as
+             (Texpr_apply
+              (Texpr_ident Mul::mul|Int| () (Prim (Parith I32 Mul))
+               ((Int Int) -> Int (generic_ false)))
+              ((Texpr_ident a/0 () Normal Int)
+               (Texpr_ident b/1 () Normal Int))
+              Int Infix)
+             (Tname_trait_object (name Show)) (T_trait Show) true)
+            (TLabelled (Texpr_constant 30 String) ((label_name content))
+             content))
+           Rethrow Unit Normal)
+          (Texpr_apply
+           (Texpr_ident (inspect (target $builtin.inspect)) ()
+            ((_ content? (auto loc) (auto args_loc))) Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           ((Texpr_as
+             (Texpr_apply
+              (Texpr_ident Div::div|Int| () (Prim (Parith I32 Div))
+               ((Int Int) -> Int (generic_ false)))
+              ((Texpr_ident a/0 () Normal Int)
+               (Texpr_ident b/1 () Normal Int))
+              Int Infix)
+             (Tname_trait_object (name Show)) (T_trait Show) true)
+            (TLabelled (Texpr_constant 3 String) ((label_name content))
+             content))
+           Rethrow Unit Normal))
+         (Texpr_apply
+          (Texpr_ident (inspect (target $builtin.inspect)) ()
+           ((_ content? (auto loc) (auto args_loc))) Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          ((Texpr_as
+            (Texpr_apply
+             (Texpr_ident Mod::mod|Int| () (Prim (Parith I32 Mod))
+              ((Int Int) -> Int (generic_ false)))
+             ((Texpr_ident a/0 () Normal Int)
+              (Texpr_ident b/1 () Normal Int))
+             Int Infix)
+            (Tname_trait_object (name Show)) (T_trait Show) true)
+           (TLabelled (Texpr_constant 1 String) ((label_name content))
+            content))
+          Rethrow Unit Normal)
+         Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_2)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var t/0 Bool) (Texpr_constant true Bool)
+       (((binder t/0) (binder_typ Bool)))
+       (Texpr_let (Tpat_var f/1 Bool) (Texpr_constant false Bool)
+        (((binder f/1) (binder_typ Bool)))
+        (Texpr_sequence
+         ((Texpr_apply
+           (Texpr_ident (inspect (target $builtin.inspect)) ()
+            ((_ content? (auto loc) (auto args_loc))) Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           ((Texpr_as
+             (Texpr_and (Texpr_ident t/0 () Normal Bool)
+              (Texpr_ident t/0 () Normal Bool) 4:13-4:15)
+             (Tname_trait_object (name Show)) (T_trait Show) true)
+            (TLabelled (Texpr_constant true String) ((label_name content))
+             content))
+           Rethrow Unit Normal)
+          (Texpr_apply
+           (Texpr_ident (inspect (target $builtin.inspect)) ()
+            ((_ content? (auto loc) (auto args_loc))) Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           ((Texpr_as
+             (Texpr_or (Texpr_ident t/0 () Normal Bool)
+              (Texpr_ident f/1 () Normal Bool) 5:13-5:15)
+             (Tname_trait_object (name Show)) (T_trait Show) true)
+            (TLabelled (Texpr_constant true String) ((label_name content))
+             content))
+           Rethrow Unit Normal)
+          (Texpr_apply
+           (Texpr_ident (inspect (target $builtin.inspect)) ()
+            ((_ content? (auto loc) (auto args_loc))) Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           ((Texpr_as (Texpr_not (Texpr_ident f/1 () Normal Bool) 6:11-6:13)
+             (Tname_trait_object (name Show)) (T_trait Show) true)
+            (TLabelled (Texpr_constant true String) ((label_name content))
+             content))
+           Rethrow Unit Normal))
+         (Texpr_apply
+          (Texpr_ident (inspect (target $builtin.inspect)) ()
+           ((_ content? (auto loc) (auto args_loc))) Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          ((Texpr_as
+            (Texpr_apply
+             (Texpr_unresolved_method (Tname_trait (name Eq)) not_equal Bool
+              ((Bool Bool) -> Bool (generic_ true)))
+             ((Texpr_ident t/0 () Normal Bool)
+              (Texpr_ident f/1 () Normal Bool))
+             Bool Infix)
+            (Tname_trait_object (name Show)) (T_trait Show) true)
+           (TLabelled (Texpr_constant true String) ((label_name content))
+            content))
+          Rethrow Unit Normal)
+         Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_3)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var arr/0 (T_constr Array (Int) (generic_ false)))
+       (Texpr_array
+        ((Texpr_constant 1 Int) (Texpr_constant 2 Int)
+         (Texpr_constant 3 Int))
+        (T_constr Array (Int) (generic_ false)) Array)
+       (((binder arr/0) (binder_typ (T_constr Array (Int) (generic_ false)))))
+       (Texpr_sequence
+        ((Texpr_apply
+          (Texpr_ident (inspect (target $builtin.inspect)) ()
+           ((_ content? (auto loc) (auto args_loc))) Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          ((Texpr_as
+            (Texpr_apply
+             (Texpr_ident Array::length (Int) (Prim Pfixedarray_length)
+              (((T_constr Array (Int) (generic_ false))) -> Int
+               (generic_ false)))
+             ((Texpr_ident arr/0 () Normal
+               (T_constr Array (Int) (generic_ false))))
+             Int Dot)
+            (Tname_trait_object (name Show)) (T_trait Show) true)
+           (TLabelled (Texpr_constant 3 String) ((label_name content))
+            content))
+          Rethrow Unit Normal)
+         (Texpr_apply
+          (Texpr_ident (inspect (target $builtin.inspect)) ()
+           ((_ content? (auto loc) (auto args_loc))) Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          ((Texpr_as
+            (Texpr_apply
+             (Texpr_ident (Array::op_get (target Array::at)) (Int)
+              (Prim (Pintrinsic Array_get))
+              (((T_constr Array (Int) (generic_ false)) Int) -> Int
+               (generic_ false)))
+             ((Texpr_ident arr/0 () Normal
+               (T_constr Array (Int) (generic_ false)))
+              (Texpr_constant 0 Int))
+             Int Dot)
+            (Tname_trait_object (name Show)) (T_trait Show) true)
+           (TLabelled (Texpr_constant 1 String) ((label_name content))
+            content))
+          Rethrow Unit Normal))
+        (Texpr_apply
+         (Texpr_ident (inspect (target $builtin.inspect)) ()
+          ((_ content? (auto loc) (auto args_loc))) Normal
+          (((T_trait Show) (Option String (generic_ true))
+            (T_constr SourceLoc () (generic_ false))
+            (T_constr ArgsLoc () (generic_ false)))
+           -> Unit ! (T_suberror InspectError) (generic_ false)))
+         ((Texpr_as
+           (Texpr_apply
+            (Texpr_ident (Array::op_get (target Array::at)) (Int)
+             (Prim (Pintrinsic Array_get))
+             (((T_constr Array (Int) (generic_ false)) Int) -> Int
+              (generic_ false)))
+            ((Texpr_ident arr/0 () Normal
+              (T_constr Array (Int) (generic_ false)))
+             (Texpr_constant 2 Int))
+            Int Dot)
+           (Tname_trait_object (name Show)) (T_trait Show) true)
+          (TLabelled (Texpr_constant 3 String) ((label_name content))
+           content))
+         Rethrow Unit Normal)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_4)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let
+       (Tpat_constraint (Tpat_var some_val/0 (Option Int (generic_ false)))
+        (Tname ((lid Option)) ((Tname ((lid Int)) () Int))
+         (Option Int (generic_ false)))
+        (Option Int (generic_ false)))
+       (Texpr_apply
+        (Texpr_constr ((name Some)) (Constr_tag_regular Some)
+         ((Int) -> (Option Int (generic_ false)) (generic_ false)))
+        ((Texpr_constant 42 Int)) (Option Int (generic_ false)) Normal)
+       (((binder some_val/0) (binder_typ (Option Int (generic_ false)))))
+       (Texpr_let
+        (Tpat_constraint (Tpat_var none_val/1 (Option Int (generic_ false)))
+         (Tname ((lid Option)) ((Tname ((lid Int)) () Int))
+          (Option Int (generic_ false)))
+         (Option Int (generic_ false)))
+        (Texpr_constr ((name None)) (Constr_tag_regular None)
+         (Option Int (generic_ false)))
+        (((binder none_val/1) (binder_typ (Option Int (generic_ false)))))
+        (Texpr_let (Tpat_var result1/2 Int)
+         (Texpr_match
+          (Texpr_ident some_val/0 () Normal (Option Int (generic_ false)))
+          (((pat
+             (Tpat_constr ((name Some)) ((Tpat_var x/3 Int))
+              (Constr_tag_regular Some) (Option Int (generic_ false)) 
+              (Int)))
+            (action (Texpr_ident x/3 () Normal Int))
+            (pat_binders (((binder x/3) (binder_typ Int)))))
+           ((pat
+             (Tpat_constr ((name None)) () (Constr_tag_regular None)
+              (Option Int (generic_ false)) ()))
+            (action (Texpr_constant 0 Int)) (pat_binders ())))
+          Int)
+         (((binder result1/2) (binder_typ Int)))
+         (Texpr_let (Tpat_var result2/4 Int)
+          (Texpr_match
+           (Texpr_ident none_val/1 () Normal (Option Int (generic_ false)))
+           (((pat
+              (Tpat_constr ((name Some)) ((Tpat_var x/5 Int))
+               (Constr_tag_regular Some) (Option Int (generic_ false)) 
+               (Int)))
+             (action (Texpr_ident x/5 () Normal Int))
+             (pat_binders (((binder x/5) (binder_typ Int)))))
+            ((pat
+              (Tpat_constr ((name None)) () (Constr_tag_regular None)
+               (Option Int (generic_ false)) ()))
+             (action (Texpr_constant 0 Int)) (pat_binders ())))
+           Int)
+          (((binder result2/4) (binder_typ Int)))
+          (Texpr_sequence
+           ((Texpr_apply
+             (Texpr_ident (inspect (target $builtin.inspect)) ()
+              ((_ content? (auto loc) (auto args_loc))) Normal
+              (((T_trait Show) (Option String (generic_ true))
+                (T_constr SourceLoc () (generic_ false))
+                (T_constr ArgsLoc () (generic_ false)))
+               -> Unit ! (T_suberror InspectError) (generic_ false)))
+             ((Texpr_as (Texpr_ident result1/2 () Normal Int)
+               (Tname_trait_object (name Show)) (T_trait Show) true)
+              (TLabelled (Texpr_constant 42 String) ((label_name content))
+               content))
+             Rethrow Unit Normal))
+           (Texpr_apply
+            (Texpr_ident (inspect (target $builtin.inspect)) ()
+             ((_ content? (auto loc) (auto args_loc))) Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            ((Texpr_as (Texpr_ident result2/4 () Normal Int)
+              (Tname_trait_object (name Show)) (T_trait Show) true)
+             (TLabelled (Texpr_constant 0 String) ((label_name content))
+              content))
+            Rethrow Unit Normal)
+           Unit)
+          Unit)
+         Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_5)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let
+       (Tpat_constraint
+        (Tpat_var ok_val/0 (Result Int String (generic_ false)))
+        (Tname ((lid Result))
+         ((Tname ((lid Int)) () Int) (Tname ((lid String)) () String))
+         (Result Int String (generic_ false)))
+        (Result Int String (generic_ false)))
+       (Texpr_apply
+        (Texpr_constr ((name Ok)) (Constr_tag_regular Ok)
+         ((Int) -> (Result Int String (generic_ false)) (generic_ false)))
+        ((Texpr_constant 42 Int)) (Result Int String (generic_ false))
+        Normal)
+       (((binder ok_val/0) (binder_typ (Result Int String (generic_ false)))))
+       (Texpr_let
+        (Tpat_constraint
+         (Tpat_var err_val/1 (Result Int String (generic_ false)))
+         (Tname ((lid Result))
+          ((Tname ((lid Int)) () Int) (Tname ((lid String)) () String))
+          (Result Int String (generic_ false)))
+         (Result Int String (generic_ false)))
+        (Texpr_apply
+         (Texpr_constr ((name Err)) (Constr_tag_regular Err)
+          ((String) -> (Result Int String (generic_ false)) (generic_ false)))
+         ((Texpr_constant error String)) (Result Int String (generic_ false))
+         Normal)
+        (((binder err_val/1)
+          (binder_typ (Result Int String (generic_ false)))))
+        (Texpr_let (Tpat_var result1/2 Int)
+         (Texpr_match
+          (Texpr_ident ok_val/0 () Normal
+           (Result Int String (generic_ false)))
+          (((pat
+             (Tpat_constr ((name Ok)) ((Tpat_var x/3 Int))
+              (Constr_tag_regular Ok) (Result Int String (generic_ false))
+              (Int)))
+            (action (Texpr_ident x/3 () Normal Int))
+            (pat_binders (((binder x/3) (binder_typ Int)))))
+           ((pat
+             (Tpat_constr ((name Err)) () (Constr_tag_regular Err)
+              (Result Int String (generic_ false)) (String)))
+            (action (Texpr_constant 0 Int)) (pat_binders ())))
+          Int)
+         (((binder result1/2) (binder_typ Int)))
+         (Texpr_let (Tpat_var result2/4 Int)
+          (Texpr_match
+           (Texpr_ident err_val/1 () Normal
+            (Result Int String (generic_ false)))
+           (((pat
+              (Tpat_constr ((name Ok)) ((Tpat_var x/5 Int))
+               (Constr_tag_regular Ok) (Result Int String (generic_ false))
+               (Int)))
+             (action (Texpr_ident x/5 () Normal Int))
+             (pat_binders (((binder x/5) (binder_typ Int)))))
+            ((pat
+              (Tpat_constr ((name Err)) () (Constr_tag_regular Err)
+               (Result Int String (generic_ false)) (String)))
+             (action (Texpr_constant -1 Int)) (pat_binders ())))
+           Int)
+          (((binder result2/4) (binder_typ Int)))
+          (Texpr_sequence
+           ((Texpr_apply
+             (Texpr_ident (inspect (target $builtin.inspect)) ()
+              ((_ content? (auto loc) (auto args_loc))) Normal
+              (((T_trait Show) (Option String (generic_ true))
+                (T_constr SourceLoc () (generic_ false))
+                (T_constr ArgsLoc () (generic_ false)))
+               -> Unit ! (T_suberror InspectError) (generic_ false)))
+             ((Texpr_as (Texpr_ident result1/2 () Normal Int)
+               (Tname_trait_object (name Show)) (T_trait Show) true)
+              (TLabelled (Texpr_constant 42 String) ((label_name content))
+               content))
+             Rethrow Unit Normal))
+           (Texpr_apply
+            (Texpr_ident (inspect (target $builtin.inspect)) ()
+             ((_ content? (auto loc) (auto args_loc))) Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            ((Texpr_as (Texpr_ident result2/4 () Normal Int)
+              (Tname_trait_object (name Show)) (T_trait Show) true)
+             (TLabelled (Texpr_constant -1 String) ((label_name content))
+              content))
+            Rethrow Unit Normal)
+           Unit)
+          Unit)
+         Unit)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_6)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var c/0 Char) (Texpr_constant A Char)
+       (((binder c/0) (binder_typ Char)))
+       (Texpr_sequence
+        ((Texpr_apply
+          (Texpr_ident (inspect (target $builtin.inspect)) ()
+           ((_ content? (auto loc) (auto args_loc))) Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          ((Texpr_as
+            (Texpr_apply
+             (Texpr_ident Show::to_string|Char| () Normal
+              ((Char) -> String (generic_ false)))
+             ((Texpr_ident c/0 () Normal Char)) String Dot)
+            (Tname_trait_object (name Show)) (T_trait Show) true)
+           (TLabelled (Texpr_constant "A" String) ((label_name content))
+            content))
+          Rethrow Unit Normal))
+        (Texpr_apply
+         (Texpr_ident (inspect (target $builtin.inspect)) ()
+          ((_ content? (auto loc) (auto args_loc))) Normal
+          (((T_trait Show) (Option String (generic_ true))
+            (T_constr SourceLoc () (generic_ false))
+            (T_constr ArgsLoc () (generic_ false)))
+           -> Unit ! (T_suberror InspectError) (generic_ false)))
+         ((Texpr_as
+           (Texpr_apply
+            (Texpr_ident Char::to_int () (Prim Pidentity)
+             ((Char) -> Int (generic_ false)))
+            ((Texpr_ident c/0 () Normal Char)) Int Dot)
+           (Tname_trait_object (name Show)) (T_trait Show) true)
+          (TLabelled (Texpr_constant 65 String) ((label_name content))
+           content))
+         Rethrow Unit Normal)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_7)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var x/0 Int) (Texpr_constant 5 Int)
+       (((binder x/0) (binder_typ Int)))
+       (Texpr_let (Tpat_var result/1 String)
+        (Texpr_match (Texpr_ident x/0 () Normal Int)
+         (((pat (Tpat_constant 1 Int)) (action (Texpr_constant one String))
+           (pat_binders ()))
+          ((pat (Tpat_constant 5 Int)) (action (Texpr_constant five String))
+           (pat_binders ()))
+          ((pat (Tpat_any Int)) (action (Texpr_constant other String))
+           (pat_binders ())))
+         String)
+        (((binder result/1) (binder_typ String)))
+        (Texpr_apply
+         (Texpr_ident (inspect (target $builtin.inspect)) ()
+          ((_ content? (auto loc) (auto args_loc))) Normal
+          (((T_trait Show) (Option String (generic_ true))
+            (T_constr SourceLoc () (generic_ false))
+            (T_constr ArgsLoc () (generic_ false)))
+           -> Unit ! (T_suberror InspectError) (generic_ false)))
+         ((Texpr_as (Texpr_ident result/1 () Normal String)
+           (Tname_trait_object (name Show)) (T_trait Show) true)
+          (TLabelled (Texpr_constant "five" String) ((label_name content))
+           content))
+         Rethrow Unit Normal)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ())))
+ (Timpl_fun_decl
+  ((kind Fun_kind_regular)
+   (fn_binder
+    __test_7374616e646172645f66756e6374696f6e616c6974795f74657374732e6d6274_8)
+   (fn
+    ((params ())
+     (body
+      (Texpr_let (Tpat_var t/0 (Tproduct (Int String) (generic_ false)))
+       (Texpr_tuple ((Texpr_constant 42 Int) (Texpr_constant hello String))
+        (Tproduct (Int String) (generic_ false)))
+       (((binder t/0) (binder_typ (Tproduct (Int String) (generic_ false)))))
+       (Texpr_sequence
+        ((Texpr_apply
+          (Texpr_ident (inspect (target $builtin.inspect)) ()
+           ((_ content? (auto loc) (auto args_loc))) Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          ((Texpr_as
+            (Texpr_field
+             (Texpr_ident t/0 () Normal
+              (Tproduct (Int String) (generic_ false)))
+             (Index (tuple_index 0)) 0 Int)
+            (Tname_trait_object (name Show)) (T_trait Show) true)
+           (TLabelled (Texpr_constant 42 String) ((label_name content))
+            content))
+          Rethrow Unit Normal))
+        (Texpr_apply
+         (Texpr_ident (inspect (target $builtin.inspect)) ()
+          ((_ content? (auto loc) (auto args_loc))) Normal
+          (((T_trait Show) (Option String (generic_ true))
+            (T_constr SourceLoc () (generic_ false))
+            (T_constr ArgsLoc () (generic_ false)))
+           -> Unit ! (T_suberror InspectError) (generic_ false)))
+         ((Texpr_as
+           (Texpr_field
+            (Texpr_ident t/0 () Normal
+             (Tproduct (Int String) (generic_ false)))
+            (Index (tuple_index 1)) 1 String)
+           (Tname_trait_object (name Show)) (T_trait Show) true)
+          (TLabelled (Texpr_constant "hello" String) ((label_name content))
+           content))
+         Rethrow Unit Normal)
+        Unit)
+       Unit))
+     (ret_constraint ((Tname ((lid Unit)) () Unit)))
+     (err_constraint
+      (Error_typ
+       (Tname ((lid Error)) () (T_constr Error () (generic_ false)))))
+     (ty
+      (() -> Unit ! (T_constr Error () (generic_ false)) (generic_ false)))))
+   (attrs ()))))
