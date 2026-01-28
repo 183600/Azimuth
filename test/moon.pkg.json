@@ -65,6 +65,7 @@
     "our_final_tests.mbt",
     "simple_test_example.mbt",
     "simple_azimuth_new_tests.mbt",
-    "azimuth_final_tests.mbt"
+    "azimuth_final_tests.mbt",
+    "premium_quality_tests.mbt"
   ]
 }
