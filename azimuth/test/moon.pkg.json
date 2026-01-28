@@ -210,6 +210,7 @@
   "standard_moonbit_tests_new.mbt",
   "quality_moonbit_tests.mbt",
   "standard_quality_tests.mbt",
-  "concise_quality_tests.mbt"
+  "concise_quality_tests.mbt",
+  "standard_moonbit_tests_new.mbt"
   ]
 }
