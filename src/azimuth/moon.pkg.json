@@ -161,8 +161,7 @@
       "azimuth_standard_test_cases.mbt",
       "quality_test_suite.mbt",
         "quality_test_examples.mbt",
-    "standard_enhanced_test_cases.mbt",
-    "azimuth_quality_test_cases.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
+        "quality_enhanced_test_suite.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
     "single_test.mbt",
     "simple_test_verification.mbt",
@@ -389,5 +388,6 @@
     "new_standard_tests.mbt",
     "focused_test_cases.mbt",
     "simple_focused_test.mbt",
-    "standard_enhanced_test_cases.mbt"
+    "standard_enhanced_test_cases.mbt",
+    "quality_enhanced_test_suite.mbt"
                                                                                                                                                 ]}
