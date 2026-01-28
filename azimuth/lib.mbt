@@ -8058,3 +8058,164 @@ test "high_quality_event_planning" {
   let budget_utilization = divide_with_ceil(multiply(total_cost, 100), total_budget)
   assert_eq(80, budget_utilization)  // ceil(240000/3000) = 80%
 }
+
+// 新增的10个高质量 MoonBit 测试用例
+test "enhanced_precision_arithmetic" {
+  // 精度算术运算测试
+  let large_num1 = 1000000
+  let large_num2 = 999999
+  let sum_result = add(large_num1, large_num2)
+  let diff_result = subtract(large_num1, large_num2)
+  
+  assert_eq(1999999, sum_result)
+  assert_eq(1, diff_result)
+  assert_eq(500000, divide_with_ceil(1000000, 2))
+  assert_eq(333334, divide_with_ceil(1000000, 3))
+}
+
+test "enhanced_string_processing" {
+  // 高级字符串处理测试
+  assert_eq_string("Hello, empty!", greet(""))
+  assert_eq_string("Hello, space !", greet(" "))
+  assert_eq_string("Hello, multiple   spaces!", greet("multiple   spaces"))
+  assert_eq_string("Hello, emoji😊!", greet("emoji😊"))
+  assert_eq_string("Hello, mathπ!", greet("mathπ"))
+}
+
+test "enhanced_inventory_management" {
+  // 业务库存管理测试
+  let product_a_stock = 245
+  let product_a_capacity = 12
+  let boxes_a = divide_with_ceil(product_a_stock, product_a_capacity)
+  
+  let product_b_stock = 487
+  let product_b_capacity = 18
+  let boxes_b = divide_with_ceil(product_b_stock, product_b_capacity)
+  
+  let total_boxes = add(boxes_a, boxes_b)
+  assert_eq(43, total_boxes)  // 21 + 22 = 43
+}
+
+test "enhanced_mathematical_series" {
+  // 数学级数计算测试
+  // 等差数列：1, 4, 7, 10, 13 (公差为3)
+  let arithmetic_diff = 3
+  let arithmetic_term1 = 1
+  let arithmetic_term2 = add(arithmetic_term1, arithmetic_diff)
+  let arithmetic_term3 = add(arithmetic_term2, arithmetic_diff)
+  let arithmetic_term4 = add(arithmetic_term3, arithmetic_diff)
+  let arithmetic_term5 = add(arithmetic_term4, arithmetic_diff)
+  
+  let arithmetic_sum = add(add(add(add(arithmetic_term1, arithmetic_term2), arithmetic_term3), arithmetic_term4), arithmetic_term5)
+  assert_eq(35, arithmetic_sum)  // 1+4+7+10+13 = 35
+}
+
+test "enhanced_resource_optimization" {
+  // 资源优化测试
+  let total_budget = 50000
+  let project_a_priority = 3
+  let project_b_priority = 2
+  let total_priority = add(project_a_priority, project_b_priority)
+  
+  let base_unit = divide_with_ceil(total_budget, total_priority)
+  let project_a_budget = multiply(project_a_priority, base_unit)
+  let project_b_budget = multiply(project_b_priority, base_unit)
+  
+  assert_eq(4, base_unit)  // ceil(50000/6)
+  assert_eq(12, project_a_budget)
+  assert_eq(8, project_b_budget)
+}
+
+test "enhanced_error_recovery" {
+  // 错误恢复场景测试
+  let result1 = divide_with_ceil(10, 0)
+  let result2 = divide_with_ceil(0, 0)
+  let result3 = divide_with_ceil(-10, 0)
+  
+  assert_eq(0, result1)
+  assert_eq(0, result2)
+  assert_eq(0, result3)
+  
+  // 错误后的正常操作验证
+  let normal_result1 = add(result1, 5)  // 0 + 5 = 5
+  let normal_result2 = multiply(result2, 10)  // 0 * 10 = 0
+  let normal_result3 = divide_with_ceil(20, 4)  // ceil(20/4) = 5
+  
+  assert_eq(5, normal_result1)
+  assert_eq(0, normal_result2)
+  assert_eq(5, normal_result3)
+}
+
+test "enhanced_performance_benchmark" {
+  // 性能基准测试
+  let base_value = 1000
+  let iterations = 100
+  
+  let add_result = add(base_value, iterations)
+  let multiply_result = multiply(divide_with_ceil(base_value, 10), 15)
+  let mixed_result = divide_with_ceil(
+    multiply(add(base_value, 50), 2),
+    subtract(iterations, 50)
+  )
+  
+  assert_eq(1100, add_result)
+  assert_eq(1500, multiply_result)
+  assert_eq(42, mixed_result)  // ceil((1000+50)*2/50) = ceil(2100/50) = 42
+}
+
+test "enhanced_data_validation" {
+  // 数据验证测试
+  assert_eq(0, add(0, 0))
+  assert_eq(1, add(0, 1))
+  assert_eq(100, add(0, 100))
+  assert_eq(1000000, add(0, 1000000))
+  assert_eq(-1, add(0, -1))
+  assert_eq(-100, add(0, -100))
+  assert_eq(-1000000, add(0, -1000000))
+  
+  assert_eq(0, multiply(0, 1000000))
+  assert_eq(1000000, multiply(1, 1000000))
+  assert_eq(-1000000, multiply(-1, 1000000))
+}
+
+test "enhanced_algorithm_complexity" {
+  // 算法复杂度验证测试
+  let input_size_10 = 10
+  let input_size_100 = 100
+  let input_size_1000 = 1000
+  
+  // O(n) 线性算法模拟
+  let linear_10 = multiply(input_size_10, 2)
+  let linear_100 = multiply(input_size_100, 2)
+  let linear_1000 = multiply(input_size_1000, 2)
+  
+  // O(log n) 对数算法模拟
+  let log_10 = divide_with_ceil(input_size_10, 3)
+  let log_100 = divide_with_ceil(input_size_100, 3)
+  let log_1000 = divide_with_ceil(input_size_1000, 3)
+  
+  assert_eq(20, linear_10)
+  assert_eq(200, linear_100)
+  assert_eq(2000, linear_1000)
+  
+  assert_eq(4, log_10)
+  assert_eq(34, log_100)
+  assert_eq(334, log_1000)
+}
+
+test "enhanced_financial_calculations" {
+  // 金融计算测试
+  let loan_amount = 200000
+  let interest_rate = 6  // 6% 年利率
+  let loan_years = 30
+  
+  let total_months = multiply(loan_years, 12)
+  let total_interest = divide_with_ceil(multiply(loan_amount, multiply(interest_rate, loan_years)), 100)
+  let total_payment = add(loan_amount, total_interest)
+  let monthly_payment = divide_with_ceil(total_payment, total_months)
+  
+  assert_eq(360, total_months)
+  assert_eq(360000, total_interest)  // 200000 * 6% * 30
+  assert_eq(560000, total_payment)
+  assert_eq(1556, monthly_payment)  // ceil(560000/360)
+}

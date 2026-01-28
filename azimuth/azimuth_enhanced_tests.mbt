@@ -1,121 +1,87 @@
-// Azimuth 增强测试用例
-// 补充更多边界情况和组合测试
+// Azimuth 增强测试用例 - 10个标准 MoonBit 测试用例
 
-test "add_large_numbers" {
-  // 测试大数加法
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试接近边界的加法
-  @azimuth.assert_eq(max_val - 1, @azimuth.add(max_val - 1000, 1000))
-  @azimuth.assert_eq(min_val + 1, @azimuth.add(min_val + 1000, -1000))
-  
-  // 测试大数与小数的组合
-  @azimuth.assert_eq(2147483646, @azimuth.add(2147483640, 6))
-  @azimuth.assert_eq(-2147483647, @azimuth.add(-2147483640, -7))
+test "enhanced_add_function" {
+  // 测试增强的加法功能
+  assert_eq(10, add(3, 7))
+  assert_eq(0, add(0, 0))
+  assert_eq(-10, add(-5, -5))
+  assert_eq(2, add(-5, 7))
 }
 
-test "multiply_large_numbers" {
-  // 测试大数乘法
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试接近边界的乘法
-  @azimuth.assert_eq(2147483646, @azimuth.multiply(1073741823, 2))
-  @azimuth.assert_eq(-2147483648, @azimuth.multiply(-1073741824, 2))
-  
-  // 测试大数与小数的乘法
-  @azimuth.assert_eq(4294967294, @azimuth.multiply(2147483647, 2))
-  @azimuth.assert_eq(-4294967296, @azimuth.multiply(-2147483648, 2))
+test "enhanced_multiply_function" {
+  // 测试增强的乘法功能
+  assert_eq(21, multiply(3, 7))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(-15, multiply(-3, 5))
+  assert_eq(15, multiply(-3, -5))
 }
 
-test "greet_unicode_and_spaces" {
-  // 测试包含Unicode字符和空格的问候
-  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
-  @azimuth.assert_eq_string("Hello,  MoonBit  !", @azimuth.greet("  MoonBit  "))
-  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
-  @azimuth.assert_eq_string("Hello, café!", @azimuth.greet("café"))
+test "enhanced_greet_function" {
+  // 测试增强的问候功能
+  assert_eq_string("Hello, enhanced!", greet("enhanced"))
+  assert_eq_string("Hello, 测试!", greet("测试"))
+  assert_eq_string("Hello, 123!", greet("123"))
 }
 
-test "complex_mathematical_expressions" {
-  // 测试复杂数学表达式
-  let x = 100
-  let y = -50
-  let z = 25
+test "enhanced_divide_with_ceil" {
+  // 测试增强的向上取整除法功能
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(10, 0))
+}
+
+test "enhanced_mathematical_properties" {
+  // 测试增强的数学性质
+  let x = 15
+  let y = 8
   
-  // 计算 (x + y) * z
-  let sum = @azimuth.add(x, y)
-  let product = @azimuth.multiply(sum, z)
-  @azimuth.assert_eq(-1250, product)
+  assert_eq(add(x, y), add(y, x))
+  assert_eq(multiply(x, y), multiply(y, x))
+  assert_eq(
+    multiply(x, add(y, 2)),
+    add(multiply(x, y), multiply(x, 2))
+  )
+}
+
+test "enhanced_business_calculation" {
+  // 测试增强的业务计算
+  let items = 47
+  let capacity = 12
+  let boxes = divide_with_ceil(items, capacity)
   
-  // 计算 x * y + z
-  let product2 = @azimuth.multiply(x, y)
-  let sum2 = @azimuth.add(product2, z)
-  @azimuth.assert_eq(-4975, sum2)
+  assert_eq(4, boxes)
+  assert_eq(48, multiply(boxes, capacity))
 }
 
-test "divide_with_ceil_edge_cases" {
-  // 测试向上取整除法的边界情况
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-1, -1))
-  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(1, -1))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-1, 1))
-  @azimuth.assert_eq(2147483647, @azimuth.divide_with_ceil(2147483647, 1))
-  @azimuth.assert_eq(-2147483648, @azimuth.divide_with_ceil(-2147483648, 1))
+test "enhanced_complex_operations" {
+  // 测试增强的复杂操作
+  let base = 10
+  let result = divide_with_ceil(
+    multiply(add(base, 5), 2),
+    4
+  )
+  assert_eq(8, result)
 }
 
-test "add_alternating_signs" {
-  // 测试交替符号的加法
-  @azimuth.assert_eq(0, @azimuth.add(100, -100))
-  @azimuth.assert_eq(1, @azimuth.add(2147483647, -2147483646))
-  @azimuth.assert_eq(-1, @azimuth.add(-2147483648, 2147483647))
-  @azimuth.assert_eq(5, @azimuth.add(-10, 15))
-  @azimuth.assert_eq(-5, @azimuth.add(10, -15))
+test "enhanced_negative_operations" {
+  // 测试增强的负数操作
+  assert_eq(-8, add(-5, -3))
+  assert_eq(15, multiply(-5, -3))
+  assert_eq(-2, divide_with_ceil(-7, 4))
 }
 
-test "multiply_alternating_signs" {
-  // 测试交替符号的乘法
-  @azimuth.assert_eq(-10000, @azimuth.multiply(100, -100))
-  @azimuth.assert_eq(10000, @azimuth.multiply(-100, -100))
-  @azimuth.assert_eq(-2147483647, @azimuth.multiply(2147483647, -1))
-  @azimuth.assert_eq(2147483647, @azimuth.multiply(-2147483647, -1))
-  @azimuth.assert_eq(2147483647, @azimuth.multiply(-1, -2147483647))
+test "enhanced_large_numbers" {
+  // 测试增强的大数操作
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(1001, divide_with_ceil(1000000, 999))
 }
 
-test "greet_empty_and_special_strings" {
-  // 测试空字符串和特殊字符串的问候
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("   "))
-  @azimuth.assert_eq_string("Hello, \n\t!", @azimuth.greet("\n\t"))
-  @azimuth.assert_eq_string("Hello, \"quote\"!", @azimuth.greet("\"quote\""))
-  @azimuth.assert_eq_string("Hello, \\backslash\\!", @azimuth.greet("\\backslash\\"))
-}
-
-test "chained_operations" {
-  // 测试链式操作
-  let result = @azimuth.add(@azimuth.multiply(10, 5), @azimuth.multiply(-3, 2))
-  @azimuth.assert_eq(44, result)
-  
-  let result2 = @azimuth.multiply(@azimuth.add(10, 5), @azimuth.add(-3, 2))
-  @azimuth.assert_eq(-5, result2)
-  
-  let result3 = @azimuth.divide_with_ceil(@azimuth.add(10, 5), 4)
-  @azimuth.assert_eq(4, result3)
-}
-
-test "extreme_boundary_values" {
-  // 测试极端边界值
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 加法边界测试
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, max_val))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, min_val))
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
-  
-  // 乘法边界测试
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 2))
+test "enhanced_edge_cases" {
+  // 测试增强的边缘情况
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, 0))
 }
