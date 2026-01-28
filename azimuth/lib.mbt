@@ -7191,3 +7191,185 @@ test "machine_learning_model_evaluation" {
   let f1_score = divide_with_ceil(add(precision, recall), 2)
   assert_eq(92, f1_score)  // ceil((91+92)/2) = 92
 }
+
+// 新增的增强测试用例 - 实际应用场景
+test "project_resource_planning" {
+  // 场景：项目资源规划
+  let team_members = 12
+  let project_duration_weeks = 16
+  let hours_per_week = 40
+  let total_hours = multiply(team_members, multiply(project_duration_weeks, hours_per_week))
+  assert_eq(7680, total_hours)  // 12 * 16 * 40 = 7680
+  
+  // 计算需要的冲刺数（每冲刺2周）
+  let sprints_needed = divide_with_ceil(project_duration_weeks, 2)
+  assert_eq(8, sprints_needed)  // ceil(16/2) = 8
+  
+  // 计算每个冲刺的工作量
+  let effort_per_sprint = divide_with_ceil(total_hours, sprints_needed)
+  assert_eq(960, effort_per_sprint)  // ceil(7680/8) = 960
+}
+
+test "inventory_optimization" {
+  // 场景：库存优化
+  let product_a_qty = 245
+  let product_b_qty = 189
+  let product_c_qty = 367
+  let box_capacity = 48
+  
+  // 计算各产品需要的箱子数
+  let boxes_a = divide_with_ceil(product_a_qty, box_capacity)
+  let boxes_b = divide_with_ceil(product_b_qty, box_capacity)
+  let boxes_c = divide_with_ceil(product_c_qty, box_capacity)
+  
+  assert_eq(6, boxes_a)  // ceil(245/48) = 6
+  assert_eq(4, boxes_b)  // ceil(189/48) = 4
+  assert_eq(8, boxes_c)  // ceil(367/48) = 8
+  
+  // 计算总箱子数和剩余容量
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  let total_capacity = multiply(total_boxes, box_capacity)
+  let total_items = add(add(product_a_qty, product_b_qty), product_c_qty)
+  let remaining_capacity = subtract(total_capacity, total_items)
+  
+  assert_eq(18, total_boxes)  // 6 + 4 + 8 = 18
+  assert_eq(864, total_capacity)  // 18 * 48 = 864
+  assert_eq(63, remaining_capacity)  // 864 - 801 = 63
+}
+
+test "financial_budget_allocation" {
+  // 场景：财务预算分配
+  let total_budget = 150000
+  let departments = 7
+  let min_budget_per_dept = divide_with_ceil(total_budget, departments)
+  assert_eq(21429, min_budget_per_dept)  // ceil(150000/7) = 21429
+  
+  // 计算实际分配总额
+  let actual_allocation = multiply(min_budget_per_dept, departments)
+  assert_eq(150003, actual_allocation)  // 21429 * 7 = 150003
+  
+  // 计算预算溢出
+  let budget_overflow = subtract(actual_allocation, total_budget)
+  assert_eq(3, budget_overflow)  // 150003 - 150000 = 3
+}
+
+test "network_bandwidth_planning" {
+  // 场景：网络带宽规划
+  let data_volume_gb = 1250
+  let transfer_hours = 8
+  let required_mbps = divide_with_ceil(multiply(data_volume_gb, 8192), multiply(transfer_hours, 3600))
+  assert_eq(356, required_mbps)  // ceil(1250*8192/(8*3600)) = 356
+  
+  // 计算多条并行连接的带宽需求
+  let parallel_connections = 4
+  let per_connection_mbps = divide_with_ceil(required_mbps, parallel_connections)
+  assert_eq(89, per_connection_mbps)  // ceil(356/4) = 89
+  
+  // 验证总带宽
+  let total_bandwidth = multiply(per_connection_mbps, parallel_connections)
+  assert_eq(356, total_bandwidth)  // 89 * 4 = 356
+}
+
+test "event_planning_logistics" {
+  // 场景：活动策划后勤
+  let attendees = 487
+  let tables = 65
+  let chairs_per_table = 8
+  let total_chairs = multiply(tables, chairs_per_table)
+  assert_eq(520, total_chairs)  // 65 * 8 = 520
+  
+  // 计算剩余座位
+  let available_chairs = subtract(total_chairs, attendees)
+  assert_eq(33, available_chairs)  // 520 - 487 = 33
+  
+  // 计算需要的餐桌数（每桌8人）
+  let tables_needed = divide_with_ceil(attendees, chairs_per_table)
+  assert_eq(61, tables_needed)  // ceil(487/8) = 61
+  
+  // 计算备用餐桌
+  let spare_tables = subtract(tables, tables_needed)
+  assert_eq(4, spare_tables)  // 65 - 61 = 4
+}
+
+test "manufacturing_production_calculation" {
+  // 场景：制造业生产计算
+  let daily_target = 1250
+  let machines = 8
+  let operating_hours = 16
+  let machine_hourly_capacity = divide_with_ceil(daily_target, multiply(machines, operating_hours))
+  assert_eq(10, machine_hourly_capacity)  // ceil(1250/(8*16)) = 10
+  
+  // 计算实际日产量
+  let actual_daily_output = multiply(machine_hourly_capacity, multiply(machines, operating_hours))
+  assert_eq(1280, actual_daily_output)  // 10 * 8 * 16 = 1280
+  
+  // 计算超额完成
+  let overproduction = subtract(actual_daily_output, daily_target)
+  assert_eq(30, overproduction)  // 1280 - 1250 = 30
+  
+  // 计算周产量
+  let weekly_output = multiply(actual_daily_output, 7)
+  assert_eq(8960, weekly_output)  // 1280 * 7 = 8960
+}
+
+test "educational_class_scheduling" {
+  // 场景：教育课程安排
+  let students = 156
+  let classrooms = 6
+  let max_students_per_room = 30
+  let total_capacity = multiply(classrooms, max_students_per_room)
+  assert_eq(180, total_capacity)  // 6 * 30 = 180
+  
+  // 计算需要的教室数
+  let rooms_needed = divide_with_ceil(students, max_students_per_room)
+  assert_eq(6, rooms_needed)  // ceil(156/30) = 6
+  
+  // 计算剩余座位
+  let available_seats = subtract(total_capacity, students)
+  assert_eq(24, available_seats)  // 180 - 156 = 24
+  
+  // 计算每班平均学生数
+  let avg_students_per_room = divide_with_ceil(students, rooms_needed)
+  assert_eq(26, avg_students_per_room)  // ceil(156/6) = 26
+}
+
+test "healthcare_resource_management" {
+  // 场景：医疗资源管理
+  let patients = 234
+  let doctors = 12
+  let nurses = 18
+  let max_patients_per_doctor = divide_with_ceil(patients, doctors)
+  assert_eq(20, max_patients_per_doctor)  // ceil(234/12) = 20
+  
+  // 计算每位医生需要的护士数
+  let nurses_per_doctor = divide_with_ceil(nurses, doctors)
+  assert_eq(2, nurses_per_doctor)  // ceil(18/12) = 2
+  
+  // 计算总医疗人员
+  let total_medical_staff = add(doctors, nurses)
+  assert_eq(30, total_medical_staff)  // 12 + 18 = 30
+  
+  // 计算每位医护人员负责的患者数
+  let patients_per_staff = divide_with_ceil(patients, total_medical_staff)
+  assert_eq(8, patients_per_staff)  // ceil(234/30) = 8
+}
+
+test "construction_project_calculation" {
+  // 场景：建筑项目计算
+  let building_area_sqm = 1250
+  let floors = 8
+  let total_floor_area = multiply(building_area_sqm, floors)
+  assert_eq(10000, total_floor_area)  // 1250 * 8 = 10000
+  
+  // 计算需要的工人数量（每人每天可完成50平方米）
+  let workers_needed = divide_with_ceil(total_floor_area, 50)
+  assert_eq(200, workers_needed)  // ceil(10000/50) = 200
+  
+  // 计算项目工期（每个工人工作20天）
+  let project_duration = divide_with_ceil(total_floor_area, multiply(workers_needed, 50))
+  assert_eq(1, project_duration)  // ceil(10000/(200*50)) = 1
+  
+  // 计算总工日
+  let total_work_days = multiply(workers_needed, project_duration)
+  assert_eq(200, total_work_days)  // 200 * 1 = 200
+}

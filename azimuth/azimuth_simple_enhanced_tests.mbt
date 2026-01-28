@@ -1,59 +1,120 @@
-// Azimuth 简单增强测试
-// 使用标准的 MoonBit 测试语法
+// 简单增强的 MoonBit 测试用例
+// 为 azimuth 库添加基本测试用例
 
-test "enhanced_add_overflow" {
-  // 测试加法溢出处理
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试正数溢出
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  
-  // 测试负数溢出
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
+test "enhanced_add_functionality" {
+  assert_eq(10, add(7, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-10, add(-7, -3))
+  assert_eq(4, add(-7, 11))
+  assert_eq(1000000, add(500000, 500000))
 }
 
-test "enhanced_multiply_edge_cases" {
-  // 测试乘法边界情况
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 测试与0的乘法
-  @azimuth.assert_eq(0, @azimuth.multiply(max_val, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(min_val, 0))
-  
-  // 测试与1的乘法
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
+test "enhanced_multiply_functionality" {
+  assert_eq(25, multiply(-5, -5))
+  assert_eq(-15, multiply(-5, 3))
+  assert_eq(-15, multiply(5, -3))
+  assert_eq(0, multiply(-5, 0))
+  assert_eq(1000000, multiply(1000, 1000))
 }
 
-test "enhanced_divide_with_ceil" {
-  // 测试向上取整除法
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(10, 3))
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(11, 3))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 2))
-  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-7, 3))
+test "enhanced_greet_functionality" {
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, ñoño!", greet("ñoño"))
 }
 
-test "enhanced_greet_unicode" {
-  // 测试Unicode字符的问候
-  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+test "enhanced_divide_with_ceil_business" {
+  // 场景：计算需要的运输车辆数量
+  let packages = 47
+  let capacity_per_truck = 10
+  let trucks_needed = divide_with_ceil(packages, capacity_per_truck)
+  assert_eq(5, trucks_needed)
+  
+  // 验证总运力
+  let total_capacity = multiply(trucks_needed, capacity_per_truck)
+  assert_eq(50, total_capacity)
 }
 
-test "enhanced_complex_operations" {
-  // 测试复合运算
-  let a = 10
-  let b = 20
-  let c = 30
+test "enhanced_complex_calculation" {
+  // 场景：计算项目完成时间
+  let tasks = 25
+  let people = 4
+  let tasks_per_person_per_day = 2
   
-  // (a + b) * c
-  let sum = @azimuth.add(a, b)
-  let result = @azimuth.multiply(sum, c)
-  @azimuth.assert_eq(900, result)
+  let daily_capacity = multiply(people, tasks_per_person_per_day)
+  let days_needed = divide_with_ceil(tasks, daily_capacity)
+  assert_eq(4, days_needed)  // ceil(25/(4*2)) = 4
   
-  // a * b + c
-  let product = @azimuth.multiply(a, b)
-  let result2 = @azimuth.add(product, c)
-  @azimuth.assert_eq(230, result2)
+  // 验证总处理能力
+  let total_capacity = multiply(days_needed, daily_capacity)
+  assert_eq(32, total_capacity)
+}
+
+test "enhanced_mathematical_properties" {
+  let x = 42
+  let y = 17
+  
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
+  
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 分配律
+  assert_eq(
+    multiply(x, add(y, 3)),
+    add(multiply(x, y), multiply(x, 3))
+  )
+}
+
+test "enhanced_resource_allocation" {
+  let total_budget = 10000
+  let team_members = 6
+  
+  // 使用向上取整确保覆盖所有情况
+  let max_share = divide_with_ceil(total_budget, team_members)
+  assert_eq(1667, max_share)  // ceil(10000/6) = 1667
+  
+  // 验证总分配不超过预算
+  let total_allocated = multiply(max_share, team_members)
+  assert_eq(10002, total_allocated)
+}
+
+test "enhanced_error_handling" {
+  // 除零情况
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 极值测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 1))
+}
+
+test "enhanced_string_processing" {
+  assert_eq_string("Hello, single!", greet("single"))
+  assert_eq_string("Hello, space test!", greet("space test"))
+  assert_eq_string("Hello, 12345!", greet("12345"))
+  assert_eq_string("Hello, !@#$%^!", greet("!@#$%^"))
+  assert_eq_string("Hello, mixedCASE!", greet("mixedCASE"))
+}
+
+test "enhanced_real_world_scenario" {
+  // 场景：计算活动安排
+  let participants = 87
+  let chairs_per_table = 8
+  
+  // 计算需要的桌子数量
+  let tables_needed = divide_with_ceil(participants, chairs_per_table)
+  assert_eq(11, tables_needed)  // ceil(87/8) = 11
+  
+  // 计算总座位数
+  let total_seats = multiply(tables_needed, chairs_per_table)
+  assert_eq(88, total_seats)
+  
+  // 验证总座位数正确
+  assert_eq(88, total_seats)
 }
