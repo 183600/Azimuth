@@ -1,197 +1,153 @@
-// 高质量 MoonBit 测试用例 - 针对 azimuth 库的补充测试
-// 重点测试边界情况、数学性质和实际应用场景
+// 增强 MoonBit 测试用例
+// 针对 azimuth 库的高级功能测试
 
-test "mathematical_identity_elements" {
-  // 测试数学单位元性质
-  // 加法单位元：0
-  @azimuth.assert_eq(42, @azimuth.add(42, 0))
-  @azimuth.assert_eq(-17, @azimuth.add(-17, 0))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  
-  // 乘法单位元：1
-  @azimuth.assert_eq(42, @azimuth.multiply(42, 1))
-  @azimuth.assert_eq(-17, @azimuth.multiply(-17, 1))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 1))
+test "add_boundary_values" {
+  // 测试 add 函数的边界值
+  @azimuth.assert_eq(2147483647, @azimuth.add(2147483646, 1))  // 接近最大值
+  @azimuth.assert_eq(-2147483648, @azimuth.add(-2147483647, -1))  // 接近最小值
+  @azimuth.assert_eq(0, @azimuth.add(2147483647, -2147483647))  // 最大值与相反数
+  @azimuth.assert_eq(1, @azimuth.add(0, 1))  // 零边界
+  @azimuth.assert_eq(-1, @azimuth.add(0, -1))  // 负零边界
 }
 
-test "inverse_mathematical_properties" {
-  // 测试数学逆元性质
-  // 加法逆元：a + (-a) = 0
-  @azimuth.assert_eq(0, @azimuth.add(15, -15))
-  @azimuth.assert_eq(0, @azimuth.add(-23, 23))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  
-  // 乘法逆元测试（仅限于1和-1，因为整数限制）
-  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
-  @azimuth.assert_eq(1, @azimuth.multiply(-1, -1))
-  @azimuth.assert_eq(-1, @azimuth.multiply(1, -1))
+test "multiply_boundary_values" {
+  // 测试 multiply 函数的边界值
+  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))  // 单位元
+  @azimuth.assert_eq(-1, @azimuth.multiply(1, -1))  // 负单位元
+  @azimuth.assert_eq(0, @azimuth.multiply(2147483647, 0))  // 大数乘零
+  @azimuth.assert_eq(2147483647, @azimuth.multiply(1, 2147483647))  // 单位乘大数
+  @azimuth.assert_eq(46340, @azimuth.multiply(215, 215))  // 接近平方根边界
 }
 
-test "divide_with_ceil_comprehensive_behavior" {
-  // 全面测试向上取整除法的行为
-  // 正数情况
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(11, 3))  // 3.666... -> 4
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(12, 3))  // 4 -> 4
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100)) // 0.01 -> 1
-  
-  // 负数情况
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))  // -3.333... -> -3
-  @azimuth.assert_eq(-4, @azimuth.divide_with_ceil(-11, 3))  // -3.666... -> -4
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(-9, -3))   // 3 -> 3
-  
-  // 零除数安全处理
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-100, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
+test "greet_unicode_emoji" {
+  // 测试 greet 函数的 Unicode 和表情符号处理
+  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
+  @azimuth.assert_eq_string("Hello, 👋!", @azimuth.greet("👋"))
+  @azimuth.assert_eq_string("Hello, 🎉!", @azimuth.greet("🎉"))
+  @azimuth.assert_eq_string("Hello, 🌍!", @azimuth.greet("🌍"))
 }
 
-test "complex_business_calculation_workflow" {
-  // 复杂业务计算工作流测试
-  let base_price = 120
-  let quantity = 8
-  let discount_rate = 10  // 10%
-  let tax_rate = 8        // 8%
-  let shipping = 25
-  
-  // 计算小计
-  let subtotal = @azimuth.multiply(base_price, quantity)
-  
-  // 计算折扣
-  let discount = @azimuth.divide_with_ceil(@azimuth.multiply(subtotal, discount_rate), 100)
-  let after_discount = @azimuth.add(subtotal, @azimuth.multiply(-1, discount))
-  
-  // 计算税费
-  let tax = @azimuth.divide_with_ceil(@azimuth.multiply(after_discount, tax_rate), 100)
-  
-  // 计算总价
-  let total = @azimuth.add(@azimuth.add(after_discount, tax), shipping)
-  
-  @azimuth.assert_eq(960, subtotal)
-  @azimuth.assert_eq(96, discount)
-  @azimuth.assert_eq(864, after_discount)
-  @azimuth.assert_eq(70, tax)
-  @azimuth.assert_eq(959, total)
+test "divide_with_ceil_complex_cases" {
+  // 测试 divide_with_ceil 函数的复杂情况
+  @azimuth.assert_eq(-333334, @azimuth.divide_with_ceil(-1000000, 3))  // 大负数
+  @azimuth.assert_eq(333334, @azimuth.divide_with_ceil(1000000, 3))  // 大正数
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-1, -1))  // 负数相等
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, -1))  // 零除负数
+  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-1, 1))  // 负数除正数
 }
 
-test "string_greeting_with_edge_cases" {
-  // 字符串问候的边界情况测试
-  // 空字符串和特殊字符
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("  "))
-  @azimuth.assert_eq_string("Hello, \n\t!", @azimuth.greet("\n\t"))
+test "advanced_mathematical_expressions" {
+  // 测试高级数学表达式
+  let x = 42
+  let y = 17
+  let z = 8
   
-  // 数字和特殊符号
-  @azimuth.assert_eq_string("Hello, 12345!", @azimuth.greet("12345"))
-  @azimuth.assert_eq_string("Hello, @#$%^&*()!", @azimuth.greet("@#$%^&*()"))
+  // 复杂嵌套表达式
+  let result = @azimuth.add(
+    @azimuth.multiply(x, @azimuth.divide_with_ceil(y, z)),
+    @azimuth.multiply(z, @azimuth.divide_with_ceil(x, y))
+  )
+  @azimuth.assert_eq(58, result)  // 42*ceil(17/8) + 8*ceil(42/17) = 42*3 + 8*3 = 126 + 24 = 150
   
-  // Unicode 字符
-  @azimuth.assert_eq_string("Hello, αβγδε!", @azimuth.greet("αβγδε"))
-  @azimuth.assert_eq_string("Hello, 🌟🌙!", @azimuth.greet("🌟🌙"))
+  // 多层嵌套
+  let nested = @azimuth.divide_with_ceil(
+    @azimuth.multiply(
+      @azimuth.add(x, y),
+      @azimuth.multiply(z, 2)
+    ),
+    3
+  )
+  @azimuth.assert_eq(80, nested)  // ceil((42+17)*(8*2)/3) = ceil(59*16/3) = ceil(944/3) = 315
 }
 
-test "algorithm_complexity_simulation" {
-  // 算法复杂度模拟测试
-  let input_size = 100
-  
-  // O(1) 常数时间
-  let constant_time = 5
-  
-  // O(n) 线性时间
-  let linear_time = @azimuth.multiply(input_size, 3)
-  
-  // O(n²) 平方时间（简化计算）
-  let quadratic_time = @azimuth.divide_with_ceil(@azimuth.multiply(input_size, input_size), 10)
-  
-  // O(log n) 对数时间（简化为除法）
-  let logarithmic_time = @azimuth.divide_with_ceil(input_size, 32)
-  
-  @azimuth.assert_eq(5, constant_time)
-  @azimuth.assert_eq(300, linear_time)
-  @azimuth.assert_eq(1000, quadratic_time)
-  @azimuth.assert_eq(4, logarithmic_time)
-}
-
-test "financial_compound_interest_calculation" {
-  // 金融复利计算测试
+test "financial_calculation_scenario" {
+  // 金融计算场景：复利计算
   let principal = 10000
   let rate_percent = 5
-  let _years = 4  // 未使用的变量
+  let years = 3
   
-  // 逐年计算复利
+  // 第一年
   let year1 = @azimuth.add(principal, @azimuth.divide_with_ceil(@azimuth.multiply(principal, rate_percent), 100))
+  // 第二年
   let year2 = @azimuth.add(year1, @azimuth.divide_with_ceil(@azimuth.multiply(year1, rate_percent), 100))
+  // 第三年
   let year3 = @azimuth.add(year2, @azimuth.divide_with_ceil(@azimuth.multiply(year2, rate_percent), 100))
-  let year4 = @azimuth.add(year3, @azimuth.divide_with_ceil(@azimuth.multiply(year3, rate_percent), 100))
   
-  @azimuth.assert_eq(10500, year1)
-  @azimuth.assert_eq(11025, year2)
-  @azimuth.assert_eq(11576, year3)
-  @azimuth.assert_eq(12155, year4)
+  @azimuth.assert_eq(10500, year1)  // 10000 + ceil(10000*5/100) = 10000 + 500 = 10500
+  @azimuth.assert_eq(11025, year2)  // 10500 + ceil(10500*5/100) = 10500 + 525 = 11025
+  @azimuth.assert_eq(11576, year3)  // 11025 + ceil(11025*5/100) = 11025 + 551 = 11576
 }
 
-test "geometric_and_arithmetic_sequences" {
-  // 几何和算术序列测试
-  // 算术序列：3, 7, 11, 15, 19 (公差为4)
-  let arith1 = 3
-  let arith2 = @azimuth.add(arith1, 4)
-  let arith3 = @azimuth.add(arith2, 4)
-  let arith4 = @azimuth.add(arith3, 4)
-  let arith5 = @azimuth.add(arith4, 4)
+test "inventory_management_system" {
+  // 库存管理系统测试
+  let initial_stock = 1000
+  let daily_sales = 45
+  let restock_batch = 200
+  let days_to_simulate = 5
   
-  // 几何序列：2, 6, 18, 54 (公比为3)
-  let geom1 = 2
-  let geom2 = @azimuth.multiply(geom1, 3)
-  let geom3 = @azimuth.multiply(geom2, 3)
-  let geom4 = @azimuth.multiply(geom3, 3)
+  // 计算总销售量
+  let total_sold = @azimuth.multiply(daily_sales, days_to_simulate)
   
-  @azimuth.assert_eq(3, arith1)
-  @azimuth.assert_eq(7, arith2)
-  @azimuth.assert_eq(11, arith3)
-  @azimuth.assert_eq(15, arith4)
-  @azimuth.assert_eq(19, arith5)
+  // 计算剩余库存
+  let remaining_stock = @azimuth.add(initial_stock, -total_sold)
   
-  @azimuth.assert_eq(2, geom1)
-  @azimuth.assert_eq(6, geom2)
-  @azimuth.assert_eq(18, geom3)
-  @azimuth.assert_eq(54, geom4)
+  // 计算需要补货的批次数
+  let restock_batches_needed = @azimuth.divide_with_ceil(
+    @azimuth.add(total_sold, -remaining_stock),
+    restock_batch
+  )
+  
+  @azimuth.assert_eq(225, total_sold)  // 45 * 5 = 225
+  @azimuth.assert_eq(775, remaining_stock)  // 1000 - 225 = 775
+  @azimuth.assert_eq(2, restock_batches_needed)  // ceil(225/200) = 2
 }
 
 test "resource_allocation_optimization" {
   // 资源分配优化测试
-  let total_budget = 5000
-  let project_costs = [800, 1200, 600, 900, 1500]
+  let total_budget = 50000
+  let project_costs = @azimuth.multiply(8500, 4)  // 4个项目
+  let team_costs = @azimuth.multiply(3200, 6)    // 6个团队
+  let overhead = 5000
   
-  // 计算项目总成本
-  let total_cost = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(project_costs[0], project_costs[1]), project_costs[2]), project_costs[3]), project_costs[4])
+  // 计算总支出
+  let total_expenses = @azimuth.add(
+    @azimuth.add(project_costs, team_costs),
+    overhead
+  )
   
   // 计算剩余预算
-  let remaining_budget = @azimuth.add(total_budget, @azimuth.multiply(-1, total_cost))
+  let remaining_budget = @azimuth.add(total_budget, -total_expenses)
   
-  // 计算可以支持的小项目数量（每个小项目成本300）
-  let small_projects = @azimuth.divide_with_ceil(remaining_budget, 300)
+  // 计算可以支持的小项目数量（每个3000）
+  let small_projects = @azimuth.divide_with_ceil(remaining_budget, 3000)
   
-  @azimuth.assert_eq(5000, total_cost)
-  @azimuth.assert_eq(0, remaining_budget)
-  @azimuth.assert_eq(0, small_projects)
+  @azimuth.assert_eq(34000, project_costs)  // 8500 * 4 = 34000
+  @azimuth.assert_eq(19200, team_costs)    // 3200 * 6 = 19200
+  @azimuth.assert_eq(58200, total_expenses) // 34000 + 19200 + 5000 = 58200
+  @azimuth.assert_eq(-8200, remaining_budget) // 50000 - 58200 = -8200
+  @azimuth.assert_eq(-2, small_projects)   // ceil(-8200/3000) = -2
 }
 
-test "physics_motion_calculations" {
-  // 物理运动计算测试
-  let initial_velocity = 10
-  let acceleration = 2
-  let time = 5
+test "string_processing_multilingual" {
+  // 多语言字符串处理测试
+  let greetings = [
+    "English",
+    "中文",
+    "Español",
+    "Русский",
+    "العربية",
+    "日本語",
+    "한국어",
+    "Français"
+  ]
   
-  // 计算最终速度：v = u + at
-  let final_velocity = @azimuth.add(initial_velocity, @azimuth.multiply(acceleration, time))
-  
-  // 计算位移：s = ut + 0.5at²（简化为整数计算）
-  let displacement = @azimuth.add(@azimuth.multiply(initial_velocity, time), @azimuth.multiply(acceleration, @azimuth.multiply(time, time)) / 2)
-  
-  // 计算动能：KE = 0.5mv²（假设质量m=2kg）
-  let mass = 2
-  let kinetic_energy = @azimuth.multiply(mass, @azimuth.multiply(final_velocity, final_velocity)) / 2
-  
-  @azimuth.assert_eq(20, final_velocity)
-  @azimuth.assert_eq(75, displacement)
-  @azimuth.assert_eq(400, kinetic_energy)
+  // 测试每种语言的问候
+  @azimuth.assert_eq_string("Hello, English!", @azimuth.greet("English"))
+  @azimuth.assert_eq_string("Hello, 中文!", @azimuth.greet("中文"))
+  @azimuth.assert_eq_string("Hello, Español!", @azimuth.greet("Español"))
+  @azimuth.assert_eq_string("Hello, Русский!", @azimuth.greet("Русский"))
+  @azimuth.assert_eq_string("Hello, العربية!", @azimuth.greet("العربية"))
+  @azimuth.assert_eq_string("Hello, 日本語!", @azimuth.greet("日本語"))
+  @azimuth.assert_eq_string("Hello, 한국어!", @azimuth.greet("한국어"))
+  @azimuth.assert_eq_string("Hello, Français!", @azimuth.greet("Français"))
 }
