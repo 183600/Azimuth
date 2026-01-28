@@ -1,111 +1,88 @@
-// Copyright 2026 International Digital Economy Academy
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// 标准 MoonBit 测试用例 - 为 Azimuth 项目创建
+// 包含 10 个高质量的测试用例，使用标准 MoonBit 测试语法
 
-///|
-test "integer basic arithmetic" {
-  inspect(1 + 2, content="3")
-  inspect(10 - 3, content="7")
-  inspect(4 * 5, content="20")
-  inspect(15 / 3, content="5")
-  inspect(17 % 5, content="2")
+test "add_basic_functionality" {
+  // 测试基本加法功能
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(10, add(-5, 15))
 }
 
-///|
-test "integer comparison operations" {
-  inspect(5 > 3, content="true")
-  inspect(5 < 3, content="false")
-  inspect(5 >= 5, content="true")
-  inspect(5 <= 3, content="false")
-  inspect(5 == 5, content="true")
-  inspect(5 != 3, content="true")
+test "multiply_basic_functionality" {
+  // 测试基本乘法功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(15, multiply(-3, -5))
 }
 
-///|
-test "string basic operations" {
-  let str1 = "Hello"
-  let str2 = "World"
-  let combined = str1 + " " + str2
-  inspect(combined, content="Hello World")
-  inspect(str1.length(), content="5")
-  inspect(combined.length(), content="11")
+test "greet_string_functionality" {
+  // 测试字符串问候功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
 }
 
-///|
-test "array basic operations" {
-  let numbers = [1, 2, 3, 4, 5]
-  let empty = []
-  inspect(numbers.length(), content="5")
-  inspect(empty.length(), content="0")
-  inspect(numbers[0], content="1")
-  inspect(numbers[4], content="5")
+test "subtract_basic_functionality" {
+  // 测试基本减法功能
+  assert_eq(2, subtract(5, 3))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(-2, subtract(3, 5))
+  assert_eq(10, subtract(5, -5))
 }
 
-///|
-test "boolean logic operations" {
-  inspect(true && true, content="true")
-  inspect(true && false, content="false")
-  inspect(false || true, content="true")
-  inspect(false || false, content="false")
-  inspect(!true, content="false")
-  inspect(!false, content="true")
+test "divide_with_ceil_positive_numbers" {
+  // 测试正数的向上取整除法
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(0, divide_with_ceil(0, 5))
 }
 
-///|
-test "integer bit operations" {
-  inspect(5 & 3, content="1")
-  inspect(5 | 3, content="7")
-  inspect(5 ^ 3, content="6")
-  inspect(5 << 2, content="20")
-  inspect(5 >> 1, content="2")
+test "divide_with_ceil_negative_numbers" {
+  // 测试负数的向上取整除法
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(-1, divide_with_ceil(-1, 2))
 }
 
-///|
-test "string comparison and indexing" {
-  let text = "MoonBit"
-  inspect(text[0], content="'M'")
-  inspect(text[3], content="'n'")
-  inspect(text.length(), content="7")
-  inspect(text > "Apple", content="true")
-  inspect(text < "Zebra", content="true")
-  inspect(text == "MoonBit", content="true")
-  inspect(text != "moonbit", content="true")
+test "mathematical_commutative_properties" {
+  // 测试数学交换律性质
+  assert_eq(add(7, 13), add(13, 7))
+  assert_eq(multiply(7, 13), multiply(13, 7))
 }
 
-///|
-test "array operations with different types" {
-  let numbers = [10, 20, 30]
-  let strings = ["a", "b", "c"]
-  inspect(numbers[1] + numbers[2], content="50")
-  inspect(strings[0] + strings[1], content="ab")
-  inspect(numbers.length(), content="3")
-  inspect(strings.length(), content="3")
+test "zero_element_properties" {
+  // 测试零元素性质
+  assert_eq(5, add(5, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
 }
 
-///|
-test "integer boundary values" {
-  inspect(@int.max_value, content="2147483647")
-  inspect(@int.min_value, content="-2147483648")
-  inspect(@int.max_value + 1, content="-2147483648")
-  inspect(@int.min_value - 1, content="2147483647")
+test "complex_arithmetic_operations" {
+  // 测试复杂算术运算
+  let result = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
+  
+  let complex_result = divide_with_ceil(add(multiply(3, 4), subtract(10, 2)), 5)
+  assert_eq(4, complex_result)  // ceil((12 + 8)/5) = ceil(20/5) = 4
 }
 
-///|
-test "type conversion and casting" {
-  let int_val = 42
-  let bool_true = true
-  let bool_false = false
-  inspect(int_val.to_string(), content="42")
-  inspect(bool_true.to_string(), content="true")
-  inspect(bool_false.to_string(), content="false")
+test "business_logic_packaging_calculation" {
+  // 测试业务逻辑：包装计算
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
+  
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, items_per_box)
+  assert_eq(30, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(5, remaining_space)
 }
