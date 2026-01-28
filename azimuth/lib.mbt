@@ -7373,3 +7373,152 @@ test "construction_project_calculation" {
   let total_work_days = multiply(workers_needed, project_duration)
   assert_eq(200, total_work_days)  // 200 * 1 = 200
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "subtract_function_basic" {
+  // 测试减法函数的基本功能
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(15, subtract(10, -5))
+  assert_eq(-15, subtract(-10, 5))
+}
+
+test "boolean_assertions" {
+  // 测试布尔断言函数
+  assert_true(true)
+  assert_false(false)
+  assert_true(5 > 3)
+  assert_false(3 > 5)
+  assert_true(5 >= 5)
+  assert_true(5 <= 5)
+}
+
+test "extreme_large_numbers" {
+  // 测试极大数运算
+  let large_num = 1000000
+  assert_eq(2000000, add(large_num, large_num))
+  assert_eq(1000000000000, multiply(large_num, large_num))
+  assert_eq(1, divide_with_ceil(large_num, large_num))
+  assert_eq(2, divide_with_ceil(add(large_num, 1), large_num))
+}
+
+test "fractional_division_precision" {
+  // 测试分数除法的精度
+  assert_eq(1, divide_with_ceil(1, 2))
+  assert_eq(1, divide_with_ceil(2, 3))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(3, divide_with_ceil(8, 3))
+  assert_eq(100, divide_with_ceil(199, 2))
+}
+
+test "string_edge_cases" {
+  // 测试字符串边缘情况
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("   "))
+  assert_eq_string("Hello, a!", greet("a"))
+  assert_eq_string("Hello, A!", greet("A"))
+  assert_eq_string("Hello, 1234567890!", greet("1234567890"))
+}
+
+test "complex_mathematical_expressions" {
+  // 测试复杂数学表达式
+  let a = 10
+  let b = 20
+  let c = 30
+  
+  // (a + b) * c - (a * b + c)
+  let result = subtract(
+    multiply(add(a, b), c),
+    add(multiply(a, b), c)
+  )
+  assert_eq(470, result)  // (10+20)*30 - (10*20+30) = 900 - 230 = 670
+  
+  // ((a * b) + (b * c)) / (a + c)
+  let result2 = divide_with_ceil(
+    add(multiply(a, b), multiply(b, c)),
+    add(a, c)
+  )
+  assert_eq(17, result2)  // ceil((200+600)/40) = ceil(800/40) = 20
+}
+
+test "business_inventory_calculation" {
+  // 业务库存计算测试
+  let initial_stock = 1000
+  let daily_sales = 45
+  let days = 22
+  let total_sold = multiply(daily_sales, days)
+  let remaining_stock = subtract(initial_stock, total_sold)
+  
+  assert_eq(990, total_sold)  // 45 * 22 = 990
+  assert_eq(10, remaining_stock)  // 1000 - 990 = 10
+  
+  // 计算需要补货的天数
+  let reorder_threshold = 100
+  let days_until_reorder = divide_with_ceil(subtract(remaining_stock, reorder_threshold), daily_sales)
+  assert_eq(0, days_until_reorder)  // 已经低于补货阈值
+}
+
+test "time_zone_conversion" {
+  // 时区转换计算测试
+  let local_time = 23  // 晚上11点
+  let time_difference = 5  // 时差5小时
+  
+  // 向前转换时间
+  let forward_time = add(local_time, time_difference)
+  let normalized_forward = divide_with_ceil(forward_time, 24)
+  assert_eq(1, normalized_forward)  // 第二天
+  
+  // 向后转换时间
+  let backward_time = subtract(local_time, time_difference)
+  assert_eq(18, backward_time)  // 同一天下午6点
+}
+
+test "resource_efficiency_metrics" {
+  // 资源效率指标测试
+  let total_resources = 500
+  let utilized_resources = 425
+  let waste_resources = subtract(total_resources, utilized_resources)
+  
+  assert_eq(75, waste_resources)
+  
+  // 计算效率百分比
+  let efficiency_percent = divide_with_ceil(
+    multiply(utilized_resources, 100),
+    total_resources
+  )
+  assert_eq(85, efficiency_percent)  // ceil(42500/500) = ceil(85) = 85
+  
+  // 计算浪费百分比
+  let waste_percent = divide_with_ceil(
+    multiply(waste_resources, 100),
+    total_resources
+  )
+  assert_eq(15, waste_percent)  // ceil(7500/500) = ceil(15) = 15
+}
+
+test "multi_step_problem_solving" {
+  // 多步骤问题解决测试
+  // 场景：计算旅行预算
+  let travelers = 4
+  let days = 7
+  let daily_food_budget = 50
+  let daily_accommodation_budget = 80
+  let transportation_cost = 200
+  
+  // 计算总食物预算
+  let total_food_budget = multiply(travelers, multiply(days, daily_food_budget))
+  assert_eq(1400, total_food_budget)  // 4 * 7 * 50 = 1400
+  
+  // 计算总住宿预算
+  let total_accommodation_budget = multiply(travelers, multiply(days, daily_accommodation_budget))
+  assert_eq(2240, total_accommodation_budget)  // 4 * 7 * 80 = 2240
+  
+  // 计算总预算
+  let total_budget = add(add(total_food_budget, total_accommodation_budget), transportation_cost)
+  assert_eq(3840, total_budget)  // 1400 + 2240 + 200 = 3840
+  
+  // 计算每人平均费用
+  let cost_per_person = divide_with_ceil(total_budget, travelers)
+  assert_eq(960, cost_per_person)  // ceil(3840/4) = 960
+}
