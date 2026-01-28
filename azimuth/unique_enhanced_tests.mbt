@@ -1,7 +1,7 @@
-// 增强的 MoonBit 测试用例
-// 为 azimuth 库添加的高级测试场景
+// 独特的增强 MoonBit 测试用例
+// 为 azimuth 库添加的高级测试场景，使用唯一的测试名称
 
-test "extreme_boundary_values" {
+test "extreme_values_boundary_test" {
   // 测试极值边界情况
   assert_eq(2147483646, add(2147483645, 1))  // 接近 Int 最大值
   assert_eq(-2147483647, add(-2147483646, -1))  // 接近 Int 最小值
@@ -9,7 +9,7 @@ test "extreme_boundary_values" {
   assert_eq(1000000, multiply(1000, 1000))  // 大数但安全范围内
 }
 
-test "financial_calculation_scenario" {
+test "loan_amortization_calculation" {
   // 金融计算场景：贷款分期计算
   let loan_amount = 100000
   let monthly_payment = 3500
@@ -25,7 +25,7 @@ test "financial_calculation_scenario" {
   assert_eq(1500, final_payment)
 }
 
-test "nested_function_composition" {
+test "complex_nested_functions" {
   // 嵌套函数组合测试
   let base_value = 10
   
@@ -42,7 +42,7 @@ test "nested_function_composition" {
   assert_eq(4, result)
 }
 
-test "error_resilience_scenarios" {
+test "division_error_handling" {
   // 错误恢复场景测试
   // 除零错误的多种情况
   assert_eq(0, divide_with_ceil(0, 0))
@@ -54,7 +54,7 @@ test "error_resilience_scenarios" {
   assert_eq(-999999, divide_with_ceil(-999999, 1))
 }
 
-test "data_processing_pipeline" {
+test "batch_processing_workflow" {
   // 数据处理流水线测试
   // 模拟批量数据处理场景
   let data_batches = 150
@@ -75,7 +75,7 @@ test "data_processing_pipeline" {
   assert_eq(6, final_batch_size)  // 最后一批处理6个
 }
 
-test "string_formatting_edge_cases" {
+test "special_string_inputs" {
   // 字符串格式化边缘情况测试
   // 测试各种特殊字符串组合
   assert_eq_string("Hello, null!", greet("null"))
@@ -87,7 +87,7 @@ test "string_formatting_edge_cases" {
   assert_eq_string("Hello, {}!", greet("{}"))
 }
 
-test "algorithm_complexity_validation" {
+test "algorithm_performance_test" {
   // 算法复杂度验证测试
   // 验证不同算法路径的性能特征
   let input_size = 1000
@@ -105,7 +105,7 @@ test "algorithm_complexity_validation" {
   assert_eq(300, efficiency_ratio)
 }
 
-test "resource_optimization_problem" {
+test "warehouse_storage_optimization" {
   // 资源优化问题测试
   // 场景：仓库存储优化
   // 使用单独的变量而不是数组来避免导入问题
@@ -144,7 +144,7 @@ test "resource_optimization_problem" {
   assert_eq(330, total_capacity)
 }
 
-test "mathematical_series_calculation" {
+test "mathematical_progressions" {
   // 数学级数计算测试
   // 计算等差数列和等比数列
   
