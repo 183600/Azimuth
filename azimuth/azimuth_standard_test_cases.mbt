@@ -1,94 +1,91 @@
-// Azimuth 标准测试用例集合
-// 包含 8 个高质量的测试用例，使用标准 MoonBit 测试语法
-// 测试覆盖基本功能、边界情况和业务逻辑场景
+// Azimuth 标准测试用例
+// 包含 8 个高质量的标准 MoonBit 测试用例
 
-test "add_function_comprehensive" {
-  // 全面测试加法函数
-  assert_eq(8, add(3, 5))
+test "basic_addition_operations" {
+  // 基本加法运算测试
+  assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
-  assert_eq(-8, add(-3, -5))
-  assert_eq(2, add(-3, 5))
-  assert_eq(1000000, add(500000, 500000))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(10, add(15, -5))
 }
 
-test "multiply_function_properties" {
-  // 测试乘法函数的数学性质
-  assert_eq(15, multiply(3, 5))
-  assert_eq(0, multiply(3, 0))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(1, multiply(1, 999999))
+test "multiplication_comprehensive" {
+  // 乘法综合测试
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(6, multiply(-2, -3))
+  assert_eq(100, multiply(10, 10))
 }
 
-test "greet_function_internationalization" {
-  // 测试问候函数的国际化支持
+test "greeting_function_variations" {
+  // 问候函数变体测试
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
   assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
 }
 
-test "divide_with_ceil_edge_cases" {
-  // 测试向上取整除法的边缘情况
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 100))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(10, 0))
-}
-
-test "mathematical_commutative_laws" {
-  // 测试数学交换律
-  let a = 12
-  let b = 8
-  assert_eq(add(a, b), add(b, a))
-  assert_eq(multiply(a, b), multiply(b, a))
-}
-
-test "business_logistics_calculation" {
-  // 业务逻辑：物流计算场景
-  let total_packages = 47
-  let packages_per_truck = 10
-  let trucks_needed = divide_with_ceil(total_packages, packages_per_truck)
-  assert_eq(5, trucks_needed)
+test "ceil_division_business_logic" {
+  // 向上取整除法业务逻辑测试
+  // 场景：计算需要的包装箱数量
+  let items = 25
+  let capacity_per_box = 6
+  let boxes_needed = divide_with_ceil(items, capacity_per_box)
+  assert_eq(5, boxes_needed)
   
-  // 验证总运力
-  let total_capacity = multiply(trucks_needed, packages_per_truck)
-  assert_eq(50, total_capacity)
-  
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_packages)
-  assert_eq(3, remaining_space)
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, capacity_per_box)
+  assert_eq(30, total_capacity)
+}
+
+test "subtraction_edge_cases" {
+  // 减法边缘情况测试
+  assert_eq(2, subtract(5, 3))
+  assert_eq(-2, subtract(3, 5))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(10, subtract(5, -5))
+  assert_eq(-10, subtract(-5, 5))
 }
 
 test "complex_calculation_pipeline" {
   // 复杂计算流水线测试
-  let base_value = 15
-  let multiplier = 3
-  let divisor = 4
-  let addition = 7
-  
-  // 计算流程：((base * multiplier) / divisor) + addition
-  let step1 = multiply(base_value, multiplier)
-  let step2 = divide_with_ceil(step1, divisor)
-  let result = add(step2, addition)
-  
-  assert_eq(19, result)  // ceil(15*3/4) + 7 = 12 + 7 = 19
+  // 场景：计算项目资源需求
+  let team_size = 8
+  let tasks_per_person = 5
+  let total_tasks = multiply(team_size, tasks_per_person)
+  let tasks_per_sprint = 15
+  let sprints_needed = divide_with_ceil(total_tasks, tasks_per_sprint)
+  assert_eq(3, sprints_needed)
 }
 
-test "resource_allocation_optimization" {
-  // 资源分配优化测试
-  let total_budget = 10000
-  let team_members = 6
-  let min_budget_per_member = divide_with_ceil(total_budget, team_members)
-  assert_eq(1667, min_budget_per_member)
+test "mathematical_properties_validation" {
+  // 数学性质验证测试
+  let x = 12
+  let y = 8
   
-  // 验证总分配
-  let total_allocated = multiply(min_budget_per_member, team_members)
-  assert_eq(10002, total_allocated)
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
   
-  // 验证预算超支
-  let budget_overage = subtract(total_allocated, total_budget)
-  assert_eq(2, budget_overage)
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 分配律
+  assert_eq(
+    multiply(x, add(y, 3)),
+    add(multiply(x, y), multiply(x, 3))
+  )
+}
+
+test "error_handling_boundary_conditions" {
+  // 错误处理和边界条件测试
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 极值测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(1000000, multiply(1000, 1000))
 }
