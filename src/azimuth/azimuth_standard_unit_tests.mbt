@@ -1,76 +1,91 @@
-// 标准 MoonBit 单元测试
-// 针对 azimuth 库核心功能的测试用例
+// 标准 MoonBit 测试用例 - 针对 azimuth 库的核心功能
+// 包含基本功能测试和实际应用场景
 
-test "add_simple_test" {
-  assert_eq(5, add(2, 3))
-  assert_eq(0, add(0, 0))
+test "add_function_basic_test" {
+  // 测试基本的加法功能
+  let result = @azimuth.add(10, 25)
+  @azimuth.assert_eq(35, result)
 }
 
-test "multiply_simple_test" {
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(0, 5))
+test "multiply_function_basic_test" {
+  // 测试基本的乘法功能
+  let result = @azimuth.multiply(7, 8)
+  @azimuth.assert_eq(56, result)
 }
 
-test "greet_simple_test" {
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
+test "greet_function_basic_test" {
+  // 测试基本的问候功能
+  let result = @azimuth.greet("MoonBit")
+  @azimuth.assert_eq_string("Hello, MoonBit!", result)
 }
 
-test "divide_with_ceil_simple_test" {
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(0, divide_with_ceil(5, 0))
-}
-
-test "mathematical_properties_test" {
-  let a = 12
-  let b = 8
-  assert_eq(add(a, b), add(b, a))
-  assert_eq(multiply(a, b), multiply(b, a))
-}
-
-test "identity_elements_test" {
-  assert_eq(15, add(15, 0))
-  assert_eq(15, multiply(15, 1))
-  assert_eq(0, multiply(15, 0))
+test "divide_with_ceil_basic_test" {
+  // 测试基本的向上取整除法功能
+  let result = @azimuth.divide_with_ceil(17, 5)
+  @azimuth.assert_eq(4, result)
 }
 
 test "complex_calculation_test" {
-  let base_price = 25
-  let quantity = 4
-  let tax_rate = 8
-  let shipping = 10
+  // 测试复杂计算场景
+  let subtotal = @azimuth.multiply(15, 8)  // 15 * 8 = 120
+  let tax = @azimuth.divide_with_ceil(@azimuth.multiply(subtotal, 10), 100)  // 120 * 10 / 100 = 12
+  let total = @azimuth.add(subtotal, tax)  // 120 + 12 = 132
+  @azimuth.assert_eq(132, total)
+}
+
+test "negative_operations_test" {
+  // 测试负数运算
+  let result1 = @azimuth.add(-10, 5)
+  let result2 = @azimuth.multiply(-3, 4)
+  let result3 = @azimuth.divide_with_ceil(-15, 4)
   
-  let subtotal = multiply(base_price, quantity)
-  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  let total = add(add(subtotal, tax), shipping)
+  @azimuth.assert_eq(-5, result1)
+  @azimuth.assert_eq(-12, result2)
+  @azimuth.assert_eq(-3, result3)
+}
+
+test "zero_handling_test" {
+  // 测试零的处理
+  let result1 = @azimuth.multiply(25, 0)
+  let result2 = @azimuth.add(0, 42)
+  let result3 = @azimuth.divide_with_ceil(100, 0)
   
-  assert_eq(100, subtotal)
-  assert_eq(8, tax)
-  assert_eq(118, total)
+  @azimuth.assert_eq(0, result1)
+  @azimuth.assert_eq(42, result2)
+  @azimuth.assert_eq(0, result3)
 }
 
-test "edge_case_test" {
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(99, 100))
-  assert_eq(-1, divide_with_ceil(-1, -1))
-  assert_eq_string("Hello, A!", greet("A"))
-}
-
-test "unicode_test" {
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, ñáéíóú!", greet("ñáéíóú"))
-}
-
-test "business_calculation_test" {
-  let items_per_box = 12
+test "packaging_calculation_test" {
+  // 测试包装计算的实际应用
   let total_items = 47
-  let cost_per_item = 5
+  let items_per_box = 12
+  let boxes_needed = @azimuth.divide_with_ceil(total_items, items_per_box)
+  @azimuth.assert_eq(4, boxes_needed)
+}
+
+test "string_greeting_special_chars_test" {
+  // 测试特殊字符的问候功能
+  let result1 = @azimuth.greet("世界")
+  let result2 = @azimuth.greet("")
+  let result3 = @azimuth.greet("123")
   
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  let total_cost = multiply(total_items, cost_per_item)
+  @azimuth.assert_eq_string("Hello, 世界!", result1)
+  @azimuth.assert_eq_string("Hello, !", result2)
+  @azimuth.assert_eq_string("Hello, 123!", result3)
+}
+
+test "mathematical_properties_test" {
+  // 测试数学性质
+  let x = 12
+  let y = 8
   
-  assert_eq(4, boxes_needed)
-  assert_eq(235, total_cost)
+  // 加法交换律
+  let commutative_add = @azimuth.add(x, y)
+  let reverse_add = @azimuth.add(y, x)
+  @azimuth.assert_eq(commutative_add, reverse_add)
+  
+  // 乘法交换律
+  let commutative_mul = @azimuth.multiply(x, y)
+  let reverse_mul = @azimuth.multiply(y, x)
+  @azimuth.assert_eq(commutative_mul, reverse_mul)
 }
