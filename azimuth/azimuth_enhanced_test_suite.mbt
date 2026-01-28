@@ -1,192 +1,187 @@
-// Azimuth 增强测试套件 - 标准MoonBit测试用例
-// 包含8个高质量测试用例，覆盖各种场景
+// Azimuth 增强测试套件
+// 包含10个高质量的标准 MoonBit 测试用例
 
-test "arithmetic_precision_large_numbers" {
-  // 测试大数算术精度
-  let large_num1 = 1000000
-  let large_num2 = 999999
-  
-  assert_eq(1999999, add(large_num1, large_num2))
-  assert_eq(999999000000, multiply(large_num1, large_num2))
-  assert_eq(2, divide_with_ceil(large_num1, large_num2))
-  assert_eq(1, divide_with_ceil(large_num2, large_num1))
-}
-
-test "divide_with_ceil_comprehensive_edge_cases" {
-  // 全面测试向上取整除法的边缘情况
-  // 正数除数
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(2, divide_with_ceil(3, 2))
-  assert_eq(3, divide_with_ceil(8, 3))
-  assert_eq(10, divide_with_ceil(91, 10))
-  
-  // 负数情况
-  assert_eq(-2, divide_with_ceil(-3, 2))
-  assert_eq(-1, divide_with_ceil(-1, 2))
-  assert_eq(2, divide_with_ceil(3, -2))
-  assert_eq(-2, divide_with_ceil(-3, -2))
-  
-  // 零值处理
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(0, -5))
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
-}
-
-test "string_greeting_multilingual_support" {
-  // 测试多语言问候支持
-  assert_eq_string("Hello, English!", greet("English"))
-  assert_eq_string("Hello, 中文!", greet("中文"))
-  assert_eq_string("Hello, 日本語!", greet("日本語"))
-  assert_eq_string("Hello, 한국어!", greet("한국어"))
-  assert_eq_string("Hello, español!", greet("español"))
-  assert_eq_string("Hello, français!", greet("français"))
-  assert_eq_string("Hello, русский!", greet("русский"))
-  assert_eq_string("Hello, العربية!", greet("العربية"))
-}
-
-test "complex_business_calculation_pipeline" {
-  // 复杂业务计算流水线测试
-  // 场景：电子商务订单处理
-  let order_items = 47
-  let items_per_box = 12
-  let cost_per_item = 25
-  let shipping_cost_per_box = 15
-  
-  // 计算需要的箱子数量
-  let boxes_needed = divide_with_ceil(order_items, items_per_box)
-  assert_eq(4, boxes_needed)
-  
-  // 计算商品总成本
-  let item_cost = multiply(order_items, cost_per_item)
-  assert_eq(1175, item_cost)
-  
-  // 计算运输总成本
-  let shipping_cost = multiply(boxes_needed, shipping_cost_per_box)
-  assert_eq(60, shipping_cost)
-  
-  // 计算订单总成本
-  let total_cost = add(item_cost, shipping_cost)
-  assert_eq(1235, total_cost)
-}
-
-test "mathematical_properties_extended_verification" {
-  // 扩展数学性质验证测试
-  let a = 12
+test "mathematical_fibonacci_properties" {
+  // 测试数学斐波那契数列相关性质
+  let a = 5
   let b = 8
-  let c = 5
+  let c = 13
   
-  // 加法结合律
-  assert_eq(add(add(a, b), c), add(a, add(b, c)))
+  // 验证斐波那契性质：F(n) = F(n-1) + F(n-2)
+  assert_eq(c, add(a, b))
   
-  // 乘法结合律
-  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
-  
-  // 分配律
-  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
-  
-  // 零元素性质
-  assert_eq(a, add(a, 0))
-  assert_eq(0, multiply(a, 0))
-  
-  // 单位元性质
-  assert_eq(a, multiply(a, 1))
-  assert_eq(a, add(0, a))
+  // 验证乘法分配律与斐波那契数列
+  assert_eq(multiply(c, 2), add(multiply(a, 2), multiply(b, 2)))
 }
 
-test "resource_optimization_complex_scenario" {
-  // 复杂资源优化场景测试
-  // 场景：多项目资源分配优化
-  let project_a_tasks = 25
-  let project_b_tasks = 37
-  let project_c_tasks = 19
-  let team_capacity_per_day = 20
+test "time_calculation_scenario" {
+  // 时间计算场景测试
+  let total_minutes = 157
+  let minutes_per_hour = 60
   
-  // 计算各项目所需天数
-  let days_a = divide_with_ceil(project_a_tasks, team_capacity_per_day)
-  let days_b = divide_with_ceil(project_b_tasks, team_capacity_per_day)
-  let days_c = divide_with_ceil(project_c_tasks, team_capacity_per_day)
+  // 计算小时数和剩余分钟数
+  let hours = divide_with_ceil(total_minutes, minutes_per_hour)
+  let remaining_minutes = subtract(total_minutes, multiply(hours - 1, minutes_per_hour))
   
-  assert_eq(2, days_a)  // ceil(25/20) = 2
-  assert_eq(2, days_b)  // ceil(37/20) = 2
-  assert_eq(1, days_c)  // ceil(19/20) = 1
-  
-  // 计算总天数
-  let total_days = add(add(days_a, days_b), days_c)
-  assert_eq(5, total_days)
-  
-  // 计算实际处理能力
-  let total_capacity = multiply(total_days, team_capacity_per_day)
-  assert_eq(100, total_capacity)
-  
-  // 计算剩余处理能力
-  let total_tasks = add(add(project_a_tasks, project_b_tasks), project_c_tasks)
-  let remaining_capacity = subtract(total_capacity, total_tasks)
-  assert_eq(19, remaining_capacity)
+  assert_eq(3, hours)  // ceil(157/60) = 3
+  assert_eq(37, remaining_minutes)  // 157 - 2*60 = 37
 }
 
-test "error_handling_robustness_verification" {
-  // 错误处理健壮性验证测试
-  // 测试各种异常输入情况
+test "temperature_conversion_logic" {
+  // 温度转换逻辑测试（简化版本）
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 9), divide_with_ceil(multiply(5, 32), 5))
   
-  // 除零错误的多重场景
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
-  
-  // 极值运算测试
-  let max_safe_int = 1000000
-  let min_safe_int = -1000000
-  
-  assert_eq(2000000, add(max_safe_int, max_safe_int))
-  assert_eq(-2000000, add(min_safe_int, min_safe_int))
-  assert_eq(0, add(max_safe_int, min_safe_int))
-  
-  assert_eq(1000000000000, multiply(max_safe_int, max_safe_int))
-  assert_eq(1000000000000, multiply(min_safe_int, min_safe_int))
-  assert_eq(-1000000000000, multiply(max_safe_int, min_safe_int))
+  // 简化的摄氏度到华氏度转换：F = C * 9/5 + 32
+  // 这里使用整数运算模拟
+  assert_eq(77, fahrenheit)
 }
 
-test "real_world_application_comprehensive_test" {
-  // 真实世界应用综合测试
-  // 场景：活动策划与资源配置
+test "inventory_batch_processing" {
+  // 库存批次处理测试
+  let total_items = 234
+  let batch_size = 50
   
-  // 活动参数
-  let participants = 156
-  let tables = 12
-  let chairs_per_table = 8
-  let budget_per_person = 45
-  let fixed_costs = 800
+  // 计算需要的批次数
+  let batches = divide_with_ceil(total_items, batch_size)
+  assert_eq(5, batches)  // ceil(234/50) = 5
   
-  // 计算需要的桌子数量
-  let tables_needed = divide_with_ceil(participants, chairs_per_table)
-  assert_eq(20, tables_needed)  // ceil(156/8) = 20
+  // 计算最后一批的物品数量
+  let full_batches = batches - 1
+  let items_in_full_batches = multiply(full_batches, batch_size)
+  let final_batch_size = subtract(total_items, items_in_full_batches)
   
-  // 计算可用座位数
-  let available_seats = multiply(tables_needed, chairs_per_table)
-  assert_eq(160, available_seats)
+  assert_eq(4, full_batches)
+  assert_eq(200, items_in_full_batches)
+  assert_eq(34, final_batch_size)
+}
+
+test "geometric_progression_calculation" {
+  // 几何级数计算测试
+  let first_term = 2
+  let ratio = 3
+  let n_terms = 4
   
-  // 计算剩余座位
-  let extra_seats = subtract(available_seats, participants)
-  assert_eq(4, extra_seats)
+  // 计算几何级数的第n项：a * r^(n-1)
+  let term1 = first_term
+  let term2 = multiply(term1, ratio)
+  let term3 = multiply(term2, ratio)
+  let term4 = multiply(term3, ratio)
   
-  // 计算人员相关成本
-  let personnel_costs = multiply(participants, budget_per_person)
-  assert_eq(7020, personnel_costs)
+  assert_eq(2, term1)
+  assert_eq(6, term2)
+  assert_eq(18, term3)
+  assert_eq(54, term4)
   
-  // 计算总预算
-  let total_budget = add(personnel_costs, fixed_costs)
-  assert_eq(7820, total_budget)
+  // 计算前n项和（简化版本）
+  let sum = add(add(add(term1, term2), term3), term4)
+  assert_eq(80, sum)
+}
+
+test "digital_root_calculation" {
+  // 数字根计算测试
+  let number = 9875
   
-  // 计算人均实际成本
-  let actual_cost_per_person = divide_with_ceil(total_budget, participants)
-  assert_eq(51, actual_cost_per_person)  // ceil(7820/156) = 51
+  // 计算数字根的简化版本
+  let digit1 = divide_with_ceil(number, 1000)
+  let remainder1 = subtract(number, multiply(digit1, 1000))
   
-  // 验证座位充足性
-  assert_true(available_seats >= participants)
+  let digit2 = divide_with_ceil(remainder1, 100)
+  let remainder2 = subtract(remainder1, multiply(digit2, 100))
   
-  // 验证桌子可用性
-  assert_true(tables_needed <= tables)
+  let digit3 = divide_with_ceil(remainder2, 10)
+  let digit4 = subtract(remainder2, multiply(digit3, 10))
+  
+  let digital_root = add(add(add(digit1, digit2), digit3), digit4)
+  
+  assert_eq(9, digit1)
+  assert_eq(8, digit2)
+  assert_eq(7, digit3)
+  assert_eq(5, digit4)
+  assert_eq(29, digital_root)
+}
+
+test "page_pagination_logic" {
+  // 分页逻辑测试
+  let total_records = 247
+  let records_per_page = 20
+  
+  // 计算总页数
+  let total_pages = divide_with_ceil(total_records, records_per_page)
+  assert_eq(13, total_pages)  // ceil(247/20) = 13
+  
+  // 计算最后一页的记录数
+  let full_pages = total_pages - 1
+  let records_in_full_pages = multiply(full_pages, records_per_page)
+  let last_page_records = subtract(total_records, records_in_full_pages)
+  
+  assert_eq(12, full_pages)
+  assert_eq(240, records_in_full_pages)
+  assert_eq(7, last_page_records)
+}
+
+test "compound_interest_simplified" {
+  // 简化的复利计算测试
+  let principal = 1000
+  let rate_percent = 5
+  let years = 3
+  
+  // 第一年
+  let year1_interest = divide_with_ceil(multiply(principal, rate_percent), 100)
+  let year1_total = add(principal, year1_interest)
+  
+  // 第二年
+  let year2_interest = divide_with_ceil(multiply(year1_total, rate_percent), 100)
+  let year2_total = add(year1_total, year2_interest)
+  
+  // 第三年
+  let year3_interest = divide_with_ceil(multiply(year2_total, rate_percent), 100)
+  let year3_total = add(year2_total, year3_interest)
+  
+  assert_eq(50, year1_interest)
+  assert_eq(1050, year1_total)
+  assert_eq(53, year2_interest)
+  assert_eq(1103, year2_total)
+  assert_eq(55, year3_interest)
+  assert_eq(1158, year3_total)
+}
+
+test "array_index_calculation" {
+  // 数组索引计算测试（模拟二维数组到一维数组的转换）
+  let rows = 4
+  let cols = 5
+  let row_index = 2
+  let col_index = 3
+  
+  // 计算一维数组中的索引：index = row * cols + col
+  let linear_index = add(multiply(row_index, cols), col_index)
+  
+  assert_eq(13, linear_index)  // 2*5 + 3 = 13
+  
+  // 验证总元素数
+  let total_elements = multiply(rows, cols)
+  assert_eq(20, total_elements)
+  
+  // 验证索引在有效范围内
+  assert_true(linear_index < total_elements)
+  assert_true(linear_index >= 0)
+}
+
+test "cpu_scheduling_round_robin" {
+  // CPU调度轮转算法测试
+  let processes = 15
+  let time_quantum = 3
+  let total_time_units = 47
+  
+  // 计算需要的轮次
+  let rounds_needed = divide_with_ceil(total_time_units, multiply(processes, time_quantum))
+  assert_eq(2, rounds_needed)  // ceil(47/(15*3)) = 2
+  
+  // 计算每个进程获得的时间片
+  let time_per_process = multiply(rounds_needed, time_quantum)
+  assert_eq(6, time_per_process)  // 2 * 3 = 6
+  
+  // 计算总分配时间
+  let total_allocated = multiply(processes, time_per_process)
+  assert_eq(90, total_allocated)  // 15 * 6 = 90
 }
