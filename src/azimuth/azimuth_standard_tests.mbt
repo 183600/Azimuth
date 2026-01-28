@@ -1,148 +1,144 @@
-// 标准 MoonBit 测试用例 - 针对 azimuth 库的核心功能
-// 包含基本数学运算和字符串处理功能的测试
+// Azimuth 项目标准测试用例
+// 使用标准 MoonBit 测试语法，针对核心功能进行全面测试
 
-// 导入必要的函数
-test "add_function_basic" {
-  // 测试基本的加法功能
-  let result1 = add(3, 7)
-  let result2 = add(0, 0)
-  let result3 = add(-2, 5)
-  
-  // 验证结果
-  assert_eq(result1, 10)
-  assert_eq(result2, 0)
-  assert_eq(result3, 3)
+test "add_function_commutative_property" {
+  // 测试加法交换律
+  assert_eq(15, azimuth.add(7, 8))
+  assert_eq(15, azimuth.add(8, 7))
+  assert_eq(0, azimuth.add(5, -5))
+  assert_eq(0, azimuth.add(-5, 5))
 }
 
-test "multiply_function_comprehensive" {
-  // 测试乘法功能的多种情况
-  let result1 = multiply(4, 5)
-  let result2 = multiply(0, 10)
-  let result3 = multiply(-3, 6)
-  let result4 = multiply(-2, -4)
+test "multiply_function_distributive_property" {
+  // 测试乘法分配律
+  let a = 3
+  let b = 4
+  let c = 5
   
-  // 验证结果
-  assert_eq(result1, 20)
-  assert_eq(result2, 0)
-  assert_eq(result3, -18)
-  assert_eq(result4, 8)
+  // a * (b + c) = a * b + a * c
+  let left_side = azimuth.multiply(a, azimuth.add(b, c))
+  let right_side = azimuth.add(azimuth.multiply(a, b), azimuth.multiply(a, c))
+  
+  assert_eq(left_side, right_side)
 }
 
-test "greet_function_variations" {
-  // 测试问候函数的不同输入
-  let greeting1 = greet("MoonBit")
-  let greeting2 = greet("")
-  let greeting3 = greet("世界")
-  
-  // 验证结果
-  assert_eq_string(greeting1, "Hello, MoonBit!")
-  assert_eq_string(greeting2, "Hello, !")
-  assert_eq_string(greeting3, "Hello, 世界!")
+test "divide_with_ceil_fractional_cases" {
+  // 测试向上取整除法的小数情况
+  assert_eq(2, azimuth.divide_with_ceil(3, 2))  // 1.5 -> 2
+  assert_eq(3, azimuth.divide_with_ceil(8, 3))  // 2.666... -> 3
+  assert_eq(4, azimuth.divide_with_ceil(11, 3)) // 3.666... -> 4
+  assert_eq(0, azimuth.divide_with_ceil(5, 0))  // 除数为零的安全处理
 }
 
-test "divide_with_ceil_positive_cases" {
-  // 测试正数的向上取整除法
-  let result1 = divide_with_ceil(10, 3)
-  let result2 = divide_with_ceil(9, 3)
-  let result3 = divide_with_ceil(1, 100)
-  let result4 = divide_with_ceil(25, 6)
-  
-  // 验证结果
-  assert_eq(result1, 4)
-  assert_eq(result2, 3)
-  assert_eq(result3, 1)
-  assert_eq(result4, 5)
+test "greet_function_special_characters" {
+  // 测试问候函数的特殊字符处理
+  assert_eq_string("Hello, 世界!", azimuth.greet("世界"))
+  assert_eq_string("Hello, 🚀!", azimuth.greet("🚀"))
+  assert_eq_string("Hello, user@example.com!", azimuth.greet("user@example.com"))
+  assert_eq_string("Hello, !", azimuth.greet(""))
 }
 
-test "divide_with_ceil_negative_and_zero" {
-  // 测试负数和零的向上取整除法
-  let result1 = divide_with_ceil(-10, 3)
-  let result2 = divide_with_ceil(-10, -3)
-  let result3 = divide_with_ceil(5, 0)
-  let result4 = divide_with_ceil(0, 5)
-  
-  // 验证结果
-  assert_eq(result1, -3)
-  assert_eq(result2, 4)
-  assert_eq(result3, 0)
-  assert_eq(result4, 0)
-}
-
-test "combined_operations_business_scenario" {
-  // 测试组合运算的业务场景
-  // 计算订单总价：商品价格 × 数量 + 运费
+test "complex_business_calculation" {
+  // 测试复杂业务计算场景
   let unit_price = 25
   let quantity = 8
+  let tax_rate = 8
   let shipping = 15
   
-  let subtotal = multiply(unit_price, quantity)
-  let total = add(subtotal, shipping)
+  // 计算小计
+  let subtotal = azimuth.multiply(unit_price, quantity)
+  // 计算税费
+  let tax = azimuth.divide_with_ceil(azimuth.multiply(subtotal, tax_rate), 100)
+  // 计算总价
+  let total = azimuth.add(azimuth.add(subtotal, tax), shipping)
   
-  // 验证结果
-  assert_eq(subtotal, 200)
-  assert_eq(total, 215)
+  assert_eq(200, subtotal)
+  assert_eq(16, tax)
+  assert_eq(231, total)
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 7
-  let b = 13
+test "mathematical_series_sum" {
+  // 测试数学级数求和
+  let n = 10
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  // 计算等差数列和：1 + 2 + 3 + ... + n
+  let arithmetic_sum = azimuth.divide_with_ceil(
+    azimuth.multiply(n, azimuth.add(n, 1)),
+    2
+  )
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  // 计算等比数列和：1 + 2 + 4 + 8 + 16
+  let geometric_sum = azimuth.add(
+    azimuth.add(
+      azimuth.add(azimuth.multiply(1, 1), azimuth.multiply(2, 2)),
+      azimuth.multiply(4, 4)
+    ),
+    azimuth.multiply(8, 8)
+  )
   
-  // 零元素性质
-  assert_eq(0, multiply(a, 0))
-  assert_eq(a, add(a, 0))
+  assert_eq(55, arithmetic_sum)
+  assert_eq(85, geometric_sum)
 }
 
-test "packaging_calculation_scenario" {
-  // 测试包装计算场景
-  let total_items = 47
-  let items_per_box = 12
-  
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  
-  // 验证结果：ceil(47/12) = 4
-  assert_eq(boxes_needed, 4)
+test "negative_number_operations" {
+  // 测试负数运算
+  assert_eq(-10, azimuth.add(-3, -7))
+  assert_eq(-5, azimuth.add(-8, 3))
+  assert_eq(15, azimuth.multiply(-3, -5))
+  assert_eq(-15, azimuth.multiply(3, -5))
+  assert_eq(-3, azimuth.divide_with_ceil(-10, 3))
+  assert_eq(-4, azimuth.divide_with_ceil(-11, 3))
 }
 
-test "complex_nested_operations" {
-  // 测试复杂的嵌套运算
-  let x = 10
-  let y = 20
-  let z = 5
+test "large_number_precision" {
+  // 测试大数精度
+  let large_num = 1000000
   
-  // 计算：(x + y) * z - x / y
-  let sum_xy = add(x, y)
-  let product = multiply(sum_xy, z)
-  let division = divide_with_ceil(x, y)
-  let result = add(product, -division)
-  
-  // 验证结果：(10 + 20) * 5 - ceil(10/20) = 30*5 - 1 = 150 - 1 = 149
-  assert_eq(result, 149)
+  assert_eq(2000000, azimuth.add(large_num, large_num))
+  assert_eq(1000000, azimuth.multiply(1000, 1000))
+  assert_eq(333334, azimuth.divide_with_ceil(1000000, 3))
+  assert_eq(1, azimuth.divide_with_ceil(1, 1000000))
 }
 
-test "string_and_number_integration" {
-  // 测试字符串和数字的集成处理
-  let name = "User"
-  let age = 25
-  let score = 87
+test "real_world_packaging_scenario" {
+  // 测试实际包装场景
+  let small_items = 25
+  let medium_items = 47
+  let large_items = 83
   
-  // 生成个性化问候
-  let greeting = greet(name)
+  let small_box_capacity = 6
+  let medium_box_capacity = 12
+  let large_box_capacity = 24
   
-  // 计算总分（年龄 + 分数）
-  let total_points = add(age, score)
+  // 计算每种物品需要的箱子数量
+  let small_boxes = azimuth.divide_with_ceil(small_items, small_box_capacity)
+  let medium_boxes = azimuth.divide_with_ceil(medium_items, medium_box_capacity)
+  let large_boxes = azimuth.divide_with_ceil(large_items, large_box_capacity)
   
-  // 计算平均分（向上取整）
-  let average = divide_with_ceil(total_points, 2)
+  // 计算总箱子数
+  let total_boxes = azimuth.add(
+    azimuth.add(small_boxes, medium_boxes),
+    large_boxes
+  )
   
-  // 验证结果
-  assert_eq_string(greeting, "Hello, User!")
-  assert_eq(total_points, 112)
-  assert_eq(average, 56)
+  assert_eq(5, small_boxes)   // ceil(25/6) = 5
+  assert_eq(4, medium_boxes)  // ceil(47/12) = 4
+  assert_eq(4, large_boxes)   // ceil(83/24) = 4
+  assert_eq(13, total_boxes)  // 5 + 4 + 4 = 13
+}
+
+test "time_calculation_workflow" {
+  // 测试时间计算工作流
+  let total_tasks = 45
+  let tasks_per_hour = 8
+  let work_hours_per_day = 8
+  
+  // 计算需要的工作小时数
+  let total_hours_needed = azimuth.divide_with_ceil(total_tasks, tasks_per_hour)
+  
+  // 计算需要的工作天数
+  let total_days_needed = azimuth.divide_with_ceil(total_hours_needed, work_hours_per_day)
+  
+  assert_eq(6, total_hours_needed)  // ceil(45/8) = 6
+  assert_eq(1, total_days_needed)   // ceil(6/8) = 1
 }
