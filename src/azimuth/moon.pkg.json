@@ -8,6 +8,7 @@
     "azimuth"
   ],
   "test": [
+    "azimuth_advanced_scenarios_tests.mbt",
     "single_test.mbt",
     "simple_test_verification.mbt",
     "standard_moonbit_test_additions.mbt",
@@ -164,6 +165,7 @@
         "quality_enhanced_test_suite.mbt",
     "azimuth_new_standard_test_cases.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
+    "azimuth_advanced_scenarios_tests.mbt",
     "single_test.mbt",
     "simple_test_verification.mbt",
     "standard_moonbit_test_additions.mbt",
