@@ -7712,3 +7712,131 @@ test "resource_scheduling_algorithm" {
   // 验证所有任务都能被处理
   assert_true(total_task_capacity >= tasks)
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "comprehensive_basic_arithmetic" {
+  // 全面测试基本算术运算
+  assert_eq(15, add(7, 8))
+  assert_eq(-2, add(-5, 3))
+  assert_eq(0, add(5, -5))
+  assert_eq(24, multiply(6, 4))
+  assert_eq(-18, multiply(6, -3))
+  assert_eq(0, multiply(0, 10))
+}
+
+test "mathematical_commutative_laws" {
+  // 测试数学交换律
+  let a = 12
+  let b = 23
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+}
+
+test "boundary_value_testing" {
+  // 边界值测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(1, multiply(1, 100))
+  assert_eq(-100, multiply(-1, 100))
+  assert_eq(100, multiply(-1, -100))
+}
+
+test "divide_with_ceil_comprehensive" {
+  // 全面测试向上取整除法
+  assert_eq(3, divide_with_ceil(10, 3))
+  assert_eq(4, divide_with_ceil(11, 3))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(-2, divide_with_ceil(-5, 3))
+  assert_eq(2, divide_with_ceil(-5, -3))
+}
+
+test "string_processing_edge_cases" {
+  // 字符串处理边界情况
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, a!", greet("a"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+}
+
+test "complex_calculation_sequence" {
+  // 复杂计算序列测试
+  let initial = 10
+  let step1 = add(initial, 5)        // 15
+  let step2 = multiply(step1, 2)     // 30
+  let step3 = divide_with_ceil(step2, 8)  // 4
+  let step4 = add(step3, 1)          // 5
+  
+  assert_eq(5, step4)
+}
+
+test "resource_allocation_scenario" {
+  // 资源分配场景测试
+  let total_items = 100
+  let containers = 9
+  let items_per_container = divide_with_ceil(total_items, containers)
+  
+  assert_eq(12, items_per_container)  // ceil(100/9) = 12
+  
+  // 验证总容量
+  let total_capacity = multiply(items_per_container, containers)
+  assert_eq(108, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(8, remaining_space)
+}
+
+test "mathematical_distributive_property" {
+  // 测试数学分配律
+  let a = 5
+  let b = 8
+  let c = 3
+  
+  // a * (b + c) = a * b + a * c
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  
+  assert_eq(left_side, right_side)  // 5 * (8 + 3) = 5 * 8 + 5 * 3 = 55
+}
+
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(0, divide_with_ceil(-5, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 极值测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 1))
+}
+
+test "real_world_application_test" {
+  // 真实世界应用测试：活动安排
+  let guests = 150
+  let tables = 12
+  let chairs_per_table = 15
+  
+  // 计算需要的桌子数量
+  let tables_needed = divide_with_ceil(guests, chairs_per_table)
+  assert_eq(10, tables_needed)  // ceil(150/15) = 10
+  
+  // 验证桌子数量足够
+  assert_true(tables_needed <= tables)
+  
+  // 计算总座位数
+  let total_seats = multiply(tables_needed, chairs_per_table)
+  assert_eq(150, total_seats)
+  
+  // 验证座位充足
+  let extra_seats = subtract(total_seats, guests)
+  assert_true(extra_seats >= 0)
+}
