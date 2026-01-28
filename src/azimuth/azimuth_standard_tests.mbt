@@ -1,88 +1,148 @@
-// 标准 MoonBit 测试用例
-// 针对 azimuth 库核心功能的简洁测试
+// 标准 MoonBit 测试用例 - 针对 azimuth 库的核心功能
+// 包含基本数学运算和字符串处理功能的测试
 
-test "add_commutative_property" {
-  // 测试加法交换律
-  assert_eq(15, add(8, 7))
-  assert_eq(15, add(7, 8))
-  assert_eq(0, add(-5, 5))
-  assert_eq(0, add(5, -5))
-}
-
-test "multiply_by_zero" {
-  // 测试乘以零的性质
-  assert_eq(0, multiply(5, 0))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(0, multiply(-10, 0))
-  assert_eq(0, multiply(0, -10))
-}
-
-test "greet_with_special_characters" {
-  // 测试包含特殊字符的问候
-  assert_eq_string("Hello, @user!", greet("@user"))
-  assert_eq_string("Hello, test-123!", greet("test-123"))
-  assert_eq_string("Hello, C++!", greet("C++"))
-}
-
-test "divide_with_ceil_fractional_results" {
-  // 测试向上取整除法的小数结果
-  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
-  assert_eq(4, divide_with_ceil(7, 2))  // 3.5 -> 4
-  assert_eq(3, divide_with_ceil(8, 3))  // 2.666... -> 3
-}
-
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景：购物车总价
-  let item1_price = 25
-  let item1_qty = 3
-  let item2_price = 15
-  let item2_qty = 2
+// 导入必要的函数
+test "add_function_basic" {
+  // 测试基本的加法功能
+  let result1 = add(3, 7)
+  let result2 = add(0, 0)
+  let result3 = add(-2, 5)
   
-  let subtotal = add(multiply(item1_price, item1_qty), multiply(item2_price, item2_qty))
-  assert_eq(105, subtotal)  // 25*3 + 15*2 = 75 + 30 = 105
+  // 验证结果
+  assert_eq(result1, 10)
+  assert_eq(result2, 0)
+  assert_eq(result3, 3)
 }
 
-test "negative_division_ceil" {
-  // 测试负数的向上取整除法
-  assert_eq(-2, divide_with_ceil(-4, 2))   // -4/2 = -2 -> -2
-  assert_eq(-1, divide_with_ceil(-3, 2))   // -3/2 = -1.5 -> -1
-  assert_eq(3, divide_with_ceil(-9, -3))   // -9/-3 = 3 -> 3
-}
-
-test "large_number_calculations" {
-  // 测试大数计算
-  assert_eq(100000, add(50000, 50000))
-  assert_eq(1000000, multiply(1000, 1000))
-  assert_eq(1, divide_with_ceil(100000, 100000))
-}
-
-test "distributive_property" {
-  // 测试分配律：a * (b + c) = a * b + a * c
-  let a = 3
-  let b = 4
-  let c = 5
-  let left = multiply(a, add(b, c))
-  let right = add(multiply(a, b), multiply(a, c))
-  assert_eq(left, right)  // 3 * (4 + 5) = 3 * 4 + 3 * 5 = 27
-}
-
-test "packaging_efficiency" {
-  // 测试包装效率计算
-  let total_products = 47
-  let products_per_box = 12
-  let boxes_needed = divide_with_ceil(total_products, products_per_box)
+test "multiply_function_comprehensive" {
+  // 测试乘法功能的多种情况
+  let result1 = multiply(4, 5)
+  let result2 = multiply(0, 10)
+  let result3 = multiply(-3, 6)
+  let result4 = multiply(-2, -4)
   
-  assert_eq(4, boxes_needed)  // ceil(47/12) = 4
-  
-  // 计算剩余空间
-  let total_capacity = multiply(boxes_needed, products_per_box)
-  let unused_space = add(total_capacity, -total_products)
-  assert_eq(1, unused_space)  // 4*12 - 47 = 48 - 47 = 1
+  // 验证结果
+  assert_eq(result1, 20)
+  assert_eq(result2, 0)
+  assert_eq(result3, -18)
+  assert_eq(result4, 8)
 }
 
-test "string_greeting_edge_cases" {
-  // 测试字符串问候的边界情况
-  assert_eq_string("Hello, !", greet(""))  // 空字符串
-  assert_eq_string("Hello, A!", greet("A"))  // 单字符
-  assert_eq_string("Hello,   !", greet("   "))  // 空格字符串
+test "greet_function_variations" {
+  // 测试问候函数的不同输入
+  let greeting1 = greet("MoonBit")
+  let greeting2 = greet("")
+  let greeting3 = greet("世界")
+  
+  // 验证结果
+  assert_eq_string(greeting1, "Hello, MoonBit!")
+  assert_eq_string(greeting2, "Hello, !")
+  assert_eq_string(greeting3, "Hello, 世界!")
+}
+
+test "divide_with_ceil_positive_cases" {
+  // 测试正数的向上取整除法
+  let result1 = divide_with_ceil(10, 3)
+  let result2 = divide_with_ceil(9, 3)
+  let result3 = divide_with_ceil(1, 100)
+  let result4 = divide_with_ceil(25, 6)
+  
+  // 验证结果
+  assert_eq(result1, 4)
+  assert_eq(result2, 3)
+  assert_eq(result3, 1)
+  assert_eq(result4, 5)
+}
+
+test "divide_with_ceil_negative_and_zero" {
+  // 测试负数和零的向上取整除法
+  let result1 = divide_with_ceil(-10, 3)
+  let result2 = divide_with_ceil(-10, -3)
+  let result3 = divide_with_ceil(5, 0)
+  let result4 = divide_with_ceil(0, 5)
+  
+  // 验证结果
+  assert_eq(result1, -3)
+  assert_eq(result2, 4)
+  assert_eq(result3, 0)
+  assert_eq(result4, 0)
+}
+
+test "combined_operations_business_scenario" {
+  // 测试组合运算的业务场景
+  // 计算订单总价：商品价格 × 数量 + 运费
+  let unit_price = 25
+  let quantity = 8
+  let shipping = 15
+  
+  let subtotal = multiply(unit_price, quantity)
+  let total = add(subtotal, shipping)
+  
+  // 验证结果
+  assert_eq(subtotal, 200)
+  assert_eq(total, 215)
+}
+
+test "mathematical_properties" {
+  // 测试数学性质
+  let a = 7
+  let b = 13
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 零元素性质
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, add(a, 0))
+}
+
+test "packaging_calculation_scenario" {
+  // 测试包装计算场景
+  let total_items = 47
+  let items_per_box = 12
+  
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  
+  // 验证结果：ceil(47/12) = 4
+  assert_eq(boxes_needed, 4)
+}
+
+test "complex_nested_operations" {
+  // 测试复杂的嵌套运算
+  let x = 10
+  let y = 20
+  let z = 5
+  
+  // 计算：(x + y) * z - x / y
+  let sum_xy = add(x, y)
+  let product = multiply(sum_xy, z)
+  let division = divide_with_ceil(x, y)
+  let result = add(product, -division)
+  
+  // 验证结果：(10 + 20) * 5 - ceil(10/20) = 30*5 - 1 = 150 - 1 = 149
+  assert_eq(result, 149)
+}
+
+test "string_and_number_integration" {
+  // 测试字符串和数字的集成处理
+  let name = "User"
+  let age = 25
+  let score = 87
+  
+  // 生成个性化问候
+  let greeting = greet(name)
+  
+  // 计算总分（年龄 + 分数）
+  let total_points = add(age, score)
+  
+  // 计算平均分（向上取整）
+  let average = divide_with_ceil(total_points, 2)
+  
+  // 验证结果
+  assert_eq_string(greeting, "Hello, User!")
+  assert_eq(total_points, 112)
+  assert_eq(average, 56)
 }
