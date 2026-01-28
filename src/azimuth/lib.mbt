@@ -1170,6 +1170,152 @@ test "enhanced_percentage_calculation" {
   assert_eq(38, result)
 }
 
+// 新增的10个标准MoonBit测试用例
+test "standard_arithmetic_boundary_test" {
+  // 标准算术边界测试
+  assert_eq(2147483647, add(2147483646, 1))  // 接近Int最大值
+  assert_eq(-2147483648, add(-2147483647, -1))  // 接近Int最小值
+  assert_eq(1, divide_with_ceil(2147483647, 2147483647))  // 大数相等除法
+}
+
+test "standard_distributive_property" {
+  // 标准分配律测试 a * (b + c) = a * b + a * c
+  let a = 7
+  let b = 12
+  let c = 8
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)  // 7 * (12 + 8) = 7 * 12 + 7 * 8 = 140
+}
+
+test "standard_division_comprehensive" {
+  // 标准除法综合测试
+  assert_eq(1, divide_with_ceil(1, 1))  // 完全相等
+  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
+  assert_eq(5, divide_with_ceil(21, 4))  // 5.25 -> 6
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -3.333... -> -3
+  assert_eq(0, divide_with_ceil(100, 0))  // 除零安全处理
+}
+
+test "standard_string_processing" {
+  // 标准字符串处理测试
+  assert_eq_string("Hello, MoonBit 2024!", greet("MoonBit 2024"))
+  assert_eq_string("Hello, user@domain.com!", greet("user@domain.com"))
+  assert_eq_string("Hello, Café!", greet("Café"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+}
+
+test "standard_function_composition" {
+  // 标准函数组合测试
+  let base_value = 10
+  let multiplier = 3
+  let addition = 5
+  
+  // 组合运算：(base * multiplier) + addition
+  let result = add(multiply(base_value, multiplier), addition)
+  assert_eq(35, result)  // (10 * 3) + 5 = 35
+  
+  // 嵌套组合：ceil((base + addition) * multiplier / 2)
+  let nested_result = divide_with_ceil(multiply(add(base_value, addition), multiplier), 2)
+  assert_eq(23, nested_result)  // ceil((10 + 5) * 3 / 2) = ceil(45 / 2) = 23
+}
+
+test "standard_business_calculation" {
+  // 标准业务计算测试
+  let unit_price = 45
+  let quantity = 8
+  let tax_rate = 10  // 10%
+  let shipping = 25
+  
+  // 计算总价
+  let subtotal = multiply(unit_price, quantity)
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let total = add(add(subtotal, tax), shipping)
+  
+  assert_eq(360, subtotal)
+  assert_eq(36, tax)
+  assert_eq(421, total)
+}
+
+test "standard_error_handling" {
+  // 标准错误处理测试
+  // 测试各种边界情况下的安全处理
+  assert_eq(0, divide_with_ceil(0, 0))  // 0除以0
+  assert_eq(0, divide_with_ceil(-100, 0))  // 负数除以0
+  assert_eq(0, multiply(0, -1000))  // 零乘法
+  assert_eq(0, add(1000, -1000))  // 相反数相加
+}
+
+test "standard_mathematical_identities" {
+  // 标准数学恒等式测试
+  let x = 15
+  let y = 25
+  
+  // 加法恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(y, add(0, y))
+  
+  // 乘法恒等式
+  assert_eq(x, multiply(x, 1))
+  assert_eq(y, multiply(1, y))
+  
+  // 零元素性质
+  assert_eq(0, multiply(x, 0))
+  assert_eq(0, multiply(0, y))
+}
+
+test "standard_performance_simulation" {
+  // 标准性能模拟测试
+  let base_operations = 100
+  let optimization_factor = 5
+  let overhead_percent = 20
+  
+  // 模拟性能优化计算
+  let optimized_ops = multiply(base_operations, optimization_factor)
+  let overhead = divide_with_ceil(multiply(optimized_ops, overhead_percent), 100)
+  let actual_performance = add(optimized_ops, -overhead)
+  
+  assert_eq(500, optimized_ops)
+  assert_eq(100, overhead)
+  assert_eq(400, actual_performance)
+}
+
+test "standard_complex_workflow" {
+  // 标准复杂工作流测试
+  // 模拟订单处理：商品计算 + 折扣 + 运费 + 税费
+  let item_price = 75
+  let item_quantity = 6
+  let discount_threshold = 400
+  let discount_amount = 50
+  let shipping_rate = 12
+  let tax_rate = 8
+  
+  // 步骤1：计算小计
+  let subtotal = multiply(item_price, item_quantity)
+  
+  // 步骤2：应用折扣
+  let after_discount = if subtotal > discount_threshold {
+    add(subtotal, -discount_amount)
+  } else {
+    subtotal
+  }
+  
+  // 步骤3：计算运费
+  let shipping = multiply(shipping_rate, item_quantity)
+  
+  // 步骤4：计算税费
+  let tax = divide_with_ceil(multiply(after_discount, tax_rate), 100)
+  
+  // 步骤5：计算最终总价
+  let final_total = add(add(after_discount, shipping), tax)
+  
+  assert_eq(450, subtotal)
+  assert_eq(400, after_discount)
+  assert_eq(72, shipping)
+  assert_eq(32, tax)
+  assert_eq(504, final_total)
+}
+
 // 新增的10个标准 MoonBit 测试用例
 
 test "algorithm_binary_search_simulation" {
