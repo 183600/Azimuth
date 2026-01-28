@@ -7941,3 +7941,227 @@ test "azimuth_compression_algorithm_simulation" {
   assert_eq(60, savings_2)
   assert_eq(2, compression_efficiency)
 }
+
+// 新增的10个标准 MoonBit 测试用例
+
+test "azimuth_recursive_calculation_simulation" {
+  // 递归计算模拟：计算阶乘 n! = n * (n-1) * (n-2) * ... * 1
+  let n = 5
+  // 模拟 5! = 5 * 4 * 3 * 2 * 1
+  let factorial_5 = multiply(multiply(multiply(multiply(5, 4), 3), 2), 1)
+  assert_eq(120, factorial_5)
+  
+  // 模拟 4! = 4 * 3 * 2 * 1
+  let factorial_4 = multiply(multiply(multiply(4, 3), 2), 1)
+  assert_eq(24, factorial_4)
+  
+  // 验证递归关系：n! = n * (n-1)!
+  let recursive_check = multiply(5, factorial_4)
+  assert_eq(factorial_5, recursive_check)
+}
+
+test "azimuth_array_index_calculation" {
+  // 数组索引计算：模拟二维数组的一维索引计算
+  let rows = 4
+  let cols = 5
+  let row_index = 2
+  let col_index = 3
+  
+  // 一维索引 = row_index * cols + col_index
+  let linear_index = add(multiply(row_index, cols), col_index)
+  assert_eq(13, linear_index)
+  
+  // 反向计算：从一维索引计算行列
+  let recovered_row = divide_with_ceil(linear_index, cols)
+  let recovered_col = add(linear_index, -multiply(recovered_row, cols))
+  assert_eq(row_index, recovered_row)
+  assert_eq(col_index, recovered_col)
+}
+
+test "azimuth_time_conversion_calculation" {
+  // 时间转换计算：秒到分钟、小时的转换
+  let total_seconds = 3661
+  
+  // 计算小时和剩余秒数
+  let hours = divide_with_ceil(total_seconds, 3600)
+  let remaining_seconds = add(total_seconds, -multiply(hours, 3600))
+  
+  // 计算分钟和剩余秒数
+  let minutes = divide_with_ceil(remaining_seconds, 60)
+  let final_seconds = add(remaining_seconds, -multiply(minutes, 60))
+  
+  assert_eq(2, hours)      // 3661/3600 = 1.016... -> 2 (向上取整)
+  assert_eq(-2539, remaining_seconds)  // 3661 - 2*3600 = -3539
+  assert_eq(-42, minutes)  // -3539/60 = -58.98... -> -58 (向上取整)
+  assert_eq(121, final_seconds)  // -3539 - (-58)*60 = 121
+}
+
+test "azimuth_geometric_calculation" {
+  // 几何计算：矩形和圆的面积、周长计算
+  let rect_length = 8
+  let rect_width = 5
+  let circle_radius = 7
+  
+  // 矩形面积和周长
+  let rect_area = multiply(rect_length, rect_width)
+  let rect_perimeter = multiply(2, add(rect_length, rect_width))
+  
+  // 圆的面积和周长（使用π≈22/7的近似值）
+  let pi_approximation = divide_with_ceil(22, 7)
+  let circle_area = multiply(pi_approximation, multiply(circle_radius, circle_radius))
+  let circle_circumference = multiply(2, multiply(pi_approximation, circle_radius))
+  
+  assert_eq(40, rect_area)
+  assert_eq(26, rect_perimeter)
+  assert_eq(4, pi_approximation)  // 22/7 = 3.14... -> 4 (向上取整)
+  assert_eq(196, circle_area)    // 4 * 7 * 7 = 196
+  assert_eq(56, circle_circumference)  // 2 * 4 * 7 = 56
+}
+
+test "azimuth_statistical_calculation" {
+  // 统计学计算：平均值和中位数的模拟计算
+  let data_sum = 156
+  let data_count = 6
+  let median_sum = 51  // 假设中间两个数之和
+  let median_count = 2
+  
+  // 计算平均值
+  let mean = divide_with_ceil(data_sum, data_count)
+  
+  // 计算中位数
+  let median = divide_with_ceil(median_sum, median_count)
+  
+  // 计算方差（简化版本）
+  let variance_approximation = divide_with_ceil(multiply(mean, mean), 2)
+  
+  assert_eq(26, mean)  // 156/6 = 26
+  assert_eq(26, median)  // 51/2 = 25.5 -> 26
+  assert_eq(338, variance_approximation)  // 26*26/2 = 338
+}
+
+test "azimuth_number_base_conversion" {
+  // 进制转换模拟：简单的二进制转换
+  let decimal_number = 13
+  let base = 2
+  
+  // 模拟二进制转换：13 = 1101 (base 2)
+  // 计算各位权重：2^0, 2^1, 2^2, 2^3
+  let bit_0_weight = 1  // 2^0
+  let bit_1_weight = 2  // 2^1
+  let bit_2_weight = 4  // 2^2
+  let bit_3_weight = 8  // 2^3
+  
+  // 验证二进制表示：1*8 + 1*4 + 0*2 + 1*1 = 13
+  let binary_verification = add(add(add(multiply(1, bit_3_weight), multiply(1, bit_2_weight)), multiply(0, bit_1_weight)), multiply(1, bit_0_weight))
+  
+  assert_eq(13, binary_verification)
+  
+  // 计算需要的二进制位数
+  let bits_needed = divide_with_ceil(decimal_number, bit_2_weight)
+  assert_eq(4, bits_needed)  // 13/4 = 3.25 -> 4
+}
+
+test "azimuth_physics_calculation" {
+  // 物理计算：速度、距离、时间的关系
+  let initial_velocity = 10  // m/s
+  let acceleration = 2       // m/s²
+  let time = 5               // seconds
+  
+  // 计算最终速度：v = u + at
+  let final_velocity = add(initial_velocity, multiply(acceleration, time))
+  
+  // 计算距离：s = ut + (1/2)at²
+  let distance_part1 = multiply(initial_velocity, time)
+  let distance_part2 = divide_with_ceil(multiply(acceleration, multiply(time, time)), 2)
+  let total_distance = add(distance_part1, distance_part2)
+  
+  // 计算平均速度
+  let average_velocity = divide_with_ceil(add(initial_velocity, final_velocity), 2)
+  
+  assert_eq(20, final_velocity)  // 10 + 2*5 = 20
+  assert_eq(50, distance_part1)  // 10*5 = 50
+  assert_eq(25, distance_part2)  // 2*25/2 = 25
+  assert_eq(75, total_distance)  // 50 + 25 = 75
+  assert_eq(15, average_velocity)  // (10 + 20)/2 = 15
+}
+
+test "azimuth_financial_compound_interest" {
+  // 金融复利计算：更复杂的复利场景
+  let principal = 10000
+  let annual_rate = 8
+  let years = 3
+  let compound_frequency = 4  // 季度复利
+  
+  // 计算每期利率
+  let period_rate = divide_with_ceil(annual_rate, compound_frequency)
+  
+  // 计算总期数
+  let total_periods = multiply(years, compound_frequency)
+  
+  // 简化的复利计算（近似）
+  let amount_after_year1 = add(principal, divide_with_ceil(multiply(principal, period_rate), 100))
+  let amount_after_year2 = add(amount_after_year1, divide_with_ceil(multiply(amount_after_year1, period_rate), 100))
+  let amount_after_year3 = add(amount_after_year2, divide_with_ceil(multiply(amount_after_year2, period_rate), 100))
+  
+  // 计算总收益
+  let total_interest = add(amount_after_year3, -principal)
+  
+  assert_eq(2, period_rate)  // 8/4 = 2
+  assert_eq(12, total_periods)  // 3*4 = 12
+  assert_eq(10200, amount_after_year1)
+  assert_eq(10404, amount_after_year2)
+  assert_eq(10612, amount_after_year3)
+  assert_eq(612, total_interest)
+}
+
+test "azimuth_data_validation_scenario" {
+  // 数据验证场景：输入验证相关的计算
+  let min_value = 10
+  let max_value = 100
+  let input_value = 45
+  let batch_size = 25
+  let total_records = 234
+  
+  // 验证输入是否在范围内
+  let is_in_range = if input_value >= min_value && input_value <= max_value { 1 } else { 0 }
+  
+  // 计算需要的批次数
+  let batches_needed = divide_with_ceil(total_records, batch_size)
+  
+  // 计算最后一批的记录数
+  let last_batch_size = add(total_records, -multiply(batches_needed - 1, batch_size))
+  
+  // 计算验证通过率（假设90%通过）
+  let pass_rate = 90
+  let passed_records = divide_with_ceil(multiply(total_records, pass_rate), 100)
+  
+  assert_eq(1, is_in_range)  // 45在范围内
+  assert_eq(10, batches_needed)  // 234/25 = 9.36 -> 10
+  assert_eq(9, last_batch_size)  // 234 - 9*25 = 9
+  assert_eq(211, passed_records)  // 234*90/100 = 210.6 -> 211
+}
+
+test "azimuth_algorithm_optimization_comparison" {
+  // 算法优化对比：O(n²) vs O(n log n) 算法性能比较
+  let data_size = 1000
+  
+  // O(n²) 算法的操作数
+  let on2_operations = multiply(data_size, data_size)
+  
+  // O(n log n) 算法的操作数（简化计算）
+  let log_approximation = divide_with_ceil(data_size, 100)  // 简化的log计算
+  let onlogn_operations = multiply(data_size, log_approximation)
+  
+  // 性能提升倍数
+  let performance_improvement = divide_with_ceil(on2_operations, onlogn_operations)
+  
+  // 内存使用优化：减少50%
+  let memory_reduction = 50
+  let original_memory = 500  // MB
+  let optimized_memory = add(original_memory, -divide_with_ceil(multiply(original_memory, memory_reduction), 100))
+  
+  assert_eq(1000000, on2_operations)
+  assert_eq(10000, onlogn_operations)  // 1000 * 10 = 10000
+  assert_eq(100, performance_improvement)  // 1000000/10000 = 100
+  assert_eq(250, optimized_memory)  // 500 - 500*50/100 = 250
+}
