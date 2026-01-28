@@ -1,80 +1,55 @@
 #!/bin/bash
 
-# 验证新测试文件的脚本
-echo "验证 Azimuth 新增测试用例..."
-echo ""
+# 验证新创建的测试文件
 
-# 检查测试文件是否存在
-if [ -f "azimuth_new_enhanced_test_cases.mbt" ]; then
-    echo "✓ 找到测试文件: azimuth_new_enhanced_test_cases.mbt"
-    echo ""
-    
-    # 统计测试用例数量
-    TEST_COUNT=$(grep -c 'test "' azimuth_new_enhanced_test_cases.mbt)
-    echo "✓ 发现 $TEST_COUNT 个测试用例 (要求不超过10个)"
-    echo ""
-    
-    # 检查是否使用了正确的断言函数
-    ASSERT_EQ_COUNT=$(grep -c 'assert_eq(' azimuth_new_enhanced_test_cases.mbt)
-    ASSERT_EQ_STRING_COUNT=$(grep -c 'assert_eq_string(' azimuth_new_enhanced_test_cases.mbt)
-    
-    echo "✓ 使用了 $ASSERT_EQ_COUNT 次 assert_eq() 断言"
-    echo "✓ 使用了 $ASSERT_EQ_STRING_COUNT 次 assert_eq_string() 断言"
-    echo ""
-    
-    # 列出所有测试用例
-    echo "测试用例列表:"
-    grep 'test "' azimuth_new_enhanced_test_cases.mbt | sed 's/test "/- /' | sed 's/" {/:/'
-    echo ""
-    
-    # 检查语法错误
-    SYNTAX_ERRORS=0
-    
-    # 检查是否有未闭合的括号
-    OPEN_BRACES=$(grep -o '{' azimuth_new_enhanced_test_cases.mbt | wc -l)
-    CLOSE_BRACES=$(grep -o '}' azimuth_new_enhanced_test_cases.mbt | wc -l)
-    
-    if [ $OPEN_BRACES -eq $CLOSE_BRACES ]; then
-        echo "✓ 括号匹配正确"
-    else
-        echo "✗ 括号不匹配: 开括号 $OPEN_BRACES 个, 闭括号 $CLOSE_BRACES 个"
-        SYNTAX_ERRORS=$((SYNTAX_ERRORS + 1))
-    fi
-    
-    # 检查是否有未闭合的圆括号
-    OPEN_PARENS=$(grep -o '(' azimuth_new_enhanced_test_cases.mbt | wc -l)
-    CLOSE_PARENS=$(grep -o ')' azimuth_new_enhanced_test_cases.mbt | wc -l)
-    
-    if [ $OPEN_PARENS -eq $CLOSE_PARENS ]; then
-        echo "✓ 圆括号匹配正确"
-    else
-        echo "✗ 圆括号不匹配: 开括号 $OPEN_PARENS 个, 闭括号 $CLOSE_PARENS 个"
-        SYNTAX_ERRORS=$((SYNTAX_ERRORS + 1))
-    fi
-    
-    echo ""
-    
-    if [ $SYNTAX_ERRORS -eq 0 ]; then
-        echo "✓ 所有语法检查通过！"
-        echo ""
-        echo "测试文件已成功创建，包含以下功能测试："
-        echo "1. 加法交换律扩展测试"
-        echo "2. 乘法幂运算场景测试"
-        echo "3. 问候函数格式验证测试"
-        echo "4. 向上取整除法复杂分数测试"
-        echo "5. 嵌套函数组合测试"
-        echo "6. 数学序列计算测试"
-        echo "7. 商业发票计算测试"
-        echo "8. 时间转换场景测试"
-        echo "9. 字符串模式验证测试"
-        echo "10. 资源分配优化测试"
-        echo ""
-        echo "✓ 测试文件创建成功！"
-    else
-        echo "✗ 发现 $SYNTAX_ERRORS 个语法错误，请修复后重试。"
-        exit 1
-    fi
-else
-    echo "✗ 错误: 找不到测试文件 azimuth_new_enhanced_test_cases.mbt"
-    exit 1
+echo "验证新创建的增强测试文件..."
+
+# 设置路径
+PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
+CORE_PATH="$PROJECT_ROOT/core"
+AZIMUTH_PATH="$PROJECT_ROOT/src/azimuth"
+
+# 编译 azimuth 包
+echo "编译 azimuth 包..."
+cd "$AZIMUTH_PATH"
+
+# 使用 moonc.js 编译 lib.mbt
+node "$PROJECT_ROOT/moonc.js" check -pkg azimuth -std-path "$CORE_PATH" lib.mbt
+if [ $? -ne 0 ]; then
+  echo "错误: azimuth/lib.mbt 编译失败"
+  exit 1
 fi
+
+# 生成 .mi 文件
+node "$PROJECT_ROOT/moonc.js" check -pkg azimuth -std-path "$CORE_PATH" lib.mbt -o azimuth.mi
+if [ $? -ne 0 ]; then
+  echo "警告: 生成 azimuth.mi 文件失败"
+fi
+
+# 编译新的测试文件
+echo "编译新的测试文件..."
+cd test
+
+# 测试 enhanced_comprehensive_tests.mbt
+echo "检查 enhanced_comprehensive_tests.mbt..."
+node "$PROJECT_ROOT/moonc.js" check -pkg azimuth_test -std-path "$CORE_PATH" -i ../azimuth.mi enhanced_comprehensive_tests.mbt
+if [ $? -ne 0 ]; then
+  echo "错误: enhanced_comprehensive_tests.mbt 有编译问题"
+  exit 1
+fi
+
+# 统计测试数量
+TEST_COUNT=$(grep "^test " enhanced_comprehensive_tests.mbt 2>/dev/null | wc -l)
+TEST_COUNT=$(echo "$TEST_COUNT" | tr -d ' ')
+
+echo ""
+echo "=== 测试结果 ==="
+echo "测试文件: enhanced_comprehensive_tests.mbt"
+echo "测试数量: $TEST_COUNT"
+echo "编译状态: 成功"
+echo ""
+echo "测试列表:"
+grep "^test " enhanced_comprehensive_tests.mbt
+
+echo ""
+echo "所有 $TEST_COUNT 个测试编译成功！"
