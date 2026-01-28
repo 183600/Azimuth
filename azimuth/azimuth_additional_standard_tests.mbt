@@ -1,198 +1,130 @@
-// 额外的标准 MoonBit 测试用例
-// 针对 azimuth 库的核心功能进行补充测试
+// Azimuth 额外标准测试用例
+// 包含 8 个高质量测试用例，覆盖核心功能
 
-test "subtract_basic_functionality" {
-  // 测试基本减法功能
+test "subtract_function_comprehensive" {
+  // 全面测试减法函数
   assert_eq(5, subtract(10, 5))
   assert_eq(-5, subtract(5, 10))
   assert_eq(0, subtract(5, 5))
-  assert_eq(10, subtract(0, -10))
+  assert_eq(15, subtract(10, -5))
+  assert_eq(-15, subtract(-10, 5))
 }
 
-test "complex_financial_calculation" {
-  // 复杂金融计算：贷款分期
-  let loan_amount = 12000
-  let monthly_payment = 850
-  let months_needed = divide_with_ceil(loan_amount, monthly_payment)
-  
-  assert_eq(15, months_needed)  // ceil(12000/850) = 15
-  
-  // 验证总支付金额
-  let total_payment = multiply(months_needed, monthly_payment)
-  assert_eq(12750, total_payment)
-  
-  // 验证最后一个月的实际支付金额
-  let final_payment = subtract(total_payment, multiply(months_needed - 1, monthly_payment))
-  assert_eq(750, final_payment)
+test "divide_with_ceil_precision_test" {
+  // 测试向上取整除法的精度
+  assert_eq(1, divide_with_ceil(1, 2))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(100, divide_with_ceil(199, 2))
+  assert_eq(67, divide_with_ceil(200, 3))
+  assert_eq(334, divide_with_ceil(1000, 3))
 }
 
-test "inventory_optimization" {
-  // 库存优化：多产品装箱计算
-  // 产品A：37个，每箱12个
-  let product_a = 37
-  let box_capacity_a = 12
-  let boxes_a = divide_with_ceil(product_a, box_capacity_a)
+test "mathematical_identity_properties_extended" {
+  // 扩展数学恒等式测试
+  let x = 123
+  let y = 456
   
-  // 产品B：89个，每箱15个
-  let product_b = 89
-  let box_capacity_b = 15
-  let boxes_b = divide_with_ceil(product_b, box_capacity_b)
+  // 加法恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(y, add(0, y))
   
-  // 计算总箱数
-  let total_boxes = add(boxes_a, boxes_b)
-  assert_eq(13, total_boxes)  // ceil(37/12) + ceil(89/15) = 4 + 6 = 10
+  // 乘法恒等式
+  assert_eq(x, multiply(x, 1))
+  assert_eq(y, multiply(1, y))
   
-  // 计算剩余空间
-  let total_capacity = add(multiply(boxes_a, box_capacity_a), multiply(boxes_b, box_capacity_b))
-  let total_items = add(product_a, product_b)
-  let remaining_space = subtract(total_capacity, total_items)
-  assert_eq(16, remaining_space)
+  // 减法恒等式
+  assert_eq(0, subtract(x, x))
+  assert_eq(x, subtract(x, 0))
 }
 
-test "mathematical_sequence_calculation" {
-  // 数学序列计算：等差数列求和
-  let first_term = 3
-  let common_difference = 4
-  let number_of_terms = 8
+test "complex_business_calculation_extended" {
+  // 扩展业务计算测试
+  // 场景：计算项目预算分配
+  let total_budget = 50000
+  let departments = 4
+  let base_allocation = divide_with_ceil(total_budget, departments)
   
-  // 计算最后一项
-  let last_term = add(first_term, multiply(number_of_terms - 1, common_difference))
+  assert_eq(12500, base_allocation)
   
-  // 使用求和公式：S = n * (a1 + an) / 2
-  let sum = divide_with_ceil(multiply(number_of_terms, add(first_term, last_term)), 2)
+  // 为每个部门添加应急基金
+  let emergency_fund = 2000
+  let final_allocation = add(base_allocation, emergency_fund)
   
-  assert_eq(31, last_term)  // 3 + 7*4 = 31
-  assert_eq(136, sum)       // 8 * (3 + 31) / 2 = 8 * 34 / 2 = 136
+  assert_eq(14500, final_allocation)
+  
+  // 计算总分配金额
+  let total_allocated = multiply(final_allocation, departments)
+  assert_eq(58000, total_allocated)
 }
 
-test "energy_efficiency_calculation" {
-  // 能效计算：设备功耗分析
-  let device_a_power = 150  // 瓦特
-  let device_b_power = 75   // 瓦特
-  let device_c_power = 200  // 瓦特
-  
-  let hours_per_day = 8
-  let days_per_month = 30
-  
-  // 计算日耗电量
-  let daily_consumption = add(add(device_a_power, device_b_power), device_c_power)
-  let daily_kwh = divide_with_ceil(daily_consumption, 1000)  // 转换为千瓦时
-  
-  // 计算月耗电量
-  let monthly_kwh = multiply(daily_kwh, days_per_month)
-  
-  assert_eq(425, daily_consumption)  // 150 + 75 + 200 = 425W
-  assert_eq(1, daily_kwh)           // ceil(425/1000) = 1kWh
-  assert_eq(30, monthly_kwh)         // 1 * 30 = 30kWh
+test "string_processing_edge_cases_extended" {
+  // 扩展字符串处理边缘情况测试
+  assert_eq_string("Hello, empty!", greet(""))
+  assert_eq_string("Hello, space!", greet(" "))
+  assert_eq_string("Hello, numbers123!", greet("numbers123"))
+  assert_eq_string("Hello, mixedCASE123!", greet("mixedCASE123"))
+  assert_eq_string("Hello, special@#$%!", greet("special@#$%"))
 }
 
-test "project_resource_allocation" {
-  // 项目资源分配：团队任务分配
-  let total_tasks = 67
-  let team_members = 5
-  let base_tasks_per_member = divide_with_ceil(total_tasks, team_members)
+test "resource_optimization_complex_scenario" {
+  // 复杂资源优化场景测试
+  // 场景：多项目资源分配
+  let project_a_tasks = 23
+  let project_b_tasks = 41
+  let project_c_tasks = 17
+  let team_capacity_per_sprint = 20
   
-  assert_eq(14, base_tasks_per_member)  // ceil(67/5) = 14
+  // 计算每个项目需要的冲刺数
+  let sprints_a = divide_with_ceil(project_a_tasks, team_capacity_per_sprint)
+  let sprints_b = divide_with_ceil(project_b_tasks, team_capacity_per_sprint)
+  let sprints_c = divide_with_ceil(project_c_tasks, team_capacity_per_sprint)
   
-  // 计算总分配任务数
-  let total_allocated = multiply(base_tasks_per_member, team_members)
-  assert_eq(70, total_allocated)
+  assert_eq(2, sprints_a)  // ceil(23/20)
+  assert_eq(3, sprints_b)  // ceil(41/20)
+  assert_eq(1, sprints_c)  // ceil(17/20)
   
-  // 计算多余任务槽位
-  let extra_slots = subtract(total_allocated, total_tasks)
-  assert_eq(3, extra_slots)
+  // 计算总冲刺数
+  let total_sprints = add(add(sprints_a, sprints_b), sprints_c)
+  assert_eq(6, total_sprints)
   
-  // 计算实际工作量分布
-  let members_with_extra = extra_slots
-  let members_with_base = subtract(team_members, members_with_extra)
-  
-  assert_eq(3, members_with_extra)  // 3个成员多1个任务
-  assert_eq(2, members_with_base)   // 2个成员保持基础任务数
+  // 计算总工作量
+  let total_workload = add(add(project_a_tasks, project_b_tasks), project_c_tasks)
+  assert_eq(81, total_workload)
 }
 
-test "string_processing_multilingual" {
-  // 多语言字符串处理
-  assert_eq_string("Hello, 北京!", greet("北京"))
-  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
-  assert_eq_string("Hello, München!", greet("München"))
-  assert_eq_string("Hello, 東京!", greet("東京"))
-  assert_eq_string("Hello, Cairo!", greet("Cairo"))
+test "error_handling_comprehensive" {
+  // 综合错误处理测试
+  // 除零错误的各种情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  
+  // 大数运算的安全性
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1000000000000, multiply(1000000, 1000000))
 }
 
-test "complex_shipping_calculation" {
-  // 复杂运输计算：多地区配送
-  let region_a_distance = 150  // 公里
-  let region_b_distance = 320  // 公里
-  let region_c_distance = 85   // 公里
+test "algorithm_efficiency_validation" {
+  // 算法效率验证测试
+  // 模拟不同算法的效率比较
+  let dataset_size = 1000
   
-  let base_rate_per_km = 2     // 每公里基础费率
-  let fuel_surcharge = 15      // 燃油附加费百分比
-  let handling_fee = 25        // 固定处理费
+  // O(n) 算法模拟
+  let linear_time = multiply(dataset_size, 5)
   
-  // 计算各地区运费
-  let freight_a = multiply(region_a_distance, base_rate_per_km)
-  let freight_b = multiply(region_b_distance, base_rate_per_km)
-  let freight_c = multiply(region_c_distance, base_rate_per_km)
+  // O(log n) 算法模拟（简化）
+  let logarithmic_time = divide_with_ceil(dataset_size, 10)
   
-  // 计算燃油附加费
-  let total_freight = add(add(freight_a, freight_b), freight_c)
-  let fuel_charge = divide_with_ceil(multiply(total_freight, fuel_surcharge), 100)
+  // O(n²) 算法模拟（简化）
+  let quadratic_time = multiply(dataset_size, divide_with_ceil(dataset_size, 100))
   
-  // 计算总费用
-  let total_cost = add(add(total_freight, fuel_charge), handling_fee)
+  assert_eq(5000, linear_time)
+  assert_eq(100, logarithmic_time)
+  assert_eq(10000, quadratic_time)
   
-  assert_eq(300, freight_a)   // 150 * 2 = 300
-  assert_eq(640, freight_b)   // 320 * 2 = 640
-  assert_eq(170, freight_c)   // 85 * 2 = 170
-  assert_eq(1110, total_freight)  // 300 + 640 + 170 = 1110
-  assert_eq(167, fuel_charge)     // ceil(1110 * 15 / 100) = 167
-  assert_eq(1302, total_cost)     // 1110 + 167 + 25 = 1302
-}
-
-test "temperature_conversion_analysis" {
-  // 温度转换分析：批量温度数据处理
-  let celsius_readings = 5
-  let fahrenheit_readings = 3
-  let kelvin_readings = 2
-  
-  // 模拟温度转换计算（简化）
-  // 摄氏度转华氏度：F = C * 9/5 + 32
-  let avg_celsius = 25
-  let converted_to_fahrenheit = add(divide_with_ceil(multiply(avg_celsius, 9), 5), 32)
-  
-  // 华氏度转摄氏度：C = (F - 32) * 5/9
-  let avg_fahrenheit = 77
-  let converted_to_celsius = divide_with_ceil(multiply(subtract(avg_fahrenheit, 32), 5), 9)
-  
-  // 计算总读数
-  let total_readings = add(add(celsius_readings, fahrenheit_readings), kelvin_readings)
-  
-  assert_eq(77, converted_to_fahrenheit)  // ceil(25 * 9 / 5) + 32 = 45 + 32 = 77
-  assert_eq(25, converted_to_celsius)     // ceil((77 - 32) * 5 / 9) = ceil(45 * 5 / 9) = 25
-  assert_eq(10, total_readings)           // 5 + 3 + 2 = 10
-}
-
-test "digital_storage_calculation" {
-  // 数字存储计算：文件压缩和备份策略
-  let original_files_gb = 45
-  let compression_ratio = 40  // 压缩到40%
-  let backup_copies = 3
-  
-  // 计算压缩后大小
-  let compressed_size = divide_with_ceil(multiply(original_files_gb, compression_ratio), 100)
-  
-  // 计算总备份大小
-  let total_backup_size = multiply(compressed_size, backup_copies)
-  
-  // 计算节省的存储空间
-  let original_total_size = multiply(original_files_gb, backup_copies)
-  let space_saved = subtract(original_total_size, total_backup_size)
-  
-  // 计算存储设备需求（向上取整到最接近的10GB）
-  let storage_needed = multiply(divide_with_ceil(total_backup_size, 10), 10)
-  
-  assert_eq(18, compressed_size)      // ceil(45 * 40 / 100) = 18
-  assert_eq(54, total_backup_size)    // 18 * 3 = 54
-  assert_eq(81, space_saved)          // 45 * 3 - 54 = 135 - 54 = 81
-  assert_eq(60, storage_needed)       // ceil(54/10) * 10 = 60
+  // 验证算法效率关系
+  assert_true(linear_time > logarithmic_time)
+  assert_true(quadratic_time > linear_time)
 }
