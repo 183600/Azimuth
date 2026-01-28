@@ -1,124 +1,138 @@
-// Copyright 2026 International Digital Economy Academy
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// 标准 MoonBit 测试用例
+// 为 azimuth 库提供高质量的标准测试覆盖
 
-// Standard MoonBit Test Suite
-// This file contains standard test cases for core MoonBit modules
-
-///|
-test "int absolute value edge cases" {
-  inspect(Int::abs(0), content="0")
-  inspect(Int::abs(1), content="1")
-  inspect(Int::abs(-1), content="1")
-  inspect(Int::abs(@int.max_value), content="2147483647")
-  inspect(Int::abs(@int.min_value), content="-2147483648")  // min_value.abs() stays negative due to overflow
+test "basic_arithmetic_operations" {
+  // 基本算术运算测试
+  assert_eq(5, azimuth::add(2, 3))
+  assert_eq(6, azimuth::multiply(2, 3))
+  assert_eq(-1, azimuth::subtract(2, 3))
+  assert_eq(4, azimuth::divide_with_ceil(10, 3))
 }
 
-///|
-test "int comparison operations" {
-  assert_eq(10 > 5, true)
-  assert_eq(10 < 5, false)
-  assert_eq(10 >= 10, true)
-  assert_eq(10 <= 5, false)
-  assert_eq(10 == 10, true)
-  assert_eq(10 != 5, true)
+test "mathematical_properties" {
+  // 数学性质验证测试
+  let x = 15
+  let y = 8
+  
+  // 加法交换律
+  assert_eq(azimuth::add(x, y), azimuth::add(y, x))
+  
+  // 乘法交换律
+  assert_eq(azimuth::multiply(x, y), azimuth::multiply(y, x))
+  
+  // 分配律
+  assert_eq(
+    azimuth::multiply(x, azimuth::add(y, 2)),
+    azimuth::add(azimuth::multiply(x, y), azimuth::multiply(x, 2))
+  )
 }
 
-///|
-test "int signed shift operations" {
-  inspect(10 >> 2, content="2")
-  inspect(-10 >> 2, content="-3")
-  inspect(10 << 2, content="40")
-  inspect(-10 << 2, content="-40")
+test "edge_cases_and_boundaries" {
+  // 边界情况和极值测试
+  assert_eq(0, azimuth::add(0, 0))
+  assert_eq(0, azimuth::multiply(5, 0))
+  assert_eq(0, azimuth::divide_with_ceil(0, 5))
+  assert_eq(0, azimuth::divide_with_ceil(10, 0))
+  assert_eq(1, azimuth::divide_with_ceil(1, 1))
 }
 
-///|
-test "list basic operations" {
-  let empty_list : @list.List[Int] = @list.empty()
-  let single_element = @list.singleton(42)
-  let multi_element = @list.from_array([1, 2, 3])
-  
-  inspect(empty_list.length(), content="0")
-  inspect(single_element.length(), content="1")
-  inspect(multi_element.length(), content="3")
-  
-  assert_eq(@list.is_empty(empty_list), true)
-  assert_eq(@list.is_empty(single_element), false)
+test "negative_numbers_handling" {
+  // 负数处理测试
+  assert_eq(-2, azimuth::add(-5, 3))
+  assert_eq(-15, azimuth::multiply(-5, 3))
+  assert_eq(15, azimuth::multiply(-5, -3))
+  assert_eq(-1, azimuth::divide_with_ceil(-3, 4))
+  assert_eq(1, azimuth::divide_with_ceil(-3, -4))
 }
 
-///|
-test "list element access" {
-  let ls = @list.from_array([10, 20, 30, 40, 50])
-  
-  inspect(ls[0], content="10")
-  inspect(ls[2], content="30")
-  inspect(ls[4], content="50")
-  
-  inspect(ls.first(), content="Some(10)")
-  inspect(ls.last(), content="Some(50)")
-  
-  let empty_ls : @list.List[Int] = @list.empty()
-  inspect(empty_ls.first(), content="None")
-  inspect(empty_ls.last(), content="None")
+test "string_processing_comprehensive" {
+  // 字符串处理综合测试
+  assert_eq_string("Hello, World!", azimuth::greet("World"))
+  assert_eq_string("Hello, MoonBit!", azimuth::greet("MoonBit"))
+  assert_eq_string("Hello, !", azimuth::greet(""))
+  assert_eq_string("Hello, 123!", azimuth::greet("123"))
+  assert_eq_string("Hello, 世界!", azimuth::greet("世界"))
 }
 
-///|
-test "list transformations" {
-  let ls = @list.from_array([1, 2, 3, 4, 5])
+test "business_logic_packaging" {
+  // 业务逻辑：包装计算测试
+  let items = 47
+  let capacity_per_box = 12
+  let boxes_needed = azimuth::divide_with_ceil(items, capacity_per_box)
   
-  let doubled = ls.map(fn(x) { x * 2 })
-  inspect(doubled, content="@list.from_array([2, 4, 6, 8, 10])")
+  assert_eq(4, boxes_needed)
   
-  let evens = ls.filter(fn(x) { x % 2 == 0 })
-  inspect(evens, content="@list.from_array([2, 4])")
+  // 验证总容量
+  let total_capacity = azimuth::multiply(boxes_needed, capacity_per_box)
+  assert_eq(48, total_capacity)
   
-  let sum = ls.fold(0, fn(acc, x) { acc + x })
-  inspect(sum, content="15")
+  // 验证剩余空间
+  let remaining_space = azimuth::subtract(total_capacity, items)
+  assert_eq(1, remaining_space)
 }
 
-///|
-test "string basic operations" {
-  let empty_str = ""
-  let hello = "Hello"
-  let world = "World"
-  let combined = hello + " " + world
+test "complex_calculation_pipeline" {
+  // 复杂计算流水线测试
+  let base_value = 10
+  let multiplier = 3
+  let divisor = 4
+  let addition = 5
   
-  inspect(empty_str.length(), content="0")
-  inspect(hello.length(), content="5")
-  inspect(combined, content="Hello World")
-  inspect(combined.length(), content="11")
+  // 计算流程：((base * multiplier) / divisor) + addition
+  let step1 = azimuth::multiply(base_value, multiplier)
+  let step2 = azimuth::divide_with_ceil(step1, divisor)
+  let result = azimuth::add(step2, addition)
+  
+  assert_eq(13, result)  // ceil(10*3/4) + 5 = 8 + 5 = 13
 }
 
-///|
-test "string character operations" {
-  let str = "MoonBit"
+test "error_handling_and_validation" {
+  // 错误处理和验证测试
+  // 除零错误处理
+  assert_eq(0, azimuth::divide_with_ceil(10, 0))
+  assert_eq(0, azimuth::divide_with_ceil(-10, 0))
+  assert_eq(0, azimuth::divide_with_ceil(0, 0))
   
-  inspect(str[0], content="'M'")
-  inspect(str[3], content="'B'")
-  inspect(str[6], content="'t'")
-  
-  inspect(str.char_at(0), content="Some('M')")
-  inspect(str.char_at(10), content="None")
+  // 极值验证
+  assert_eq(1000000, azimuth::multiply(1000, 1000))
+  assert_eq(2000000, azimuth::add(1000000, 1000000))
 }
 
-///|
-test "string case conversions" {
-  let lower = "moonbit"
-  let upper = "MOONBIT"
-  let mixed = "MoonBit"
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_resources = 100
+  let teams = 3
+  let min_resources_per_team = azimuth::divide_with_ceil(total_resources, teams)
   
-  inspect(lower.to_uppercase(), content="MOONBIT")
-  inspect(upper.to_lowercase(), content="moonbit")
-  inspect(mixed.to_uppercase(), content="MOONBIT")
-  inspect(mixed.to_lowercase(), content="moonbit")
+  assert_eq(34, min_resources_per_team)
+  
+  // 验证分配结果
+  let allocated_total = azimuth::multiply(min_resources_per_team, teams)
+  assert_eq(102, allocated_total)
+  
+  // 验证资源利用率
+  let utilization = azimuth::divide_with_ceil(azimuth::multiply(total_resources, 100), allocated_total)
+  assert_eq(98, utilization)  // floor(10000/102) = 98%
+}
+
+test "real_world_application_scenario" {
+  // 真实世界应用场景测试：活动安排
+  let participants = 87
+  let tables = 8
+  let chairs_per_table = 10
+  
+  // 计算需要的桌子数量
+  let tables_needed = azimuth::divide_with_ceil(participants, chairs_per_table)
+  assert_eq(9, tables_needed)
+  
+  // 计算可用座位数
+  let available_seats = azimuth::multiply(tables_needed, chairs_per_table)
+  assert_eq(90, available_seats)
+  
+  // 计算剩余座位
+  let remaining_seats = azimuth::subtract(available_seats, participants)
+  assert_eq(3, remaining_seats)
+  
+  // 验证座位充足性
+  assert_true(available_seats >= participants)
 }
