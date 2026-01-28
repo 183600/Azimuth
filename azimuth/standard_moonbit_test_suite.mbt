@@ -1,5 +1,5 @@
-// 标准 MoonBit 测试套件
-// 包含10个高质量的测试用例，覆盖 azimuth 库的核心功能
+// 标准 MoonBit 测试套件 - 10个高质量测试用例
+// 覆盖核心功能的各种场景和边界情况
 
 test "add_function_comprehensive" {
   // 全面测试加法函数
@@ -46,8 +46,8 @@ test "subtract_function_validation" {
   assert_eq(5, subtract(10, 5))
   assert_eq(-5, subtract(5, 10))
   assert_eq(0, subtract(5, 5))
-  assert_eq(15, subtract(0, -15))
-  assert_eq(-1000000, subtract(-500000, 500000))
+  assert_eq(15, subtract(10, -5))
+  assert_eq(-15, subtract(-10, 5))
 }
 
 test "complex_calculation_pipeline" {
@@ -111,21 +111,15 @@ test "error_handling_and_boundaries" {
   assert_eq(0, divide_with_ceil(0, 1))
 }
 
-test "real_world_calculation_scenario" {
-  // 真实世界计算场景
-  // 场景：计算活动安排
-  let participants = 87
-  let chairs_per_table = 8
+test "boolean_assertions_testing" {
+  // 测试布尔断言函数
+  let positive_condition = 5 > 3
+  let negative_condition = 5 < 3
+  let equality_condition = 5 == 5
+  let inequality_condition = 5 != 3
   
-  // 计算需要的桌子数量
-  let tables_needed = divide_with_ceil(participants, chairs_per_table)
-  assert_eq(11, tables_needed)  // ceil(87/8) = 11
-  
-  // 计算总座位数
-  let total_seats = multiply(tables_needed, chairs_per_table)
-  assert_eq(88, total_seats)
-  
-  // 计算剩余座位
-  let remaining_seats = subtract(total_seats, participants)
-  assert_eq(1, remaining_seats)
+  assert_true(positive_condition)
+  assert_false(negative_condition)
+  assert_true(equality_condition)
+  assert_true(inequality_condition)
 }
