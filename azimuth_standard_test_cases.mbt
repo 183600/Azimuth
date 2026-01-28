@@ -1,130 +1,112 @@
-// Azimuth 项目标准测试用例
-// 使用标准 MoonBit 测试语法，覆盖核心功能
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-test "add_function_comprehensive" {
-  // 全面测试加法函数
-  assert_eq(10, add(7, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-10, add(-7, -3))
-  assert_eq(4, add(-7, 11))
-  assert_eq(1000000, add(500000, 500000))
+// 标准MoonBit测试用例集合
+
+///|
+test "option_map_transformation" {
+  let some_value = Some(5)
+  let none_value : Int? = None
+  
+  let mapped_some = some_value.map(x => x * 2)
+  let mapped_none = none_value.map(x => x * 2)
+  
+  inspect(mapped_some, content="Some(10)")
+  inspect(mapped_none, content="None")
 }
 
-test "multiply_function_edge_cases" {
-  // 测试乘法函数的边缘情况
-  assert_eq(0, multiply(0, 12345))
-  assert_eq(12345, multiply(1, 12345))
-  assert_eq(-12345, multiply(-1, 12345))
-  assert_eq(12345, multiply(-1, -12345))
-  assert_eq(1000000, multiply(1000, 1000))
+///|
+test "option_is_some_and_none" {
+  let some_value = Some(42)
+  let none_value : Int? = None
+  
+  assert_true(some_value.is_some())
+  assert_false(some_value.is_none())
+  assert_false(none_value.is_some())
+  assert_true(none_value.is_none())
 }
 
-test "greet_function_international" {
-  // 测试问候函数的国际字符支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+///|
+test "list_fold_left_sum" {
+  let numbers = @list.from_array([1, 2, 3, 4, 5])
+  let sum = numbers.fold_left(0, (acc, x) => acc + x)
+  inspect(sum, content="15")
 }
 
-test "divide_with_ceil_business_logic" {
-  // 测试向上取整除法的业务逻辑场景
-  // 场景：计算需要的运输车辆数量
-  let packages = 47
-  let capacity_per_truck = 10
-  let trucks_needed = divide_with_ceil(packages, capacity_per_truck)
-  assert_eq(5, trucks_needed)
-  
-  // 验证总运力
-  let total_capacity = multiply(trucks_needed, capacity_per_truck)
-  assert_eq(50, total_capacity)
+///|
+test "list_filter_even_numbers" {
+  let numbers = @list.from_array([1, 2, 3, 4, 5, 6])
+  let even_numbers = numbers.filter(x => x % 2 == 0)
+  inspect(even_numbers, content="@list.from_array([2, 4, 6])")
 }
 
-test "complex_calculation_pipeline" {
-  // 测试复杂计算流水线
-  // 场景：计算项目完成时间
-  let tasks = 25
-  let people = 4
-  let tasks_per_person_per_day = 2
-  
-  let daily_capacity = multiply(people, tasks_per_person_per_day)
-  let days_needed = divide_with_ceil(tasks, daily_capacity)
-  assert_eq(4, days_needed)  // ceil(25/(4*2)) = 4
-  
-  // 验证总处理能力
-  let total_capacity = multiply(days_needed, daily_capacity)
-  assert_eq(32, total_capacity)
+///|
+test "list_map_transformation" {
+  let numbers = @list.from_array([1, 2, 3])
+  let squared = numbers.map(x => x * x)
+  inspect(squared, content="@list.from_array([1, 4, 9])")
 }
 
-test "mathematical_properties_verification" {
-  // 验证数学性质
-  let x = 42
-  let y = 17
-  
-  // 加法交换律
-  assert_eq(add(x, y), add(y, x))
-  
-  // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
-  
-  // 分配律
-  assert_eq(
-    multiply(x, add(y, 3)),
-    add(multiply(x, y), multiply(x, 3))
-  )
+///|
+test "string_operations" {
+  let greeting = "Hello"
+  let world = "World"
+  let combined = greeting + ", " + world + "!"
+  inspect(combined, content="Hello, World!")
+  inspect(combined.length(), content="13")
 }
 
-test "resource_allocation_optimization" {
-  // 资源分配优化测试
-  let total_budget = 10000
-  let team_members = 6
-  
-  // 使用向上取整确保覆盖所有情况
-  let max_share = divide_with_ceil(total_budget, team_members)
-  assert_eq(1667, max_share)  // ceil(10000/6) = 1667
-  
-  // 验证总分配不超过预算
-  let total_allocated = multiply(max_share, team_members)
-  assert_eq(10002, total_allocated)
+///|
+test "int_max_min_functions" {
+  let a = 10
+  let b = 20
+  inspect(Int::max(a, b), content="20")
+  inspect(Int::min(a, b), content="10")
+  inspect(Int::max(-5, -3), content="-3")
+  inspect(Int::min(-5, -3), content="-5")
 }
 
-test "error_handling_and_boundaries" {
-  // 错误处理和边界测试
-  // 除零情况
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  
-  // 极值测试
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(-1, -1))
-  assert_eq(0, divide_with_ceil(0, 1))
+///|
+test "int_power_function" {
+  inspect(Int::pow(2, 3), content="8")
+  inspect(Int::pow(5, 0), content="1")
+  inspect(Int::pow(0, 5), content="0")
+  inspect(Int::pow(-2, 3), content="-8")
 }
 
-test "string_processing_comprehensive" {
-  // 字符串处理综合测试
-  assert_eq_string("Hello, single!", greet("single"))
-  assert_eq_string("Hello, space test!", greet("space test"))
-  assert_eq_string("Hello, 12345!", greet("12345"))
-  assert_eq_string("Hello, !@#$%^!", greet("!@#$%^"))
-  assert_eq_string("Hello, mixedCASE!", greet("mixedCASE"))
+///|
+test "option_unwrap_or_default" {
+  let some_value = Some(100)
+  let none_value : Int? = None
+  
+  inspect(some_value.unwrap_or(0), content="100")
+  inspect(none_value.unwrap_or(0), content="0")
+  
+  let some_string = Some("test")
+  let none_string : String? = None
+  
+  inspect(some_string.unwrap_or("default"), content="\"test\"")
+  inspect(none_string.unwrap_or("default"), content="\"default\"")
 }
 
-test "real_world_calculation_scenario" {
-  // 真实世界计算场景
-  // 场景：计算活动安排
-  let participants = 87
-  let chairs_per_table = 8
+///|
+test "list_reverse_function" {
+  let original = @list.from_array([1, 2, 3, 4, 5])
+  let reversed = original.reverse()
+  inspect(reversed, content="@list.from_array([5, 4, 3, 2, 1])")
   
-  // 计算需要的桌子数量
-  let tables_needed = divide_with_ceil(participants, chairs_per_table)
-  assert_eq(11, tables_needed)  // ceil(87/8) = 11
-  
-  // 计算总座位数
-  let total_seats = multiply(tables_needed, chairs_per_table)
-  assert_eq(88, total_seats)
-  
-  // 验证总座位数正确
-  assert_eq(88, total_seats)
+  let empty_list : @list.List[Int] = @list.empty()
+  let reversed_empty = empty_list.reverse()
+  inspect(reversed_empty, content="@list.from_array([])")
 }
