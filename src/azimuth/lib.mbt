@@ -7324,3 +7324,283 @@ test "azimuth_standard_fibonacci_sequence" {
   assert_eq(3, fib4)
   assert_eq(5, fib5)
 }
+
+// 新增的10个高质量测试用例
+test "high_quality_extreme_boundary_values" {
+  // 测试极端边界值运算
+  let max_safe = 2147483647
+  let min_safe = -2147483648
+  
+  // 测试接近边界的加法运算
+  assert_eq(2147483646, add(max_safe - 1, 0))
+  assert_eq(-2147483647, add(min_safe + 1, 0))
+  assert_eq(0, add(max_safe, -max_safe))
+  
+  // 测试边界值的乘法
+  assert_eq(2147483647, multiply(max_safe, 1))
+  assert_eq(-2147483648, multiply(min_safe, 1))
+  assert_eq(0, multiply(max_safe, 0))
+}
+
+test "high_quality_complex_mathematical_expressions" {
+  // 测试复杂数学表达式和运算优先级
+  let a = 10
+  let b = 20
+  let c = 30
+  
+  // 测试 (a + b) * c - a / b
+  let result1 = add(multiply(add(a, b), c), -divide_with_ceil(a, b))
+  assert_eq(899, result1)  // (10 + 20) * 30 - ceil(10/20) = 30*30 - 1 = 900 - 1 = 899
+  
+  // 测试嵌套表达式：a * (b + c / d)
+  let d = 5
+  let result2 = multiply(a, add(b, divide_with_ceil(c, d)))
+  assert_eq(260, result2)  // 10 * (20 + ceil(30/5)) = 10 * (20 + 6) = 10 * 26 = 260
+  
+  // 测试复杂除法链
+  let result3 = divide_with_ceil(divide_with_ceil(multiply(a, b), c), d)
+  assert_eq(2, result3)  // ceil(ceil(10*20/30)/5) = ceil(ceil(200/30)/5) = ceil(7/5) = 2
+}
+
+test "high_quality_advanced_business_calculations" {
+  // 测试高级业务计算场景
+  let base_price = 199
+  let quantity = 17
+  let tax_rate = 8
+  let shipping_per_item = 12
+  let bulk_discount_threshold = 3000
+  let bulk_discount_amount = 150
+  
+  // 计算商品小计
+  let subtotal = multiply(base_price, quantity)
+  
+  // 计算运费
+  let total_shipping = multiply(shipping_per_item, quantity)
+  
+  // 计算税费
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  
+  // 计算折扣前总价
+  let pre_discount_total = add(add(subtotal, total_shipping), tax_amount)
+  
+  // 应用批量折扣（如果满足条件）
+  let final_total = if pre_discount_total > bulk_discount_threshold {
+    add(pre_discount_total, -bulk_discount_amount)
+  } else {
+    pre_discount_total
+  }
+  
+  assert_eq(3383, subtotal)
+  assert_eq(204, total_shipping)
+  assert_eq(271, tax_amount)
+  assert_eq(3858, pre_discount_total)
+  assert_eq(3708, final_total)
+}
+
+test "high_quality_string_processing_edge_cases" {
+  // 测试字符串处理的边界情况
+  // 测试各种特殊字符和边界情况
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, \t\n\r!", greet("\t\n\r"))
+  assert_eq_string("Hello, 🌟🌙⭐!", greet("🌟🌙⭐"))
+  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
+  assert_eq_string("Hello, @#$%^&*()!", greet("@#$%^&*()"))
+  assert_eq_string("Hello, a!", greet("a"))
+  assert_eq_string("Hello, This is a very long string that tests the greet function with extended length!", greet("This is a very long string that tests the greet function with extended length!"))
+}
+
+test "high_quality_mathematical_properties_comprehensive" {
+  // 综合测试数学性质
+  let x = 12
+  let y = 18
+  let z = 24
+  
+  // 测试加法交换律
+  assert_eq(add(x, y), add(y, x))
+  assert_eq(add(x, z), add(z, x))
+  assert_eq(add(y, z), add(z, y))
+  
+  // 测试乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  assert_eq(multiply(x, z), multiply(z, x))
+  assert_eq(multiply(y, z), multiply(z, y))
+  
+  // 测试加法结合律
+  assert_eq(add(add(x, y), z), add(x, add(y, z)))
+  
+  // 测试乘法结合律
+  assert_eq(multiply(multiply(x, y), z), multiply(x, multiply(y, z)))
+  
+  // 测试分配律
+  assert_eq(multiply(x, add(y, z)), add(multiply(x, y), multiply(x, z)))
+  
+  // 测试零元素性质
+  assert_eq(0, multiply(x, 0))
+  assert_eq(0, multiply(y, 0))
+  assert_eq(0, multiply(z, 0))
+  assert_eq(x, add(x, 0))
+  assert_eq(y, add(y, 0))
+  assert_eq(z, add(z, 0))
+  
+  // 测试单位元性质
+  assert_eq(x, multiply(x, 1))
+  assert_eq(y, multiply(y, 1))
+  assert_eq(z, multiply(z, 1))
+}
+
+test "high_quality_error_handling_robustness" {
+  // 测试错误处理和健壮性
+  // 测试除零错误处理
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  
+  // 测试极值除法
+  assert_eq(2147483647, divide_with_ceil(2147483647, 1))
+  assert_eq(-2147483648, divide_with_ceil(-2147483648, 1))
+  assert_eq(1, divide_with_ceil(2147483647, 2147483647))
+  assert_eq(1, divide_with_ceil(-2147483648, -2147483648))
+  
+  // 测试大数运算稳定性
+  let large_num = 1000000
+  assert_eq(2000000, add(large_num, large_num))
+  assert_eq(1000000, multiply(large_num, large_num) / 1000000)  // 避免溢出
+}
+
+test "high_quality_performance_efficiency_calculations" {
+  // 测试性能相关的计算
+  let base_operations = 10000
+  let optimization_factor = 5
+  let overhead_percentage = 12
+  
+  // 计算优化后的操作数
+  let optimized_operations = multiply(base_operations, optimization_factor)
+  
+  // 计算系统开销
+  let system_overhead = divide_with_ceil(multiply(optimized_operations, overhead_percentage), 100)
+  
+  // 计算实际性能
+  let actual_performance = add(optimized_operations, -system_overhead)
+  
+  // 计算性能提升倍数
+  let performance_improvement = divide_with_ceil(actual_performance, base_operations)
+  
+  // 计算效率百分比
+  let efficiency_percentage = divide_with_ceil(multiply(actual_performance, 100), optimized_operations)
+  
+  assert_eq(50000, optimized_operations)
+  assert_eq(6000, system_overhead)
+  assert_eq(44000, actual_performance)
+  assert_eq(5, performance_improvement)
+  assert_eq(88, efficiency_percentage)
+}
+
+test "high_quality_real_world_time_calculations" {
+  // 测试实际时间计算场景
+  let tasks_per_day = 8
+  let total_tasks = 127
+  let work_days_per_week = 5
+  let hours_per_day = 8
+  
+  // 计算需要的工作天数
+  let workdays_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  
+  // 计算总工作小时数
+  let total_work_hours = multiply(workdays_needed, hours_per_day)
+  
+  // 计算需要的周数（向上取整）
+  let weeks_needed = divide_with_ceil(workdays_needed, work_days_per_week)
+  
+  // 计算剩余工作日
+  let remaining_workdays = add(workdays_needed, -multiply(weeks_needed - 1, work_days_per_week))
+  
+  assert_eq(16, workdays_needed)
+  assert_eq(128, total_work_hours)
+  assert_eq(4, weeks_needed)
+  assert_eq(1, remaining_workdays)
+}
+
+test "high_quality_precision_and_accuracy_tests" {
+  // 测试精度和准确性
+  // 测试除法精度
+  assert_eq(1, divide_with_ceil(1, 1))  // 完全相等
+  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
+  assert_eq(3, divide_with_ceil(5, 2))  // 2.5 -> 3
+  assert_eq(4, divide_with_ceil(7, 2))  // 3.5 -> 4
+  
+  // 测试大数除法精度
+  assert_eq(334, divide_with_ceil(1001, 3))  // 333.666... -> 334
+  assert_eq(200, divide_with_ceil(1999, 10))  // 199.9 -> 200
+  assert_eq(1000, divide_with_ceil(9999, 10))  // 999.9 -> 1000
+  
+  // 测试负数除法精度
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -3.333... -> -3
+  assert_eq(-4, divide_with_ceil(-11, 3))  // -3.666... -> -4
+  assert_eq(4, divide_with_ceil(-11, -3))  // 3.666... -> 4
+  assert_eq(4, divide_with_ceil(-10, -3))  // 3.333... -> 4
+  
+  // 测试复合运算精度
+  let precision_test = divide_with_ceil(multiply(add(100, 50), 3), 7)
+  assert_eq(65, precision_test)  // ceil(150*3/7) = ceil(450/7) = ceil(64.285...) = 65
+}
+
+test "high_quality_comprehensive_application_scenario" {
+  // 综合应用场景测试：电商订单处理系统
+  let product_a_price = 89
+  let product_a_quantity = 3
+  let product_b_price = 125
+  let product_b_quantity = 2
+  let product_c_price = 45
+  let product_c_quantity = 6
+  
+  let tax_rate = 8
+  let shipping_base = 15
+  let shipping_per_item = 3
+  let discount_threshold = 800
+  let discount_percentage = 10
+  
+  // 计算各商品小计
+  let subtotal_a = multiply(product_a_price, product_a_quantity)
+  let subtotal_b = multiply(product_b_price, product_b_quantity)
+  let subtotal_c = multiply(product_c_price, product_c_quantity)
+  
+  // 计算商品总价
+  let merchandise_total = add(add(subtotal_a, subtotal_b), subtotal_c)
+  
+  // 计算总数量
+  let total_quantity = add(add(product_a_quantity, product_b_quantity), product_c_quantity)
+  
+  // 计算运费
+  let total_shipping = add(shipping_base, multiply(shipping_per_item, total_quantity))
+  
+  // 计算税费
+  let tax_amount = divide_with_ceil(multiply(merchandise_total, tax_rate), 100)
+  
+  // 计算折扣前总价
+  let pre_discount_total = add(add(merchandise_total, total_shipping), tax_amount)
+  
+  // 计算折扣金额
+  let discount_amount = if pre_discount_total > discount_threshold {
+    divide_with_ceil(multiply(pre_discount_total, discount_percentage), 100)
+  } else {
+    0
+  }
+  
+  // 计算最终总价
+  let final_total = add(pre_discount_total, -discount_amount)
+  
+  // 验证各步骤计算
+  assert_eq(267, subtotal_a)
+  assert_eq(250, subtotal_b)
+  assert_eq(270, subtotal_c)
+  assert_eq(787, merchandise_total)
+  assert_eq(11, total_quantity)
+  assert_eq(48, total_shipping)
+  assert_eq(63, tax_amount)
+  assert_eq(898, pre_discount_total)
+  assert_eq(90, discount_amount)
+  assert_eq(808, final_total)
+}
