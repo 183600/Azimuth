@@ -170,7 +170,8 @@
         "quality_enhanced_test_suite.mbt",
     "azimuth_new_standard_test_cases.mbt",
     "azimuth_enhanced_core_tests.mbt",
-    "azimuth_enhanced_quality_tests.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
+    "azimuth_enhanced_quality_tests.mbt",
+    "standard_comprehensive_test_suite.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
     "standard_moonbit_core_tests.mbt",
     "azimuth_concise_standard_tests.mbt",
