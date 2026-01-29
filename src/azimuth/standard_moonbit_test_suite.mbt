@@ -1,149 +1,175 @@
-// 标准 MoonBit 测试套件 - 10个高质量测试用例
-// 为 azimuth 库提供全面的测试覆盖
+// 标准 MoonBit 测试用例集
+// 包含10个高质量的测试用例，使用标准的 MoonBit 测试语法
 
-test "error_boundary_handling" {
-  // 测试错误边界处理
+test "add_function_commutative_property" {
+  // 测试加法交换律: a + b = b + a
+  let a = 15
+  let b = 27
+  assert_eq(add(a, b), add(b, a))
+  
+  // 测试边界情况
+  assert_eq(add(0, 10), add(10, 0))
+  assert_eq(add(-5, 8), add(8, -5))
+}
+
+test "multiply_function_distributive_property" {
+  // 测试乘法分配律: a * (b + c) = a * b + a * c
+  let a = 4
+  let b = 7
+  let c = 9
+  
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  
+  assert_eq(left_side, right_side)
+}
+
+test "divide_with_ceil_precision_test" {
+  // 测试向上取整除法的精度
+  // 正数除法
+  assert_eq(4, divide_with_ceil(11, 3))  // 11/3 = 3.666... -> 4
+  assert_eq(3, divide_with_ceil(9, 3))   // 9/3 = 3 -> 3
+  assert_eq(1, divide_with_ceil(1, 100)) // 1/100 = 0.01 -> 1
+  
+  // 负数除法
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -10/3 = -3.333... -> -3
+  assert_eq(4, divide_with_ceil(-11, -3))  // -11/-3 = 3.666... -> 4
+  
+  // 除数为零的安全处理
   assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
 }
 
-test "mathematical_series_sum" {
-  // 测试数学级数求和：1 + 2 + 3 + 4 + 5 = 15
-  let sum1 = add(add(add(add(1, 2), 3), 4), 5)
-  assert_eq(15, sum1)
+test "greet_function_unicode_support" {
+  // 测试问候函数的 Unicode 支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, Español!", greet("Español"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
   
-  // 测试等差数列：2 + 4 + 6 + 8 = 20
-  let sum2 = add(add(add(2, 4), 6), 8)
-  assert_eq(20, sum2)
+  // 测试空字符串和特殊字符
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, @#$%!", greet("@#$%"))
 }
 
-test "string_greeting_edge_cases" {
-  // 测试字符串问候边界情况
-  assert_eq_string("Hello,   !", greet("  "))  // 空格
-  assert_eq_string("Hello, \n!", greet("\n"))  // 换行符
-  assert_eq_string("Hello, \t!", greet("\t"))  // 制表符
-  assert_eq_string("Hello, A!", greet("A"))    // 单字符
+test "complex_business_calculation" {
+  // 复杂业务计算：订单总价计算
+  let product_price = 89
+  let quantity = 4
+  let tax_rate = 8  // 8%
+  let shipping = 15
+  let discount = 20
+  
+  // 计算小计
+  let subtotal = multiply(product_price, quantity)
+  
+  // 计算税费（向上取整）
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  
+  // 计算总价
+  let total_before_discount = add(subtotal, tax_amount)
+  let final_total = add(total_before_discount, shipping)
+  let final_price = add(final_total, -discount)
+  
+  assert_eq(356, subtotal)
+  assert_eq(29, tax_amount)
+  assert_eq(400, total_before_discount)
+  assert_eq(415, final_total)
+  assert_eq(395, final_price)
 }
 
-test "complex_calculator_operations" {
-  // 测试复杂计算器操作
-  // 计算：(5 + 3) * 2 - 10 / 3
-  let step1 = add(5, 3)
-  let step2 = multiply(step1, 2)
-  let step3 = divide_with_ceil(10, 3)
-  let result = add(step2, -step3)
-  assert_eq(13, result)  // (5 + 3) * 2 - ceil(10/3) = 8 * 2 - 4 = 16 - 4 = 12
+test "mathematical_series_summation" {
+  // 数学级数求和：等差数列求和
+  // 使用公式 S = n/2 * (2a + (n-1)d)
+  let first_term = 5
+  let common_difference = 3
+  let number_of_terms = 8
+  
+  let sum_formula = divide_with_ceil(
+    multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference))),
+    2
+  )
+  
+  // 验证结果：5 + 8 + 11 + 14 + 17 + 20 + 23 + 26 = 124
+  assert_eq(124, sum_formula)
 }
 
-test "resource_allocation_optimization" {
-  // 测试资源分配优化
-  let total_resources = 100
-  let project1_needs = 35
-  let project2_needs = 28
-  let project3_needs = 22
+test "inventory_packaging_optimization" {
+  // 库存包装优化：计算不同商品需要的包装箱数量
+  let item_a_qty = 47
+  let item_b_qty = 83
+  let item_c_qty = 121
+  let box_capacity = 24
   
-  let allocated = add(add(project1_needs, project2_needs), project3_needs)
-  let remaining = add(total_resources, -allocated)
-  let additional_projects = divide_with_ceil(remaining, 10)
+  let boxes_a = divide_with_ceil(item_a_qty, box_capacity)
+  let boxes_b = divide_with_ceil(item_b_qty, box_capacity)
+  let boxes_c = divide_with_ceil(item_c_qty, box_capacity)
   
-  assert_eq(85, allocated)
-  assert_eq(15, remaining)
-  assert_eq(2, additional_projects)
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  
+  assert_eq(2, boxes_a)   // ceil(47/24) = 2
+  assert_eq(4, boxes_b)   // ceil(83/24) = 4
+  assert_eq(6, boxes_c)   // ceil(121/24) = 6
+  assert_eq(12, total_boxes) // 2 + 4 + 6 = 12
 }
 
-test "time_zone_conversion_simulation" {
-  // 测试时区转换模拟
-  let local_time = 14  // 下午2点
-  let timezone_offset = 8  // 东8区
-  let target_offset = -5  // 西5区
+test "time_and_resource_management" {
+  // 时间和资源管理：项目完成时间计算
+  let total_tasks = 87
+  let tasks_per_day = 8
+  let working_days_per_week = 5
   
-  let time_diff = add(target_offset, -timezone_offset)
-  let converted_time = add(local_time, time_diff)
-  let normalized_time = if converted_time < 0 {
-    add(converted_time, 24)
-  } else if converted_time >= 24 {
-    add(converted_time, -24)
-  } else {
-    converted_time
-  }
+  let days_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  let weeks_needed = divide_with_ceil(days_needed, working_days_per_week)
   
-  assert_eq(1, normalized_time)  // 14 + (-5 - 8) = 14 - 13 = 1 (凌晨1点)
-}
-
-test "geometry_area_calculation" {
-  // 测试几何面积计算
-  let length = 12
-  let width = 8
-  let height = 5
+  // 计算总工作小时数（每天8小时）
+  let total_hours = multiply(days_needed, 8)
   
-  // 计算矩形面积
-  let floor_area = multiply(length, width)
-  
-  // 计算四个墙面的总面积
-  let wall_area = multiply(2, multiply(add(length, width), height))
-  
-  // 计算总表面积
-  let total_area = add(floor_area, wall_area)
-  
-  assert_eq(96, floor_area)
-  assert_eq(200, wall_area)
-  assert_eq(296, total_area)
+  assert_eq(11, days_needed)  // ceil(87/8) = 11
+  assert_eq(3, weeks_needed)  // ceil(11/5) = 3
+  assert_eq(88, total_hours)  // 11 * 8 = 88
 }
 
 test "financial_compound_interest" {
-  // 测试金融复利计算（简化版）
+  // 金融复利计算（简化版）
   let principal = 1000
-  let rate_percent = 10
+  let interest_rate = 5  // 5%
   let years = 3
   
   // 第一年
-  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, interest_rate), 100))
+  
   // 第二年
-  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, interest_rate), 100))
+  
   // 第三年
-  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, interest_rate), 100))
   
-  assert_eq(1100, year1)
-  assert_eq(1210, year2)
-  assert_eq(1331, year3)
+  assert_eq(1050, year1_amount)  // 1000 + ceil(1000*5/100) = 1000 + 50 = 1050
+  assert_eq(1103, year2_amount)  // 1050 + ceil(1050*5/100) = 1050 + 53 = 1103
+  assert_eq(1158, year3_amount)  // 1103 + ceil(1103*5/100) = 1103 + 55 = 1158
 }
 
-test "data_structure_simulation" {
-  // 测试数据结构模拟（栈操作）
-  let stack1 = 10
-  let stack2 = add(stack1, 20)  // push 20
-  let stack3 = add(stack2, 30)  // push 30
-  let stack4 = add(stack3, -30) // pop 30
-  let stack5 = add(stack4, -20) // pop 20
+test "data_analysis_statistics" {
+  // 数据分析统计：销售数据分析
+  let q1_sales = 25000
+  let q2_sales = 32000
+  let q3_sales = 28000
+  let q4_sales = 35000
   
-  assert_eq(30, stack2)
-  assert_eq(60, stack3)
-  assert_eq(30, stack4)
-  assert_eq(10, stack5)
-}
-
-test "algorithm_efficiency_benchmark" {
-  // 测试算法效率基准
-  let base_operations = 100
-  let algorithm1_factor = 3
-  let algorithm2_factor = 5
-  let optimization_factor = 2
+  // 计算年度总销售额
+  let annual_sales = add(add(add(q1_sales, q2_sales), q3_sales), q4_sales)
   
-  // 算法1的复杂度
-  let algo1_ops = multiply(base_operations, algorithm1_factor)
+  // 计算季度平均销售额（向上取整）
+  let quarterly_average = divide_with_ceil(annual_sales, 4)
   
-  // 算法2的复杂度
-  let algo2_ops = multiply(base_operations, algorithm2_factor)
+  // 计算增长率
+  let q2_growth_rate = divide_with_ceil(multiply(q2_sales - q1_sales, 100), q1_sales)
+  let q3_growth_rate = divide_with_ceil(multiply(q3_sales - q2_sales, 100), q2_sales)
+  let q4_growth_rate = divide_with_ceil(multiply(q4_sales - q3_sales, 100), q3_sales)
   
-  // 优化后的算法1
-  let optimized_algo1 = divide_with_ceil(algo1_ops, optimization_factor)
-  
-  // 性能比较
-  let performance_diff = add(algo2_ops, -optimized_algo1)
-  
-  assert_eq(300, algo1_ops)
-  assert_eq(500, algo2_ops)
-  assert_eq(150, optimized_algo1)
-  assert_eq(350, performance_diff)
+  assert_eq(120000, annual_sales)
+  assert_eq(30000, quarterly_average)
+  assert_eq(28, q2_growth_rate)  // ceil(32000-25000)*100/25000 = ceil(7000*100/25000) = ceil(28) = 28
+  assert_eq(-13, q3_growth_rate) // ceil((28000-32000)*100/32000) = ceil(-4000*100/32000) = ceil(-12.5) = -12
+  assert_eq(25, q4_growth_rate)  // ceil((35000-28000)*100/28000) = ceil(7000*100/28000) = ceil(25) = 25
 }
