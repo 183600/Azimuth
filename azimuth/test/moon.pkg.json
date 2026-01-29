@@ -216,6 +216,8 @@
   "very_simple_test.mbt",
   "simple_test_case.mbt",
   "standard_core_tests.mbt",
-  "standard_azimuth_core_tests.mbt"
+  "standard_azimuth_core_tests.mbt",
+  "azimuth_core_functionality_tests.mbt",
+  "simple_azimuth_test.mbt"
   ]
 }
