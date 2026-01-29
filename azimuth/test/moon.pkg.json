@@ -230,5 +230,6 @@
       "clean_test.mbt",
       "standard_comprehensive_test.mbt",
       "standard_moonbit_tests_new.mbt",
-      "new_standard_moonbit_tests.mbt"  ]
+      "new_standard_moonbit_tests.mbt",
+    "azimuth_additional_standard_tests.mbt"  ]
 }
