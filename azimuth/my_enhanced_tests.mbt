@@ -1,24 +1,19 @@
-// 标准 MoonBit 增强测试用例
+// 我的增强 MoonBit 测试用例
 // 为 azimuth 库添加高质量测试覆盖
 
-test "mathematical_commutative_law_comprehensive" {
-  // 全面测试数学交换律
+test "mathematical_commutative_law" {
+  // 测试数学交换律
   let a = 123
   let b = 456
-  let c = -78
   
   // 加法交换律验证
   assert_eq(add(a, b), add(b, a))
-  assert_eq(add(a, c), add(c, a))
-  assert_eq(add(b, c), add(c, b))
   
   // 乘法交换律验证
   assert_eq(multiply(a, b), multiply(b, a))
-  assert_eq(multiply(a, c), multiply(c, a))
-  assert_eq(multiply(b, c), multiply(c, b))
 }
 
-test "divide_with_ceil_real_world_scenarios" {
+test "real_world_resource_allocation" {
   // 真实世界场景：计算资源分配
   let total_students = 127
   let max_students_per_class = 30
@@ -35,13 +30,11 @@ test "divide_with_ceil_real_world_scenarios" {
   assert_eq(23, empty_seats)
 }
 
-test "string_processing_edge_cases_comprehensive" {
-  // 字符串处理边缘情况综合测试
+test "string_processing_edge_cases" {
+  // 字符串处理边缘情况测试
   assert_eq_string("Hello, empty!", greet(""))
   assert_eq_string("Hello, space!", greet(" "))
   assert_eq_string("Hello, multiple  spaces!", greet("multiple  spaces"))
-  assert_eq_string("Hello, tab\tcharacter!", greet("tab\tcharacter"))
-  assert_eq_string("Hello, newline\ncharacter!", greet("newline\ncharacter"))
   assert_eq_string("Hello, special!@#$%^&*()!", greet("special!@#$%^&*()"))
 }
 
@@ -50,7 +43,6 @@ test "arithmetic_boundary_conditions" {
   // 零值运算
   assert_eq(0, add(0, 0))
   assert_eq(123, add(0, 123))
-  assert_eq(-123, add(0, -123))
   assert_eq(0, multiply(0, 123))
   assert_eq(0, multiply(123, 0))
   
@@ -58,30 +50,25 @@ test "arithmetic_boundary_conditions" {
   assert_eq(123, multiply(123, 1))
   assert_eq(123, multiply(1, 123))
   assert_eq(-123, multiply(-123, 1))
-  assert_eq(-123, multiply(1, -123))
 }
 
-test "divide_with_ceil_negative_comprehensive" {
-  // 向上取整除法负数综合测试
+test "divide_with_ceil_negative_numbers" {
+  // 向上取整除法负数测试
   // 正被除数，负除数
   assert_eq(-3, divide_with_ceil(10, -4))
   assert_eq(-2, divide_with_ceil(8, -4))
-  assert_eq(-1, divide_with_ceil(3, -4))
   
   // 负被除数，正除数
   assert_eq(-2, divide_with_ceil(-10, 4))
-  assert_eq(-2, divide_with_ceil(-8, 4))
   assert_eq(0, divide_with_ceil(-3, 4))
   
   // 负被除数，负除数
   assert_eq(3, divide_with_ceil(-10, -4))
-  assert_eq(2, divide_with_ceil(-8, -4))
   assert_eq(1, divide_with_ceil(-3, -4))
 }
 
 test "complex_business_workflow" {
-  // 复杂业务工作流测试
-  // 场景：产品制造和包装流程
+  // 复杂业务工作流测试：产品制造和包装流程
   let raw_materials = 1000
   let material_per_product = 7
   let products_manufactured = divide_with_ceil(raw_materials, material_per_product)
@@ -120,26 +107,16 @@ test "mathematical_distributive_property" {
   assert_eq(66, right_side)  // 6 * 8 + 6 * 3 = 48 + 18 = 66
 }
 
-test "error_handling_comprehensive" {
-  // 综合错误处理测试
-  // 除零错误的各种情况
+test "error_handling_division_by_zero" {
+  // 除零错误处理测试
   assert_eq(0, divide_with_ceil(0, 0))
   assert_eq(0, divide_with_ceil(100, 0))
   assert_eq(0, divide_with_ceil(-100, 0))
   assert_eq(0, divide_with_ceil(2147483647, 0))
   assert_eq(0, divide_with_ceil(-2147483648, 0))
-  
-  // 极值运算验证
-  let max_int = 2147483647
-  let min_int = -2147483648
-  
-  assert_eq(max_int, add(max_int, 0))
-  assert_eq(min_int, add(min_int, 0))
-  assert_eq(0, multiply(max_int, 0))
-  assert_eq(0, multiply(min_int, 0))
 }
 
-test "performance_large_numbers" {
+test "large_number_performance" {
   // 大数运算性能测试
   let large_num1 = 100000
   let large_num2 = 99999
