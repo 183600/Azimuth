@@ -9332,3 +9332,232 @@ test "logistics_delivery_optimization" {
   let efficiency = divide_with_ceil(multiply(packages, 100), total_capacity)
   assert_eq(68, efficiency)  // ceil(34200/504) = 68%
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "arithmetc_sequence_operations" {
+  // 算术序列操作测试
+  let first_term = 5
+  let common_difference = 3
+  let num_terms = 7
+  
+  // 计算等差数列的第n项: a_n = a_1 + (n-1)d
+  let nth_term = add(first_term, multiply(num_terms - 1, common_difference))
+  assert_eq(23, nth_term)  // 5 + (7-1)*3 = 23
+  
+  // 计算等差数列的和: S_n = n/2 * (a_1 + a_n)
+  let sum = divide_with_ceil(multiply(num_terms, add(first_term, nth_term)), 2)
+  assert_eq(98, sum)  // 7/2 * (5+23) = 98
+}
+
+test "resource_utilization_calculation" {
+  // 资源利用率计算测试
+  let total_capacity = 1000
+  let used_resources = 756
+  let buffer_percentage = 10
+  
+  // 计算缓冲资源
+  let buffer_resources = divide_with_ceil(multiply(total_capacity, buffer_percentage), 100)
+  assert_eq(100, buffer_resources)  // ceil(1000*10/100) = 100
+  
+  // 计算可用资源
+  let available_resources = subtract(total_capacity, add(used_resources, buffer_resources))
+  assert_eq(144, available_resources)  // 1000 - (756+100) = 144
+  
+  // 验证资源利用率
+  let utilization_percentage = divide_with_ceil(multiply(used_resources, 100), total_capacity)
+  assert_eq(76, utilization_percentage)  // ceil(75600/1000) = 76
+}
+
+test "time_conversion_and_calculation" {
+  // 时间转换和计算测试
+  let hours = 47
+  let minutes_per_hour = 60
+  let seconds_per_minute = 60
+  
+  // 转换为分钟
+  let total_minutes = multiply(hours, minutes_per_hour)
+  assert_eq(2820, total_minutes)  // 47 * 60 = 2820
+  
+  // 转换为秒
+  let total_seconds = multiply(total_minutes, seconds_per_minute)
+  assert_eq(169200, total_seconds)  // 2820 * 60 = 169200
+  
+  // 计算需要的工作日数（每天8小时）
+  let work_hours_per_day = 8
+  let work_days_needed = divide_with_ceil(hours, work_hours_per_day)
+  assert_eq(6, work_days_needed)  // ceil(47/8) = 6
+}
+
+test "inventory_batch_processing" {
+  // 库存批处理测试
+  let total_items = 158
+  let batch_size = 25  // 使用单个批次大小
+  
+  // 计算需要的批次数
+  let batches_needed = divide_with_ceil(total_items, batch_size)
+  assert_eq(7, batches_needed)  // ceil(158/25) = 7
+  
+  // 计算总容量
+  let total_capacity = multiply(batches_needed, batch_size)
+  assert_eq(175, total_capacity)  // 7 * 25 = 175
+  
+  // 计算剩余空间
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(17, remaining_space)  // 175 - 158 = 17
+  
+  // 计算空间利用率
+  let utilization_rate = divide_with_ceil(multiply(total_items, 100), total_capacity)
+  assert_eq(91, utilization_rate)  // ceil(15800/175) = 91
+}
+
+test "mathematical_series_evaluation" {
+  // 数学级数求值测试
+  // 计算平方和: 1² + 2² + 3² + ... + n²
+  let n = 10
+  let mut sum_of_squares = 0
+  
+  // 手动计算前10个平方数的和
+  sum_of_squares = add(sum_of_squares, multiply(1, 1))  // 1
+  sum_of_squares = add(sum_of_squares, multiply(2, 2))  // 1 + 4 = 5
+  sum_of_squares = add(sum_of_squares, multiply(3, 3))  // 5 + 9 = 14
+  sum_of_squares = add(sum_of_squares, multiply(4, 4))  // 14 + 16 = 30
+  sum_of_squares = add(sum_of_squares, multiply(5, 5))  // 30 + 25 = 55
+  sum_of_squares = add(sum_of_squares, multiply(6, 6))  // 55 + 36 = 91
+  sum_of_squares = add(sum_of_squares, multiply(7, 7))  // 91 + 49 = 140
+  sum_of_squares = add(sum_of_squares, multiply(8, 8))  // 140 + 64 = 204
+  sum_of_squares = add(sum_of_squares, multiply(9, 9))  // 204 + 81 = 285
+  sum_of_squares = add(sum_of_squares, multiply(10, 10)) // 285 + 100 = 385
+  
+  assert_eq(385, sum_of_squares)
+  
+  // 使用公式验证: n(n+1)(2n+1)/6
+  let formula_result = divide_with_ceil(multiply(n, multiply(add(n, 1), add(multiply(2, n), 1))), 6)
+  assert_eq(385, formula_result)
+}
+
+test "project_planning_scenario" {
+  // 项目规划场景测试
+  let project_tasks = 125
+  let team_members = 8
+  let working_days = 15
+  let tasks_per_person_per_day = 2
+  
+  // 计算团队每日处理能力
+  let daily_capacity = multiply(team_members, tasks_per_person_per_day)
+  assert_eq(16, daily_capacity)  // 8 * 2 = 16
+  
+  // 计算项目期间总处理能力
+  let total_capacity = multiply(daily_capacity, working_days)
+  assert_eq(240, total_capacity)  // 16 * 15 = 240
+  
+  // 验证任务可以完成
+  assert_true(total_capacity >= project_tasks)
+  
+  // 计算实际需要的天数
+  let days_needed = divide_with_ceil(project_tasks, daily_capacity)
+  assert_eq(8, days_needed)  // ceil(125/16) = 8
+  
+  // 计算提前完成的天数
+  let days_ahead = subtract(working_days, days_needed)
+  assert_eq(7, days_ahead)  // 15 - 8 = 7
+}
+
+test "data_validation_and_bounds" {
+  // 数据验证和边界测试
+  // 测试极值情况
+  let max_safe_int = 10000
+  let min_safe_int = -10000
+  
+  // 测试加法极值
+  assert_eq(20000, add(max_safe_int, max_safe_int))
+  assert_eq(-20000, add(min_safe_int, min_safe_int))
+  assert_eq(0, add(max_safe_int, min_safe_int))
+  
+  // 测试乘法极值
+  assert_eq(100000000, multiply(max_safe_int, max_safe_int))
+  assert_eq(100000000, multiply(min_safe_int, min_safe_int))
+  assert_eq(-100000000, multiply(max_safe_int, min_safe_int))
+  
+  // 测试除法极值
+  assert_eq(1, divide_with_ceil(max_safe_int, max_safe_int))
+  assert_eq(1, divide_with_ceil(min_safe_int, min_safe_int))
+  assert_eq(-1, divide_with_ceil(max_safe_int, min_safe_int))
+  assert_eq(0, divide_with_ceil(0, max_safe_int))
+}
+
+test "string_processing_advanced" {
+  // 高级字符串处理测试
+  // 测试各种字符串组合
+  assert_eq_string("Hello, MoonBit Language!", greet("MoonBit Language"))
+  assert_eq_string("Hello, 123456789!", greet("123456789"))
+  assert_eq_string("Hello, special@chars#123!", greet("special@chars#123"))
+  assert_eq_string("Hello, mixedCASElowerUPPER!", greet("mixedCASElowerUPPER"))
+  assert_eq_string("Hello,   spaced   string   !", greet("  spaced   string   "))
+  
+  // 测试Unicode字符
+  assert_eq_string("Hello, 🌙⭐🌟!", greet("🌙⭐🌟"))
+  assert_eq_string("Hello, 数学公式!", greet("数学公式"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+  assert_eq_string("Hello, עברית!", greet("עברית"))
+}
+
+test "financial_compound_interest" {
+  // 金融复利计算测试
+  let principal = 10000
+  let annual_rate = 5  // 5%
+  let years = 4
+  
+  // 计算复利（简化版本，每年计算一次）
+  let year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
+  assert_eq(10500, year1)  // 10000 + 5%
+  let year2 = add(year1, divide_with_ceil(multiply(year1, annual_rate), 100))
+  assert_eq(11025, year2)  // 10500 + 5%
+  let year3 = add(year2, divide_with_ceil(multiply(year2, annual_rate), 100))
+  assert_eq(11576, year3)  // 11025 + 5%
+  let year4 = add(year3, divide_with_ceil(multiply(year3, annual_rate), 100))
+  assert_eq(12155, year4)  // 11576 + 5%
+  
+  // 计算总收益
+  let total_earnings = subtract(year4, principal)
+  assert_eq(2155, total_earnings)
+  
+  // 计算月供（4年=48个月）
+  let total_months = multiply(years, 12)
+  let monthly_payment = divide_with_ceil(year4, total_months)
+  assert_eq(254, monthly_payment)  // ceil(12155/48)
+}
+
+test "algorithm_efficiency_comparison" {
+  // 算法效率比较测试
+  let n1 = 100
+  let n2 = 1000
+  let n3 = 10000
+  
+  // 模拟O(n)算法
+  let linear_n1 = multiply(n1, 3)
+  let linear_n2 = multiply(n2, 3)
+  let linear_n3 = multiply(n3, 3)
+  
+  // 模拟O(log n)算法（简化为除法）
+  let log_n1 = divide_with_ceil(n1, 10)
+  let log_n2 = divide_with_ceil(n2, 10)
+  let log_n3 = divide_with_ceil(n3, 10)
+  
+  // 验证算法复杂度特征
+  assert_eq(300, linear_n1)
+  assert_eq(3000, linear_n2)
+  assert_eq(30000, linear_n3)
+  
+  assert_eq(10, log_n1)
+  assert_eq(100, log_n2)
+  assert_eq(1000, log_n3)
+  
+  // 计算效率比率
+  let ratio_n1 = divide_with_ceil(linear_n1, log_n1)
+  let ratio_n2 = divide_with_ceil(linear_n2, log_n2)
+  let ratio_n3 = divide_with_ceil(linear_n3, log_n3)
+  
+  assert_eq(30, ratio_n1)
+  assert_eq(30, ratio_n2)
+  assert_eq(30, ratio_n3)
+}
