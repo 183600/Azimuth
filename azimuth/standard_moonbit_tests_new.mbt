@@ -1,91 +1,103 @@
-// 标准 MoonBit 测试用例 - 为 azimuth 库新增的测试
-// 包含 8 个高质量测试用例，覆盖核心功能和边界情况
+// 标准 MoonBit 测试用例 - 10个高质量测试用例
+// 测试 azimuth 库的核心功能
 
-test "arithmetic_basic_operations" {
-  // 基本算术运算测试
-  @azimuth.assert_eq(10, @azimuth.add(3, 7))
-  @azimuth.assert_eq(-4, @azimuth.subtract(2, 6))
-  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 123))
+test "add_function_basic_operations" {
+  // 测试加法函数的基本运算
+  assert_eq(10, add(7, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-10, add(-7, -3))
+  assert_eq(4, add(-7, 11))
+  assert_eq(1000000, add(500000, 500000))
+}
+
+test "multiply_function_properties" {
+  // 测试乘法函数的数学性质
+  assert_eq(25, multiply(5, 5))
+  assert_eq(-15, multiply(-5, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(15, multiply(-5, -3))
+  assert_eq(1000000, multiply(1000, 1000))
+}
+
+test "greet_function_international_chars" {
+  // 测试问候函数的国际字符支持
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, !", greet(""))
+}
+
+test "divide_with_ceil_packaging_logic" {
+  // 测试向上取整除法的包装逻辑
+  let items = 25
+  let box_capacity = 6
+  let boxes_needed = divide_with_ceil(items, box_capacity)
+  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
+  
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(30, total_capacity)
 }
 
 test "mathematical_commutative_laws" {
-  // 数学交换律测试
-  let a = 12
+  // 测试数学交换律
+  let a = 15
   let b = 8
   
   // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  assert_eq(add(a, b), add(b, a))
   
   // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
+  assert_eq(multiply(a, b), multiply(b, a))
 }
 
-test "divide_with_ceil_comprehensive" {
-  // 向上取整除法综合测试
-  // 正数除法
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100))
-  
-  // 负数处理
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(5, 0))
+test "subtract_function_edge_cases" {
+  // 测试减法函数的边缘情况
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(7, 7))
+  assert_eq(15, subtract(0, -15))
+  assert_eq(-1000000, subtract(0, 1000000))
 }
 
-test "greet_function_various_inputs" {
-  // 问候函数各种输入测试
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
+test "complex_business_calculation" {
+  // 复杂业务计算测试
+  // 场景：计算项目资源需求
+  let team_size = 8
+  let tasks_per_person = 5
+  let total_tasks = multiply(team_size, tasks_per_person)
+  let tasks_per_sprint = 15
+  let sprints_needed = divide_with_ceil(total_tasks, tasks_per_sprint)
+  assert_eq(3, sprints_needed)  // ceil(40/15) = 3
 }
 
-test "complex_calculation_pipeline" {
-  // 复杂计算流水线测试
-  let base = 10
-  let step1 = @azimuth.add(base, 5)        // 15
-  let step2 = @azimuth.multiply(step1, 2)  // 30
-  let step3 = @azimuth.divide_with_ceil(step2, 8)  // 4
-  let result = @azimuth.subtract(step3, 1)  // 3
-  
-  @azimuth.assert_eq(3, result)
+test "error_handling_division_by_zero" {
+  // 测试除零错误处理
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(1000000, 0))
 }
 
-test "negative_number_operations" {
-  // 负数运算测试
-  @azimuth.assert_eq(-5, @azimuth.add(-2, -3))
-  @azimuth.assert_eq(2, @azimuth.subtract(-1, -3))
-  @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
-  @azimuth.assert_eq(-15, @azimuth.multiply(3, -5))
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_budget = 10000
+  let team_members = 6
+  let max_share = divide_with_ceil(total_budget, team_members)
+  assert_eq(1667, max_share)  // ceil(10000/6) = 1667
+  
+  // 验证总分配
+  let total_allocated = multiply(max_share, team_members)
+  assert_eq(10002, total_allocated)
 }
 
-test "boundary_value_operations" {
-  // 边界值运算测试
-  // 零值运算
-  @azimuth.assert_eq(5, @azimuth.add(5, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
-  @azimuth.assert_eq(5, @azimuth.subtract(5, 0))
-  
-  // 单位值运算
-  @azimuth.assert_eq(5, @azimuth.multiply(5, 1))
-  @azimuth.assert_eq(-5, @azimuth.multiply(5, -1))
-}
-
-test "real_world_business_scenario" {
-  // 真实业务场景测试：装盒问题
-  let items = 47
-  let box_capacity = 12
-  
-  // 计算需要的盒子数量
-  let boxes_needed = @azimuth.divide_with_ceil(items, box_capacity)
-  @azimuth.assert_eq(4, boxes_needed)
-  
-  // 计算总容量
-  let total_capacity = @azimuth.multiply(boxes_needed, box_capacity)
-  @azimuth.assert_eq(48, total_capacity)
-  
-  // 计算剩余空间
-  let remaining_space = @azimuth.subtract(total_capacity, items)
-  @azimuth.assert_eq(1, remaining_space)
+test "sequential_calculation_chain" {
+  // 连续计算链测试
+  let initial = 5
+  let step1 = add(initial, multiply(2, 3))     // 5 + 2*3 = 11
+  let step2 = divide_with_ceil(step1, 4)       // ceil(11/4) = 3
+  let step3 = multiply(step2, add(1, 2))       // 3 * (1+2) = 9
+  let step4 = divide_with_ceil(step3, 5)       // ceil(9/5) = 2
+  assert_eq(2, step4)
 }
