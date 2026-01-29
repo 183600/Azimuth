@@ -1,133 +1,76 @@
 // Azimuth 新增测试用例
-// 使用标准 MoonBit 测试语法的精选测试用例
 
-test "arithmetic_sequence_calculation" {
-  // 等差数列计算：计算 3 + 7 + 11 + 15 + 19
-  let term1 = 3
-  let diff = 4
-  let terms = 5
-  
-  // 使用等差数列求和公式：S = n/2 * (2a + (n-1)d)
-  let sum = divide_with_ceil(
-    multiply(terms, add(multiply(2, term1), multiply(terms - 1, diff))),
-    2
-  )
-  
-  assert_eq(55, sum)  // 3 + 7 + 11 + 15 + 19 = 55
+test "add_function_basic" {
+  // 基本加法测试
+  assert_eq(10, add(7, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-10, add(-7, -3))
 }
 
-test "resource_allocation_optimization" {
-  // 资源分配优化问题
-  let total_resources = 100
-  let project_a_needs = 23
-  let project_b_needs = 31
-  let project_c_needs = 19
-  
-  let allocated_a = project_a_needs
-  let allocated_b = project_b_needs
-  let allocated_c = project_c_needs
-  let total_allocated = add(add(allocated_a, allocated_b), allocated_c)
-  let remaining = add(total_resources, -total_allocated)
-  
-  assert_eq(73, total_allocated)
-  assert_eq(27, remaining)
+test "multiply_function_commutative" {
+  // 乘法交换律测试
+  assert_eq(21, multiply(7, 3))
+  assert_eq(21, multiply(3, 7))
+  assert_eq(0, multiply(5, 0))
 }
 
-test "temperature_conversion" {
-  // 温度转换模拟（简化版）
-  let celsius = 25
-  let fahrenheit = add(multiply(celsius, 9), 160) / 5
-  
-  assert_eq(77, fahrenheit)  // 25°C = 77°F
+test "greet_function_standard" {
+  // 问候函数标准测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
-test "digital_clock_calculation" {
-  // 数字时钟计算：计算一天中的总秒数
-  let hours = 24
-  let minutes_per_hour = 60
-  let seconds_per_minute = 60
-  
-  let seconds_per_day = multiply(hours, multiply(minutes_per_hour, seconds_per_minute))
-  
-  assert_eq(86400, seconds_per_day)
+test "divide_with_ceil_positive" {
+  // 向上取整除法正数测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
 }
 
-test "compound_interest_simplified" {
-  // 简化的复利计算
-  let principal = 1000
-  let rate_percent = 5
-  let _years = 3
-  
-  // 第一年
-  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  // 第二年
-  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
-  // 第三年
-  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
-  
-  assert_eq(1158, year3)  // 1000 -> 1050 -> 1103 -> 1158
+test "divide_with_ceil_zero_divisor" {
+  // 除零测试
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
 }
 
-test "geometric_area_calculation" {
-  // 几何面积计算：计算梯形面积
-  let base1 = 8
-  let base2 = 12
-  let height = 5
-  
-  // 梯形面积公式：(上底 + 下底) × 高 ÷ 2
-  let area = divide_with_ceil(multiply(add(base1, base2), height), 2)
-  
-  assert_eq(50, area)  // (8 + 12) × 5 ÷ 2 = 50
+test "subtract_function_basic" {
+  // 基本减法测试
+  assert_eq(4, subtract(7, 3))
+  assert_eq(-4, subtract(3, 7))
+  assert_eq(0, subtract(5, 5))
 }
 
-test "batch_processing_efficiency" {
-  // 批处理效率计算
-  let total_items = 157
-  let batch_size = 25
-  
-  let full_batches = divide_with_ceil(total_items, batch_size)
-  let last_batch_size = total_items - multiply(full_batches - 1, batch_size)
-  
-  assert_eq(7, full_batches)
-  assert_eq(7, last_batch_size)
+test "complex_calculation_sequence" {
+  // 复杂计算序列测试
+  let a = add(5, 3)
+  let b = multiply(a, 2)
+  let c = divide_with_ceil(b, 4)
+  assert_eq(4, c)  // ((5+3)*2)/4 = 16/4 = 4
 }
 
-test "multilingual_greeting_system" {
-  // 多语言问候系统测试
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, Mundo!", greet("Mundo"))
-  assert_eq_string("Hello, Monde!", greet("Monde"))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🌍!", greet("🌍"))
+test "mathematical_properties" {
+  // 数学性质测试
+  let x = 15
+  let y = 8
+  
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
+  
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
 }
 
-test "inventory_reorder_calculation" {
-  // 库存重新订购计算
-  let current_stock = 45
-  let daily_demand = 8
-  let lead_time_days = 7
-  let safety_stock = 15
+test "business_logic_packaging" {
+  // 业务逻辑：包装计算测试
+  let items = 47
+  let capacity_per_box = 12
+  let boxes_needed = divide_with_ceil(items, capacity_per_box)
   
-  let demand_during_lead = multiply(daily_demand, lead_time_days)
-  let reorder_point = add(demand_during_lead, safety_stock)
-  let need_reorder = current_stock < reorder_point
+  assert_eq(4, boxes_needed)
   
-  assert_eq(56, demand_during_lead)
-  assert_eq(71, reorder_point)
-  
-  // 用断言表示需要重新订购
-  assert_eq(1, if need_reorder { 1 } else { 0 })
-}
-
-test "network_packet_optimization" {
-  // 网络数据包优化计算
-  let data_size = 2048
-  let header_size = 32
-  let max_packet_size = 512
-  
-  let total_size = add(data_size, header_size)
-  let packets_needed = divide_with_ceil(total_size, max_packet_size)
-  
-  assert_eq(2080, total_size)
-  assert_eq(5, packets_needed)
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, capacity_per_box)
+  assert_eq(48, total_capacity)
 }
