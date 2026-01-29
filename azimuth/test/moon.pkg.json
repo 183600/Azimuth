@@ -218,6 +218,9 @@
   "standard_core_tests.mbt",
   "standard_azimuth_core_tests.mbt",
   "azimuth_core_functionality_tests.mbt",
-  "simple_azimuth_test.mbt"
+  "simple_azimuth_test.mbt",
+    "standard_moonbit_test_suite.mbt",
+    "simple_moonbit_tests.mbt",
+    "new_simple_tests.mbt"
   ]
 }
