@@ -214,6 +214,7 @@
   "standard_moonbit_tests_new.mbt",
   "azimuth_standard_test_cases_new.mbt",
   "very_simple_test.mbt",
-  "simple_test_case.mbt"
+  "simple_test_case.mbt",
+  "standard_core_tests.mbt"
   ]
 }
