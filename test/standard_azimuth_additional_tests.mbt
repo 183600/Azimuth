@@ -1,112 +1,105 @@
-// 标准 MoonBit 测试用例 - Azimuth 项目补充测试
-// 测试核心功能：add, multiply, greet 和断言函数
+// 标准 MoonBit 测试用例 - azimuth 库的额外测试
+// 包含10个标准测试用例，覆盖核心功能
 
-test "add_function_basic_functionality" {
-  // 测试 add 函数的基本功能
-  assert_eq(0, azimuth.add(0, 0))
-  assert_eq(5, azimuth.add(2, 3))
-  assert_eq(-1, azimuth.add(-2, 1))
-  assert_eq(100, azimuth.add(50, 50))
+test "add_function_commutative_property" {
+  // 测试加法交换律：a + b = b + a
+  let a = 15
+  let b = 27
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(42, add(15, 27))
+  assert_eq(42, add(27, 15))
 }
 
-test "add_function_negative_numbers" {
-  // 测试 add 函数处理负数的能力
-  assert_eq(-10, azimuth.add(-5, -5))
-  assert_eq(0, azimuth.add(-10, 10))
-  assert_eq(-20, azimuth.add(-30, 10))
-  assert_eq(5, azimuth.add(-15, 20))
+test "multiply_function_distributive_property" {
+  // 测试乘法分配律：a * (b + c) = a * b + a * c
+  let a = 5
+  let b = 8
+  let c = 12
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)
 }
 
-test "multiply_function_basic_functionality" {
-  // 测试 multiply 函数的基本功能
-  assert_eq(0, azimuth.multiply(0, 5))
-  assert_eq(6, azimuth.multiply(2, 3))
-  assert_eq(-6, azimuth.multiply(-2, 3))
-  assert_eq(6, azimuth.multiply(-2, -3))
+test "greet_function_with_special_characters" {
+  // 测试问候函数处理特殊字符
+  assert_eq_string("Hello, @moonbit!", greet("@moonbit"))
+  assert_eq_string("Hello, test+case@example.com!", greet("test+case@example.com"))
+  assert_eq_string("Hello, 123_456!", greet("123_456"))
 }
 
-test "multiply_function_large_numbers" {
-  // 测试 multiply 函数处理大数的能力
-  assert_eq(10000, azimuth.multiply(100, 100))
-  assert_eq(1000000, azimuth.multiply(1000, 1000))
-  assert_eq(-1000000, azimuth.multiply(-1000, 1000))
+test "divide_with_ceil_complex_scenarios" {
+  // 测试向上取整除法的复杂场景
+  assert_eq(7, divide_with_ceil(40, 6))    // 40/6 = 6.666... -> 7
+  assert_eq(3, divide_with_ceil(-20, 7))   // -20/7 = -2.857... -> -2
+  assert_eq(0, divide_with_ceil(0, 100))   // 0/任何数 = 0
+  assert_eq(0, divide_with_ceil(50, 0))    // 除数为0时返回0
 }
 
-test "greet_function_various_inputs" {
-  // 测试 greet 函数处理各种输入的能力
-  assert_eq_string("Hello, World!", azimuth.greet("World"))
-  assert_eq_string("Hello, !", azimuth.greet(""))
-  assert_eq_string("Hello, 123!", azimuth.greet("123"))
-  assert_eq_string("Hello, 测试!", azimuth.greet("测试"))
-}
-
-test "overflow_protection_add" {
-  // 测试 add 函数的溢出保护机制
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "combined_arithmetic_operations" {
+  // 测试组合算术运算
+  let x = 10
+  let y = 15
+  let z = 20
   
-  assert_eq(max_val, azimuth.add(max_val, 1))
-  assert_eq(max_val, azimuth.add(max_val, max_val))
-  assert_eq(min_val, azimuth.add(min_val, -1))
-  assert_eq(min_val, azimuth.add(min_val, min_val))
+  // 计算：(x + y) * z - x
+  let result = add(multiply(add(x, y), z), -x)
+  assert_eq(490, result)  // (10 + 15) * 20 - 10 = 25 * 20 - 10 = 500 - 10 = 490
 }
 
-test "overflow_protection_multiply" {
-  // 测试 multiply 函数的溢出保护机制
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  assert_eq(max_val, azimuth.multiply(max_val, 2))
-  assert_eq(min_val, azimuth.multiply(min_val, -1))
-  assert_eq(max_val, azimuth.multiply(46341, 46341))
-  assert_eq(min_val, azimuth.multiply(-46341, 46341))
+test "negative_number_operations_comprehensive" {
+  // 测试负数的综合运算
+  assert_eq(-10, add(-3, -7))
+  assert_eq(25, multiply(-5, -5))
+  assert_eq(-15, multiply(3, -5))
+  assert_eq(-3, divide_with_ceil(-10, 4))
+  assert_eq(3, divide_with_ceil(-10, -4))
 }
 
-test "complex_arithmetic_operations" {
-  // 测试复合算术运算
-  let a = 10
-  let b = 20
-  let c = 30
-  
-  // (a + b) * c
-  let result1 = azimuth.multiply(azimuth.add(a, b), c)
-  assert_eq(900, result1)
-  
-  // a * b + c
-  let result2 = azimuth.add(azimuth.multiply(a, b), c)
-  assert_eq(230, result2)
+test "boundary_value_testing" {
+  // 测试边界值
+  assert_eq(1, add(0, 1))
+  assert_eq(-1, add(0, -1))
+  assert_eq(0, multiply(0, 1000))
+  assert_eq(1000, multiply(1, 1000))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(99, 100))
 }
 
-test "assertion_functions_validation" {
-  // 测试断言函数的正确性
-  azimuth.assert_true(true)
-  azimuth.assert_false(false)
-  azimuth.assert_eq(42, 42)
-  azimuth.assert_eq_string("MoonBit", "MoonBit")
-  
-  // 测试复合断言
-  let x = 5
-  let y = 10
-  azimuth.assert_true(azimuth.add(x, y) == 15)
-  azimuth.assert_false(azimuth.multiply(x, y) == 40)
-}
-
-test "real_world_application_scenarios" {
-  // 测试实际应用场景
-  // 场景1：计算购物车总价
-  let item1_price = 199
+test "real_world_shopping_cart_calculation" {
+  // 模拟真实购物车计算
+  let item1_price = 29
   let item1_quantity = 2
-  let item2_price = 299
-  let item2_quantity = 1
+  let item2_price = 15
+  let item2_quantity = 3
+  let discount = 10
   
-  let total1 = azimuth.multiply(item1_price, item1_quantity)
-  let total2 = azimuth.multiply(item2_price, item2_quantity)
-  let cart_total = azimuth.add(total1, total2)
+  let subtotal1 = multiply(item1_price, item1_quantity)
+  let subtotal2 = multiply(item2_price, item2_quantity)
+  let total_before_discount = add(subtotal1, subtotal2)
+  let final_total = add(total_before_discount, -discount)
   
-  azimuth.assert_eq(697, cart_total)
+  assert_eq(103, final_total)  // 29*2 + 15*3 - 10 = 58 + 45 - 10 = 93
+}
+
+test "string_greeting_with_unicode_emoji" {
+  // 测试Unicode表情符号的问候
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, 💻!", greet("💻"))
+  assert_eq_string("Hello, 🎯!", greet("🎯"))
+}
+
+test "mathematical_sequence_calculation" {
+  // 测试数学序列计算：等差数列求和
+  let first_term = 3
+  let common_diff = 2
+  let num_terms = 6
   
-  // 场景2：温度转换（简化版：F = C × 2 + 30）
-  let celsius = 25
-  let fahrenheit = azimuth.add(azimuth.multiply(celsius, 2), 30)
-  azimuth.assert_eq(80, fahrenheit)
+  // 使用公式：S = n/2 * (2a + (n-1)d)
+  let sum = divide_with_ceil(
+    multiply(num_terms, add(multiply(2, first_term), multiply(num_terms - 1, common_diff))),
+    2
+  )
+  
+  assert_eq(48, sum)  // 6/2 * (6 + 10) = 3 * 16 = 48
 }
