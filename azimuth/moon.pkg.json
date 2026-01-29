@@ -98,7 +98,8 @@
     "azimuth_standard_comprehensive_tests.mbt",
     "standard_moonbit_test_cases.mbt",
     "standard_moonbit_test_cases_new.mbt",
-    "azimuth_new_standard_tests.mbt"
+    "azimuth_new_standard_tests.mbt",
+    "azimuth_standard_unit_tests.mbt"
   ],
   "import": [
     "moonbitlang/core/builtin",
