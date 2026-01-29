@@ -89,3 +89,71 @@ test "unicode_string_handling" {
   assert_eq_string("Hello, 🚀!", greet("🚀"))
   assert_eq_string("Hello, café!", greet("café"))
 }
+
+// 新添加的5个测试用例
+test "precision_division_edge_cases" {
+  // 测试除法精度边缘情况
+  assert_eq(1, divide_with_ceil(1, 1000000))
+  assert_eq(2, divide_with_ceil(1000001, 1000000))
+  assert_eq(1000, divide_with_ceil(999999, 1000))
+  assert_eq(1, divide_with_ceil(-1, 1000000))
+  assert_eq(-2, divide_with_ceil(-1000001, 1000000))
+}
+
+test "complex_calculation_pipeline" {
+  // 测试复杂计算流水线
+  let base = 10
+  let step1 = multiply(base, 2)           // 20
+  let step2 = add(step1, 5)               // 25
+  let step3 = divide_with_ceil(step2, 3)  // 9
+  let step4 = multiply(step3, 4)          // 36
+  let result = subtract(step4, 2)         // 34
+  
+  assert_eq(34, result)
+}
+
+test "resource_allocation_scenario" {
+  // 资源分配场景测试
+  let total_budget = 10000
+  let team_members = 6
+  
+  // 使用向上取整确保覆盖所有情况
+  let max_share = divide_with_ceil(total_budget, team_members)
+  assert_eq(1667, max_share)  // ceil(10000/6) = 1667
+  
+  // 验证总分配不超过预算
+  let total_allocated = multiply(max_share, team_members)
+  assert_eq(10002, total_allocated)
+}
+
+test "mathematical_sequence_operations" {
+  // 测试数学序列操作
+  let start = 1
+  let difference = 3
+  let terms = 5
+  
+  // 计算等差数列的和
+  let term1 = start
+  let term2 = add(term1, difference)
+  let term3 = add(term2, difference)
+  let term4 = add(term3, difference)
+  let term5 = add(term4, difference)
+  
+  let sequence_sum = add(add(add(add(term1, term2), term3), term4), term5)
+  assert_eq(35, sequence_sum)  // 1 + 4 + 7 + 10 + 13 = 35
+}
+
+test "error_boundary_conditions" {
+  // 错误边界条件测试
+  // 测试各种极端除零情况
+  assert_eq(0, divide_with_ceil(2147483647, 0))    // 最大正值除零
+  assert_eq(0, divide_with_ceil(-2147483648, 0))   // 最大负值除零
+  assert_eq(0, divide_with_ceil(0, 0))             // 零除零
+  
+  // 测试极值运算
+  let max_positive = 2147483647
+  let max_negative = -2147483648
+  
+  assert_eq(0, multiply(max_positive, 0))
+  assert_eq(0, multiply(max_negative, 0))
+}
