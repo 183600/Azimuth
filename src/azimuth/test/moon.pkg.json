@@ -4,6 +4,7 @@
   ],
   "export": [],
   "test": [
+    "standard_azimuth_new_tests.mbt",
     "quality_standard_tests.mbt",
     "single_test.mbt",
     "simple_test_verification.mbt",
