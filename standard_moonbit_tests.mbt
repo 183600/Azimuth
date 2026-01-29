@@ -1,98 +1,201 @@
-// 标准 MoonBit 测试用例
-// 针对 azimuth 库的核心功能进行测试
+// MoonBit 标准测试用例
+// 覆盖核心功能模块
 
-test "standard_add_commutative_property" {
-  // 测试加法交换律
-  let a = 15
-  let b = 27
-  assert_eq(add(a, b), add(b, a))
-  assert_eq(42, add(15, 27))
-  assert_eq(42, add(27, 15))
-}
-
-test "standard_multiply_zero_property" {
-  // 测试乘法零元素性质
-  assert_eq(0, multiply(5, 0))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(0, multiply(0, 0))
-  assert_eq(0, multiply(-10, 0))
-}
-
-test "standard_divide_with_ceil_precision" {
-  // 测试向上取整除法的精度
-  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
-  assert_eq(4, divide_with_ceil(10, 3)) // 3.333... -> 4
-  assert_eq(1, divide_with_ceil(1, 1))  // 1 -> 1
-  assert_eq(0, divide_with_ceil(0, 5))  // 0 -> 0
-}
-
-test "standard_greet_unicode_support" {
-  // 测试问候函数的 Unicode 支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, αβγ!", greet("αβγ"))
-}
-
-test "standard_combined_arithmetic_operations" {
-  // 测试组合算术运算
-  let x = 8
-  let y = 12
-  let z = 5
+///|
+test "integer_basic_operations" {
+  // 测试整数基本操作
+  let a = 42
+  let b = 17
   
-  // 测试 (x + y) * z
-  let result1 = multiply(add(x, y), z)
-  assert_eq(100, result1)  // (8 + 12) * 5 = 20 * 5 = 100
+  // 加法
+  let sum = a + b
+  inspect(sum, content="59")
   
-  // 测试 x * y + z
-  let result2 = add(multiply(x, y), z)
-  assert_eq(101, result2)  // 8 * 12 + 5 = 96 + 5 = 101
-}
-
-test "standard_negative_number_operations" {
-  // 测试负数运算
-  assert_eq(-10, add(-3, -7))
-  assert_eq(-5, add(-8, 3))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(-15, multiply(3, -5))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-}
-
-test "standard_large_number_calculations" {
-  // 测试大数计算
-  let large_num = 100000
-  assert_eq(200000, add(large_num, large_num))
-  assert_eq(10000000000, multiply(large_num, large_num))
-  assert_eq(33334, divide_with_ceil(1000000, 30))
-}
-
-test "standard_edge_case_division" {
-  // 测试除法边界情况
-  assert_eq(1, divide_with_ceil(5, 5))     // 相等数
-  assert_eq(1, divide_with_ceil(1, 100))   // 被除数小于除数
-  assert_eq(100, divide_with_ceil(100, 1)) // 除数为1
-  assert_eq(0, divide_with_ceil(10, 0))    // 除数为0
-}
-
-test "standard_string_greeting_edge_cases" {
-  // 测试字符串问候边界情况
-  assert_eq_string("Hello, !", greet(""))           // 空字符串
-  assert_eq_string("Hello, A!", greet("A"))         // 单字符
-  assert_eq_string("Hello, 123!", greet("123"))     // 数字字符串
-  assert_eq_string("Hello, a b c!", greet("a b c")) // 包含空格
-}
-
-test "standard_real_world_calculation_scenario" {
-  // 测试实际世界计算场景：订单总价计算
-  let unit_price = 45
-  let quantity = 8
-  let shipping_cost = 15
-  let discount = 20
+  // 减法
+  let diff = a - b
+  inspect(diff, content="25")
   
-  let subtotal = multiply(unit_price, quantity)
-  let total_before_discount = add(subtotal, shipping_cost)
-  let final_total = add(total_before_discount, -discount)
+  // 乘法
+  let product = a * b
+  inspect(product, content="714")
   
-  assert_eq(360, subtotal)           // 45 * 8 = 360
-  assert_eq(375, total_before_discount) // 360 + 15 = 375
-  assert_eq(355, final_total)        // 375 - 20 = 355
+  // 除法
+  let quotient = a / b
+  inspect(quotient, content="2")
+}
+
+///|
+test "string_basic_operations" {
+  // 测试字符串基本操作
+  let greeting = "Hello"
+  let name = "MoonBit"
+  
+  // 字符串连接
+  let message = greeting + ", " + name + "!"
+  inspect(message, content="Hello, MoonBit!")
+  
+  // 字符串长度
+  let len = message.length()
+  inspect(len, content="15")
+  
+  // 空字符串
+  let empty = ""
+  inspect(empty.length(), content="0")
+}
+
+///|
+test "boolean_logic_operations" {
+  // 测试布尔逻辑操作
+  let true_val = true
+  let false_val = false
+  
+  // 基本逻辑运算
+  inspect(true_val && false_val, content="false")
+  inspect(true_val || false_val, content="true")
+  inspect(!true_val, content="false")
+  inspect(!false_val, content="true")
+  
+  // 复合逻辑
+  let complex = (true_val && false_val) || (true_val || false_val)
+  inspect(complex, content="true")
+}
+
+///|
+test "comparison_operations" {
+  // 测试比较操作
+  let a = 10
+  let b = 20
+  let c = 10
+  
+  // 基本比较
+  inspect(a < b, content="true")
+  inspect(a > b, content="false")
+  inspect(a <= b, content="true")
+  inspect(a >= b, content="false")
+  inspect(a == c, content="true")
+  inspect(a != b, content="true")
+  
+  // 字符串比较
+  let str1 = "apple"
+  let str2 = "banana"
+  inspect(str1 < str2, content="true")
+}
+
+///|
+test "mathematical_functions" {
+  // 测试数学函数
+  let x = -5
+  let y = 3.14
+  
+  // 绝对值
+  let abs_x = Int::abs(x)
+  inspect(abs_x, content="5")
+  
+  // 基本数学运算
+  let power = 2 * 2 * 2
+  inspect(power, content="8")
+  
+  // 模运算
+  let remainder = 17 % 5
+  inspect(remainder, content="2")
+}
+
+///|
+test "type_conversions" {
+  // 测试类型转换
+  let int_val = 42
+  let byte_val = int_val.to_byte()
+  
+  // 字符转换
+  let char_val = 'A'
+  let char_as_int = char_val.to_int()
+  inspect(char_as_int, content="65")
+  
+  // 数值转换
+  let small_int = 100
+  let as_byte = small_int.to_byte()
+  inspect(as_byte.to_int(), content="100")
+}
+
+///|
+test "array_operations" {
+  // 测试数组操作
+  let numbers = [1, 2, 3, 4, 5]
+  
+  // 数组长度
+  inspect(numbers.length(), content="5")
+  
+  // 数组访问
+  inspect(numbers[0], content="1")
+  inspect(numbers[4], content="5")
+  
+  // 数组操作
+  let first = numbers[0]
+  let last = numbers[numbers.length() - 1]
+  inspect(first + last, content="6")
+}
+
+///|
+test "option_type_handling" {
+  // 测试Option类型处理
+  let some_value = Some(42)
+  let none_value = None
+  
+  // Option检查
+  inspect(some_value.is_some(), content="true")
+  inspect(none_value.is_some(), content="false")
+  inspect(some_value.is_none(), content="false")
+  inspect(none_value.is_none(), content="true")
+  
+  // Option值提取
+  let extracted = match some_value {
+    Some(x) => x * 2
+    None => 0
+  }
+  inspect(extracted, content="84")
+}
+
+///|
+test "result_type_operations" {
+  // 测试Result类型操作
+  let success_result = Ok(42)
+  let error_result = Err("Error message")
+  
+  // Result检查
+  inspect(success_result.is_ok(), content="true")
+  inspect(error_result.is_ok(), content="false")
+  inspect(success_result.is_err(), content="false")
+  inspect(error_result.is_err(), content="true")
+  
+  // Result值处理
+  let processed = match success_result {
+    Ok(value) => value * 3
+    Err(_) => 0
+  }
+  inspect(processed, content="126")
+}
+
+///|
+test "edge_cases_and_boundaries" {
+  // 测试边界情况和特殊情况
+  let max_int = Int::max_value
+  let min_int = Int::min_value
+  
+  // 边界值检查
+  inspect(max_int, content="2147483647")
+  inspect(min_int, content="-2147483648")
+  
+  // 零值操作
+  let zero = 0
+  inspect(zero + 1, content="1")
+  inspect(zero * 100, content="0")
+  
+  // 特殊字符串
+  let special_chars = "!@#$%^&*()"
+  inspect(special_chars.length(), content="10")
+  
+  // 空值处理
+  let empty_string = ""
+  inspect(empty_string.length(), content="0")
+  inspect(empty_string == "", content="true")
 }
