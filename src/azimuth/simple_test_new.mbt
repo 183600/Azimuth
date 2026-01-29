@@ -1,5 +1,12 @@
-// 简单的测试文件，测试一个函数
-
-test "simple_addition_test" {
+// 简单测试文件
+test "simple_test_add" {
   assert_eq(5, add(2, 3))
+}
+
+test "simple_test_multiply" {
+  assert_eq(6, multiply(2, 3))
+}
+
+test "simple_test_greet" {
+  assert_eq_string("Hello, Test!", greet("Test"))
 }
