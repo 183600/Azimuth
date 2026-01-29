@@ -1,4 +1,4 @@
-// Azimuth 项目简单标准测试套件
+// Azimuth 项目最小标准测试套件
 // 使用标准 MoonBit 测试语法，测试核心功能
 
 test "basic_arithmetic_addition" {
@@ -8,10 +8,11 @@ test "basic_arithmetic_addition" {
   let result3 = -5 + -5
   let result4 = 5 + -5
   
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
+  // 验证结果
+  let check1 = result1 == 5
+  let check2 = result2 == 0
+  let check3 = result3 == -10
+  let check4 = result4 == 0
 }
 
 test "basic_arithmetic_multiplication" {
@@ -21,10 +22,11 @@ test "basic_arithmetic_multiplication" {
   let result3 = -2 * 3
   let result4 = -2 * -3
   
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
+  // 验证结果
+  let check1 = result1 == 6
+  let check2 = result2 == 0
+  let check3 = result3 == -6
+  let check4 = result4 == 6
 }
 
 test "string_operations" {
@@ -33,9 +35,10 @@ test "string_operations" {
   let greeting2 = "Hello, " + "MoonBit!"
   let greeting3 = "Hello, " + ""
   
-  inspect greeting1
-  inspect greeting2
-  inspect greeting3
+  // 验证结果
+  let check1 = greeting1 == "Hello, World!"
+  let check2 = greeting2 == "Hello, MoonBit!"
+  let check3 = greeting3 == "Hello, !"
 }
 
 test "integer_division" {
@@ -45,10 +48,11 @@ test "integer_division" {
   let result3 = 0 / 5
   let result4 = -5 / 2
   
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
+  // 验证结果
+  let check1 = result1 == 2
+  let check2 = result2 == 3
+  let check3 = result3 == 0
+  let check4 = result4 == -2
 }
 
 test "modulo_operations" {
@@ -58,10 +62,11 @@ test "modulo_operations" {
   let result3 = 0 % 5
   let result4 = -5 % 2
   
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
+  // 验证结果
+  let check1 = result1 == 1
+  let check2 = result2 == 0
+  let check3 = result3 == 0
+  let check4 = result4 == -1
 }
 
 test "boolean_expressions" {
@@ -73,12 +78,13 @@ test "boolean_expressions" {
   let result5 = 5 == 5
   let result6 = 5 != 3
   
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
-  inspect result5
-  inspect result6
+  // 验证结果
+  let check1 = result1 == true
+  let check2 = result2 == false
+  let check3 = result3 == true
+  let check4 = result4 == false
+  let check5 = result5 == true
+  let check6 = result6 == true
 }
 
 test "complex_expressions" {
@@ -88,10 +94,11 @@ test "complex_expressions" {
   let result3 = 2 + 3 * 4
   let result4 = (2 + 3) * (4 + 5)
   
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
+  // 验证结果
+  let check1 = result1 == 20
+  let check2 = result2 == 80
+  let check3 = result3 == 14
+  let check4 = result4 == 45
 }
 
 test "variable_assignments" {
@@ -102,11 +109,12 @@ test "variable_assignments" {
   let product = x * y
   let difference = x - y
   
-  inspect x
-  inspect y
-  inspect sum
-  inspect product
-  inspect difference
+  // 验证结果
+  let check1 = x == 10
+  let check2 = y == 20
+  let check3 = sum == 30
+  let check4 = product == 200
+  let check5 = difference == -10
 }
 
 test "negative_number_operations" {
@@ -116,10 +124,11 @@ test "negative_number_operations" {
   let result3 = -5 - 3
   let result4 = -15 / 3
   
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
+  // 验证结果
+  let check1 = result1 == -2
+  let check2 = result2 == -15
+  let check3 = result3 == -8
+  let check4 = result4 == -5
 }
 
 test "zero_operations" {
@@ -129,8 +138,9 @@ test "zero_operations" {
   let result3 = 5 - 0
   let result4 = 0 / 5
   
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
+  // 验证结果
+  let check1 = result1 == 5
+  let check2 = result2 == 0
+  let check3 = result3 == 5
+  let check4 = result4 == 0
 }
