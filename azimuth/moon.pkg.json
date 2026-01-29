@@ -13,6 +13,8 @@
   ],
   "files": [
     "lib.mbt",
+    "test_simple_core_test.mbt",
+    "standard_core_tests.mbt",
     "standard_moonbit_test_cases.mbt",
     "core_standard_tests.mbt",
     "additional_standard_tests.mbt",

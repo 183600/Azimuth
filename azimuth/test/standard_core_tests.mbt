@@ -1,89 +1,87 @@
-// 标准 MoonBit 测试用例 - 针对 azimuth 库核心功能
-// 包含 10 个高质量测试用例，覆盖主要功能和边界情况
+// 标准 MoonBit 测试用例 - 核心功能测试
+// 测试 azimuth 库的核心功能
 
-test "add_function_basic_operations" {
-  // 测试加法函数的基本操作
-  add(2, 3)
-  add(0, 0)
-  add(-2, -3)
-  add(-2, 3)
+test "basic_addition_functionality" {
+  // 测试基本加法功能
+  @azimuth.add(2, 3)
+  @azimuth.add(0, 0)
+  @azimuth.add(-2, 1)
+  @azimuth.add(50, 50)
 }
 
-test "multiply_function_basic_operations" {
-  // 测试乘法函数的基本操作
-  multiply(2, 3)
-  multiply(0, 5)
-  multiply(-2, 3)
-  multiply(-2, -3)
+test "basic_multiplication_functionality" {
+  // 测试基本乘法功能
+  @azimuth.multiply(2, 3)
+  @azimuth.multiply(5, 0)
+  @azimuth.multiply(-2, 3)
+  @azimuth.multiply(5, 5)
 }
 
-test "greet_function_various_inputs" {
-  // 测试问候函数的各种输入
-  greet("World")
-  greet("MoonBit")
-  greet("")
+test "greet_function_basic_cases" {
+  // 测试问候函数的基本情况
+  @azimuth.greet("World")
+  @azimuth.greet("MoonBit")
+  @azimuth.greet("")
+  @azimuth.greet("123")
 }
 
-test "divide_with_ceil_positive_numbers" {
-  // 测试向上取整除法的正数情况
-  divide_with_ceil(10, 3)
-  divide_with_ceil(9, 3)
-  divide_with_ceil(1, 100)
+test "divide_with_ceil_basic_functionality" {
+  // 测试向上取整除法的基本功能
+  @azimuth.divide_with_ceil(10, 3)
+  @azimuth.divide_with_ceil(9, 3)
+  @azimuth.divide_with_ceil(1, 1)
+  @azimuth.divide_with_ceil(0, 5)
+  @azimuth.divide_with_ceil(10, 0)
 }
 
-test "divide_with_ceil_negative_numbers" {
-  // 测试向上取整除法的负数情况
-  divide_with_ceil(-10, 3)
-  divide_with_ceil(-10, -3)
-  divide_with_ceil(5, 0)
+test "subtract_function_basic_cases" {
+  // 测试减法函数的基本情况
+  @azimuth.subtract(5, 3)
+  @azimuth.subtract(3, 5)
+  @azimuth.subtract(5, 5)
+  @azimuth.subtract(15, 5)
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let x = 7
-  let y = 13
-  
-  // 加法交换律
-  add(x, y)
-  add(y, x)
-  
-  // 乘法交换律
-  multiply(x, y)
-  multiply(y, x)
+test "mathematical_commutative_properties" {
+  // 测试数学交换律性质
+  @azimuth.add(7, 13)
+  @azimuth.add(13, 7)
+  @azimuth.multiply(7, 13)
+  @azimuth.multiply(13, 7)
 }
 
-test "business_logic_packaging" {
-  // 测试业务逻辑：包装计算
+test "mathematical_identity_properties" {
+  // 测试数学恒等式性质
+  let x = 42
+  @azimuth.add(x, 0)
+  @azimuth.multiply(x, 0)
+  @azimuth.multiply(x, 1)
+}
+
+test "negative_number_operations" {
+  // 测试负数运算
+  @azimuth.add(-5, -3)
+  @azimuth.multiply(-5, -3)
+  @azimuth.multiply(-5, 3)
+  @azimuth.divide_with_ceil(-10, 3)
+  @azimuth.divide_with_ceil(-10, -3)
+}
+
+test "complex_calculation_scenario" {
+  // 测试复杂计算场景
+  // 场景：计算装盒问题
   let items = 25
-  let capacity_per_box = 6
-  let boxes_needed = divide_with_ceil(items, capacity_per_box)
+  let capacity = 6
+  let boxes = @azimuth.divide_with_ceil(items, capacity)
   
-  // 验证总容量
-  let total_capacity = multiply(boxes_needed, capacity_per_box)
-  total_capacity
+  let total_capacity = @azimuth.multiply(boxes, capacity)
+  let remaining = @azimuth.subtract(total_capacity, items)
 }
 
-test "complex_calculation_pipeline" {
-  // 测试复杂计算流水线
-  let base_value = 10
-  let step1 = add(base_value, 5)        // 15
-  let step2 = multiply(step1, 2)        // 30
-  let step3 = divide_with_ceil(step2, 8)  // 4
-  let step4 = add(step3, 1)             // 5
-  
-  step4
-}
-
-test "string_operations" {
-  // 测试字符串操作
-  greet("Test")
-  greet("")
-  greet("123")
-}
-
-test "edge_cases" {
-  // 测试边界情况
-  add(2147483647, 0)
-  multiply(-2147483648, 0)
-  divide_with_ceil(0, 1)
+test "unicode_and_special_characters" {
+  // 测试Unicode和特殊字符
+  @azimuth.greet("世界")
+  @azimuth.greet("🚀")
+  @azimuth.greet("café")
+  @azimuth.greet("ñoño")
 }
