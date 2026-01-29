@@ -76,6 +76,7 @@
     "azimuth_comprehensive_quality_tests.mbt",
     "azimuth_standard_tests.mbt",
     "azimuth_premium_tests.mbt",
-    "standard_azimuth_additional_tests.mbt"
+    "standard_azimuth_additional_tests.mbt",
+    "standard_moonbit_test_suite.mbt"
   ]
 }
