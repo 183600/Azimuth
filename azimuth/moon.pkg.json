@@ -75,7 +75,8 @@
     "azimuth_premium_test_cases_final.mbt",
     "azimuth_premium_enhanced_tests.mbt",
     "standard_moonbit_test_suite.mbt",
-    "simple_moonbit_tests.mbt"
+    "simple_moonbit_tests.mbt",
+    "standard_moonbit_test_cases.mbt"
   ],
   "import": [
     "moonbitlang/core/builtin",
