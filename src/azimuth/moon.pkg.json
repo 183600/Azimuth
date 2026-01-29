@@ -442,4 +442,6 @@
         "azimuth_enhanced_quality_tests.mbt",
     "standard_moonbit_test_cases.mbt",
     "standard_core_test_cases.mbt",
-    "azimuth_standard_tests_v2.mbt"                                                                                                                                                ]}
+    "azimuth_standard_tests_v2.mbt",
+    "azimuth_simple_test.mbt",
+    "azimuth_enhanced_test_cases.mbt"                                                                                                                                                ]}
