@@ -226,6 +226,7 @@
     "standard_azimuth_core_tests.mbt",
     "standard_moonbit_test_cases.mbt",
     "simple_azimuth_enhanced_test.mbt",
-    "clean_test.mbt"
+    "clean_test.mbt",
+    "standard_comprehensive_test.mbt"
   ]
 }
