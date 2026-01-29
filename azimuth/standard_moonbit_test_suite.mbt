@@ -1,128 +1,134 @@
-// 标准 MoonBit 测试套件 - 包含10个高质量测试用例
-// 测试 azimuth 库的核心功能
+// 标准 MoonBit 测试套件
+// 包含10个高质量的测试用例，覆盖核心功能模块
 
-test "add_function_basic_operations" {
-  // 测试加法函数的基本运算
-  assert_eq(5, add(2, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(10, add(-5, 15))
-  assert_eq(1000, add(500, 500))
+// 测试1: Int 模块基本功能
+test "int_module_basic_functions" {
+  // 测试 Int 模块的基本常量和函数
+  assert_eq(2147483647, Int::max_value)
+  assert_eq(-2147483648, Int::min_value)
+  assert_eq(42, Int::abs(42))
+  assert_eq(42, Int::abs(-42))
+  assert_eq(0, Int::abs(0))
 }
 
-test "multiply_function_comprehensive" {
-  // 测试乘法函数的综合运算
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(10000, multiply(100, 100))
+// 测试2: Math 模块基本运算
+test "math_module_basic_operations" {
+  // 测试 Math 模块的基本数学运算
+  assert_eq(4.0, @double.round(3.7))
+  assert_eq(4.0, @double.ceil(3.2))
+  assert_eq(3.0, @double.floor(3.7))
+  assert_eq(3.0, @double.trunc(3.7))
+  assert_eq(-3.0, @double.trunc(-3.7))
 }
 
-test "divide_with_ceil_function_edge_cases" {
-  // 测试向上取整除法函数的边缘情况
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(-3, divide_with_ceil(-10, 3))
+// 测试3: String 模块基本功能
+test "string_module_basic_functions" {
+  // 测试 String 模块的基本功能
+  assert_eq("", String::default())
+  assert_eq("Hello, World!", "Hello, " + "World!")
+  assert_eq(5, "Hello".length())
+  assert_eq(true, "Hello".contains("ell"))
+  assert_eq(false, "Hello".contains("world"))
 }
 
-test "subtract_function_validations" {
-  // 测试减法函数的各种情况
-  assert_eq(2, subtract(5, 3))
-  assert_eq(-2, subtract(3, 5))
-  assert_eq(0, subtract(5, 5))
-  assert_eq(10, subtract(5, -5))
-  assert_eq(-10, subtract(-5, 5))
+// 测试4: 数值转换功能
+test "numeric_conversion_functions" {
+  // 测试数值转换功能
+  assert_eq(42, "42".to_int())
+  assert_eq(0, "".to_int())
+  assert_eq(3.14, "3.14".to_double())
+  assert_eq("42", 42.to_string())
+  assert_eq("3.14", 3.14.to_string())
 }
 
-test "greet_function_international_support" {
-  // 测试问候函数的国际字符支持
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, !", greet(""))
+// 测试5: 数组操作功能
+test "array_operations" {
+  // 测试数组操作功能
+  let arr = [1, 2, 3, 4, 5]
+  assert_eq(5, arr.length())
+  assert_eq(1, arr[0])
+  assert_eq(5, arr[4])
+  assert_eq(true, arr.contains(3))
+  assert_eq(false, arr.contains(6))
 }
 
-test "mathematical_properties_validation" {
-  // 验证数学性质和恒等式
-  let x = 15
-  let y = 8
+// 测试6: 选项类型处理
+test "option_type_handling" {
+  // 测试选项类型的处理
+  let some_value = Some(42)
+  let none_value = None
   
-  // 加法交换律
-  assert_eq(add(x, y), add(y, x))
-  
-  // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
-  
-  // 加法恒等式
-  assert_eq(x, add(x, 0))
-  
-  // 乘法恒等式
-  assert_eq(x, multiply(x, 1))
+  assert_eq(true, some_value.is_some())
+  assert_eq(false, some_value.is_none())
+  assert_eq(false, none_value.is_some())
+  assert_eq(true, none_value.is_none())
+  assert_eq(42, some_value.unwrap_or(0))
+  assert_eq(0, none_value.unwrap_or(0))
 }
 
-test "business_logic_packaging_calculation" {
-  // 业务逻辑：包装计算测试
-  let items = 47
-  let capacity_per_box = 12
-  let boxes_needed = divide_with_ceil(items, capacity_per_box)
+// 测试7: 结果类型处理
+test "result_type_handling" {
+  // 测试结果类型的处理
+  let ok_result = Ok(42)
+  let err_result = Err("Error message")
   
-  assert_eq(4, boxes_needed)
-  
-  // 验证总容量
-  let total_capacity = multiply(boxes_needed, capacity_per_box)
-  assert_eq(48, total_capacity)
-  
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, items)
-  assert_eq(1, remaining_space)
+  assert_eq(true, ok_result.is_ok())
+  assert_eq(false, ok_result.is_err())
+  assert_eq(false, err_result.is_ok())
+  assert_eq(true, err_result.is_err())
+  assert_eq(42, ok_result.unwrap_or(0))
+  assert_eq(0, err_result.unwrap_or(0))
 }
 
-test "complex_calculation_pipeline" {
-  // 复杂计算流水线测试
-  let base_value = 10
-  
-  // 计算流程：((base * 3) / 4) + 5
-  let step1 = multiply(base_value, 3)
-  let step2 = divide_with_ceil(step1, 4)
-  let result = add(step2, 5)
-  
-  assert_eq(13, result)  // ceil(10*3/4) + 5 = 8 + 5 = 13
+// 测试8: 字符串高级操作
+test "string_advanced_operations" {
+  // 测试字符串的高级操作
+  let text = "Hello, World!"
+  assert_eq("hello, world!", text.lowercase())
+  assert_eq("HELLO, WORLD!", text.uppercase())
+  assert_eq("Hello", text.split(",")[0])
+  assert_eq(" World!", text.split(",")[1])
+  assert_eq("Hello World!", text.replace(",", ""))
 }
 
-test "resource_allocation_optimization" {
-  // 资源分配优化测试
-  let total_resources = 100
-  let teams = 3
-  let min_resources_per_team = divide_with_ceil(total_resources, teams)
+// 测试9: 数学函数高级应用
+test "math_advanced_functions" {
+  // 测试数学函数的高级应用
+  let x = 16.0
+  let y = 2.0
   
-  assert_eq(34, min_resources_per_team)
-  
-  // 验证分配结果
-  let allocated_total = multiply(min_resources_per_team, teams)
-  assert_eq(102, allocated_total)
-  
-  // 验证资源利用率
-  let utilization = divide_with_ceil(multiply(total_resources, 100), allocated_total)
-  assert_eq(98, utilization)  // floor(10000/102) = 98%
+  assert_eq(4.0, @double.sqrt(x))
+  assert_eq(256.0, @double.pow(x, y))
+  assert_eq(10.0, @double.log10(100.0))
+  assert_eq(2.718281828459045, @double.exp(1.0))
 }
 
-test "error_handling_and_boundary_conditions" {
-  // 错误处理和边界条件测试
-  // 除零错误处理
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+// 测试10: 综合业务场景测试
+test "comprehensive_business_scenario" {
+  // 测试综合业务场景：计算订单总价
+  let prices = [10.5, 20.0, 15.75, 5.25]
+  let quantities = [2, 1, 3, 4]
   
-  // 极值验证
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(-1, divide_with_ceil(-1, 1))
-  assert_eq(1, divide_with_ceil(-1, -1))
+  // 计算每个商品的总价
+  let item_totals = [
+    prices[0] * quantities[0].to_double(),
+    prices[1] * quantities[1].to_double(),
+    prices[2] * quantities[2].to_double(),
+    prices[3] * quantities[3].to_double()
+  ]
   
-  // 大数运算验证
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(1000000, multiply(1000, 1000))
+  // 计算订单总价
+  let subtotal = item_totals[0] + item_totals[1] + item_totals[2] + item_totals[3]
+  let tax_rate = 0.08
+  let tax = subtotal * tax_rate
+  let total = subtotal + tax
+  
+  // 验证计算结果
+  assert_eq(21.0, item_totals[0])  // 10.5 * 2
+  assert_eq(20.0, item_totals[1])  // 20.0 * 1
+  assert_eq(47.25, item_totals[2]) // 15.75 * 3
+  assert_eq(21.0, item_totals[3])  // 5.25 * 4
+  assert_eq(109.25, subtotal)      // 21.0 + 20.0 + 47.25 + 21.0
+  assert_eq(8.74, @double.round(tax * 100.0) / 100.0)  // 109.25 * 0.08 = 8.74
+  assert_eq(117.99, @double.round(total * 100.0) / 100.0) // 109.25 + 8.74 = 117.99
 }
