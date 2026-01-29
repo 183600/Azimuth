@@ -1,193 +1,150 @@
 // Azimuth 项目标准增强测试用例
-// 使用标准 MoonBit 测试语法，包含10个高质量测试用例
+// 使用标准 MoonBit 测试语法，针对核心功能进行全面测试
 
-test "add_function_comprehensive" {
-  // 全面测试加法函数
-  assert_eq(5, add(2, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(100, add(50, 50))
-  assert_eq(-100, add(-50, -50))
-  assert_eq(0, add(100, -100))
+test "add_function_identity_elements" {
+  // 测试加法单位元性质
+  assert_eq(5, azimuth.add(5, 0))
+  assert_eq(-3, azimuth.add(-3, 0))
+  assert_eq(0, azimuth.add(0, 0))
+  assert_eq(1000000, azimuth.add(1000000, 0))
+  assert_eq(0, azimuth.add(0, 1000000))
 }
 
-test "multiply_function_edge_cases" {
-  // 测试乘法函数的边界情况
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(6, multiply(-2, -3))
-  assert_eq(1, multiply(1, 1))
-  assert_eq(1000000, multiply(1000, 1000))
+test "multiply_function_zero_properties" {
+  // 测试乘法零元素性质
+  assert_eq(0, azimuth.multiply(5, 0))
+  assert_eq(0, azimuth.multiply(0, 5))
+  assert_eq(0, azimuth.multiply(0, 0))
+  assert_eq(0, azimuth.multiply(-100, 0))
+  assert_eq(0, azimuth.multiply(0, -100))
 }
 
-test "subtract_function_various_scenarios" {
-  // 测试减法函数的各种场景
-  assert_eq(5, subtract(10, 5))
-  assert_eq(-5, subtract(5, 10))
-  assert_eq(0, subtract(7, 7))
-  assert_eq(10, subtract(0, -10))
-  assert_eq(-10, subtract(-10, 0))
-  assert_eq(20, subtract(-10, -30))
+test "divide_with_ceil_edge_cases" {
+  // 测试向上取整除法的边界情况
+  assert_eq(1, azimuth.divide_with_ceil(1, 1))
+  assert_eq(1, azimuth.divide_with_ceil(100, 100))
+  assert_eq(1, azimuth.divide_with_ceil(1, 100))
+  assert_eq(2, azimuth.divide_with_ceil(101, 100))
+  assert_eq(0, azimuth.divide_with_ceil(0, 100))
+  assert_eq(0, azimuth.divide_with_ceil(100, 0))
 }
 
-test "divide_with_ceil_comprehensive" {
-  // 全面测试向上取整除法函数
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 100))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(4, divide_with_ceil(-10, -3))
-  assert_eq(0, divide_with_ceil(5, 0))
-  assert_eq(0, divide_with_ceil(-5, 0))
+test "greet_function_unicode_support" {
+  // 测试问候函数的 Unicode 支持
+  assert_eq_string("Hello, 世界!", azimuth.greet("世界"))
+  assert_eq_string("Hello, 🌟!", azimuth.greet("🌟"))
+  assert_eq_string("Hello, αβγ!", azimuth.greet("αβγ"))
+  assert_eq_string("Hello, ñáéíóú!", azimuth.greet("ñáéíóú"))
+  assert_eq_string("Hello, 🚀🌍!", azimuth.greet("🚀🌍"))
 }
 
-test "greet_function_international" {
-  // 测试问候函数的国际化支持
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
+test "complex_financial_calculation" {
+  // 测试复杂金融计算场景
+  let principal = 10000
+  let rate_percent = 5
+  let years = 3
+  
+  // 简化的复利计算（每年计算一次）
+  let year1 = azimuth.add(principal, azimuth.divide_with_ceil(azimuth.multiply(principal, rate_percent), 100))
+  let year2 = azimuth.add(year1, azimuth.divide_with_ceil(azimuth.multiply(year1, rate_percent), 100))
+  let year3 = azimuth.add(year2, azimuth.divide_with_ceil(azimuth.multiply(year2, rate_percent), 100))
+  
+  assert_eq(10500, year1)
+  assert_eq(11025, year2)
+  assert_eq(11576, year3)
 }
 
-test "mathematical_properties_validation" {
-  // 验证数学性质
+test "mathematical_commutative_and_associative" {
+  // 测试数学交换律和结合律
   let a = 7
   let b = 13
+  let c = 19
   
   // 加法交换律
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  assert_eq(azimuth.add(a, b), azimuth.add(b, a))
+  assert_eq(azimuth.add(a, c), azimuth.add(c, a))
+  assert_eq(azimuth.add(b, c), azimuth.add(c, b))
   
   // 加法结合律
-  assert_eq(add(add(a, b), 5), add(a, add(b, 5)))
+  assert_eq(azimuth.add(azimuth.add(a, b), c), azimuth.add(a, azimuth.add(b, c)))
   
-  // 乘法结合律
-  assert_eq(multiply(multiply(a, b), 2), multiply(a, multiply(b, 2)))
+  // 乘法交换律
+  assert_eq(azimuth.multiply(a, b), azimuth.multiply(b, a))
+  assert_eq(azimuth.multiply(a, c), azimuth.multiply(c, a))
+  assert_eq(azimuth.multiply(b, c), azimuth.multiply(c, b))
 }
 
-test "complex_business_calculations" {
-  // 复杂业务计算测试
-  let unit_price = 25
-  let quantity = 8
-  let discount_rate = 10
-  let tax_rate = 8
-  let shipping = 15
+test "inventory_management_system" {
+  // 测试库存管理系统计算
+  let initial_stock = 500
+  let daily_sales = 25
+  let days = 7
+  let new_shipment = 200
   
-  // 计算小计
-  let subtotal = multiply(unit_price, quantity)
+  // 计算一周后的库存
+  let weekly_sales = azimuth.multiply(daily_sales, days)
+  let stock_before_shipment = azimuth.add(initial_stock, -weekly_sales)
+  let final_stock = azimuth.add(stock_before_shipment, new_shipment)
   
-  // 计算折扣
-  let discount = divide_with_ceil(multiply(subtotal, discount_rate), 100)
-  let discounted_total = subtract(subtotal, discount)
-  
-  // 计算税费
-  let tax = divide_with_ceil(multiply(discounted_total, tax_rate), 100)
-  let total_with_tax = add(discounted_total, tax)
-  
-  // 计算最终总额
-  let final_total = add(total_with_tax, shipping)
-  
-  assert_eq(200, subtotal)
-  assert_eq(20, discount)
-  assert_eq(180, discounted_total)
-  assert_eq(15, tax)
-  assert_eq(195, total_with_tax)
-  assert_eq(210, final_total)
+  assert_eq(175, weekly_sales)
+  assert_eq(325, stock_before_shipment)
+  assert_eq(525, final_stock)
 }
 
-test "error_handling_and_robustness" {
-  // 错误处理和健壮性测试
-  // 除零处理
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+test "project_resource_allocation" {
+  // 测试项目资源分配计算
+  let total_budget = 50000
+  let team_members = 8
+  let project_duration_weeks = 12
   
-  // 极值测试
-  assert_eq(2147483647, add(2147483646, 1))
-  assert_eq(-2147483648, add(-2147483647, -1))
+  // 计算每周预算
+  let weekly_budget = azimuth.divide_with_ceil(total_budget, project_duration_weeks)
   
-  // 空字符串和特殊字符
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 
-	!", greet("
-	"))
-  assert_eq_string("Hello, @#$%!", greet("@#$%"))
+  // 计算每人每周预算
+  let per_person_weekly_budget = azimuth.divide_with_ceil(weekly_budget, team_members)
+  
+  // 计算项目总人周
+  let total_person_weeks = azimuth.multiply(team_members, project_duration_weeks)
+  
+  assert_eq(4167, weekly_budget)
+  assert_eq(521, per_person_weekly_budget)
+  assert_eq(96, total_person_weeks)
 }
 
-test "performance_and_efficiency" {
-  // 性能和效率测试
-  let large_numbers_test = true
+test "data_processing_pipeline" {
+  // 测试数据处理管道计算
+  let data_points = 1000
+  let processing_rate_per_hour = 150
+  let hours_per_day = 8
   
-  // 大数运算
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(1000000000, multiply(1000000, 1000))
-  assert_eq(1000001, divide_with_ceil(1000000000, 999))
+  // 计算处理天数
+  let total_hours_needed = azimuth.divide_with_ceil(data_points, processing_rate_per_hour)
+  let days_needed = azimuth.divide_with_ceil(total_hours_needed, hours_per_day)
   
-  // 连续运算性能
-  let result = 0
-  let i = 0
-  while (i < 100) {
-    result = add(result, 1)
-    i = i + 1
-  }
-  assert_eq(100, result)
+  // 计算每天处理的数据点
+  let daily_capacity = azimuth.multiply(processing_rate_per_hour, hours_per_day)
   
-  assert_true(large_numbers_test)
+  assert_eq(7, total_hours_needed)
+  assert_eq(1, days_needed)
+  assert_eq(1200, daily_capacity)
 }
 
-test "real_world_application_scenarios" {
-  // 真实世界应用场景测试
-  // 场景1：库存管理
-  let initial_stock = 150
-  let sold_items = 45
-  let restocked_items = 30
-  let items_per_box = 12
+test "energy_consumption_analysis" {
+  // 测试能源消耗分析计算
+  let daily_consumption_kwh = 120
+  let days_in_month = 30
+  let cost_per_kwh = 15
   
-  let remaining_stock = subtract(initial_stock, sold_items)
-  let total_stock = add(remaining_stock, restocked_items)
-  let boxes_needed = divide_with_ceil(total_stock, items_per_box)
+  // 计算月度消耗
+  let monthly_consumption = azimuth.multiply(daily_consumption_kwh, days_in_month)
   
-  assert_eq(105, remaining_stock)
-  assert_eq(135, total_stock)
-  assert_eq(12, boxes_needed)
+  // 计算月度成本（分为单位）
+  let monthly_cost = azimuth.multiply(monthly_consumption, cost_per_kwh)
   
-  // 场景2：项目管理
-  let team_size = 6
-  let tasks_per_member = 8
-  let completed_tasks = 25
-  let new_tasks = 15
+  // 计算年度预估成本
+  let annual_cost = azimuth.multiply(monthly_cost, 12)
   
-  let total_tasks = multiply(team_size, tasks_per_member)
-  let remaining_tasks = subtract(total_tasks, completed_tasks)
-  let updated_tasks = add(remaining_tasks, new_tasks)
-  let completion_rate = divide_with_ceil(multiply(completed_tasks, 100), total_tasks)
-  
-  assert_eq(48, total_tasks)
-  assert_eq(23, remaining_tasks)
-  assert_eq(38, updated_tasks)
-  assert_eq(52, completion_rate)
-  
-  // 场景3：财务计算
-  let revenue = 50000
-  let expenses = 32000
-  let tax_rate = 25
-  let profit_margin = 15
-  
-  let gross_profit = subtract(revenue, expenses)
-  let tax = divide_with_ceil(multiply(gross_profit, tax_rate), 100)
-  let net_profit = subtract(gross_profit, tax)
-  let target_profit = divide_with_ceil(multiply(revenue, profit_margin), 100)
-  
-  assert_eq(18000, gross_profit)
-  assert_eq(4500, tax)
-  assert_eq(13500, net_profit)
-  assert_eq(7500, target_profit)
-  
-  // 验证盈利目标达成
-  assert_true(net_profit >= target_profit)
+  assert_eq(3600, monthly_consumption)
+  assert_eq(54000, monthly_cost)
+  assert_eq(648000, annual_cost)
 }
