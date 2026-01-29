@@ -193,7 +193,9 @@
     "standard_comprehensive_test_suite.mbt",
     "azimuth_additional_enhanced_tests.mbt",
     "our_test.mbt",
-    "simple_our_test.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
+    "simple_our_test.mbt",
+    "standard_core_test_cases.mbt",
+    "azimuth_standard_tests_v2.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
     "azimuth_new_standard_unit_tests.mbt",
     "azimuth_comprehensive_new_tests.mbt",
@@ -433,4 +435,6 @@
     "quality_enhanced_test_suite.mbt",
     "azimuth_enhanced_core_tests.mbt",
         "azimuth_enhanced_quality_tests.mbt",
-    "standard_moonbit_test_cases.mbt"                                                                                                                                                ]}
+    "standard_moonbit_test_cases.mbt",
+    "standard_core_test_cases.mbt",
+    "azimuth_standard_tests_v2.mbt"                                                                                                                                                ]}
