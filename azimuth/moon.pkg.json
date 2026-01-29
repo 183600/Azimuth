@@ -39,6 +39,7 @@
     "new_standard_test_cases_test.mbt",
     "simple_new_test.mbt",
     "standard_moonbit_tests.mbt",
+    "standard_moonbit_tests_new.mbt",
     "enhanced_test_cases.mbt",
     "unique_enhanced_tests.mbt",
     "standard_test_cases.mbt",
