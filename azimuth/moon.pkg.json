@@ -66,7 +66,8 @@
     "azimuth_enhanced_standard_tests.mbt",
     "additional_standard_tests.mbt",
     "('simple_verification_test.mbt', 'simple_test_case.mbt')",
-    "standard_moonbit_tests_new.mbt"
+    "standard_moonbit_tests_new.mbt",
+    "quality_standard_test_cases.mbt"
   ],
   "import": [
     "moonbitlang/core/builtin",
