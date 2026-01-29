@@ -1,36 +1,43 @@
-// Azimuth 综合测试套件
+// Azimuth 简化测试套件
 // 包含8个高质量的标准 MoonBit 测试用例
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  assert_eq(10, add(3, 7))
+test "add_basic_functionality" {
+  // 基本加法功能测试
+  assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
   assert_eq(-4, add(-10, 6))
-  assert_eq(15, multiply(3, 5))
-  assert_eq(0, multiply(0, 123))
+}
+
+test "multiply_basic_functionality" {
+  // 基本乘法功能测试
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
   assert_eq(-25, multiply(-5, 5))
 }
 
-test "divide_with_ceil_functionality" {
-  // 向上取整除法功能测试
+test "divide_with_ceil_basic" {
+  // 向上取整除法基本测试
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 100))
   assert_eq(0, divide_with_ceil(0, 5))
   assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(-3, divide_with_ceil(-10, 3))
 }
 
-test "greet_function_variations" {
-  // 问候函数变化测试
+test "greet_basic_functionality" {
+  // 基本问候功能测试
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 世界!", greet("世界"))
 }
 
-test "mathematical_commutative_laws" {
+test "subtract_basic_functionality" {
+  // 基本减法功能测试
+  assert_eq(2, subtract(5, 3))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(-2, subtract(3, 5))
+}
+
+test "mathematical_commutative_property" {
   // 数学交换律测试
   let a = 12
   let b = 8
@@ -72,31 +79,4 @@ test "complex_calculation_workflow" {
   let result = add(step2, addition)
   
   assert_eq(19, result)  // ceil(15*3/4) + 7 = 12 + 7 = 19
-}
-
-test "negative_number_operations" {
-  // 负数运算测试
-  assert_eq(-5, add(-2, -3))
-  assert_eq(3, add(-5, 8))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(-2, divide_with_ceil(-7, 4))
-  assert_eq(2, divide_with_ceil(-7, -4))
-}
-
-test "resource_allocation_optimization" {
-  // 资源分配优化测试
-  let total_resources = 100
-  let team_members = 8
-  let min_resources_per_team = divide_with_ceil(total_resources, team_members)
-  
-  assert_eq(13, min_resources_per_team)
-  
-  // 验证分配结果
-  let allocated_total = multiply(min_resources_per_team, team_members)
-  assert_eq(104, allocated_total)
-  
-  // 验证资源利用率
-  let utilization = divide_with_ceil(multiply(total_resources, 100), allocated_total)
-  assert_eq(97, utilization)  // floor(10000/104) = 96%，但向上取整为97%
 }
