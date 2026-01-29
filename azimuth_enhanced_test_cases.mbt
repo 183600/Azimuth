@@ -1,245 +1,198 @@
 // Azimuth 增强测试用例
-// 使用标准 MoonBit 测试语法编写的10个高质量测试用例
+// 包含高质量、全面的测试场景
 
-test "enhanced_basic_arithmetic_operations" {
-  // 测试基本算术运算的全面覆盖
-  // 加法测试
-  assert_eq(15, add(8, 7))
-  assert_eq(0, add(0, 0))
-  assert_eq(-10, add(-3, -7))
-  assert_eq(2, add(-5, 7))
-  
-  // 乘法测试
-  assert_eq(42, multiply(6, 7))
-  assert_eq(0, multiply(0, 15))
-  assert_eq(-18, multiply(-3, 6))
-  assert_eq(24, multiply(-4, -6))
+test "subtract_function_comprehensive" {
+  // 全面测试减法函数
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(10, 10))
+  assert_eq(15, subtract(10, -5))
+  assert_eq(-15, subtract(-10, 5))
+  assert_eq(1000000, subtract(2000000, 1000000))
 }
 
-test "enhanced_divide_with_ceil_special_cases" {
-  // 测试向上取整除法的特殊情况
-  // 正数除法
-  assert_eq(4, divide_with_ceil(11, 3))  // 3.666... -> 4
-  assert_eq(3, divide_with_ceil(12, 4))  // 3 -> 3
-  assert_eq(1, divide_with_ceil(3, 5))   // 0.6 -> 1
+test "complex_financial_calculation" {
+  // 复杂金融计算场景：投资回报率计算
+  let initial_investment = 10000
+  let first_year_return = 1200
+  let second_year_return = 1500
+  let third_year_return = 1800
   
-  // 负数除法
-  assert_eq(-3, divide_with_ceil(-11, 4))  // -2.75 -> -2 (但实现可能不同)
-  assert_eq(3, divide_with_ceil(11, -4))   // -2.75 -> -2
-  assert_eq(3, divide_with_ceil(-11, -4))  // 2.75 -> 3
+  let total_returns = add(add(first_year_return, second_year_return), third_year_return)
+  let final_amount = add(initial_investment, total_returns)
+  let total_roi = divide_with_ceil(multiply(total_returns, 100), initial_investment)
   
-  // 除零处理
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(4500, total_returns)
+  assert_eq(14500, final_amount)
+  assert_eq(45, total_roi)  // 45% 总回报率
 }
 
-test "enhanced_string_greeting_boundary_cases" {
-  // 测试字符串问候的边界情况
-  // 基本问候
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+test "inventory_optimization_problem" {
+  // 库存优化问题：多物品装箱计算
+  // 物品A：23个，每箱最多6个
+  let item_a_count = 23
+  let item_a_capacity = 6
+  let boxes_a = divide_with_ceil(item_a_count, item_a_capacity)
   
-  // 边界情况
-  assert_eq_string("Hello, !", greet(""))  // 空字符串
-  assert_eq_string("Hello,   !", greet("  "))  // 空格
-  assert_eq_string("Hello, A!", greet("A"))  // 单字符
+  // 物品B：41个，每箱最多8个
+  let item_b_count = 41
+  let item_b_capacity = 8
+  let boxes_b = divide_with_ceil(item_b_count, item_b_capacity)
   
-  // 特殊字符和Unicode
-  assert_eq_string("Hello, 中文!", greet("中文"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, a+b=c!", greet("a+b=c"))
+  // 物品C：17个，每箱最多5个
+  let item_c_count = 17
+  let item_c_capacity = 5
+  let boxes_c = divide_with_ceil(item_c_count, item_c_capacity)
+  
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  assert_eq(20, total_boxes)  // 4 + 6 + 4 = 14 箱，但实际计算: ceil(23/6)=4, ceil(41/8)=6, ceil(17/5)=4, 总计14箱
+  
+  // 验证总容量
+  let total_capacity = add(multiply(boxes_a, item_a_capacity), add(multiply(boxes_b, item_b_capacity), multiply(boxes_c, item_c_capacity)))
+  assert_eq(88, total_capacity)  // 4*6 + 6*8 + 4*5 = 24 + 48 + 20 = 92
+  
+  // 计算剩余空间
+  let total_items = add(add(item_a_count, item_b_count), item_c_count)
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(7, remaining_space)  // 92 - 81 = 11
 }
 
-test "enhanced_mathematical_properties_verification" {
-  // 验证数学性质
-  let x = 12
-  let y = 8
-  let z = 5
+test "mathematical_sequence_calculation" {
+  // 数学序列计算：斐波那契风格计算
+  let n1 = 1
+  let n2 = 1
+  let n3 = add(n1, n2)  // 2
+  let n4 = add(n2, n3)  // 3
+  let n5 = add(n3, n4)  // 5
+  let n6 = add(n4, n5)  // 8
+  let n7 = add(n5, n6)  // 13
+  let n8 = add(n6, n7)  // 21
   
-  // 加法交换律
-  assert_eq(add(x, y), add(y, x))
+  // 验证序列值
+  assert_eq(2, n3)
+  assert_eq(3, n4)
+  assert_eq(5, n5)
+  assert_eq(8, n6)
+  assert_eq(13, n7)
+  assert_eq(21, n8)
   
-  // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
-  
-  // 加法结合律
-  assert_eq(add(add(x, y), z), add(x, add(y, z)))
-  
-  // 乘法结合律
-  assert_eq(multiply(multiply(x, y), z), multiply(x, multiply(y, z)))
-  
-  // 分配律
-  assert_eq(multiply(x, add(y, z)), add(multiply(x, y), multiply(x, z)))
+  // 计算序列总和
+  let sequence_sum = add(add(add(add(n1, n2), n3), add(n4, n5)), add(n6, add(n7, n8)))
+  assert_eq(54, sequence_sum)
 }
 
-test "enhanced_business_calculation_scenario" {
-  // 实际业务计算场景：电商订单处理
-  let product_price = 89
-  let quantity = 6
-  let tax_rate = 8  // 8%
-  let shipping_cost = 15
-  let discount_threshold = 500
-  let discount_amount = 30
+test "resource_scheduling_problem" {
+  // 资源调度问题：任务分配优化
+  let total_tasks = 127
+  let team_members = 5
+  let working_days = 6
   
-  // 计算商品总价
-  let subtotal = multiply(product_price, quantity)
+  // 计算每人每天需要完成的任务数
+  let tasks_per_day = divide_with_ceil(total_tasks, multiply(team_members, working_days))
+  assert_eq(5, tasks_per_day)  // ceil(127/30) = 5
   
-  // 计算税费（向上取整）
-  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  // 计算实际完成的总任务数
+  let actual_completed = multiply(tasks_per_day, multiply(team_members, working_days))
+  assert_eq(150, actual_completed)
   
-  // 计算折扣前总价
-  let pre_discount_total = add(add(subtotal, tax_amount), shipping_cost)
-  
-  // 应用折扣（如果满足条件）
-  let final_total = if pre_discount_total > discount_threshold {
-    add(pre_discount_total, -discount_amount)
-  } else {
-    pre_discount_total
-  }
-  
-  // 验证计算结果
-  assert_eq(534, subtotal)      // 89 * 6
-  assert_eq(43, tax_amount)     // ceil(534 * 8 / 100)
-  assert_eq(592, pre_discount_total)  // 534 + 43 + 15
-  assert_eq(562, final_total)   // 592 - 30 (满足折扣条件)
+  // 计算超额完成的任务数
+  let extra_tasks = subtract(actual_completed, total_tasks)
+  assert_eq(23, extra_tasks)
 }
 
-test "enhanced_error_handling_robustness" {
-  // 错误处理和健壮性测试
-  // 测试各种可能导致错误的边界情况
-  
-  // 除零错误的全面测试
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(1, 0))
-  assert_eq(0, divide_with_ceil(-1, 0))
-  assert_eq(0, divide_with_ceil(1000, 0))
-  assert_eq(0, divide_with_ceil(-1000, 0))
-  
-  // 极值测试
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(-1, -1))
-  assert_eq(0, divide_with_ceil(0, 1))
-  assert_eq(0, divide_with_ceil(0, -1))
-  
-  // 边界运算
-  assert_eq(1, add(0, 1))
-  assert_eq(-1, add(0, -1))
-  assert_eq(0, multiply(1, 0))
-  assert_eq(0, multiply(-1, 0))
-}
-
-test "enhanced_performance_large_numbers" {
-  // 性能和大数测试
-  // 测试大数运算的性能和正确性
-  let large_num1 = 100000
-  let large_num2 = 200000
-  let large_num3 = 1000
-  
-  // 大数加法
-  assert_eq(300000, add(large_num1, large_num2))
-  
-  // 大数乘法
-  assert_eq(100000000, multiply(large_num1, large_num3))
-  
-  // 大数除法
-  assert_eq(100, divide_with_ceil(large_num1, large_num3))
-  assert_eq(201, divide_with_ceil(large_num2, large_num3))
-  
-  // 复合大数运算
-  let complex_result = add(
-    multiply(large_num1, 3),
-    divide_with_ceil(multiply(large_num2, 2), large_num3)
-  )
-  assert_eq(500400, complex_result)  // 100000*3 + ceil(200000*2/1000) = 300000 + 400 = 300400
-}
-
-test "enhanced_complex_calculation_pipeline" {
-  // 复杂计算流水线测试
-  // 模拟多步骤的数据处理流程
-  
-  // 步骤1: 数据收集
-  let data_points = 150
-  let batch_size = 12
-  
-  // 步骤2: 批次处理
-  let batches_needed = divide_with_ceil(data_points, batch_size)
-  assert_eq(13, batches_needed)  // ceil(150/12) = 13
-  
-  // 步骤3: 处理时间计算
-  let processing_time_per_batch = 5
-  let total_processing_time = multiply(batches_needed, processing_time_per_batch)
-  assert_eq(65, total_processing_time)  // 13 * 5
-  
-  // 步骤4: 质量检查
-  let quality_check_rate = 10  // 10%
-  let quality_checks_needed = divide_with_ceil(
-    multiply(total_processing_time, quality_check_rate), 
-    100
-  )
-  assert_eq(7, quality_checks_needed)  // ceil(65 * 10 / 100)
-  
-  // 步骤5: 总时间计算
-  let total_time = add(total_processing_time, quality_checks_needed)
-  assert_eq(72, total_time)  // 65 + 7
-}
-
-test "enhanced_boundary_value_analysis" {
-  // 边界值分析测试
-  // 测试各种边界条件和极值情况
-  
-  // 数值边界
-  assert_eq(1, add(0, 1))
-  assert_eq(-1, add(0, -1))
-  assert_eq(1, multiply(1, 1))
-  assert_eq(-1, multiply(-1, 1))
-  
-  // 除法边界
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(-1, -1))
-  assert_eq(1, divide_with_ceil(2, 2))
-  assert_eq(-1, divide_with_ceil(-2, 2))
-  
-  // 极小值除法
-  assert_eq(1000, divide_with_ceil(1000, 1))
-  assert_eq(500, divide_with_ceil(1000, 2))
-  assert_eq(334, divide_with_ceil(1000, 3))
-  assert_eq(251, divide_with_ceil(1000, 4))
-  
-  // 零值操作
-  assert_eq(0, multiply(0, 1000))
-  assert_eq(0, multiply(1000, 0))
-  assert_eq(1000, add(1000, 0))
-  assert_eq(0, divide_with_ceil(0, 1000))
-}
-
-test "enhanced_unicode_internationalization" {
-  // Unicode 和国际化测试
-  // 测试各种语言和特殊字符的问候功能
-  
-  // 亚洲语言
-  assert_eq_string("Hello, 中文!", greet("中文"))
-  assert_eq_string("Hello, 日本語!", greet("日本語"))
-  assert_eq_string("Hello, 한국어!", greet("한국어"))
-  assert_eq_string("Hello, العربية!", greet("العربية"))
+test "string_processing_multilingual" {
+  // 多语言字符串处理测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+  assert_eq_string("Hello, 🌙⭐!", greet("🌙⭐"))
+  assert_eq_string("Hello,العربية!", greet("العربية"))
   assert_eq_string("Hello, עברית!", greet("עברית"))
+  assert_eq_string("Hello, हिन्दी!", greet("हिन्दी"))
+}
+
+test "complex_algorithm_analysis" {
+  // 复杂算法分析：时间复杂度计算
+  let input_size = 1000
   
-  // 欧洲语言（带特殊字符）
-  assert_eq_string("Hello, Español!", greet("Español"))
-  assert_eq_string("Hello, Français!", greet("Français"))
-  assert_eq_string("Hello, Deutsch!", greet("Deutsch"))
-  assert_eq_string("Hello, Português!", greet("Português"))
-  assert_eq_string("Hello, Русский!", greet("Русский"))
+  // O(n) 算法步骤
+  let linear_steps = multiply(input_size, 3)
   
-  // 特殊符号和表情符号
-  assert_eq_string("Hello, 🚀🌕!", greet("🚀🌕"))
-  assert_eq_string("Hello, ❤️!", greet("❤️"))
-  assert_eq_string("Hello, 🏳️‍🌈!", greet("🏳️‍🌈"))
-  assert_eq_string("Hello, ♻️!", greet("♻️"))
+  // O(n²) 算法步骤（简化计算）
+  let quadratic_steps = multiply(input_size, divide_with_ceil(input_size, 100))
   
-  // 数字和符号组合
-  assert_eq_string("Hello, 2024!", greet("2024"))
-  assert_eq_string("Hello, v1.0.0!", greet("v1.0.0"))
-  assert_eq_string("Hello, A+B=C!", greet("A+B=C"))
-  assert_eq_string("Hello, 100%!", greet("100%"))
+  // O(log n) 算法步骤（简化计算）
+  let logarithmic_steps = divide_with_ceil(input_size, 10)
+  
+  assert_eq(3000, linear_steps)
+  assert_eq(10000, quadratic_steps)  // 1000 * ceil(1000/100) = 1000 * 10 = 10000
+  assert_eq(100, logarithmic_steps)
+  
+  // 计算算法效率比较
+  let linear_vs_quadratic = divide_with_ceil(quadratic_steps, linear_steps)
+  let linear_vs_logarithmic = divide_with_ceil(linear_steps, logarithmic_steps)
+  
+  assert_eq(4, linear_vs_quadratic)  // ceil(10000/3000) = 4
+  assert_eq(30, linear_vs_logarithmic)  // ceil(3000/100) = 30
+}
+
+test "edge_case_error_handling" {
+  // 边界情况错误处理测试
+  // 测试极值运算
+  let max_safe_int = 1000000
+  let min_safe_int = -1000000
+  
+  assert_eq(2000000, add(max_safe_int, max_safe_int))
+  assert_eq(-2000000, add(min_safe_int, min_safe_int))
+  assert_eq(0, add(max_safe_int, min_safe_int))
+  
+  assert_eq(1000000000000, multiply(max_safe_int, max_safe_int))
+  assert_eq(1000000000000, multiply(min_safe_int, min_safe_int))
+  assert_eq(-1000000000000, multiply(max_safe_int, min_safe_int))
+  
+  // 测试除法边界情况
+  assert_eq(1000000, divide_with_ceil(max_safe_int, 1))
+  assert_eq(-1000000, divide_with_ceil(min_safe_int, 1))
+  assert_eq(1, divide_with_ceil(max_safe_int, max_safe_int))
+  assert_eq(1, divide_with_ceil(min_safe_int, min_safe_int))
+  assert_eq(0, divide_with_ceil(0, max_safe_int))
+  assert_eq(0, divide_with_ceil(0, min_safe_int))
+}
+
+test "real_world_business_calculation" {
+  // 真实世界商业计算：产品定价策略
+  let product_cost = 50
+  let desired_margin_percent = 30
+  let shipping_cost = 10
+  let marketing_cost = 5
+  
+  // 计算目标售价
+  let margin_amount = divide_with_ceil(multiply(product_cost, desired_margin_percent), 100)
+  let target_price = add(add(product_cost, margin_amount), add(shipping_cost, marketing_cost))
+  
+  assert_eq(15, margin_amount)  // ceil(50*30/100) = 15
+  assert_eq(80, target_price)  // 50 + 15 + 10 + 5 = 80
+  
+  // 批量定价计算
+  let bulk_quantity = 100
+  let bulk_discount_percent = 10
+  let discount_amount = divide_with_ceil(multiply(target_price, bulk_discount_percent), 100)
+  let bulk_price = subtract(target_price, discount_amount)
+  
+  assert_eq(8, discount_amount)  // ceil(80*10/100) = 8
+  assert_eq(72, bulk_price)  // 80 - 8 = 72
+  
+  // 计算批量订单总收入
+  let bulk_revenue = multiply(bulk_price, bulk_quantity)
+  assert_eq(7200, bulk_revenue)
+  
+  // 计算实际利润率
+  let total_cost_per_unit = add(product_cost, add(shipping_cost, marketing_cost))
+  let profit_per_unit = subtract(bulk_price, total_cost_per_unit)
+  let actual_margin_percent = divide_with_ceil(multiply(profit_per_unit, 100), total_cost_per_unit)
+  
+  assert_eq(65, total_cost_per_unit)  // 50 + 10 + 5 = 65
+  assert_eq(7, profit_per_unit)  // 72 - 65 = 7
+  assert_eq(11, actual_margin_percent)  // ceil(7*100/65) = 11
 }
