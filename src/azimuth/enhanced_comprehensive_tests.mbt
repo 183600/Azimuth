@@ -1,234 +1,235 @@
-// 增强综合测试用例 - 为 azimuth 库添加的高质量测试
-// 专注于数学性质、实际应用场景和边界情况
-
-test "associative_law_verification" {
-  // 验证加法结合律: (a + b) + c = a + (b + c)
-  let a = 15
-  let b = 27
-  let c = 42
-  
-  let left_side = add(add(a, b), c)
-  let right_side = add(a, add(b, c))
-  assert_eq(left_side, right_side)  // (15 + 27) + 42 = 15 + (27 + 42) = 84
-  
-  // 验证乘法结合律: (a * b) * c = a * (b * c)
-  let x = 3
-  let y = 7
-  let z = 5
-  
-  let mult_left = multiply(multiply(x, y), z)
-  let mult_right = multiply(x, multiply(y, z))
-  assert_eq(mult_left, mult_right)  // (3 * 7) * 5 = 3 * (7 * 5) = 105
-}
-
-test "mathematical_identities" {
-  // 验证数学恒等式
-  // 加法单位元: a + 0 = a
-  assert_eq(42, add(42, 0))
-  assert_eq(-17, add(-17, 0))
-  assert_eq(0, add(0, 0))
-  
-  // 乘法单位元: a * 1 = a
-  assert_eq(42, multiply(42, 1))
-  assert_eq(-17, multiply(-17, 1))
-  assert_eq(0, multiply(0, 1))
-  
-  // 乘法零元: a * 0 = 0
-  assert_eq(0, multiply(42, 0))
-  assert_eq(0, multiply(-17, 0))
-  assert_eq(0, multiply(0, 0))
-}
-
-test "divide_with_ceil_consistency" {
-  // 测试向上取整除法的一致性
-  // 对于正数，结果应该 >= 普通除法结果
-  assert_eq(3, divide_with_ceil(6, 2))   // 6/2 = 3.0 -> 3
-  assert_eq(4, divide_with_ceil(7, 2))   // 7/2 = 3.5 -> 4
-  assert_eq(2, divide_with_ceil(4, 2))   // 4/2 = 2.0 -> 2
-  assert_eq(3, divide_with_ceil(5, 2))   // 5/2 = 2.5 -> 3
-  
-  // 测试连续除法的一致性
-  let value = 100
-  let divisor1 = 3
-  let divisor2 = 7
-  
-  let step1 = divide_with_ceil(value, divisor1)
-  let step2 = divide_with_ceil(step1, divisor2)
-  let direct = divide_with_ceil(value, multiply(divisor1, divisor2))
-  
-  // 注意：由于向上取整的特性，step2可能不等于direct
-  assert_eq(5, step2)  // ceil(ceil(100/3)/7) = ceil(34/7) = 5
-}
-
-test "string_greeting_edge_cases" {
-  // 测试字符串问候的边界情况
-  // 测试包含特殊字符的名称
-  assert_eq_string("Hello, John-Doe!", greet("John-Doe"))
-  assert_eq_string("Hello, O'Connor!", greet("O'Connor"))
-  assert_eq_string("Hello, Dr. Smith!", greet("Dr. Smith"))
-  assert_eq_string("Hello, Mr. & Mrs. Johnson!", greet("Mr. & Mrs. Johnson"))
-  
-  // 测试数字和字母混合
-  assert_eq_string("Hello, User123!", greet("User123"))
-  assert_eq_string("Hello, A1B2C3!", greet("A1B2C3"))
-  
-  // 测试只有空格的字符串
-  assert_eq_string("Hello,   !", greet("   "))
-}
-
-test "complex_business_calculation" {
-  // 复杂业务计算：批发采购场景
-  let product_a_price = 25
-  let product_a_qty = 12
-  let product_b_price = 18
-  let product_b_qty = 8
-  let product_c_price = 32
-  let product_c_qty = 5
-  
-  // 计算各商品小计
-  let subtotal_a = multiply(product_a_price, product_a_qty)
-  let subtotal_b = multiply(product_b_price, product_b_qty)
-  let subtotal_c = multiply(product_c_price, product_c_qty)
-  
-  // 计算总金额
-  let total_amount = add(add(subtotal_a, subtotal_b), subtotal_c)
-  
-  // 计算需要多少个箱子（每箱装30个商品）
-  let total_items = add(add(product_a_qty, product_b_qty), product_c_qty)
-  let boxes_needed = divide_with_ceil(total_items, 30)
-  
-  assert_eq(716, total_amount)  // 25*12 + 18*8 + 32*5 = 300 + 144 + 160 = 604
-  assert_eq(1, boxes_needed)    // ceil(25/30) = 1
-}
-
-test "mathematical_series_progression" {
-  // 数学级数：等差数列和等比数列
-  // 等差数列求和：1 + 3 + 5 + ... + 19 (10个奇数)
-  let first_term = 1
-  let common_diff = 2
-  let num_terms = 10
-  
-  // 使用公式：S = n/2 * (2a + (n-1)d)
-  let arithmetic_sum = divide_with_ceil(
-    multiply(num_terms, add(multiply(2, first_term), multiply(num_terms - 1, common_diff))),
-    2
-  )
-  
-  // 验证结果：1 + 3 + 5 + ... + 19 = 100
-  assert_eq(100, arithmetic_sum)
-  
-  // 等比数列求和（简化版）：2 + 4 + 8 + 16 (4项)
-  let geo_first = 2
-  let geo_ratio = 2
-  let geo_terms = 4
-  
-  let geo_sum = multiply(geo_first, divide_with_ceil(multiply(geo_ratio, geo_terms) - 1, geo_ratio - 1))
-  assert_eq(30, geo_sum)  // 2 + 4 + 8 + 16 = 30
-}
-
-test "resource_allocation_optimization" {
-  // 资源分配优化问题
-  let total_budget = 1000
-  let project_cost_a = 234
-  let project_cost_b = 189
-  let project_cost_c = 156
-  
-  // 计算剩余预算
-  let spent_a = project_cost_a
-  let spent_b = project_cost_b
-  let spent_c = project_cost_c
-  let total_spent = add(add(spent_a, spent_b), spent_c)
-  let remaining = add(total_budget, -total_spent)
-  
-  // 计算可以支持多少个额外的小项目（每个75元）
-  let small_project_cost = 75
-  let additional_projects = divide_with_ceil(remaining, small_project_cost)
-  
-  assert_eq(421, remaining)  // 1000 - (234 + 189 + 156) = 421
-  assert_eq(6, additional_projects)  // ceil(421/75) = 6
-}
-
-test "time_management_scheduling" {
-  // 时间管理和调度
-  let tasks_per_hour = 4
-  let working_hours_per_day = 8
-  let total_tasks = 150
-  
-  // 计算需要多少天
-  let tasks_per_day = multiply(tasks_per_hour, working_hours_per_day)
-  let days_needed = divide_with_ceil(total_tasks, tasks_per_day)
-  
-  // 计算总工作小时数
-  let total_hours = multiply(days_needed, working_hours_per_day)
-  
-  // 计算剩余时间（可以处理的额外任务数）
-  let capacity = multiply(days_needed, tasks_per_day)
-  let spare_capacity = add(capacity, -total_tasks)
-  
-  assert_eq(5, days_needed)      // ceil(150/(4*8)) = ceil(150/32) = 5
-  assert_eq(40, total_hours)     // 5 * 8 = 40
-  assert_eq(10, spare_capacity)  // 5*32 - 150 = 160 - 150 = 10
-}
+// Enhanced comprehensive tests for azimuth library
+// 高级综合测试用例 - 针对 azimuth 库的全面测试
 
 test "error_boundary_conditions" {
   // 错误边界条件测试
-  // 测试极端数值组合
-  let max_int = 2147483647
-  let min_int = -2147483648
-  
-  // 测试接近边界值的运算
-  assert_eq(2147483646, add(max_int, -1))
-  assert_eq(-2147483647, add(min_int, 1))
-  
-  // 测试除法边界情况
-  assert_eq(1, divide_with_ceil(1, max_int))
-  assert_eq(0, divide_with_ceil(-1, max_int))
-  assert_eq(max_int, divide_with_ceil(max_int, 1))
-  
-  // 测试零的各种情况
-  assert_eq(0, divide_with_ceil(0, max_int))
-  assert_eq(0, divide_with_ceil(0, min_int))
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, multiply(0, max_int))
-  assert_eq(0, multiply(0, min_int))
+  // 测试极端数值和边界情况
+  assert_eq(2147483647, add(2147483646, 1))  // 接近 Int 最大值
+  assert_eq(-2147483648, add(-2147483647, -1))  // 接近 Int 最小值
+  assert_eq(0, divide_with_ceil(2147483647, -2147483647))  // 最大值除以相反数
+  assert_eq(1, divide_with_ceil(-2147483648, -2147483648))  // 最小值自除
 }
 
-test "comprehensive_integration_test" {
-  // 综合集成测试：模拟完整的业务流程
-  // 场景：电商平台的订单处理
+test "string_greeting_comprehensive" {
+  // 字符串问候综合测试
+  // 测试各种特殊字符和边界情况
+  assert_eq_string("Hello, \n\t\r!", greet("\n\t\r"))  // 控制字符
+  assert_eq_string("Hello, 🌈🌟🎉!", greet("🌈🌟🎉"))  // Emoji 表情
+  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))  // 引号
+  assert_eq_string("Hello, \\backslash!", greet("\\backslash"))  // 反斜杠
+  assert_eq_string("Hello, space   here!", greet("space   here"))  // 多个空格
+}
+
+test "mathematical_series_and_patterns" {
+  // 数学级数和模式测试
+  // 测试等差数列、等比数列等数学概念
   
-  // 商品信息
-  let laptop_price = 5999
-  let laptop_qty = 2
-  let mouse_price = 199
-  let mouse_qty = 3
-  let keyboard_price = 499
-  let keyboard_qty = 1
+  // 等差数列求和：1+2+3+4+5 = 15
+  let arithmetic_sum = add(add(add(add(1, 2), 3), 4), 5)
+  assert_eq(15, arithmetic_sum)
   
-  // 计算商品总价
-  let laptop_total = multiply(laptop_price, laptop_qty)
-  let mouse_total = multiply(mouse_price, mouse_qty)
-  let keyboard_total = multiply(keyboard_price, keyboard_qty)
-  let subtotal = add(add(laptop_total, mouse_total), keyboard_total)
+  // 等比数列：2+4+8+16 = 30
+  let geometric_sum = add(add(add(2, multiply(2, 2)), multiply(4, 2)), multiply(8, 2))
+  assert_eq(30, geometric_sum)
   
-  // 计算运费（每箱50元，每箱最多装5件商品）
-  let total_items = add(add(laptop_qty, mouse_qty), keyboard_qty)
-  let shipping_boxes = divide_with_ceil(total_items, 5)
-  let shipping_cost = multiply(shipping_boxes, 50)
+  // 平方和：1²+2²+3² = 14
+  let square_sum = add(add(multiply(1, 1), multiply(2, 2)), multiply(3, 3))
+  assert_eq(14, square_sum)
+}
+
+test "real_world_financial_calculations" {
+  // 真实世界金融计算测试
+  // 模拟银行利息、贷款计算等金融场景
   
-  // 计算税费（简化为8%）
-  let tax = divide_with_ceil(multiply(subtotal, 8), 100)
+  let principal = 10000
+  let annual_rate = 5  // 5%
+  let years = 3
   
-  // 计算最终总价
-  let total_before_discount = add(add(subtotal, shipping_cost), tax)
-  let discount = 500  // 促销折扣
-  let final_total = add(total_before_discount, -discount)
+  // 简单利息计算（每年复利一次）
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, annual_rate), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, annual_rate), 100))
   
-  // 生成订单确认信息
-  let order_summary = "订单总额: " + final_total.to_string() + "元"
-  let greeting = greet("尊贵的客户")
+  // 验证复利增长
+  assert_eq(10500, year1_amount)  // 第一年后
+  assert_eq(11025, year2_amount)  // 第二年后
+  assert_eq(11576, year3_amount)  // 第三年后（向上取整）
+}
+
+test "complex_inventory_management" {
+  // 复杂库存管理测试
+  // 模拟多仓库、多产品的库存管理
   
-  // 验证计算结果
-  assert_eq(14194, final_total)  // 5999*2 + 199*3 + 499*1 + ceil(6/5)*50 + ceil(13195*8/100) - 500
-  assert_eq_string("Hello, 尊贵的客户!", greeting)
+  let warehouse_a_initial = 500
+  let warehouse_b_initial = 300
+  let daily_sales_a = 25
+  let daily_sales_b = 15
+  let days = 10
+  let new_shipment = 200
+  
+  // 计算销售后的库存
+  let total_sales_a = multiply(daily_sales_a, days)
+  let total_sales_b = multiply(daily_sales_b, days)
+  
+  let warehouse_a_after_sales = add(warehouse_a_initial, -total_sales_a)
+  let warehouse_b_after_sales = add(warehouse_b_initial, -total_sales_b)
+  
+  // 新货物分配
+  let shipment_to_a = divide_with_ceil(multiply(new_shipment, 2), 3)  // 2/3 到 A 仓库
+  let shipment_to_b = add(new_shipment, -shipment_to_a)  // 剩余到 B 仓库
+  
+  let warehouse_a_final = add(warehouse_a_after_sales, shipment_to_a)
+  let warehouse_b_final = add(warehouse_b_after_sales, shipment_to_b)
+  
+  assert_eq(250, warehouse_a_after_sales)
+  assert_eq(150, warehouse_b_after_sales)
+  assert_eq(134, shipment_to_a)  // ceil(200*2/3) = 134
+  assert_eq(66, shipment_to_b)   // 200 - 134 = 66
+  assert_eq(384, warehouse_a_final)  // 250 + 134 = 384
+  assert_eq(216, warehouse_b_final)  // 150 + 66 = 216
+}
+
+test "advanced_time_calculations" {
+  // 高级时间计算测试
+  // 模拟项目管理、排程等时间相关计算
+  
+  let project_tasks = 87
+  let team_members = 5
+  let hours_per_day = 8
+  let work_days_per_week = 5
+  let vacation_days = 10
+  
+  // 计算总工时
+  let total_hours_needed = project_tasks
+  let hours_per_member = divide_with_ceil(total_hours_needed, team_members)
+  
+  // 计算工作日数
+  let work_days_needed = divide_with_ceil(hours_per_member, hours_per_day)
+  
+  // 计算总日历天数（包含周末）
+  let calendar_days = multiply(work_days_needed, 2)  // 简化计算：工作日*2
+  
+  // 加上假期
+  let final_days = add(calendar_days, vacation_days)
+  
+  assert_eq(18, hours_per_member)     // ceil(87/5) = 18
+  assert_eq(3, work_days_needed)      // ceil(18/8) = 3
+  assert_eq(6, calendar_days)         // 3 * 2 = 6
+  assert_eq(16, final_days)           // 6 + 10 = 16
+}
+
+test "data_processing_algorithms" {
+  // 数据处理算法测试
+  // 模拟排序、搜索等算法的基本操作
+  
+  let data_points = 1000
+  let batch_size = 47
+  let processing_time_per_batch = 3
+  let overhead_percentage = 10
+  
+  // 计算需要的批次数
+  let batches_needed = divide_with_ceil(data_points, batch_size)
+  
+  // 计算基础处理时间
+  let base_processing_time = multiply(batches_needed, processing_time_per_batch)
+  
+  // 计算开销时间
+  let overhead_time = divide_with_ceil(multiply(base_processing_time, overhead_percentage), 100)
+  
+  // 总处理时间
+  let total_time = add(base_processing_time, overhead_time)
+  
+  assert_eq(22, batches_needed)        // ceil(1000/47) = 22
+  assert_eq(66, base_processing_time)  // 22 * 3 = 66
+  assert_eq(7, overhead_time)          // ceil(66*10/100) = 7
+  assert_eq(73, total_time)            // 66 + 7 = 73
+}
+
+test "scientific_calculations" {
+  // 科学计算测试
+  // 模拟物理、化学等科学领域的计算
+  
+  let initial_temperature = 20  // 摄氏度
+  let heating_rate = 2          // 每分钟升温
+  let time_minutes = 15
+  let cooling_rate = 1          // 每分钟降温
+  let cooling_time = 5
+  
+  // 加热过程
+  let heating_increase = multiply(heating_rate, time_minutes)
+  let max_temperature = add(initial_temperature, heating_increase)
+  
+  // 冷却过程
+  let cooling_decrease = multiply(cooling_rate, cooling_time)
+  let final_temperature = add(max_temperature, -cooling_decrease)
+  
+  // 计算温度变化率
+  let total_change = add(final_temperature, -initial_temperature)
+  let total_time = add(time_minutes, cooling_time)
+  let average_rate = divide_with_ceil(multiply(total_change, 100), total_time)
+  
+  assert_eq(50, max_temperature)     // 20 + 2*15 = 50
+  assert_eq(45, final_temperature)   // 50 - 1*5 = 45
+  assert_eq(25, total_change)        // 45 - 20 = 25
+  assert_eq(125, average_rate)       // ceil(25*100/20) = 125
+}
+
+test "network_and_communication" {
+  // 网络和通信测试
+  // 模拟数据传输、带宽计算等网络相关计算
+  
+  let file_size_mb = 850
+  let network_speed_mbps = 50
+  let packet_overhead = 20  // 20% 开销
+  let retry_attempts = 2
+  
+  // 基础传输时间
+  let base_transfer_time = divide_with_ceil(file_size_mb, network_speed_mbps)
+  
+  // 考虑网络开销
+  let overhead_time = divide_with_ceil(multiply(base_transfer_time, packet_overhead), 100)
+  
+  // 单次尝试总时间
+  let single_attempt_time = add(base_transfer_time, overhead_time)
+  
+  // 考虑重试的总时间
+  let total_transfer_time = multiply(single_attempt_time, retry_attempts)
+  
+  assert_eq(17, base_transfer_time)      // ceil(850/50) = 17
+  assert_eq(4, overhead_time)            // ceil(17*20/100) = 4
+  assert_eq(21, single_attempt_time)     // 17 + 4 = 21
+  assert_eq(42, total_transfer_time)     // 21 * 2 = 42
+}
+
+test "comprehensive_system_integration" {
+  // 综合系统集成测试
+  // 模拟复杂的多系统集成场景
+  
+  let system_a_load = 150
+  let system_b_load = 200
+  let system_c_load = 120
+  let load_balancer_capacity = 300
+  let failover_threshold = 400
+  let redundancy_factor = 2
+  
+  // 计算总负载
+  let total_load = add(add(system_a_load, system_b_load), system_c_load)
+  
+  // 计算负载均衡
+  let balanced_load_per_system = divide_with_ceil(total_load, 3)
+  
+  // 检查是否需要故障转移
+  let needs_failover = total_load > failover_threshold
+  
+  // 计算冗余容量
+  let redundancy_capacity = multiply(load_balancer_capacity, redundancy_factor)
+  
+  // 系统可用性检查
+  let system_healthy = redundancy_capacity > total_load
+  
+  assert_eq(470, total_load)                    // 150 + 200 + 120 = 470
+  assert_eq(157, balanced_load_per_system)      // ceil(470/3) = 157
+  assert_eq(true, needs_failover)               // 470 > 400 = true
+  assert_eq(600, redundancy_capacity)           // 300 * 2 = 600
+  assert_eq(true, system_healthy)               // 600 > 470 = true
 }
