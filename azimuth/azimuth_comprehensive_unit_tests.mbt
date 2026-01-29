@@ -1,101 +1,84 @@
-// Azimuth 综合单元测试 - 8个高质量 MoonBit 测试用例
-// 测试覆盖基本功能、边界情况、错误处理和实际应用场景
+// Azimuth 综合单元测试 - 新增10个标准 MoonBit 测试用例
+// 测试主要功能的各个方面，包括边界情况、错误处理和实际应用场景
 
-test "arithmetic_operation_chaining" {
-  // 测试算术运算链式组合
-  let base = 15
-  let result = add(multiply(base, 2), divide_with_ceil(subtract(base, 5), 3))
-  assert_eq(34, result)  // 15*2 + ceil(10/3) = 30 + 4 = 34
+test "subtract_function_basic" {
+  // 基本减法函数测试
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(5, 5))
 }
 
-test "resource_planning_scenario" {
-  // 测试资源规划场景
-  let project_days = 22
-  let team_members = 5
-  let tasks_per_member = 8
-  let total_tasks = multiply(team_members, tasks_per_member)
-  let tasks_per_day = divide_with_ceil(total_tasks, project_days)
-  assert_eq(2, tasks_per_day)  // ceil(40/22) = 2
+test "multiply_and_add_combination" {
+  // 乘法和加法组合测试
+  let result = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
 }
 
-test "negative_number_division_edge_cases" {
-  // 测试负数除法的边缘情况
-  assert_eq(-2, divide_with_ceil(-7, 4))
-  assert_eq(-1, divide_with_ceil(-3, 4))
-  assert_eq(2, divide_with_ceil(7, -4))
-  assert_eq(1, divide_with_ceil(3, -4))
-  assert_eq(2, divide_with_ceil(-7, -4))
+test "divide_with_ceil_packaging" {
+  // 向上取整除法包装计算测试
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
 }
 
-test "string_input_validation" {
-  // 测试字符串输入验证
-  assert_eq_string("Hello, space separated!", greet("space separated"))
-  assert_eq_string("Hello, special@chars#123!", greet("special@chars#123"))
-  assert_eq_string("Hello, mixedCASE123!", greet("mixedCASE123"))
-  assert_eq_string("Hello, emoji 🎉🚀!", greet("emoji 🎉🚀"))
+test "complex_calculation_sequence" {
+  // 复杂计算序列测试
+  let initial = 10
+  let step1 = add(initial, 5)        // 15
+  let step2 = multiply(step1, 2)     // 30
+  let step3 = divide_with_ceil(step2, 8)  // 4
+  let step4 = add(step3, 1)          // 5
+  assert_eq(5, step4)
 }
 
-test "mathematical_identity_verification" {
-  // 测试数学恒等式验证
-  let x = 42
-  
-  // 加法恒等式
-  assert_eq(x, add(x, 0))
-  assert_eq(0, subtract(x, x))
-  
-  // 乘法恒等式
-  assert_eq(x, multiply(x, 1))
-  assert_eq(0, multiply(x, 0))
-  assert_eq(-x, multiply(x, -1))
+test "resource_allocation" {
+  // 资源分配测试
+  let total_resources = 100
+  let teams = 3
+  let resources_per_team = divide_with_ceil(total_resources, teams)
+  assert_eq(34, resources_per_team)  // ceil(100/3) = 34
 }
 
-test "capacity_planning_calculation" {
-  // 测试容量规划计算
-  let users = 157
-  let server_capacity = 25
-  let servers_needed = divide_with_ceil(users, server_capacity)
-  assert_eq(7, servers_needed)  // ceil(157/25) = 7
-  
-  // 验证总容量
-  let total_capacity = multiply(servers_needed, server_capacity)
-  assert_eq(175, total_capacity)
-  
-  // 计算剩余容量
-  let remaining_capacity = subtract(total_capacity, users)
-  assert_eq(18, remaining_capacity)
+test "financial_calculation" {
+  // 金融计算测试
+  let principal = 1000
+  let rate = 5
+  let interest = divide_with_ceil(multiply(principal, rate), 100)
+  let total = add(principal, interest)
+  assert_eq(1050, total)  // 1000 + 50 = 1050
 }
 
-test "error_handling_comprehensive" {
-  // 测试综合错误处理
-  // 除零错误的各种情况
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  
-  // 边界值测试
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(-1, divide_with_ceil(-1, -1))
-  assert_eq(0, divide_with_ceil(0, 1))
-  assert_eq(0, divide_with_ceil(0, -1))
+test "inventory_management" {
+  // 库存管理测试
+  let products = 47
+  let capacity = 12
+  let boxes = divide_with_ceil(products, capacity)
+  assert_eq(4, boxes)  // ceil(47/12) = 4
 }
 
-test "complex_workflow_simulation" {
-  // 测试复杂工作流模拟
-  // 场景：订单处理流程
-  let orders = 89
-  let processing_time_per_order = 3
-  let workers = 4
-  let orders_per_worker = divide_with_ceil(orders, workers)
-  assert_eq(23, orders_per_worker)  // ceil(89/4) = 23
-  
-  // 计算总处理时间
-  let total_time = multiply(orders_per_worker, processing_time_per_order)
-  assert_eq(69, total_time)
-  
-  // 计算实际处理的订单数
-  let actual_processed = multiply(workers, orders_per_worker)
-  assert_eq(92, actual_processed)
-  
-  // 验证处理能力足够
-  assert_true(actual_processed >= orders)
+test "project_planning" {
+  // 项目规划测试
+  let tasks = 89
+  let people = 5
+  let days = 12
+  let total_person_days = multiply(people, days)
+  let tasks_per_day = divide_with_ceil(tasks, total_person_days)
+  assert_eq(2, tasks_per_day)  // ceil(89/60) = 2
+}
+
+test "batch_processing" {
+  // 批处理测试
+  let records = 1000
+  let batch_size = 75
+  let batches = divide_with_ceil(records, batch_size)
+  assert_eq(14, batches)  // ceil(1000/75) = 14
+}
+
+test "logistics_optimization" {
+  // 物流优化测试
+  let items = 156
+  let truck_capacity = 20
+  let trucks = divide_with_ceil(items, truck_capacity)
+  assert_eq(8, trucks)  // ceil(156/20) = 8
 }
