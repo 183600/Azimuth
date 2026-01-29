@@ -1171,6 +1171,142 @@ test "enhanced_percentage_calculation" {
 }
 
 // 新增的10个标准MoonBit测试用例
+test "recursive_factorial_simulation" {
+  // 模拟递归计算阶乘：5! = 120
+  // 使用迭代方式模拟递归
+  let result = multiply(multiply(multiply(multiply(1, 2), 3), 4), 5)
+  assert_eq(120, result)
+}
+
+test "array_sum_simulation" {
+  // 模拟数组求和：[1, 2, 3, 4, 5] = 15
+  let sum1 = add(1, 2)
+  let sum2 = add(sum1, 3)
+  let sum3 = add(sum2, 4)
+  let sum4 = add(sum3, 5)
+  assert_eq(15, sum4)
+}
+
+test "conditional_branch_logic" {
+  // 模拟条件分支逻辑
+  let x = 15
+  let y = 10
+  // 模拟 if (x > y) then x - y else y - x
+  let condition_result = if x > y { add(x, -y) } else { add(y, -x) }
+  assert_eq(5, condition_result)
+  
+  // 测试相反条件
+  let condition_result2 = if y > x { add(y, -x) } else { add(x, -y) }
+  assert_eq(5, condition_result2)
+}
+
+test "error_boundary_handling" {
+  // 测试错误边界处理
+  // 模拟除零保护的多种情况
+  let normal_case = divide_with_ceil(20, 4)
+  let zero_divisor = divide_with_ceil(20, 0)
+  let negative_zero = divide_with_ceil(-20, 0)
+  
+  assert_eq(5, normal_case)
+  assert_eq(0, zero_divisor)
+  assert_eq(0, negative_zero)
+}
+
+test "bubble_sort_simulation" {
+  // 模拟冒泡排序的核心比较操作
+  let a = 5
+  let b = 3
+  let c = 8
+  let d = 1
+  
+  // 模拟比较和交换过程
+  let temp1 = if a > b { b } else { a }
+  let temp2 = if a > b { a } else { b }
+  
+  let sorted_first = if temp1 > c { c } else { temp1 }
+  let sorted_middle1 = if temp1 > c { temp1 } else { c }
+  
+  let final_smallest = if sorted_first > d { d } else { sorted_first }
+  
+  assert_eq(1, final_smallest)
+  // 使用变量以避免未使用警告
+  let _ = temp2
+  let _ = sorted_middle1
+}
+
+test "data_type_conversion" {
+  // 模拟数据类型转换场景
+  let integer_value = 42
+  let string_representation = "42"
+  
+  // 测试数值与字符串的互操作性
+  let greeting_result = greet(string_representation)
+  let math_operation = multiply(integer_value, 2)
+  
+  assert_eq_string("Hello, 42!", greeting_result)
+  assert_eq(84, math_operation)
+}
+
+test "state_machine_simulation" {
+  // 模拟简单状态机：初始状态 -> 处理中 -> 完成
+  let initial_state = 0
+  let processing_state = add(initial_state, 1)
+  let completed_state = add(processing_state, 1)
+  
+  // 模拟状态转换验证
+  let is_completed = completed_state >= 2
+  let transition_count = completed_state
+  
+  assert_eq(2, transition_count)
+  // 注意：MoonBit中的布尔值断言使用不同的方式
+  let _ = is_completed  // 使用布尔值以避免未使用警告
+}
+
+test "cache_hit_simulation" {
+  // 模拟缓存命中场景
+  let data_requests = 25
+  let cache_hits = 18
+  
+  // 计算缓存命中率
+  let hit_rate = divide_with_ceil(multiply(cache_hits, 100), data_requests)
+  let cache_misses = add(data_requests, -cache_hits)
+  
+  assert_eq(72, hit_rate)
+  assert_eq(7, cache_misses)
+}
+
+test "resource_pool_management" {
+  // 模拟资源池管理
+  let total_resources = 50
+  let allocated_resources = 23
+  let requested_resources = 15
+  
+  // 计算可用资源和分配结果
+  let available_resources = add(total_resources, -allocated_resources)
+  let can_allocate = available_resources >= requested_resources
+  let remaining_after_allocation = add(available_resources, -requested_resources)
+  
+  assert_eq(27, available_resources)
+  assert_eq(12, remaining_after_allocation)
+  // 使用布尔值以避免未使用警告
+  let _ = can_allocate
+}
+
+test "algorithm_complexity_simulation" {
+  // 模拟算法复杂度计算
+  let input_size = 100
+  let linear_operations = input_size  // O(n)
+  let quadratic_operations = multiply(input_size, input_size)  // O(n²)
+  
+  // 计算复杂度比率
+  let complexity_ratio = divide_with_ceil(quadratic_operations, linear_operations)
+  
+  assert_eq(100, linear_operations)
+  assert_eq(10000, quadratic_operations)
+  assert_eq(100, complexity_ratio)
+}
+
+// 新增的10个标准MoonBit测试用例
 test "standard_arithmetic_boundary_test" {
   // 标准算术边界测试
   assert_eq(2147483647, add(2147483646, 1))  // 接近Int最大值
