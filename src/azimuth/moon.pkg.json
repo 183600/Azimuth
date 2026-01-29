@@ -448,4 +448,8 @@
     "standard_core_test_cases.mbt",
     "azimuth_standard_tests_v2.mbt",
     "azimuth_simple_test.mbt",
-    "azimuth_enhanced_test_cases.mbt"                                                                                                                                                ]}
+    "azimuth_enhanced_test_cases.mbt",
+    "standard_test_enhancements.mbt",
+    "simple_verification_test_new.mbt",
+    "standard_test_enhancements.mbt",
+    "simple_verification_test_new.mbt"                                                                                                                                           ]}
