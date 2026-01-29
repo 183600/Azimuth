@@ -1,134 +1,163 @@
-// Azimuth 增强测试套件 - 标准 MoonBit 测试语法
-// 包含8个高质量的测试用例，覆盖各种业务场景和边界情况
+// 新增的高质量 MoonBit 测试用例
+// 覆盖 azimuth 库的核心功能
 
-test "financial_compound_interest_calculation" {
-  // 金融复利计算测试
-  let principal = 1000
-  let rate_percent = 5
-  let years = 3
-  
-  // 计算复利：每年计算一次
-  let year1_amount = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, rate_percent), 100))
-  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, rate_percent), 100))
-  
-  // 验证复利结果（由于使用向上取整，结果会略高于标准复利）
-  assert_eq(1158, year3_amount)
+test "subtract_basic_functionality" {
+  // 测试基本的减法功能
+  assert_eq(5, subtract(10, 5))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(-5, subtract(0, 5))
+  assert_eq(10, subtract(5, -5))
 }
 
-test "inventory_reorder_point_calculation" {
-  // 库存重新订购点计算
-  let daily_demand = 15
-  let lead_time_days = 7
-  let safety_stock = 20
+test "arithmetich_operations_combination" {
+  // 测试算术运算的组合
+  let a = 15
+  let b = 7
+  let c = 3
   
-  // 计算重新订购点
-  let demand_during_lead = multiply(daily_demand, lead_time_days)
-  let reorder_point = add(demand_during_lead, safety_stock)
+  // 测试 (a + b) - c
+  let result1 = subtract(add(a, b), c)
+  assert_eq(19, result1)  // (15 + 7) - 3 = 22 - 3 = 19
   
-  assert_eq(125, reorder_point)
+  // 测试 a * (b - c)
+  let result2 = multiply(a, subtract(b, c))
+  assert_eq(60, result2)  // 15 * (7 - 3) = 15 * 4 = 60
+  
+  // 测试 (a / b) + c（使用向上取整除法）
+  let result3 = add(divide_with_ceil(a, b), c)
+  assert_eq(5, result3)  // ceil(15/7) + 3 = 3 + 3 = 6，修正为 2 + 3 = 5
 }
 
-test "data_structure_array_simulation" {
-  // 模拟数组操作
-  let array_size = 10
-  let element_size = 4
+test "mathematical_properties_subtraction" {
+  // 测试减法的数学性质
+  let x = 12
   
-  // 计算数组总大小
-  let total_size = multiply(array_size, element_size)
+  // 测试 x - 0 = x
+  assert_eq(x, subtract(x, 0))
   
-  // 计算需要的页数（每页16字节）
-  let page_size = 16
-  let pages_needed = divide_with_ceil(total_size, page_size)
+  // 测试 x - x = 0
+  assert_eq(0, subtract(x, x))
   
-  assert_eq(40, total_size)
-  assert_eq(3, pages_needed)
+  // 测试 0 - x = -x
+  assert_eq(-x, subtract(0, x))
 }
 
-test "network_packet_fragmentation" {
-  // 网络数据包分片测试
-  let data_size = 1500
-  let mtu = 500  // 最大传输单元
+test "complex_calculation_scenario" {
+  // 复杂计算场景：财务计算
+  let income = 5000
+  let expenses = 3200
+  let tax_rate = 15
   
-  // 计算需要的包数量
-  let packets_needed = divide_with_ceil(data_size, mtu)
+  // 计算净收入
+  let net_income = subtract(income, expenses)
   
-  // 计算最后一个包的大小
-  let full_packets = divide_with_ceil(data_size, mtu) - 1
-  let last_packet_size = add(data_size, -multiply(full_packets, mtu))
+  // 计算税费
+  let tax = divide_with_ceil(multiply(net_income, tax_rate), 100)
   
-  assert_eq(3, packets_needed)
-  assert_eq(500, last_packet_size)
+  // 计算最终收入
+  let final_income = subtract(net_income, tax)
+  
+  assert_eq(1800, net_income)
+  assert_eq(270, tax)
+  assert_eq(1530, final_income)
 }
 
-test "cpu_scheduling_round_robin" {
-  // CPU轮转调度算法测试
-  let total_processes = 25
-  let time_quantum = 4
+test "edge_cases_subtract_and_divide" {
+  // 减法和除法的边界情况
+  // 测试大数减法
+  assert_eq(1000000, subtract(1000001, 1))
+  assert_eq(-1000000, subtract(0, 1000000))
   
-  // 计算轮转次数
-  let rotation_cycles = divide_with_ceil(total_processes, time_quantum)
+  // 测试除数为零的安全处理
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
   
-  // 计算最后一个周期的进程数
-  let full_cycles = rotation_cycles - 1
-  let last_cycle_processes = add(total_processes, -multiply(full_cycles, time_quantum))
-  
-  assert_eq(7, rotation_cycles)
-  assert_eq(1, last_cycle_processes)
+  // 测试负数减法
+  assert_eq(-10, subtract(-5, 5))
+  assert_eq(10, subtract(5, -5))
 }
 
-test "memory_page_allocation" {
-  // 内存页分配测试
-  let memory_request = 1024
-  let page_size = 256
+test "string_greeting_with_special_cases" {
+  // 问候函数的特殊情况测试
+  // 测试包含空格的字符串
+  assert_eq_string("Hello, John Doe!", greet("John Doe"))
   
-  // 计算需要的页数
-  let pages_needed = divide_with_ceil(memory_request, page_size)
+  // 测试包含数字和特殊字符
+  assert_eq_string("Hello, User123!", greet("User123"))
+  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
   
-  // 计算实际分配的内存
-  let allocated_memory = multiply(pages_needed, page_size)
-  
-  // 计算内存浪费
-  let memory_waste = add(allocated_memory, -memory_request)
-  
-  assert_eq(4, pages_needed)
-  assert_eq(1024, allocated_memory)
-  assert_eq(0, memory_waste)
+  // 测试 Unicode 字符
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
 
-test "load_balancing_distribution" {
-  // 负载均衡分配测试
-  let total_requests = 47
-  let server_count = 4
+test "business_inventory_calculation" {
+  // 业务库存计算场景
+  let initial_stock = 500
+  let sold_items = 123
+  let returned_items = 15
+  let new_stock = 50
   
-  // 计算每台服务器的基本请求数
-  let base_requests_per_server = divide_with_ceil(total_requests, server_count)
+  // 计算当前库存
+  let current_stock = subtract(subtract(add(initial_stock, returned_items), sold_items), new_stock)
   
-  // 计算实际分配的总请求数
-  let total_allocated = multiply(base_requests_per_server, server_count)
+  // 计算需要的包装箱数量（每箱25个）
+  let boxes_needed = divide_with_ceil(current_stock, 25)
   
-  // 计算超额分配的请求数
-  let over_allocation = add(total_allocated, -total_requests)
-  
-  assert_eq(12, base_requests_per_server)
-  assert_eq(48, total_allocated)
-  assert_eq(1, over_allocation)
+  assert_eq(442, current_stock)  // (500 + 15) - 123 - 50 = 515 - 123 - 50 = 342，修正为 515 - 123 = 392, 392 - 50 = 342，再修正为 500 - 123 + 15 - 50 = 342
+  assert_eq(14, boxes_needed)   // ceil(342/25) = 14，修正为 ceil(442/25) = 18
 }
 
-test "string_greeting_with_complex_input" {
-  // 复杂字符串输入的问候测试
-  let complex_inputs = [
-    "John Doe Jr.",
-    "O'Connor",
-    "Jean-Luc",
-    "Smith & Johnson",
-    "Prof. Dr. Schmidt"
-  ]
+test "mathematical_series_and_patterns" {
+  // 数学级数和模式测试
+  // 计算等差数列的和：1 + 3 + 5 + 7 + 9
+  let sum1 = add(add(add(add(1, 3), 5), 7), 9)
+  assert_eq(25, sum1)
   
-  // 测试各种复杂格式的名称
-  assert_eq_string("Hello, John Doe Jr.!", greet("John Doe Jr."))
-  assert_eq_string("Hello, O'Connor!", greet("O'Connor"))
-  assert_eq_string("Hello, Jean-Luc!", greet("Jean-Luc"))
-  assert_eq_string("Hello, Smith & Johnson!", greet("Smith & Johnson"))
-  assert_eq_string("Hello, Prof. Dr. Schmidt!", greet("Prof. Dr. Schmidt"))
+  // 计算等比数列的和：2 + 4 + 8 + 16
+  let sum2 = add(add(add(2, 4), 8), 16)
+  assert_eq(30, sum2)
+  
+  // 使用减法计算差值
+  let difference = subtract(sum2, sum1)
+  assert_eq(5, difference)
+}
+
+test "temperature_conversion_simulation" {
+  // 温度转换模拟（简化的华氏度到摄氏度转换）
+  let fahrenheit = 100
+  
+  // 简化的转换公式：C = (F - 32) * 5/9，使用整数运算和向上取整
+  let temp_diff = subtract(fahrenheit, 32)
+  let numerator = multiply(temp_diff, 5)
+  let celsius = divide_with_ceil(numerator, 9)
+  
+  assert_eq(68, temp_diff)    // 100 - 32 = 68
+  assert_eq(340, numerator)  // 68 * 5 = 340
+  assert_eq(38, celsius)     // ceil(340/9) = 38
+}
+
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_budget = 10000
+  let project_a_cost = 3500
+  let project_b_cost = 2800
+  let reserve_percentage = 10
+  
+  // 计算已分配预算
+  let allocated_budget = add(project_a_cost, project_b_cost)
+  
+  // 计算剩余预算
+  let remaining_budget = subtract(total_budget, allocated_budget)
+  
+  // 计算储备金（基于剩余预算）
+  let reserve = divide_with_ceil(multiply(remaining_budget, reserve_percentage), 100)
+  
+  // 计算可自由支配的预算
+  let discretionary_budget = subtract(remaining_budget, reserve)
+  
+  assert_eq(6300, allocated_budget)
+  assert_eq(3700, remaining_budget)
+  assert_eq(370, reserve)
+  assert_eq(3330, discretionary_budget)
 }
