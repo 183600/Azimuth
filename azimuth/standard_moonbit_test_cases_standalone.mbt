@@ -1,54 +1,54 @@
-// 标准MoonBit测试用例 - 10个高质量测试
-// 测试azimuth库的核心功能
+// 独立的MoonBit测试用例 - 10个高质量测试
+// 这个文件包含标准的MoonBit测试语法，可以直接使用
 
+// 测试1: 基本加法功能
 test "basic_addition_functionality" {
-  // 测试基本加法功能
   assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
   assert_eq(-5, add(-2, -3))
   assert_eq(10, add(-3, 13))
 }
 
+// 测试2: 基本乘法功能
 test "basic_multiplication_functionality" {
-  // 测试基本乘法功能
   assert_eq(6, multiply(2, 3))
   assert_eq(0, multiply(5, 0))
   assert_eq(-6, multiply(-2, 3))
   assert_eq(15, multiply(-3, -5))
 }
 
+// 测试3: 基本问候功能
 test "greeting_function_basic" {
-  // 测试基本问候功能
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, !", greet(""))
 }
 
+// 测试4: 向上取整除法基本功能
 test "ceil_division_basic" {
-  // 测试向上取整除法基本功能
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
   assert_eq(1, divide_with_ceil(1, 100))
   assert_eq(0, divide_with_ceil(10, 0))
 }
 
+// 测试5: 数学交换律性质
 test "mathematical_commutative_property" {
-  // 测试数学交换律性质
   let x = 7
   let y = 13
   assert_eq(add(x, y), add(y, x))
   assert_eq(multiply(x, y), multiply(y, x))
 }
 
+// 测试6: 零元素性质
 test "zero_element_properties" {
-  // 测试零元素性质
   assert_eq(5, add(5, 0))
   assert_eq(5, multiply(5, 1))
   assert_eq(0, multiply(5, 0))
 }
 
+// 测试7: 复杂计算场景
 test "complex_calculation_scenario" {
-  // 测试复杂计算场景
   let base = 10
   let multiplier = 3
   let divisor = 4
@@ -56,23 +56,23 @@ test "complex_calculation_scenario" {
   assert_eq(8, result)  // ceil(10*3/4) = 8
 }
 
+// 测试8: 负数处理
 test "negative_number_handling" {
-  // 测试负数处理
   assert_eq(-3, subtract(2, 5))
   assert_eq(-15, multiply(-3, 5))
   assert_eq(15, multiply(-3, -5))
   assert_eq(-3, divide_with_ceil(-10, 4))
 }
 
+// 测试9: Unicode字符支持
 test "unicode_character_support" {
-  // 测试Unicode字符支持
   assert_eq_string("Hello, 世界!", greet("世界"))
   assert_eq_string("Hello, 🚀!", greet("🚀"))
   assert_eq_string("Hello, café!", greet("café"))
 }
 
+// 测试10: 真实世界应用场景
 test "real_world_application" {
-  // 测试真实世界应用场景
   // 场景：计算装盒问题
   let total_items = 25
   let box_capacity = 6
