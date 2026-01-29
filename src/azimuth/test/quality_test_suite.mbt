@@ -1,127 +1,191 @@
-// 高质量 MoonBit 测试用例 - 针对 azimuth 库的核心功能
-// 使用标准的 MoonBit 测试语法
+// 高质量 MoonBit 测试套件
+// 针对 azimuth 库的全面测试，包含边界情况、实际应用和错误处理
 
-test "numeric_overflow_boundary" {
-  // 测试数值溢出边界情况
-  let max_safe = 2147483647 / 2
-  let result = @azimuth.add(max_safe, max_safe)
-  @azimuth.assert_eq(2147483646, result)
+test "extreme_boundary_values" {
+  // 测试极端边界值
+  let result1 = add(2147483646, 1)  // 接近Int最大值
+  if (result1 != 2147483647) {
+    @builtin.abort("Test failed: extreme_boundary_values 1")
+  }
+  
+  let result2 = add(-2147483647, -1)  // 接近Int最小值
+  if (result2 != -2147483648) {
+    @builtin.abort("Test failed: extreme_boundary_values 2")
+  }
+  
+  let result3 = add(2147483647, -2147483647)  // 最大值与相反数相加
+  if (result3 != 0) {
+    @builtin.abort("Test failed: extreme_boundary_values 3")
+  }
+  
+  let result4 = divide_with_ceil(2147483647, 2147483647)  // 大数相除
+  if (result4 != 1) {
+    @builtin.abort("Test failed: extreme_boundary_values 4")
+  }
 }
 
-test "divide_with_ceil_decimal_precision" {
-  // 测试向上取整除法的小数精度处理
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 2))  // 0.5 -> 1
-  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(3, 2))  // 1.5 -> 2
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(7, 2))  // 3.5 -> 4
-  @azimuth.assert_eq(34, @azimuth.divide_with_ceil(100, 3))  // 33.33... -> 34
-}
-
-test "greet_function_unicode_validation" {
-  // 测试问候函数的 Unicode 字符处理
-  @azimuth.assert_eq_string("Hello, 🌙!", @azimuth.greet("🌙"))
-  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
-  @azimuth.assert_eq_string("Hello, αβγδε!", @azimuth.greet("αβγδε"))
-  @azimuth.assert_eq_string("Hello, 中文测试!", @azimuth.greet("中文测试"))
-}
-
-test "compound_financial_calculation" {
-  // 测试复合金融计算场景
+test "financial_compound_interest" {
+  // 金融复利计算测试
   let principal = 1000
-  let rate1 = 5
-  let rate2 = 3
-  let rate3 = 4
+  let rate_percent = 5
+  let _years = 3
   
-  // 计算三年复利
-  let year1 = @azimuth.add(principal, @azimuth.divide_with_ceil(@azimuth.multiply(principal, rate1), 100))
-  let year2 = @azimuth.add(year1, @azimuth.divide_with_ceil(@azimuth.multiply(year1, rate2), 100))
-  let year3 = @azimuth.add(year2, @azimuth.divide_with_ceil(@azimuth.multiply(year2, rate3), 100))
+  // 简化的复利计算
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
   
-  @azimuth.assert_eq(1050, year1)  // 1000 + 5% = 1050
-  @azimuth.assert_eq(1082, year2)  // 1050 + 3% = 1081.5 -> 1082
-  @azimuth.assert_eq(1126, year3)  // 1082 + 4% = 1125.28 -> 1126
+  if (year1 != 1050) {  // 1000 + 50
+    @builtin.abort("Test failed: financial_compound_interest 1")
+  }
+  if (year2 != 1103) {  // 1050 + 53 (向上取整)
+    @builtin.abort("Test failed: financial_compound_interest 2")
+  }
+  if (year3 != 1158) {  // 1103 + 55 (向上取整)
+    @builtin.abort("Test failed: financial_compound_interest 3")
+  }
 }
 
-test "inventory_optimization_problem" {
-  // 测试库存优化问题
-  let demand_forecast = 157
-  let batch_size = 25
+test "inventory_optimization" {
+  // 库存优化测试
+  let demand_forecast = 347
+  let batch_size = 50
   let safety_stock = 20
   
-  // 计算订货数量（向上取整到最近的批次）
-  let base_orders = @azimuth.divide_with_ceil(demand_forecast, batch_size)
-  let total_order_quantity = @azimuth.multiply(base_orders, batch_size)
-  let final_inventory = @azimuth.add(total_order_quantity, safety_stock)
+  // 计算需要的批次数
+  let batches_needed = divide_with_ceil(demand_forecast, batch_size)
+  let total_produced = multiply(batches_needed, batch_size)
+  let final_inventory = add(total_produced, safety_stock)
   
-  @azimuth.assert_eq(7, base_orders)  // ceil(157/25) = 7
-  @azimuth.assert_eq(175, total_order_quantity)  // 7 * 25 = 175
-  @azimuth.assert_eq(195, final_inventory)  // 175 + 20 = 195
+  assert_eq(7, batches_needed)  // ceil(347/50) = 7
+  assert_eq(350, total_produced)  // 7 * 50
+  assert_eq(370, final_inventory)  // 350 + 20
 }
 
-test "string_concatenation_edge_cases" {
-  // 测试字符串连接的边界情况
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("  "))
-  @azimuth.assert_eq_string("Hello, a!", @azimuth.greet("a"))
-  @azimuth.assert_eq_string("Hello, ABC123!", @azimuth.greet("ABC123"))
-  @azimuth.assert_eq_string("Hello, special@chars#123!", @azimuth.greet("special@chars#123"))
+test "unicode_internationalization" {
+  // Unicode 国际化测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌍🌎🌏!", greet("🌍🌎🌏"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
+  assert_eq_string("Hello, 🚀🛸🛰️!", greet("🚀🛸🛰️"))
+  assert_eq_string("Hello, αβγδε!", greet("αβγδε"))
 }
 
-test "mathematical_sequence_calculation" {
-  // 测试数学序列计算
-  // 计算等差数列：3, 7, 11, 15, 19 的和
-  let term1 = 3
-  let difference = 4
-  let num_terms = 5
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟测试
+  let n = 100
+  let log_n_approx = 7  // log2(100) ≈ 6.64，向上取整为7
   
-  let sum = @azimuth.multiply(num_terms, @azimuth.add(term1, @azimuth.multiply(num_terms - 1, difference))) / 2
-  @azimuth.assert_eq(55, sum)  // 5 * (3 + 16) / 2 = 55
+  // 模拟 O(n log n) 算法的操作次数
+  let operations = multiply(n, log_n_approx)
+  
+  // 模拟 O(n²) 算法的操作次数
+  let quadratic_ops = multiply(n, n)
+  
+  // 计算性能比率
+  let performance_ratio = divide_with_ceil(quadratic_ops, operations)
+  
+  assert_eq(700, operations)
+  assert_eq(10000, quadratic_ops)
+  assert_eq(15, performance_ratio)  // ceil(10000/700) = 15
 }
 
-test "resource_allocation_algorithm" {
-  // 测试资源分配算法
-  let total_resources = 100
-  let project1_needs = 23
-  let project2_needs = 31
-  let project3_needs = 19
+test "error_resilience_robustness" {
+  // 错误恢复和健壮性测试
+  // 测试除零错误处理
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
   
-  let allocated1 = project1_needs
-  let allocated2 = project2_needs
-  let allocated3 = project3_needs
-  let total_allocated = @azimuth.add(@azimuth.add(allocated1, allocated2), allocated3)
-  let remaining = @azimuth.add(total_resources, -total_allocated)
-  
-  @azimuth.assert_eq(73, total_allocated)  // 23 + 31 + 19 = 73
-  @azimuth.assert_eq(27, remaining)  // 100 - 73 = 27
-  
-  // 计算可以支持的新项目数量（每个需要10个资源）
-  let new_projects = @azimuth.divide_with_ceil(remaining, 10)
-  @azimuth.assert_eq(3, new_projects)  // ceil(27/10) = 3
+  // 测试大数运算的稳定性
+  let large_num = 1000000
+  assert_eq(0, multiply(large_num, 0))
+  assert_eq(large_num, add(large_num, 0))
+  assert_eq(0, add(large_num, -large_num))
 }
 
-test "error_handling_robustness" {
-  // 测试错误处理的健壮性
-  // 测试除数为零的各种情况
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-100, 0))
+test "data_analysis_statistics" {
+  // 数据分析统计测试
+  let data_points = [45, 67, 23, 89, 12, 56, 78, 34, 90, 41]
+  let sum = 0
+  let count = 10
   
-  // 测试极值运算
-  @azimuth.assert_eq(0, @azimuth.add(2147483647, -2147483647))
-  @azimuth.assert_eq(1, @azimuth.add(2147483646, -2147483645))
+  // 手动计算总和（模拟数组遍历）
+  let manual_sum = add(add(add(add(add(add(add(add(add(45, 67), 23), 89), 12), 56), 78), 34), 90), 41)
+  
+  // 计算平均值（向上取整）
+  let average = divide_with_ceil(manual_sum, count)
+  
+  // 计算中位数近似值（简化计算）
+  let median_approx = divide_with_ceil(add(56, 67), 2)
+  
+  assert_eq(535, manual_sum)
+  assert_eq(54, average)  // ceil(535/10) = 54
+  assert_eq(62, median_approx)  // ceil(123/2) = 62
 }
 
-test "performance_benchmark_simulation" {
-  // 测试性能基准模拟
-  let base_operations = 1000
-  let optimization_factor = 3
-  let overhead_percent = 15
+test "engineering_structural_calculation" {
+  // 工程结构计算测试
+  let beam_length = 12  // 米
+  let load_per_meter = 500  // kg/m
+  let safety_factor = 2
   
-  // 计算优化后的性能
-  let optimized_ops = @azimuth.multiply(base_operations, optimization_factor)
-  let overhead = @azimuth.divide_with_ceil(@azimuth.multiply(optimized_ops, overhead_percent), 100)
-  let actual_performance = @azimuth.add(optimized_ops, -overhead)
+  // 计算总载荷
+  let total_load = multiply(beam_length, load_per_meter)
   
-  @azimuth.assert_eq(3000, optimized_ops)
-  @azimuth.assert_eq(450, overhead)  // ceil(3000 * 15 / 100) = 450
-  @azimuth.assert_eq(2550, actual_performance)  // 3000 - 450 = 2550
+  // 应用安全系数
+  let design_load = multiply(total_load, safety_factor)
+  
+  // 计算支撑点数量（每4米一个支撑点）
+  let support_points = divide_with_ceil(beam_length, 4) + 1
+  
+  assert_eq(6000, total_load)  // 12 * 500
+  assert_eq(12000, design_load)  // 6000 * 2
+  assert_eq(4, support_points)  // ceil(12/4) + 1 = 3 + 1
+}
+
+test "time_series_analysis" {
+  // 时间序列分析测试
+  let daily_values = [120, 135, 128, 142, 155, 148, 163]
+  let days = 7
+  
+  // 计算周总值
+  let weekly_total = add(add(add(add(add(add(120, 135), 128), 142), 155), 148), 163)
+  
+  // 计算日平均值
+  let daily_average = divide_with_ceil(weekly_total, days)
+  
+  // 计算趋势（简化：最后一天减去第一天）
+  let trend = add(163, -120)
+  
+  // 计算增长率百分比
+  let growth_rate = divide_with_ceil(multiply(trend, 100), 120)
+  
+  assert_eq(991, weekly_total)
+  assert_eq(142, daily_average)  // ceil(991/7) = 142
+  assert_eq(43, trend)
+  assert_eq(36, growth_rate)  // ceil(4300/120) = 36
+}
+
+test "cryptography_simulation" {
+  // 密码学模拟测试
+  let message = 12345
+  let key1 = 17
+  let key2 = 29
+  
+  // 简单的加密模拟
+  let encrypted = multiply(message, key1)
+  let double_encrypted = multiply(encrypted, key2)
+  
+  // 模拟哈希计算
+  let hash_value = multiply(double_encrypted, 31) % 100000
+  
+  // 模拟数字签名
+  let signature = add(multiply(message, key1), multiply(key2, key2))
+  
+  assert_eq(209865, encrypted)  // 12345 * 17
+  assert_eq(6086085, double_encrypted)  // 209865 * 29
+  assert_eq(66848, hash_value)  // (6086085 * 31) % 100000
+  assert_eq(210094, signature)  // 12345*17 + 29*29
 }
