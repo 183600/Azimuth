@@ -105,7 +105,9 @@
     "azimuth_new_standard_tests.mbt",
     "azimuth_standard_unit_tests.mbt",
     "standard_enhanced_test_cases.mbt",
-    "my_enhanced_tests.mbt"
+    "my_enhanced_tests.mbt",
+    "azimuth_enhanced_test_coverage.mbt",
+    "azimuth_enhanced_test_coverage_simple.mbt"
   ],
   "import": [
     "moonbitlang/core/builtin",
