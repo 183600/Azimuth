@@ -8219,3 +8219,175 @@ test "enhanced_financial_calculations" {
   assert_eq(560000, total_payment)
   assert_eq(1556, monthly_payment)  // ceil(560000/360)
 }
+
+// 新增的8个标准MoonBit测试用例
+test "cascading_division_chain_test" {
+  // 级联除法链测试
+  let initial_value = 1000
+  let stage1 = divide_with_ceil(initial_value, 3)    // ceil(1000/3) = 334
+  let stage2 = divide_with_ceil(stage1, 5)          // ceil(334/5) = 67
+  let stage3 = divide_with_ceil(stage2, 7)          // ceil(67/7) = 10
+  let final_result = divide_with_ceil(stage3, 3)    // ceil(10/3) = 4
+  
+  assert_eq(334, stage1)
+  assert_eq(67, stage2)
+  assert_eq(10, stage3)
+  assert_eq(4, final_result)
+}
+
+test "alternating_operations_chain_test" {
+  // 交替运算链测试
+  let base = 50
+  
+  // 交替进行加减乘除运算
+  let step1 = add(base, 25)                    // 50 + 25 = 75
+  let step2 = divide_with_ceil(step1, 8)       // ceil(75/8) = 10
+  let step3 = multiply(step2, 6)               // 10 * 6 = 60
+  let step4 = subtract(step3, 15)              // 60 - 15 = 45
+  let step5 = divide_with_ceil(step4, 7)       // ceil(45/7) = 7
+  let step6 = add(step5, 3)                    // 7 + 3 = 10
+  
+  assert_eq(75, step1)
+  assert_eq(10, step2)
+  assert_eq(60, step3)
+  assert_eq(45, step4)
+  assert_eq(7, step5)
+  assert_eq(10, step6)
+}
+
+test "boundary_value_extremes_test" {
+  // 边界值极值测试
+  // 测试接近Int类型边界的情况
+  let near_max = 2147483640
+  let near_min = -2147483640
+  
+  // 测试接近最大值的运算
+  assert_eq(2147483641, add(near_max, 1))
+  assert_eq(2000000000, multiply(near_max, 1))  // 避免溢出
+  assert_eq(214748364, divide_with_ceil(near_max, 10))
+  
+  // 测试接近最小值的运算
+  assert_eq(-2147483641, add(near_min, -1))
+  assert_eq(2000000000, multiply(near_min, -1))  // 避免溢出
+  assert_eq(-214748364, divide_with_ceil(near_min, 10))
+}
+
+test "string_special_characters_test" {
+  // 字符串特殊字符测试
+  // 测试各种特殊字符和边界情况
+  assert_eq_string("Hello, null!", greet("null"))
+  assert_eq_string("Hello, undefined!", greet("undefined"))
+  assert_eq_string("Hello, true!", greet("true"))
+  assert_eq_string("Hello, false!", greet("false"))
+  assert_eq_string("Hello, NaN!", greet("NaN"))
+  assert_eq_string("Hello, Infinity!", greet("Infinity"))
+  assert_eq_string("Hello, []!", greet("[]"))
+  assert_eq_string("Hello, {}!", greet("{}"))
+  assert_eq_string("Hello, <>!", greet("<>"))
+  assert_eq_string("Hello, ===!", greet("==="))
+}
+
+test "ecommerce_order_processing_test" {
+  // 电商订单处理流程测试
+  // 场景：电商订单处理流程
+  let order_items = 47
+  let items_per_box = 8
+  let boxes_per_pallet = 6
+  let pallets_per_truck = 12
+  
+  // 计算需要的箱子数量
+  let boxes_needed = divide_with_ceil(order_items, items_per_box)  // ceil(47/8) = 6
+  assert_eq(6, boxes_needed)
+  
+  // 计算需要的托盘数量
+  let pallets_needed = divide_with_ceil(boxes_needed, boxes_per_pallet)  // ceil(6/6) = 1
+  assert_eq(1, pallets_needed)
+  
+  // 计算需要的卡车数量
+  let trucks_needed = divide_with_ceil(pallets_needed, pallets_per_truck)  // ceil(1/12) = 1
+  assert_eq(1, trucks_needed)
+  
+  // 计算总容量
+  let total_box_capacity = multiply(boxes_needed, items_per_box)  // 6 * 8 = 48
+  let unused_space = subtract(total_box_capacity, order_items)  // 48 - 47 = 1
+  assert_eq(1, unused_space)
+}
+
+test "mathematical_series_calculation_test" {
+  // 数学级数计算测试
+  // 计算等差数列和等比数列
+  
+  // 等差数列：3, 7, 11, 15, 19 (公差为4)
+  let arithmetic_diff = 4
+  let arithmetic_term1 = 3
+  let arithmetic_term2 = add(arithmetic_term1, arithmetic_diff)  // 7
+  let arithmetic_term3 = add(arithmetic_term2, arithmetic_diff)  // 11
+  let arithmetic_term4 = add(arithmetic_term3, arithmetic_diff)  // 15
+  let arithmetic_term5 = add(arithmetic_term4, arithmetic_diff)  // 19
+  
+  let arithmetic_sum = add(add(add(add(arithmetic_term1, arithmetic_term2), arithmetic_term3), arithmetic_term4), arithmetic_term5)
+  assert_eq(55, arithmetic_sum)  // 3+7+11+15+19 = 55
+  
+  // 等比数列：2, 6, 18, 54 (公比为3)
+  let geometric_ratio = 3
+  let geometric_term1 = 2
+  let geometric_term2 = multiply(geometric_term1, geometric_ratio)  // 6
+  let geometric_term3 = multiply(geometric_term2, geometric_ratio)  // 18
+  let geometric_term4 = multiply(geometric_term3, geometric_ratio)  // 54
+  
+  let geometric_sum = add(add(add(geometric_term1, geometric_term2), geometric_term3), geometric_term4)
+  assert_eq(80, geometric_sum)  // 2+6+18+54 = 80
+}
+
+test "budget_constraint_allocation_test" {
+  // 预算约束分配测试
+  // 场景：项目资源分配与预算约束
+  let total_budget = 25000
+  let min_team_size = 5
+  let max_team_size = 15
+  let cost_per_person = 1800
+  
+  // 计算最大可能团队规模
+  let max_affordable_team = divide_with_ceil(total_budget, cost_per_person)  // ceil(25000/1800) = 14
+  assert_eq(14, max_affordable_team)
+  
+  // 确保团队规模在合理范围内
+  assert_true(max_affordable_team >= min_team_size)
+  assert_true(max_affordable_team <= max_team_size)
+  
+  // 计算实际团队规模（取最小值）
+  let actual_team_size = max_affordable_team
+  let actual_cost = multiply(actual_team_size, cost_per_person)  // 14 * 1800 = 25200
+  assert_eq(25200, actual_cost)
+  
+  // 计算预算差额
+  let budget_overrun = subtract(actual_cost, total_budget)  // 25200 - 25000 = 200
+  assert_eq(200, budget_overrun)
+}
+
+test "error_handling_recovery_test" {
+  // 错误处理恢复测试
+  // 测试错误操作对后续计算的影响
+  
+  // 除零错误
+  let error_result1 = divide_with_ceil(100, 0)  // 应该返回0
+  let error_result2 = divide_with_ceil(-50, 0)  // 应该返回0
+  let error_result3 = divide_with_ceil(0, 0)    // 应该返回0
+  
+  assert_eq(0, error_result1)
+  assert_eq(0, error_result2)
+  assert_eq(0, error_result3)
+  
+  // 错误结果在后续计算中的使用
+  let recovery_test1 = add(error_result1, 25)           // 0 + 25 = 25
+  let recovery_test2 = multiply(error_result2, 10)      // 0 * 10 = 0
+  let recovery_test3 = divide_with_ceil(50, add(error_result3, 5))  // ceil(50/5) = 10
+  
+  assert_eq(25, recovery_test1)
+  assert_eq(0, recovery_test2)
+  assert_eq(10, recovery_test3)
+  
+  // 验证错误操作不会影响正常的独立计算
+  let normal_calculation = divide_with_ceil(multiply(add(10, 5), 3), 8)  // ceil((10+5)*3/8) = ceil(45/8) = 6
+  assert_eq(6, normal_calculation)
+}
