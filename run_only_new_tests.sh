@@ -1,12 +1,12 @@
 #!/bin/bash
 echo "运行新创建的标准综合测试套件..."
-cd /home/runner/work/Azimuth/Azimuth
+cd /home/runner/work/Azimuth/Azimuth/azimuth
 
 # 创建一个临时的 moon.pkg.json，只包含我们的测试文件
-cp azimuth/moon.pkg.json azimuth/moon.pkg.json.backup
+cp moon.pkg.json moon.pkg.json.backup
 
-# 创建简化的配置文件
-cat > azimuth/moon.pkg.json << 'EOF'
+# 创建简化的配置文件，只包含lib.mbt和我们的测试文件
+cat > moon.pkg.json << 'EOF'
 {
   "name": "azimuth",
   "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil", "subtract"],
@@ -19,10 +19,16 @@ cat > azimuth/moon.pkg.json << 'EOF'
 }
 EOF
 
-# 运行测试
+echo "配置文件已更新，内容如下："
+cat moon.pkg.json
+
+echo ""
+echo "运行测试..."
+cd /home/runner/work/Azimuth/Azimuth
 ./moon test
 
 # 恢复原始配置文件
-mv azimuth/moon.pkg.json.backup azimuth/moon.pkg.json
+cd /home/runner/work/Azimuth/Azimuth/azimuth
+mv moon.pkg.json.backup moon.pkg.json
 
 echo "测试完成"
