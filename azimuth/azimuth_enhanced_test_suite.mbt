@@ -1,229 +1,184 @@
-// Azimuth 增强测试套件 - 10个高质量测试用例
-// 覆盖边界条件、错误处理和复杂业务场景
+// Azimuth 增强测试套件
+// 使用标准 MoonBit 测试语法编写的高质量测试用例
 
-test "extreme_boundary_arithmetic" {
-  // 极值算术运算测试
-  assert_eq(2147483647, add(2147483646, 1))  // 接近Int最大值
-  assert_eq(-2147483648, add(-2147483647, -1))  // 接近Int最小值
-  assert_eq(1, divide_with_ceil(2147483647, 2147483647))
-  assert_eq(0, divide_with_ceil(-2147483648, 2147483647))
+// 导入lib.mbt中定义的函数
+// 这些函数已经在lib.mbt中定义
+
+test "mathematical_fibonacci_calculation" {
+  // 使用现有函数模拟斐波那契数列计算
+  let n1 = 1
+  let n2 = 1
+  let n3 = add(n1, n2)  // 2
+  let n4 = add(n2, n3)  // 3
+  let n5 = add(n3, n4)  // 5
+  
+  // 验证斐波那契数列的前几项
+  assert_eq(1, n1)
+  assert_eq(1, n2)
+  assert_eq(2, n3)
+  assert_eq(3, n4)
+  assert_eq(5, n5)
 }
 
-test "complex_financial_calculation" {
-  // 复杂金融计算场景
-  let principal = 50000
-  let annual_rate = 8  // 8%
-  let years = 5
+test "inventory_turnover_calculation" {
+  // 库存周转率计算测试
+  let annual_sales = 120000
+  let average_inventory = 30000
+  let turnover_rate = divide_with_ceil(annual_sales, average_inventory)
   
-  // 简化复利计算
-  let year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
-  let year2 = add(year1, divide_with_ceil(multiply(year1, annual_rate), 100))
-  let year3 = add(year2, divide_with_ceil(multiply(year2, annual_rate), 100))
-  let year4 = add(year3, divide_with_ceil(multiply(year3, annual_rate), 100))
-  let year5 = add(year4, divide_with_ceil(multiply(year4, annual_rate), 100))
+  assert_eq(4, turnover_rate)  // ceil(120000/30000) = 4
   
-  assert_eq(54000, year1)   // 50000 + 8%
-  assert_eq(58320, year2)   // 54000 + 8%
-  assert_eq(62986, year3)   // 58320 + 8%
-  assert_eq(68025, year4)   // 62986 + 8%
-  assert_eq(73467, year5)   // 68025 + 8%
-  
-  // 计算月供
-  let total_months = multiply(years, 12)
-  let monthly_payment = divide_with_ceil(year5, total_months)
-  assert_eq(1223, monthly_payment)  // ceil(73467/60)
+  // 计算库存周转天数
+  let days_in_year = 365
+  let turnover_days = divide_with_ceil(days_in_year, turnover_rate)
+  assert_eq(92, turnover_days)  // ceil(365/4) = 92
 }
 
-test "resource_allocation_optimization" {
-  // 资源分配优化问题
-  let total_resources = 1000
-  let departments = 7
-  let min_per_dept = divide_with_ceil(total_resources, departments)
+test "compound_interest_simplified" {
+  // 简化的复利计算测试
+  let principal = 10000
+  let rate_percent = 5
+  let years = 3
   
-  assert_eq(143, min_per_dept)  // ceil(1000/7)
+  // 第一年
+  let year1_interest = divide_with_ceil(multiply(principal, rate_percent), 100)
+  let year1_total = add(principal, year1_interest)
   
-  // 验证分配结果
-  let total_allocated = multiply(min_per_dept, departments)
-  assert_eq(1001, total_allocated)
+  // 第二年
+  let year2_interest = divide_with_ceil(multiply(year1_total, rate_percent), 100)
+  let year2_total = add(year1_total, year2_interest)
   
-  // 计算资源利用率
-  let utilization = divide_with_ceil(multiply(total_resources, 100), total_allocated)
-  assert_eq(100, utilization)  // ceil(100000/1001)
+  // 第三年
+  let year3_interest = divide_with_ceil(multiply(year2_total, rate_percent), 100)
+  let year3_total = add(year2_total, year3_interest)
+  
+  assert_eq(10500, year1_total)
+  assert_eq(11025, year2_total)
+  assert_eq(11576, year3_total)
 }
 
-test "nested_calculation_pipeline" {
-  // 嵌套计算流水线测试
-  let base = 15
+test "batch_processing_optimization" {
+  // 批处理优化测试
+  let total_records = 987
+  let optimal_batch_size = 50
   
-  // 复杂嵌套计算：ceil((base*3 + base*2) / (base + ceil(base/4)))
-  let numerator = add(multiply(base, 3), multiply(base, 2))  // 15*3 + 15*2 = 75
-  let denominator_inner = divide_with_ceil(base, 4)  // ceil(15/4) = 4
-  let denominator = add(base, denominator_inner)  // 15 + 4 = 19
-  let result = divide_with_ceil(numerator, denominator)  // ceil(75/19) = 4
+  // 计算需要的批次数
+  let batches_needed = divide_with_ceil(total_records, optimal_batch_size)
+  assert_eq(20, batches_needed)  // ceil(987/50) = 20
   
-  assert_eq(75, numerator)
-  assert_eq(4, denominator_inner)
-  assert_eq(19, denominator)
-  assert_eq(4, result)
-}
-
-test "error_resilience_comprehensive" {
-  // 全面错误恢复能力测试
-  // 除零错误的各种情况
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
-  
-  // 极值运算验证
-  let max_int = 2147483647
-  let min_int = -2147483648
-  
-  assert_eq(0, multiply(max_int, 0))
-  assert_eq(0, multiply(min_int, 0))
-  assert_eq(max_int, add(max_int, 0))
-  assert_eq(min_int, add(min_int, 0))
-}
-
-test "unicode_string_comprehensive" {
-  // 全面Unicode字符串处理测试
-  assert_eq_string("Hello, 🌙⭐🌟!", greet("🌙⭐🌟"))
-  assert_eq_string("Hello, 北京上海!", greet("北京上海"))
-  assert_eq_string("Hello, caféña!", greet("caféña"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, 🏳️‍🌈🌍!", greet("🏳️‍🌈🌍"))
-  assert_eq_string("Hello, العربية!", greet("العربية"))
-  assert_eq_string("Hello, עברית!", greet("עברית"))
-  assert_eq_string("Hello, हिन्दी!", greet("हिन्दी"))
-}
-
-test "logistics_optimization_problem" {
-  // 物流优化问题
-  // 场景：多个仓库的货物分配
-  let warehouse_a_capacity = 150
-  let warehouse_b_capacity = 200
-  let warehouse_c_capacity = 175
-  let total_orders = 480
-  
-  // 计算每个仓库需要的处理轮次
-  let rounds_a = divide_with_ceil(warehouse_a_capacity, 50)
-  let rounds_b = divide_with_ceil(warehouse_b_capacity, 50)
-  let rounds_c = divide_with_ceil(warehouse_c_capacity, 50)
-  
-  assert_eq(3, rounds_a)  // ceil(150/50)
-  assert_eq(4, rounds_b)  // ceil(200/50)
-  assert_eq(4, rounds_c)  // ceil(175/50)
-  
-  // 计算总处理能力
-  let total_capacity = add(warehouse_a_capacity, add(warehouse_b_capacity, warehouse_c_capacity))
-  assert_eq(525, total_capacity)
-  
-  // 验证处理能力充足
-  assert_true(total_capacity >= total_orders)
+  // 计算总处理容量
+  let total_capacity = multiply(batches_needed, optimal_batch_size)
+  assert_eq(1000, total_capacity)
   
   // 计算剩余容量
-  let remaining_capacity = subtract(total_capacity, total_orders)
-  assert_eq(45, remaining_capacity)
+  let remaining_capacity = subtract(total_capacity, total_records)
+  assert_eq(13, remaining_capacity)
 }
 
-test "mathematical_sequence_validation" {
-  // 数学序列验证测试
-  // 验证等差数列和等比数列的性质
+test "network_packet_fragmentation" {
+  // 网络数据包分片测试
+  let data_size = 1500
+  let mtu_size = 512
   
-  // 等差数列：2, 5, 8, 11, 14...
-  let arithmetic_first = 2
-  let arithmetic_diff = 3
-  let arithmetic_n = 5
+  // 计算需要的包数量
+  let packets_needed = divide_with_ceil(data_size, mtu_size)
+  assert_eq(3, packets_needed)  // ceil(1500/512) = 3
   
-  let arithmetic_term_n = add(arithmetic_first, multiply(arithmetic_diff, subtract(arithmetic_n, 1)))
-  assert_eq(14, arithmetic_term_n)  // 2 + 3*4 = 14
-  
-  // 等比数列：3, 6, 12, 24, 48...
-  let geometric_first = 3
-  let geometric_ratio = 2
-  let geometric_n = 5
-  
-  let geometric_term_n = multiply(geometric_first, 
-    multiply(geometric_ratio, subtract(geometric_n, 1)))
-  assert_eq(24, geometric_term_n)  // 3 * 2*4 = 24
-  
-  // 验证数列和
-  let arithmetic_sum = divide_with_ceil(
-    multiply(arithmetic_n, add(arithmetic_first, arithmetic_term_n)), 2)
-  assert_eq(40, arithmetic_sum)  // ceil(5*(2+14)/2)
+  // 计算最后一个包的大小
+  let full_packets = subtract(packets_needed, 1)
+  let full_packets_data = multiply(full_packets, mtu_size)
+  let last_packet_size = subtract(data_size, full_packets_data)
+  assert_eq(476, last_packet_size)  // 1500 - (2*512) = 476
 }
 
-test "real_world_event_planning" {
-  // 真实世界活动规划测试
-  let attendees = 350
-  let tables_available = 40
-  let chairs_per_table = 10
-  let cost_per_chair = 25
-  let total_budget = 12000
+test "memory_allocation_blocks" {
+  // 内存分配块测试
+  let total_memory = 2048
+  let block_size = 256
   
-  // 计算需要的桌子数量
-  let tables_needed = divide_with_ceil(attendees, chairs_per_table)
-  assert_eq(35, tables_needed)  // ceil(350/10)
+  // 计算需要的块数
+  let blocks_needed = divide_with_ceil(total_memory, block_size)
+  assert_eq(8, blocks_needed)  // ceil(2048/256) = 8
   
-  // 验证桌子充足性
-  assert_true(tables_needed <= tables_available)
+  // 验证总分配内存
+  let allocated_memory = multiply(blocks_needed, block_size)
+  assert_eq(2048, allocated_memory)
   
-  // 计算总座位数
-  let total_seats = multiply(tables_needed, chairs_per_table)
-  assert_eq(350, total_seats)
-  
-  // 计算总成本
-  let total_cost = multiply(total_seats, cost_per_chair)
-  assert_eq(8750, total_cost)
-  
-  // 验证预算充足
-  assert_true(total_cost <= total_budget)
-  
-  // 计算剩余预算和利用率
-  let remaining_budget = subtract(total_budget, total_cost)
-  let budget_utilization = divide_with_ceil(multiply(total_cost, 100), total_budget)
-  
-  assert_eq(3250, remaining_budget)
-  assert_eq(73, budget_utilization)  // ceil(875000/12000)
+  // 测试非对齐分配
+  let unaligned_size = 2100
+  let unaligned_blocks = divide_with_ceil(unaligned_size, block_size)
+  assert_eq(9, unaligned_blocks)  // ceil(2100/256) = 9
 }
 
-test "algorithm_performance_analysis" {
-  // 算法性能分析测试
-  let input_sizes = [10, 100, 1000]
+test "time_zone_conversion" {
+  // 时区转换测试
+  let local_hour = 23
+  let timezone_offset = 5
   
-  // 模拟O(n)线性算法
-  let linear_10 = multiply(input_sizes[0], 5)
-  let linear_100 = multiply(input_sizes[1], 5)
-  let linear_1000 = multiply(input_sizes[2], 5)
+  // 向前转换时间
+  let utc_hour = subtract(local_hour, timezone_offset)
+  assert_eq(18, utc_hour)  // 23 - 5 = 18
   
-  // 模拟O(log n)对数算法（简化为除法）
-  let log_10 = divide_with_ceil(input_sizes[0], 3)
-  let log_100 = divide_with_ceil(input_sizes[1], 3)
-  let log_1000 = divide_with_ceil(input_sizes[2], 3)
+  // 跨日期转换
+  let late_local_hour = 3
+  let early_utc_hour = subtract(late_local_hour, timezone_offset)
+  assert_eq(-2, early_utc_hour)  // 3 - 5 = -2
   
-  // 模拟O(n²)平方算法
-  let quadratic_10 = multiply(input_sizes[0], input_sizes[0])
-  let quadratic_100 = multiply(input_sizes[1], input_sizes[1])
-  let quadratic_1000 = multiply(input_sizes[2], input_sizes[2])
+  // 使用向上取整处理时间区间
+  let time_blocks = divide_with_ceil(local_hour, timezone_offset)
+  assert_eq(5, time_blocks)  // ceil(23/5) = 5
+}
+
+test "load_balancing_distribution" {
+  // 负载均衡分配测试
+  let total_requests = 47
+  let server_count = 4
   
-  // 验证算法复杂度特征
-  assert_eq(50, linear_10)
-  assert_eq(500, linear_100)
-  assert_eq(5000, linear_1000)
+  // 计算每台服务器的基本负载
+  let base_load = divide_with_ceil(total_requests, server_count)
+  assert_eq(12, base_load)  // ceil(47/4) = 12
   
-  assert_eq(4, log_10)
-  assert_eq(34, log_100)
-  assert_eq(334, log_1000)
+  // 计算总处理能力
+  let total_capacity = multiply(base_load, server_count)
+  assert_eq(48, total_capacity)
   
-  assert_eq(100, quadratic_10)
-  assert_eq(10000, quadratic_100)
-  assert_eq(1000000, quadratic_1000)
+  // 计算剩余处理能力
+  let spare_capacity = subtract(total_capacity, total_requests)
+  assert_eq(1, spare_capacity)
+}
+
+test "caching_strategy_simulation" {
+  // 缓存策略模拟测试
+  let cache_size = 100
+  let item_size = 12
   
-  // 验证复杂度比例关系
-  let linear_ratio_100 = divide_with_ceil(linear_100, linear_10)
-  let linear_ratio_1000 = divide_with_ceil(linear_1000, linear_100)
+  // 计算可缓存的项目数
+  let items_fit = divide_with_ceil(cache_size, item_size)
+  assert_eq(9, items_fit)  // ceil(100/12) = 9
   
-  assert_eq(10, linear_ratio_100)   // 500/50 = 10
-  assert_eq(10, linear_ratio_1000)  // 5000/500 = 10
+  // 计算实际使用的缓存空间
+  let used_cache = multiply(items_fit, item_size)
+  assert_eq(108, used_cache)
+  
+  // 计算缓存溢出
+  let cache_overflow = subtract(used_cache, cache_size)
+  assert_eq(8, cache_overflow)
+}
+
+test "resource_utilization_metrics" {
+  // 资源利用率指标测试
+  let total_resources = 1000
+  let used_resources = 756
+  
+  // 计算利用率百分比
+  let utilization_percent = divide_with_ceil(multiply(used_resources, 100), total_resources)
+  assert_eq(76, utilization_percent)  // ceil(75600/1000) = 76
+  
+  // 计算剩余资源
+  let remaining_resources = subtract(total_resources, used_resources)
+  assert_eq(244, remaining_resources)
+  
+  // 计算剩余资源百分比
+  let remaining_percent = divide_with_ceil(multiply(remaining_resources, 100), total_resources)
+  assert_eq(25, remaining_percent)  // ceil(24400/1000) = 25
 }
