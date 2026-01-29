@@ -215,6 +215,7 @@
   "azimuth_standard_test_cases_new.mbt",
   "very_simple_test.mbt",
   "simple_test_case.mbt",
-  "standard_core_tests.mbt"
+  "standard_core_tests.mbt",
+  "standard_azimuth_core_tests.mbt"
   ]
 }
