@@ -68,7 +68,8 @@
     "additional_standard_tests.mbt",
     "('simple_verification_test.mbt', 'simple_test_case.mbt')",
     "standard_moonbit_tests_new.mbt",
-    "quality_standard_test_cases.mbt"
+    "quality_standard_test_cases.mbt",
+    "quality_test_enhancements.mbt"
   ],
   "import": [
     "moonbitlang/core/builtin",
