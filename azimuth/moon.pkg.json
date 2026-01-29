@@ -81,7 +81,8 @@
     "simple_moonbit_tests.mbt",
     "standard_moonbit_test_cases.mbt",
     "standard_azimuth_test_suite.mbt",
-    "standard_moonbit_test_suite.mbt"
+    "standard_moonbit_test_suite.mbt",
+    "test/quality_test_cases.mbt"
   ],
   "import": [
     "moonbitlang/core/builtin",
