@@ -143,7 +143,8 @@
     "azimuth_premium_quality_tests.mbt",
     "high_quality_azimuth_tests.mbt",
     "quality_moonbit_tests.mbt",
-    "standard_moonbit_test_cases.mbt"
+    "standard_moonbit_test_cases.mbt",
+    "azimuth_enhanced_test_suite.mbt"
   ],
   "import": [
     "moonbitlang/core/builtin",
