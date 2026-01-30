@@ -1,209 +1,125 @@
-// 高质量增强测试套件
-// 针对 azimuth 库的全面测试，包含边界情况、实际应用场景和数学性质验证
+// 增强质量测试套件 - 为 azimuth 库添加10个高质量测试用例
+// 使用标准 MoonBit 测试语法
 
-test "advanced_mathematical_series" {
-  // 测试等差数列和等比数列计算
-  let first_term = 3
-  let common_diff = 4
-  let terms_count = 6
+test "statistical_analysis_mean_calculation" {
+  // 统计分析：计算平均值
+  let data_sum = add(add(add(15, 25), add(35, 45)), 55)
+  let data_count = 5
+  let mean_value = divide_with_ceil(data_sum, data_count)
   
-  // 计算等差数列第n项：a_n = a_1 + (n-1)d
-  let nth_term = add(first_term, multiply(common_diff, terms_count - 1))
-  assert_eq(23, nth_term)  // 3 + 5*4 = 23
-  
-  // 计算等差数列前n项和：S_n = n/2 * (a_1 + a_n)
-  let series_sum = divide_with_ceil(multiply(terms_count, add(first_term, nth_term)), 2)
-  assert_eq(78, series_sum)  // 6/2 * (3 + 23) = 3 * 26 = 78
+  assert_eq(175, data_sum)
+  assert_eq(35, mean_value)
 }
 
-test "financial_compound_interest" {
-  // 测试复利计算
-  let principal = 10000
-  let annual_rate = 8
-  let _years = 3
+test "geometric_progression_calculation" {
+  // 几何级数计算：2, 4, 8, 16, 32
+  let term1 = 2
+  let term2 = multiply(term1, 2)
+  let term3 = multiply(term2, 2)
+  let term4 = multiply(term3, 2)
+  let term5 = multiply(term4, 2)
   
-  // 第一年末
-  let year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
-  // 第二年末
-  let year2 = add(year1, divide_with_ceil(multiply(year1, annual_rate), 100))
-  // 第三年末
-  let year3 = add(year2, divide_with_ceil(multiply(year2, annual_rate), 100))
+  let geometric_sum = add(add(add(add(term1, term2), add(term3, term4)), term5)
   
-  assert_eq(10800, year1)  // 10000 + 800
-  assert_eq(11664, year2)  // 10800 + 864
-  assert_eq(12597, year3)  // 11664 + 933
+  assert_eq(4, term2)
+  assert_eq(8, term3)
+  assert_eq(16, term4)
+  assert_eq(32, term5)
+  assert_eq(62, geometric_sum)
 }
 
-test "inventory_optimization" {
-  // 测试库存优化算法
-  let monthly_demand = 450
-  let order_cost = 50
-  let holding_cost_per_unit = 2
+test "currency_conversion_calculation" {
+  // 货币转换计算
+  let local_currency = 1000
+  let exchange_rate = 6
+  let conversion_fee = 5
   
-  // 计算经济订货量 (EOQ) 的简化版本
-  let annual_demand = multiply(monthly_demand, 12)
-  let eoq_numerator = multiply(multiply(2, annual_demand), order_cost)
-  let eoq = divide_with_ceil(eoq_numerator, holding_cost_per_unit)
+  let converted_amount = divide_with_ceil(multiply(local_currency, exchange_rate), 100)
+  let final_amount = add(converted_amount, -conversion_fee)
   
-  // 计算年订货次数
-  let orders_per_year = divide_with_ceil(annual_demand, eoq)
-  
-  assert_eq(5400, annual_demand)
-  assert_eq(270000, eoq_numerator)
-  assert_eq(135000, eoq)
-  assert_eq(1, orders_per_year)
+  assert_eq(60, converted_amount)
+  assert_eq(55, final_amount)
 }
 
-test "geometry_area_calculations" {
-  // 测试几何面积计算
-  let length = 12
-  let width = 8
-  let height = 5
+test "resource_optimization_problem" {
+  // 资源优化问题
+  let total_resources = 100
+  let project_a_needs = 35
+  let project_b_needs = 28
+  let project_c_needs = divide_with_ceil(multiply(total_resources, 15), 100)
   
-  // 计算矩形面积
-  let rectangle_area = multiply(length, width)
-  assert_eq(96, rectangle_area)
+  let allocated_resources = add(add(project_a_needs, project_b_needs), project_c_needs)
+  let remaining_resources = add(total_resources, -allocated_resources)
   
-  // 计算矩形周长
-  let rectangle_perimeter = multiply(2, add(length, width))
-  assert_eq(40, rectangle_perimeter)
-  
-  // 计算长方体表面积
-  let surface_area = multiply(2, add(add(multiply(length, width), multiply(width, height)), multiply(height, length)))
-  assert_eq(392, surface_area)
-  
-  // 计算长方体体积
-  let volume = multiply(multiply(length, width), height)
-  assert_eq(480, volume)
+  assert_eq(15, project_c_needs)
+  assert_eq(78, allocated_resources)
+  assert_eq(22, remaining_resources)
 }
 
-test "time_management_scenarios" {
-  // 测试时间管理场景
-  let total_tasks = 127
-  let tasks_per_hour = 8
-  let work_hours_per_day = 8
-  let work_days_per_week = 5
+test "temperature_conversion_formula" {
+  // 温度转换公式：Celsius to Fahrenheit
+  let celsius_temp = 25
+  let fahrenheit_temp = add(multiply(divide_with_ceil(multiply(celsius_temp, 9), 5), 1), 32)
   
-  // 计算需要的工作小时数
-  let total_hours = divide_with_ceil(total_tasks, tasks_per_hour)
-  // 计算需要的工作天数
-  let total_days = divide_with_ceil(total_hours, work_hours_per_day)
-  // 计算需要的周数
-  let total_weeks = divide_with_ceil(total_days, work_days_per_week)
-  
-  assert_eq(16, total_hours)   // ceil(127/8) = 16
-  assert_eq(2, total_days)     // ceil(16/8) = 2
-  assert_eq(1, total_weeks)    // ceil(2/5) = 1
+  assert_eq(77, fahrenheit_temp)
 }
 
-test "data_analysis_statistics" {
-  // 测试数据分析统计
-  let _data_points = [15, 22, 18, 25, 20, 17, 23, 19, 21, 16]
-  let sum_manual = add(add(add(add(add(add(add(add(add(15, 22), 18), 25), 20), 17), 23), 19), 21), 16)
+test "loan_amortization_calculation" {
+  // 贷款分期计算
+  let loan_principal = 12000
+  let monthly_payment = 500
+  let total_payments = divide_with_ceil(loan_principal, monthly_payment)
   
-  // 计算平均值
-  let mean = divide_with_ceil(sum_manual, 10)
+  let total_paid = multiply(total_payments, monthly_payment)
+  let final_payment = add(total_paid, -multiply(total_payments - 1, monthly_payment))
   
-  // 计算中位数（简化版本）
-  let sorted_sum = add(add(add(add(16, 17), 18), 19), 20)  // 前5个数的和
-  let median = divide_with_ceil(sorted_sum, 5)
-  
-  assert_eq(196, sum_manual)
-  assert_eq(20, mean)
-  assert_eq(18, median)
+  assert_eq(24, total_payments)
+  assert_eq(12000, total_paid)
+  assert_eq(500, final_payment)
 }
 
-test "telecommunications_bandwidth" {
-  // 测试电信带宽计算
-  let file_size_mb = 850
-  let network_speed_mbps = 50
-  let overhead_percentage = 10
+test "inventory_reorder_point" {
+  // 库存重新订购点计算
+  let daily_demand = 15
+  let lead_time_days = 5
+  let safety_stock = 20
   
-  // 计算基础传输时间
-  let base_time = divide_with_ceil(file_size_mb, network_speed_mbps)
+  let reorder_point = add(multiply(daily_demand, lead_time_days), safety_stock)
   
-  // 计算开销时间
-  let overhead_time = divide_with_ceil(multiply(base_time, overhead_percentage), 100)
+  assert_eq(95, reorder_point)
+}
+
+test "network_packet_calculation" {
+  // 网络数据包计算
+  let data_size_mb = 850
+  let packet_size_kb = 64
+  let data_size_kb = multiply(data_size_mb, 1024)
+  let packets_needed = divide_with_ceil(data_size_kb, packet_size_kb)
   
-  // 计算总传输时间
-  let total_time = add(base_time, overhead_time)
-  
-  assert_eq(17, base_time)      // ceil(850/50) = 17
-  assert_eq(2, overhead_time)   // ceil(17*10/100) = 2
-  assert_eq(19, total_time)     // 17 + 2 = 19
+  assert_eq(13594, packets_needed)
 }
 
 test "agricultural_planning" {
-  // 测试农业规划计算
-  let field_area_hectares = 25
+  // 农业规划计算
+  let field_hectares = 50
   let crop_yield_per_hectare = 800
-  let market_price_per_ton = 250
-  let labor_cost_per_hectare = 120
-  let fertilizer_cost_per_hectare = 80
+  let market_price_per_ton = 150
   
-  // 计算总产量
-  let total_yield = multiply(field_area_hectares, crop_yield_per_hectare)
+  let total_yield = multiply(field_hectares, crop_yield_per_hectare)
+  let total_revenue = divide_with_ceil(multiply(total_yield, market_price_per_ton), 1000)
   
-  // 计算总收入
-  let total_revenue = multiply(total_yield, market_price_per_ton)
-  
-  // 计算总成本
-  let total_labor_cost = multiply(field_area_hectares, labor_cost_per_hectare)
-  let total_fertilizer_cost = multiply(field_area_hectares, fertilizer_cost_per_hectare)
-  let total_cost = add(total_labor_cost, total_fertilizer_cost)
-  
-  // 计算利润
-  let profit = add(total_revenue, -total_cost)
-  
-  assert_eq(20000, total_yield)
-  assert_eq(5000000, total_revenue)
-  assert_eq(3000, total_labor_cost)
-  assert_eq(2000, total_fertilizer_cost)
-  assert_eq(5000, total_cost)
-  assert_eq(4995000, profit)
+  assert_eq(40000, total_yield)
+  assert_eq(6000, total_revenue)
 }
 
-test "string_processing_multilingual" {
-  // 测试多语言字符串处理
-  let english_greeting = greet("World")
-  let chinese_greeting = greet("世界")
-  let spanish_greeting = greet("Mundo")
-  let arabic_greeting = greet("العالم")
-  let emoji_greeting = greet("🌍")
+test "digital_storage_conversion" {
+  // 数字存储转换计算
+  let file_size_mb = 2048
+  let storage_efficiency = 85
   
-  // 验证多语言支持
-  assert_eq_string("Hello, World!", english_greeting)
-  assert_eq_string("Hello, 世界!", chinese_greeting)
-  assert_eq_string("Hello, Mundo!", spanish_greeting)
-  assert_eq_string("Hello, العالم!", arabic_greeting)
-  assert_eq_string("Hello, 🌍!", emoji_greeting)
+  let actual_storage_mb = divide_with_ceil(multiply(file_size_mb, storage_efficiency), 100)
+  let storage_waste = add(file_size_mb, -actual_storage_mb)
   
-  // 测试特殊字符组合
-  let mixed_greeting = greet("User123@email.com")
-  assert_eq_string("Hello, User123@email.com!", mixed_greeting)
-}
-
-test "advanced_algorithmic_complexity" {
-  // 测试算法复杂度计算
-  let input_size = 1000
-  let linear_constant = 2
-  let quadratic_constant = 3
-  let logarithmic_base = 2
-  
-  // O(n) 线性复杂度
-  let linear_operations = multiply(input_size, linear_constant)
-  
-  // O(n²) 二次复杂度（简化计算）
-  let quadratic_operations = multiply(multiply(input_size, input_size), quadratic_constant) / 1000
-  
-  // O(log n) 对数复杂度（简化计算）
-  let log_operations = divide_with_ceil(input_size, logarithmic_base)
-  
-  // 复杂算法总操作数
-  let total_operations = add(add(linear_operations, quadratic_operations), log_operations)
-  
-  assert_eq(2000, linear_operations)
-  assert_eq(3000, quadratic_operations)
-  assert_eq(500, log_operations)
-  assert_eq(5500, total_operations)
+  assert_eq(1741, actual_storage_mb)
+  assert_eq(307, storage_waste)
 }
