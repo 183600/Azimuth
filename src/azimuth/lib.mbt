@@ -9090,3 +9090,136 @@ test "string_processing_with_mathematics" {
   assert_eq(10, combined_length)
   assert_eq(30, estimated_display_time)
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "azimuth_compound_interest_new" {
+  // 复利计算：本金1000，年利率5%，3年
+  let principal = 1000
+  let rate_percent = 5
+  
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, rate_percent), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, rate_percent), 100))
+  
+  assert_eq(1050, year1_amount)
+  assert_eq(1103, year2_amount)
+  assert_eq(1158, year3_amount)
+}
+
+test "azimuth_temperature_conversion_new" {
+  // 温度转换模拟：摄氏度到华氏度 F = C * 9/5 + 32
+  let celsius = 25
+  let fahrenheit = add(divide_with_ceil(multiply(celsius, 9), 5), 32)
+  
+  assert_eq(77, fahrenheit)
+  
+  // 华氏度到摄氏度：C = (F - 32) * 5/9
+  let fahrenheit_back = 77
+  let celsius_back = divide_with_ceil(multiply(add(fahrenheit_back, -32), 5), 9)
+  
+  assert_eq(25, celsius_back)
+}
+
+test "azimuth_batch_processing_new" {
+  // 批处理计算：计算多批次的总处理时间
+  let batch_size = 150
+  let batches = 8
+  let processing_time_per_item = 2
+  
+  let total_items = multiply(batch_size, batches)
+  let total_time = multiply(total_items, processing_time_per_item)
+  let hours_needed = divide_with_ceil(total_time, 60)  // 转换为小时
+  
+  assert_eq(1200, total_items)
+  assert_eq(2400, total_time)
+  assert_eq(40, hours_needed)
+}
+
+test "azimuth_geometric_progression_new" {
+  // 等比数列求和：2 + 4 + 8 + 16 + 32
+  let first_term = 2
+  let ratio = 2
+  
+  let term1 = first_term
+  let term2 = multiply(term1, ratio)
+  let term3 = multiply(term2, ratio)
+  let term4 = multiply(term3, ratio)
+  let term5 = multiply(term4, ratio)
+  
+  let sum = add(add(add(add(term1, term2), term3), term4), term5)
+  
+  assert_eq(62, sum)
+}
+
+test "azimuth_budget_optimization_new" {
+  // 资源分配优化
+  let total_budget = 10000
+  let project_a_cost = 3500
+  let project_b_cost = 2800
+  let project_c_cost = 2200
+  
+  let allocated = add(add(project_a_cost, project_b_cost), project_c_cost)
+  let remaining = add(total_budget, -allocated)
+  let emergency_reserve = divide_with_ceil(remaining, 2)
+  
+  assert_eq(8500, allocated)
+  assert_eq(1500, remaining)
+  assert_eq(750, emergency_reserve)
+}
+
+test "azimuth_load_balancing_new" {
+  // 负载均衡计算
+  let total_requests = 1250
+  let servers = 8
+  
+  let requests_per_server = divide_with_ceil(total_requests, servers)
+  let total_capacity = multiply(requests_per_server, servers)
+  let unused_capacity = add(total_capacity, -total_requests)
+  
+  assert_eq(157, requests_per_server)
+  assert_eq(1256, total_capacity)
+  assert_eq(6, unused_capacity)
+}
+
+test "azimuth_data_transfer_new" {
+  // 数据传输时间计算
+  let file_size_mb = 850
+  let network_speed_mbps = 50
+  let overhead_percentage = 10
+  
+  let base_time = divide_with_ceil(file_size_mb, network_speed_mbps)
+  let overhead_time = divide_with_ceil(multiply(base_time, overhead_percentage), 100)
+  let total_time = add(base_time, overhead_time)
+  
+  assert_eq(17, base_time)
+  assert_eq(2, overhead_time)
+  assert_eq(19, total_time)
+}
+
+test "azimuth_circular_area_new" {
+  // 圆形面积计算（使用整数近似）
+  let radius = 7
+  let pi_approx = 22  // 22/7 近似 π
+  
+  let area = divide_with_ceil(multiply(pi_approx, multiply(radius, radius)), 7)
+  
+  assert_eq(154, area)
+}
+
+test "azimuth_triangular_number_new" {
+  // 三角数计算：T(n) = n*(n+1)/2
+  let n = 15
+  
+  let triangular_number = divide_with_ceil(multiply(n, add(n, 1)), 2)
+  
+  assert_eq(120, triangular_number)
+}
+
+test "azimuth_factorial_new" {
+  // 阶乘模拟：5! = 5*4*3*2*1
+  let n = 5
+  
+  let factorial = multiply(multiply(multiply(multiply(n, n-1), n-2), n-3), n-4)
+  
+  assert_eq(120, factorial)
+}
