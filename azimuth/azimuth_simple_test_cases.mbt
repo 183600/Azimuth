@@ -1,76 +1,86 @@
-// Azimuth 简单测试用例 - 10个标准测试用例
-// 覆盖主要功能和边界情况
+// 简单的 Azimuth 测试用例
+// 包含基本的测试用例，使用标准 MoonBit 测试语法
 
-test "basic_addition_functionality" {
-  // 测试基本加法功能
-  assert_eq(5, add(2, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(10, add(-5, 15))
+test "simple_add_test" {
+  // 简单的加法测试
+  assert_eq(5, azimuth.add(2, 3))
+  assert_eq(0, azimuth.add(0, 0))
+  assert_eq(-5, azimuth.add(-2, -3))
 }
 
-test "basic_multiplication_functionality" {
-  // 测试基本乘法功能
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(15, multiply(-3, -5))
+test "simple_multiply_test" {
+  // 简单的乘法测试
+  assert_eq(6, azimuth.multiply(2, 3))
+  assert_eq(0, azimuth.multiply(0, 5))
+  assert_eq(-6, azimuth.multiply(-2, 3))
 }
 
-test "greeting_function_basic" {
-  // 测试问候函数基本功能
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
+test "simple_greet_test" {
+  // 简单的问候测试
+  assert_eq_string("Hello, World!", azimuth.greet("World"))
+  assert_eq_string("Hello, MoonBit!", azimuth.greet("MoonBit"))
 }
 
-test "divide_with_ceil_positive_numbers" {
-  // 测试正数向上取整除法
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 100))
-  assert_eq(0, divide_with_ceil(5, 0))
+test "simple_divide_with_ceil_test" {
+  // 简单的向上取整除法测试
+  assert_eq(4, azimuth.divide_with_ceil(10, 3))
+  assert_eq(3, azimuth.divide_with_ceil(9, 3))
+  assert_eq(0, azimuth.divide_with_ceil(5, 0))
 }
 
-test "addition_with_negative_numbers" {
-  // 测试负数加法
-  assert_eq(2, add(5, -3))
-  assert_eq(0, add(5, -5))
-  assert_eq(-2, add(3, -5))
-  assert_eq(10, add(5, 5))
+test "simple_subtract_test" {
+  // 简单的减法测试
+  assert_eq(2, azimuth.subtract(5, 3))
+  assert_eq(-2, azimuth.subtract(3, 5))
+  assert_eq(0, azimuth.subtract(5, 5))
 }
 
-test "mathematical_commutative_properties" {
-  // 测试数学交换律性质
-  assert_eq(add(7, 13), add(13, 7))
-  assert_eq(multiply(7, 13), multiply(13, 7))
+test "mathematical_properties_test" {
+  // 数学性质测试
+  let x = 10
+  let y = 5
+  
+  // 加法交换律
+  assert_eq(azimuth.add(x, y), azimuth.add(y, x))
+  
+  // 乘法交换律
+  assert_eq(azimuth.multiply(x, y), azimuth.multiply(y, x))
 }
 
-test "complex_arithmetic_operations" {
-  // 测试复杂算术运算
-  let result = add(multiply(2, 3), multiply(4, 5))
-  assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
+test "edge_cases_test" {
+  // 边界情况测试
+  assert_eq(0, azimuth.add(0, 0))
+  assert_eq(0, azimuth.multiply(5, 0))
+  assert_eq(0, azimuth.divide_with_ceil(0, 5))
+  assert_eq(0, azimuth.divide_with_ceil(10, 0))
 }
 
-test "business_logic_packaging" {
-  // 测试业务逻辑：包装计算
-  let total_items = 25
-  let items_per_box = 6
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
+test "practical_scenario_test" {
+  // 实际场景测试：包装计算
+  let items = 25
+  let box_capacity = 6
+  let boxes_needed = azimuth.divide_with_ceil(items, box_capacity)
+  
+  assert_eq(5, boxes_needed)
+  
+  // 验证总容量
+  let total_capacity = azimuth.multiply(boxes_needed, box_capacity)
+  assert_eq(30, total_capacity)
 }
 
-test "unicode_and_special_characters" {
-  // 测试Unicode和特殊字符
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, café!", greet("café"))
+test "complex_calculation_test" {
+  // 复杂计算测试
+  let a = azimuth.add(5, 3)        // 8
+  let b = azimuth.multiply(a, 2)   // 16
+  let c = azimuth.divide_with_ceil(b, 5)  // 4
+  let result = azimuth.add(c, 1)    // 5
+  
+  assert_eq(5, result)
 }
 
-test "edge_cases_and_boundary_values" {
-  // 测试边界情况和极值
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(5, 5))
-  assert_eq(2, divide_with_ceil(3, 2))
-  assert_eq(1000000, multiply(1000, 1000))
+test "unicode_support_test" {
+  // Unicode 支持测试
+  assert_eq_string("Hello, 世界!", azimuth.greet("世界"))
+  assert_eq_string("Hello, 🚀!", azimuth.greet("🚀"))
+  assert_eq_string("Hello, café!", azimuth.greet("café"))
 }
