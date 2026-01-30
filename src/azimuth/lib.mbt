@@ -8875,3 +8875,94 @@ test "standard_unicode_and_special_characters" {
   assert_eq_string("Hello, 123!", greet("123"))
   assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
 }
+
+
+// 新增的简洁高质量测试用例
+test "concise_add_function_edge_cases" {
+  // 测试加法函数的边界情况
+  assert_eq(1000, add(1000, 0))
+  assert_eq(-1000, add(-1000, 0))
+  assert_eq(0, add(1, -1))
+  assert_eq(0, add(-1, 1))
+}
+
+test "concise_multiply_function_edge_cases" {
+  // 测试乘法函数的边界情况
+  assert_eq(1000, multiply(1, 1000))
+  assert_eq(0, multiply(0, -1000))
+  assert_eq(-1, multiply(1, -1))
+  assert_eq(1, multiply(-1, -1))
+}
+
+test "concise_divide_with_ceil_precision" {
+  // 测试向上取整除法的精度
+  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
+  assert_eq(3, divide_with_ceil(8, 3))  // 2.666... -> 3
+  assert_eq(7, divide_with_ceil(13, 2)) // 6.5 -> 7
+  assert_eq(12, divide_with_ceil(100, 9)) // 11.111... -> 12
+}
+
+test "concise_greet_function_special_characters" {
+  // 测试特殊字符的问候
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, !", greet(""))
+}
+
+test "concise_combined_operations" {
+  // 测试组合运算
+  let result1 = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result1)  // 2*3 + 4*5 = 6 + 20 = 26
+  
+  let result2 = multiply(add(5, 3), 2)
+  assert_eq(16, result2)  // (5 + 3) * 2 = 8 * 2 = 16
+}
+
+test "concise_practical_packaging" {
+  // 实际应用场景：包装计算
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
+}
+
+test "concise_negative_number_operations" {
+  // 测试负数运算
+  assert_eq(-10, add(-3, -7))
+  assert_eq(-5, add(-8, 3))
+  assert_eq(0, add(-5, 5))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-15, multiply(3, -5))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+}
+
+test "concise_large_number_operations" {
+  // 测试大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(999999, add(500000, 499999))
+  assert_eq(-2000000, add(-1000000, -1000000))
+  assert_eq(1000000, multiply(1000, 1000))
+}
+
+test "concise_zero_operations" {
+  // 测试零的运算
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, multiply(0, -10))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
+}
+
+test "concise_complex_business_calculation" {
+  // 复杂业务计算
+  let product_price = 25
+  let quantity = 8
+  let shipping_cost = 15
+  let discount = 20
+  
+  let subtotal = multiply(product_price, quantity)
+  let total_before_discount = add(subtotal, shipping_cost)
+  let final_total = add(total_before_discount, -discount)
+  
+  assert_eq(215, final_total)
+}
