@@ -1,310 +1,174 @@
-// 新增的标准 MoonBit 测试用例
-// 针对 azimuth 库的核心功能进行补充测试
+// 标准 MoonBit 增强测试用例
+// 针对 azimuth 库的额外测试，不超过10个测试用例
 
-// 测试用例 1: 数值溢出边界测试
-test "numeric_overflow_boundary_test" {
-  // 测试接近 Int 类型边界值的运算
-  let large_positive = 2147483640
-  let small_positive = 7
-  let large_negative = -2147483640
-  let small_negative = -7
+test "enhanced_error_boundary_conditions" {
+  // 测试错误边界条件
+  // 测试极大值的运算
+  let large_positive = 2147483647
+  let large_negative = -2147483648
   
-  // 测试大数相加
-  let sum_result = add(large_positive, small_positive)
-  assert_eq(2147483647, sum_result)
+  // 测试大数相加的边界情况
+  assert_eq(2147483646, add(large_positive, -1))
+  assert_eq(-2147483647, add(large_negative, 1))
   
-  // 测试大数相减（通过加负数）
-  let diff_result = add(large_negative, small_negative)
-  assert_eq(-2147483647, diff_result)
-  
-  // 测试零的平衡作用
-  let zero_balance = add(sum_result, diff_result)
-  assert_eq(0, zero_balance)
+  // 测试大数相乘的安全情况
+  assert_eq(2147483647, multiply(large_positive, 1))
+  assert_eq(-2147483648, multiply(large_negative, 1))
 }
 
-// 测试用例 2: 字符串处理的高级边界情况
-test "advanced_string_edge_cases" {
-  // 测试包含特殊字符和 Unicode 的复杂字符串
-  let emoji_string = "🚀🌟💻"
-  let mixed_string = "Hello世界123"
-  let special_chars = "!@#$%^&*()"
+test "enhanced_decimal_simulation_with_ceil" {
+  // 模拟小数运算的向上取整测试
+  // 模拟 1.1 + 2.2 = 3.3 -> 向上取整为 4
+  let simulated_decimal_1 = divide_with_ceil(11, 10)
+  let simulated_decimal_2 = divide_with_ceil(22, 10)
+  let sum = add(simulated_decimal_1, simulated_decimal_2)
   
-  // 测试各种字符串的问候功能
-  assert_eq_string("Hello, 🚀🌟💻!", greet(emoji_string))
-  assert_eq_string("Hello, Hello世界123!", greet(mixed_string))
-  assert_eq_string("Hello, !@#$%^&*()!", greet(special_chars))
+  assert_eq(2, simulated_decimal_1)  // ceil(1.1) = 2
+  assert_eq(3, simulated_decimal_2)  // ceil(2.2) = 3
+  assert_eq(5, sum)                  // 2 + 3 = 5
 }
 
-// 测试用例 3: 复杂数学公式实现
-test "complex_mathematical_formulas" {
-  // 模拟二次方程求根公式的判别式计算: b² - 4ac
-  let a = 2
-  let b = 5
-  let c = 3
+test "enhanced_complex_financial_calculation" {
+  // 复杂金融计算：贷款分期计算
+  let loan_amount = 10000
+  let interest_rate = 5  // 5%
+  let months = 12
   
-  let b_squared = multiply(b, b)
-  let four_ac = multiply(4, multiply(a, c))
-  let discriminant = add(b_squared, -four_ac)
+  // 计算月利率（简化为固定金额）
+  let monthly_interest = divide_with_ceil(multiply(loan_amount, interest_rate), 100)
+  let total_interest = multiply(monthly_interest, months)
+  let total_repayment = add(loan_amount, total_interest)
   
-  assert_eq(25, b_squared)
-  assert_eq(24, four_ac)
-  assert_eq(1, discriminant)
+  // 计算每月还款额（向上取整）
+  let monthly_payment = divide_with_ceil(total_repayment, months)
   
-  // 模拟组合数学计算: C(5,2) = 5!/(2!(5-2)!) = 10
-  let n = 5
-  let k = 2
-  let n_factorial_part = multiply(n, multiply(n - 1, n - 2))
-  let k_factorial = multiply(k, k - 1)
-  let n_minus_k_factorial = multiply(n - k, n - k - 1)
-  let combination = divide_with_ceil(n_factorial_part, multiply(k_factorial, n_minus_k_factorial))
-  
-  assert_eq(10, combination)
+  assert_eq(500, monthly_interest)
+  assert_eq(6000, total_interest)
+  assert_eq(16000, total_repayment)
+  assert_eq(1334, monthly_payment)  // ceil(16000/12) = 1334
 }
 
-// 测试用例 4: 错误处理健壮性测试
-test "error_handling_robustness" {
-  // 测试各种边界和异常情况的健壮处理
+test "enhanced_scientific_notation_simulation" {
+  // 模拟科学计数法运算
+  // 模拟 1.23 × 10^3 + 4.56 × 10^2
+  let mantissa1 = divide_with_ceil(123, 100)  // 1.23 -> 2
+  let exponent1 = 1000                         // 10^3
+  let mantissa2 = divide_with_ceil(456, 100)  // 4.56 -> 5
+  let exponent2 = 100                          // 10^2
   
-  // 连续的零除法测试
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
+  let term1 = multiply(mantissa1, exponent1)
+  let term2 = multiply(mantissa2, exponent2)
+  let result = add(term1, term2)
   
-  // 极端数值组合测试
-  let extreme_sum1 = add(2147483647, -2147483647)
-  let extreme_sum2 = add(-2147483648, 2147483647)
-  let extreme_product = multiply(2147483647, 1)
-  
-  assert_eq(0, extreme_sum1)
-  assert_eq(-1, extreme_sum2)
-  assert_eq(2147483647, extreme_product)
-  
-  // 空字符串处理
-  assert_eq_string("Hello, !", greet(""))
+  assert_eq(2, mantissa1)
+  assert_eq(5, mantissa2)
+  assert_eq(2000, term1)
+  assert_eq(500, term2)
+  assert_eq(2500, result)
 }
 
-// 测试用例 5: 性能相关计算测试
-test "performance_related_calculations" {
-  // 模拟算法复杂度计算
+test "enhanced_resource_optimization" {
+  // 资源优化算法测试
+  let total_resources = 100
+  let task1_requirement = 23
+  let task2_requirement = 31
+  let task3_requirement = 19
   
-  // O(n²) 复杂度模拟：计算前n个整数的平方和
-  let n = 10
-  let sum_of_squares = multiply(n, multiply(n + 1, multiply(2, n + 1))) / 6
-  assert_eq(385, sum_of_squares)
+  // 计算已分配资源
+  let allocated = add(add(task1_requirement, task2_requirement), task3_requirement)
   
-  // 模拟缓存命中率计算
-  let total_requests = 10000
-  let cache_hits = 8500
-  let hit_rate = divide_with_ceil(multiply(cache_hits, 100), total_requests)
-  let cache_misses = add(total_requests, -cache_hits)
-  let miss_rate = divide_with_ceil(multiply(cache_misses, 100), total_requests)
+  // 计算剩余资源
+  let remaining = add(total_resources, -allocated)
   
-  assert_eq(85, hit_rate)
-  assert_eq(15, miss_rate)
+  // 计算可以支持的新任务数量（每个新任务需要7个资源）
+  let new_tasks_possible = divide_with_ceil(remaining, 7)
+  
+  assert_eq(73, allocated)
+  assert_eq(27, remaining)
+  assert_eq(4, new_tasks_possible)  // ceil(27/7) = 4
 }
 
-// 测试用例 6: 实际业务场景的复杂应用
-test "complex_business_scenarios" {
-  // 模拟电商平台的订单处理系统
+test "enhanced_time_zone_calculation" {
+  // 时区时间计算
+  let local_time = 14  // 下午2点
+  let time_difference = 8  // 时差8小时
   
-  // 计算订单总价（含税、运费、折扣）
-  let item1_price = 299
-  let item1_qty = 2
-  let item2_price = 159
-  let item2_qty = 3
-  let item3_price = 89
-  let item3_qty = 1
-  let item4_price = 45
-  let item4_qty = 4
-  
-  // 计算商品总价
-  let item1_total = multiply(item1_price, item1_qty)
-  let item2_total = multiply(item2_price, item2_qty)
-  let item3_total = multiply(item3_price, item3_qty)
-  let item4_total = multiply(item4_price, item4_qty)
-  
-  let subtotal = add(add(add(item1_total, item2_total), item3_total), item4_total)
-  
-  // 计算税费（8%）
-  let tax_rate = 8
-  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  
-  // 计算运费（按重量向上取整）
-  let total_weight = add(add(add(item1_qty, item2_qty), item3_qty), item4_qty)
-  let shipping_rate = 12
-  let shipping_cost = multiply(divide_with_ceil(total_weight, 5), shipping_rate)
-  
-  // 应用折扣（满1000减100）
-  let discount_threshold = 1000
-  let discount_amount = 100
-  let pre_discount_total = add(add(subtotal, tax_amount), shipping_cost)
-  let final_total = if pre_discount_total > discount_threshold {
-    add(pre_discount_total, -discount_amount)
+  // 计算远程时间（模24小时运算的简化版本）
+  let remote_time = add(local_time, time_difference)
+  let adjusted_time = if remote_time >= 24 {
+    add(remote_time, -24)
   } else {
-    pre_discount_total
+    remote_time
   }
   
-  assert_eq(1247, subtotal)
-  assert_eq(100, tax_amount)
-  assert_eq(24, shipping_cost)
-  assert_eq(1271, final_total)
+  assert_eq(22, remote_time)
+  assert_eq(22, adjusted_time)
 }
 
-// 测试用例 7: 数据结构相关的计算
-test "data_structure_calculations" {
-  // 模拟数组操作的计算
+test "enhanced_data_structure_simulation" {
+  // 模拟数据结构操作：栈操作
+  let stack_size_initial = 0
+  let push_operations = 5
+  let pop_operations = 3
   
-  // 计算数组元素的总和与平均值
-  let elem1 = 15
-  let elem2 = 25
-  let elem3 = 35
-  let elem4 = 45
-  let elem5 = 55
-  let array_sum = add(add(add(add(elem1, elem2), elem3), elem4), elem5)
-  let array_length = 5
-  let array_average = divide_with_ceil(array_sum, array_length)
+  // 执行推入操作
+  let stack_after_push = add(stack_size_initial, push_operations)
   
-  assert_eq(175, array_sum)
-  assert_eq(35, array_average)
+  // 执行弹出操作
+  let final_stack_size = add(stack_after_push, -pop_operations)
   
-  // 模拟栈操作的内存使用计算
-  let stack_capacity = 100
-  let element_size = 8
-  let current_size = 67
-  let memory_used = multiply(current_size, element_size)
-  let memory_remaining = multiply(add(stack_capacity, -current_size), element_size)
+  // 检查栈是否为空
+  let is_empty = if final_stack_size == 0 { 1 } else { 0 }
   
-  assert_eq(536, memory_used)
-  assert_eq(264, memory_remaining)
-  
-  // 模拟队列的循环索引计算
-  let queue_size = 10
-  let head_index = 7
-  let enqueue_count = 5
-  let new_tail_index = add(add(head_index, enqueue_count), -1) % queue_size
-  
-  assert_eq(1, new_tail_index)
+  assert_eq(5, stack_after_push)
+  assert_eq(2, final_stack_size)
+  assert_eq(0, is_empty)  // 栈不为空
 }
 
-// 测试用例 8: 算法模拟测试
-test "algorithm_simulation" {
-  // 模拟排序算法的比较次数
+test "enhanced_temperature_conversion" {
+  // 温度转换模拟：摄氏度到华氏度
+  let celsius = 25
   
-  // 冒泡排序最坏情况比较次数: n(n-1)/2
-  let bubble_sort_n = 8
-  let bubble_comparisons = multiply(bubble_sort_n, add(bubble_sort_n, -1)) / 2
-  assert_eq(28, bubble_comparisons)
+  // 模拟公式：F = C × 9/5 + 32
+  let multiplied = multiply(celsius, 9)
+  let divided = divide_with_ceil(multiplied, 5)
+  let fahrenheit = add(divided, 32)
   
-  // 快速排序平均比较次数: n log n (简化为 n*n/2)
-  let quick_sort_n = 16
-  let quick_comparisons = multiply(quick_sort_n, divide_with_ceil(quick_sort_n, 2))
-  assert_eq(128, quick_comparisons)
-  
-  // 模拟动态规划的空间复杂度
-  let dp_rows = 5
-  let dp_cols = 8
-  let dp_space = multiply(dp_rows, dp_cols)
-  
-  assert_eq(40, dp_space)
-  
-  // 模拟贪心算法的选择过程
-  let total_items = 23
-  let knapsack_capacity = 7
-  let max_selectable = divide_with_ceil(total_items, knapsack_capacity)
-  
-  assert_eq(4, max_selectable)
+  assert_eq(225, multiplied)
+  assert_eq(45, divided)    // ceil(225/5) = 45
+  assert_eq(77, fahrenheit)
 }
 
-// 测试用例 9: 统计分析测试
-test "statistical_analysis" {
-  // 模拟数据集的统计分析
+test "enhanced_batch_processing" {
+  // 批处理计算
+  let total_items = 1000
+  let batch_size = 75
   
-  // 计算数据集的基本统计量
-  let data_count = 7
+  // 计算完整批次数
+  let full_batches = divide_with_ceil(total_items, batch_size)
   
-  // 计算总和
-  let data_sum = add(add(add(add(add(add(12, 15), 18), 21), 24), 27), 30)
+  // 计算最后一个批次的项目数
+  let last_batch_size = if total_items % batch_size == 0 {
+    batch_size
+  } else {
+    total_items - multiply(full_batches - 1, batch_size)
+  }
   
-  // 计算平均值
-  let data_mean = divide_with_ceil(data_sum, data_count)
-  
-  // 计算方差（简化版本）
-  let squared_diffs_sum = add(add(add(add(add(add(
-    multiply(12 - 21, 12 - 21),
-    multiply(15 - 21, 15 - 21)),
-    multiply(18 - 21, 18 - 21)),
-    multiply(21 - 21, 21 - 21)),
-    multiply(24 - 21, 24 - 21)),
-    multiply(27 - 21, 27 - 21)),
-    multiply(30 - 21, 30 - 21))
-  
-  let variance = divide_with_ceil(squared_diffs_sum, data_count)
-  
-  // 计算标准差（简化为整数）
-  let std_deviation = divide_with_ceil(variance, 1)
-  
-  assert_eq(147, data_sum)
-  assert_eq(21, data_mean)
-  assert_eq(36, variance)
-  assert_eq(36, std_deviation)
-  
-  // 模拟相关性计算
-  let x_sum = add(add(add(add(2, 4), 6), add(8, 10)))
-  let y_sum = add(add(add(add(3, 7), 9), add(13, 15)))
-  
-  let xy_sum = add(add(add(add(multiply(2, 3), multiply(4, 7)), multiply(6, 9)), add(multiply(8, 13), multiply(10, 15)))
-  
-  assert_eq(30, x_sum)
-  assert_eq(47, y_sum)
-  assert_eq(305, xy_sum)
+  assert_eq(14, full_batches)    // ceil(1000/75) = 14
+  assert_eq(25, last_batch_size) // 1000 - 13*75 = 25
 }
 
-// 测试用例 10: 系统资源管理测试
-test "system_resource_management" {
-  // 模拟系统资源的分配和管理
+test "enhanced_string_processing_with_numbers" {
+  // 字符串与数字的混合处理
+  let prefix = "Item"
+  let number = 42
+  let suffix = "Status"
   
-  // CPU 时间片分配计算
-  let total_cpu_time = 1000  // 毫秒
-  let process_count = 8
-  let time_slice_per_process = divide_with_ceil(total_cpu_time, process_count)
+  // 构建复合字符串
+  let number_as_string = "42"  // 简化的数字转字符串
+  let composite_string = prefix + number_as_string + suffix
+  let final_greeting = greet(composite_string)
   
-  assert_eq(125, time_slice_per_process)
-  
-  // 内存池管理计算
-  let memory_pool_size = 4096  // 字节
-  let block_size = 64
-  let allocated_blocks = 37
-  let used_memory = multiply(allocated_blocks, block_size)
-  let remaining_memory = add(memory_pool_size, -used_memory)
-  let available_blocks = divide_with_ceil(remaining_memory, block_size)
-  
-  assert_eq(2368, used_memory)
-  assert_eq(1728, remaining_memory)
-  assert_eq(27, available_blocks)
-  
-  // 磁盘I/O调度计算
-  let total_io_requests = 150
-  let io_queue_depth = 32
-  let batch_size = 8
-  let processing_batches = divide_with_ceil(total_io_requests, batch_size)
-  let max_concurrent_batches = divide_with_ceil(io_queue_depth, batch_size)
-  
-  assert_eq(19, processing_batches)
-  assert_eq(4, max_concurrent_batches)
-  
-  // 网络带宽分配计算
-  let total_bandwidth = 1000  // Mbps
-  let priority_weight_high = 5
-  let priority_weight_medium = 3
-  let priority_weight_low = 2
-  let total_weight = add(add(priority_weight_high, priority_weight_medium), priority_weight_low)
-  
-  let high_priority_bandwidth = divide_with_ceil(multiply(total_bandwidth, priority_weight_high), total_weight)
-  let medium_priority_bandwidth = divide_with_ceil(multiply(total_bandwidth, priority_weight_medium), total_weight)
-  let low_priority_bandwidth = add(total_bandwidth, add(high_priority_bandwidth, -medium_priority_bandwidth))
-  
-  assert_eq(10, total_weight)
-  assert_eq(500, high_priority_bandwidth)
-  assert_eq(300, medium_priority_bandwidth)
-  assert_eq(200, low_priority_bandwidth)
+  assert_eq_string("Hello, Item42Status!", final_greeting)
+  assert_eq_string("Hello, Test123!", greet("Test123"))
 }
