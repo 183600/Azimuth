@@ -1,162 +1,178 @@
 // 标准 MoonBit 测试用例 - 针对 azimuth 库
-// 包含核心功能的全面测试，使用标准 MoonBit 测试语法
-
-// 导入 azimuth 模块
-use "../azimuth"
+// 使用标准的 MoonBit 测试语法编写的高质量测试用例
 
 test "add_function_commutative_property" {
   // 测试加法交换律：a + b = b + a
-  assert_eq(azimuth.add(5, 3), azimuth.add(3, 5))
-  assert_eq(azimuth.add(10, 15), azimuth.add(15, 10))
-  assert_eq(azimuth.add(-2, 8), azimuth.add(8, -2))
-  assert_eq(azimuth.add(-5, -3), azimuth.add(-3, -5))
+  assert_eq(15, add(7, 8))
+  assert_eq(15, add(8, 7))
+  assert_eq(0, add(5, -5))
+  assert_eq(0, add(-5, 5))
+  assert_eq(-10, add(-3, -7))
+  assert_eq(-10, add(-7, -3))
 }
 
-test "multiply_function_distributive_property" {
-  // 测试乘法分配律：a * (b + c) = a * b + a * c
-  let a = 3
-  let b = 4
-  let c = 5
-  let left_side = azimuth.multiply(a, azimuth.add(b, c))
-  let right_side = azimuth.add(azimuth.multiply(a, b), azimuth.multiply(a, c))
-  assert_eq(left_side, right_side)
+test "multiply_function_identity_elements" {
+  // 测试乘法单位元：a * 1 = a, a * 0 = 0
+  assert_eq(42, multiply(42, 1))
+  assert_eq(-17, multiply(-17, 1))
+  assert_eq(0, multiply(999, 0))
+  assert_eq(0, multiply(-123, 0))
+  assert_eq(0, multiply(0, 0))
+}
+
+test "divide_with_ceil_comprehensive_behavior" {
+  // 全面测试向上取整除法的各种情况
+  // 正数除法
+  assert_eq(4, divide_with_ceil(11, 3))  // 11/3 = 3.666... -> 4
+  assert_eq(7, divide_with_ceil(14, 2))  // 14/2 = 7 -> 7
+  assert_eq(1, divide_with_ceil(1, 100)) // 1/100 = 0.01 -> 1
   
-  // 另一个测试用例
-  let x = 2
-  let y = 7
-  let z = 3
-  assert_eq(
-    azimuth.multiply(x, azimuth.add(y, z)),
-    azimuth.add(azimuth.multiply(x, y), azimuth.multiply(x, z))
-  )
-}
-
-test "divide_with_ceil_comprehensive_cases" {
-  // 全面测试向上取整除法函数
-  // 正数情况
-  assert_eq(4, azimuth.divide_with_ceil(10, 3))  // 3.333... -> 4
-  assert_eq(3, azimuth.divide_with_ceil(9, 3))   // 3 -> 3
-  assert_eq(1, azimuth.divide_with_ceil(1, 100)) // 0.01 -> 1
+  // 负数除法
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -10/3 = -3.333... -> -3
+  assert_eq(-4, divide_with_ceil(-11, 3))  // -11/3 = -3.666... -> -4
+  assert_eq(4, divide_with_ceil(-11, -3))  // -11/-3 = 3.666... -> 4
   
-  // 负数情况
-  assert_eq(-3, azimuth.divide_with_ceil(-10, 3))  // -3.333... -> -3
-  assert_eq(-4, azimuth.divide_with_ceil(-11, 3))  // -3.666... -> -4
-  assert_eq(4, azimuth.divide_with_ceil(-10, -3))  // 3.333... -> 4
-  
-  // 边界情况
-  assert_eq(0, azimuth.divide_with_ceil(5, 0))     // 除数为0
-  assert_eq(0, azimuth.divide_with_ceil(0, 5))     // 被除数为0
-  assert_eq(1, azimuth.divide_with_ceil(5, 5))     // 相等
+  // 除数为零的安全处理
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
 }
 
-test "greet_function_international_characters" {
-  // 测试问候函数的国际字符处理
-  assert_eq_string("Hello, 世界!", azimuth.greet("世界"))
-  assert_eq_string("Hello, 🚀!", azimuth.greet("🚀"))
-  assert_eq_string("Hello, ñáéíóú!", azimuth.greet("ñáéíóú"))
-  assert_eq_string("Hello, Москва!", azimuth.greet("Москва"))
-  assert_eq_string("Hello, العربية!", azimuth.greet("العربية"))
-  assert_eq_string("Hello, !", azimuth.greet(""))  // 空字符串
+test "greet_function_multilingual_support" {
+  // 测试多语言和特殊字符支持
+  assert_eq_string("Hello, 中文!", greet("中文"))
+  assert_eq_string("Hello, English!", greet("English"))
+  assert_eq_string("Hello, Español!", greet("Español"))
+  assert_eq_string("Hello, Русский!", greet("Русский"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
 }
 
-test "complex_business_calculation" {
-  // 复杂业务计算：订单总价计算
-  let product_price = 89
-  let quantity = 4
-  let shipping_per_item = 5
-  let tax_rate = 8  // 8%
-  let discount = 20
+test "complex_business_calculation_scenario" {
+  // 复杂业务计算场景：订单总价计算
+  let unit_price = 85
+  let quantity = 6
+  let tax_rate = 8
+  let shipping_cost = 25
+  let discount = 50
   
   // 计算小计
-  let subtotal = azimuth.multiply(product_price, quantity)
-  // 计算运费
-  let shipping = azimuth.multiply(shipping_per_item, quantity)
-  // 计算税费
-  let tax = azimuth.divide_with_ceil(azimuth.multiply(subtotal, tax_rate), 100)
+  let subtotal = multiply(unit_price, quantity)
+  
+  // 计算税费（向上取整）
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  
   // 计算总价
-  let total_before_discount = azimuth.add(azimuth.add(subtotal, shipping), tax)
-  let final_total = azimuth.add(total_before_discount, -discount)
+  let total_before_discount = add(add(subtotal, tax_amount), shipping_cost)
+  let final_total = add(total_before_discount, -discount)
   
-  assert_eq(356, subtotal)
-  assert_eq(20, shipping)
-  assert_eq(29, tax)
-  assert_eq(405, total_before_discount)
-  assert_eq(385, final_total)
+  assert_eq(510, subtotal)           // 85 * 6 = 510
+  assert_eq(41, tax_amount)          // ceil(510 * 8 / 100) = ceil(40.8) = 41
+  assert_eq(576, total_before_discount)  // 510 + 41 + 25 = 576
+  assert_eq(526, final_total)        // 576 - 50 = 526
 }
 
-test "mathematical_series_summation" {
-  // 数学级数求和：等差数列求和
-  // 使用公式：S = n/2 * (2a + (n-1)d)
-  let first_term = 3
-  let common_diff = 2
-  let num_terms = 10
+test "mathematical_laws_verification" {
+  // 验证基本数学定律
+  let a = 12
+  let b = 7
+  let c = 5
   
-  let sum = azimuth.divide_with_ceil(
-    azimuth.multiply(
-      num_terms,
-      azimuth.add(
-        azimuth.multiply(2, first_term),
-        azimuth.multiply(num_terms - 1, common_diff)
-      )
-    ),
-    2
-  )
+  // 加法结合律：(a + b) + c = a + (b + c)
+  assert_eq(add(add(a, b), c), add(a, add(b, c)))
   
-  assert_eq(120, sum)  // 10/2 * (6 + 18) = 5 * 24 = 120
+  // 乘法结合律：(a * b) * c = a * (b * c)
+  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
+  
+  // 分配律：a * (b + c) = a * b + a * c
+  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
 }
 
-test "resource_allocation_scenario" {
-  // 资源分配场景：项目资源计算
-  let total_budget = 10000
-  let team_size = 8
-  let project_duration_months = 6
-  let equipment_cost_per_person = 500
-  
-  // 计算人力成本（简化）
-  let personnel_cost = azimuth.multiply(team_size, azimuth.multiply(1000, project_duration_months))
-  // 计算设备成本
-  let equipment_cost = azimuth.multiply(equipment_cost_per_person, team_size)
-  // 计算总成本
-  let total_cost = azimuth.add(personnel_cost, equipment_cost)
-  // 计算剩余预算
-  let remaining_budget = azimuth.add(total_budget, -total_cost)
-  
-  assert_eq(48000, personnel_cost)
-  assert_eq(4000, equipment_cost)
-  assert_eq(52000, total_cost)
-  assert_eq(-42000, remaining_budget)  // 预算不足
-}
-
-test "time_management_calculation" {
-  // 时间管理计算：任务完成时间
+test "resource_planning_optimization" {
+  // 资源规划优化测试
+  let total_tasks = 67
   let tasks_per_day = 8
-  let total_tasks = 45
-  let working_days_per_week = 5
+  let work_days_per_week = 5
+  let team_members = 3
   
   // 计算需要的工作日
-  let workdays_needed = azimuth.divide_with_ceil(total_tasks, tasks_per_day)
-  // 计算需要的周数
-  let weeks_needed = azimuth.divide_with_ceil(workdays_needed, working_days_per_week)
+  let work_days_needed = divide_with_ceil(total_tasks, tasks_per_day)
   
-  assert_eq(6, workdays_needed)  // ceil(45/8) = 6
-  assert_eq(2, weeks_needed)     // ceil(6/5) = 2
+  // 计算需要的周数
+  let weeks_needed = divide_with_ceil(work_days_needed, work_days_per_week)
+  
+  // 计算总工作小时数（每天8小时）
+  let total_hours = multiply(work_days_needed, 8)
+  
+  // 计算每人平均工作小时数
+  let hours_per_person = divide_with_ceil(total_hours, team_members)
+  
+  assert_eq(9, work_days_needed)    // ceil(67/8) = 9
+  assert_eq(2, weeks_needed)        // ceil(9/5) = 2
+  assert_eq(72, total_hours)        // 9 * 8 = 72
+  assert_eq(24, hours_per_person)   // ceil(72/3) = 24
 }
 
-test "data_structure_simulation" {
-  // 数据结构模拟：模拟数组操作
-  let array_size = 10
-  let element_size = 4
-  let header_size = 8
+test "string_processing_edge_cases" {
+  // 字符串处理边界情况测试
+  assert_eq_string("Hello, a!", greet("a"))                    // 单字符
+  assert_eq_string("Hello, ABC!", greet("ABC"))                // 大写字母
+  assert_eq_string("Hello, xyz!", greet("xyz"))                // 小写字母
+  assert_eq_string("Hello, 12345!", greet("12345"))            // 纯数字
+  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))  // 邮箱格式
+  assert_eq_string("Hello, A+B=C!", greet("A+B=C"))            // 包含运算符
+  assert_eq_string("Hello, space separated!", greet("space separated"))  // 包含空格
+  assert_eq_string("Hello, \t\n\r!", greet("\t\n\r"))          // 控制字符
+}
+
+test "performance_benchmark_simulation" {
+  // 性能基准测试模拟
+  let base_operations = 1000
+  let optimization_factor = 3
+  let overhead_percentage = 15
+  let iterations = 5
   
-  // 计算数组总大小
-  let data_size = azimuth.multiply(array_size, element_size)
-  let total_size = azimuth.add(data_size, header_size)
+  // 计算优化后的操作数
+  let optimized_operations = multiply(base_operations, optimization_factor)
   
-  // 计算可以存储多少个这样的数组在内存中
-  let memory_pool = 1024
-  let arrays_in_memory = azimuth.divide_with_ceil(memory_pool, total_size)
+  // 计算开销
+  let overhead = divide_with_ceil(multiply(optimized_operations, overhead_percentage), 100)
   
-  assert_eq(40, data_size)
-  assert_eq(48, total_size)
-  assert_eq(22, arrays_in_memory)  // ceil(1024/48) = 22
+  // 计算实际性能
+  let actual_performance = add(optimized_operations, -overhead)
+  
+  // 计算迭代后的总性能
+  let total_performance = multiply(actual_performance, iterations)
+  
+  assert_eq(3000, optimized_operations)
+  assert_eq(450, overhead)
+  assert_eq(2550, actual_performance)
+  assert_eq(12750, total_performance)
+}
+
+test "data_structure_manipulation" {
+  // 数据结构操作测试（模拟数组/列表操作）
+  let initial_size = 10
+  let elements_to_add = 7
+  let batch_size = 3
+  
+  // 计算添加元素后的总大小
+  let final_size = add(initial_size, elements_to_add)
+  
+  // 计算需要的批次数
+  let batches_needed = divide_with_ceil(elements_to_add, batch_size)
+  
+  // 计算剩余空间（假设最大容量为25）
+  let max_capacity = 25
+  let remaining_space = add(max_capacity, -final_size)
+  
+  // 计算使用率百分比
+  let usage_percentage = divide_with_ceil(multiply(final_size, 100), max_capacity)
+  
+  assert_eq(17, final_size)
+  assert_eq(3, batches_needed)
+  assert_eq(8, remaining_space)
+  assert_eq(68, usage_percentage)
 }
