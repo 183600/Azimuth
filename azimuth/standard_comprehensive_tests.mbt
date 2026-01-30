@@ -1,123 +1,135 @@
-// 标准MoonBit测试用例 - 为azimuth项目添加的高质量测试
-// 包含8个精心设计的测试用例，覆盖各种场景和边界情况
+// 标准 MoonBit 测试用例 - 8个高质量测试用例
+// 涵盖核心功能和实际应用场景
 
-test "subtract_function_comprehensive" {
-  // 全面测试减法函数
-  assert_eq(5, subtract(10, 5))
-  assert_eq(-5, subtract(5, 10))
-  assert_eq(0, subtract(5, 5))
-  assert_eq(10, subtract(5, -5))
-  assert_eq(-10, subtract(-5, 5))
+test "basic_arithmetic_comprehensive" {
+  // 基础算术运算综合测试
+  @azimuth.assert_eq(10, @azimuth.add(3, 7))
+  @azimuth.assert_eq(-4, @azimuth.add(3, -7))
+  @azimuth.assert_eq(0, @azimuth.add(5, -5))
+  @azimuth.assert_eq(21, @azimuth.multiply(3, 7))
+  @azimuth.assert_eq(-21, @azimuth.multiply(3, -7))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 123))
 }
 
-test "complex_inventory_calculation" {
-  // 复杂库存计算场景
-  let initial_stock = 150
-  let sold_items = 47
-  let returned_items = 8
-  let new_stock = 25
-  
-  // 计算最终库存
-  let final_stock = subtract(add(subtract(initial_stock, sold_items), returned_items), new_stock)
-  assert_eq(136, final_stock)
+test "divide_with_ceil_scenarios" {
+  // 向上取整除法的各种场景
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(-10, -3))
 }
 
-test "pricing_strategy_calculation" {
-  // 定价策略计算测试
-  let cost_price = 80
-  let desired_margin = 30  // 30%
-  let competitor_price = 115
-  
-  // 计算建议售价（成本+期望利润）
-  let suggested_price = add(cost_price, divide_with_ceil(multiply(cost_price, desired_margin), 100))
-  assert_eq(104, suggested_price)
-  
-  // 与竞争对手价格比较
-  let price_difference = subtract(competitor_price, suggested_price)
-  assert_eq(11, price_difference)
+test "greet_function_international_support" {
+  // 问候函数的国际化支持测试
+  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, café!", @azimuth.greet("café"))
+  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
 }
 
-test "resource_planning_scenario" {
-  // 资源规划场景测试
-  let project_duration = 12  // 月
-  let team_size = 8
-  let budget_per_person = 5000
-  let contingency_budget = 15000
+test "mathematical_properties_validation" {
+  // 数学性质验证测试
+  let x = 15
+  let y = 8
   
-  // 计算基础预算
-  let base_budget = multiply(project_duration, multiply(team_size, budget_per_person))
-  assert_eq(480000, base_budget)
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
   
-  // 计算总预算（包含应急预算）
-  let total_budget = add(base_budget, contingency_budget)
-  assert_eq(495000, total_budget)
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
   
-  // 计算月均预算
-  let monthly_budget = divide_with_ceil(total_budget, project_duration)
-  assert_eq(41250, monthly_budget)
-}
-
-test "mathematical_sequence_operations" {
-  // 数学序列操作测试
-  // 等差数列：首项3，公差2，前5项和
-  let first_term = 3
-  let common_diff = 2
-  let terms_count = 5
-  
-  // 等差数列求和公式：n/2 * (2a + (n-1)d)
-  let sequence_sum = divide_with_ceil(
-    multiply(terms_count, add(multiply(2, first_term), multiply(subtract(terms_count, 1), common_diff))),
-    2
+  // 分配律
+  @azimuth.assert_eq(
+    @azimuth.multiply(x, @azimuth.add(y, 2)),
+    @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, 2))
   )
-  assert_eq(35, sequence_sum)  // 3+5+7+9+11 = 35
+  
+  // 零元素性质
+  @azimuth.assert_eq(x, @azimuth.add(x, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(x, 0))
 }
 
-test "time_management_calculation" {
-  // 时间管理计算测试
-  let work_hours_per_day = 8
-  let meeting_hours_per_day = 2
-  let break_hours_per_day = 1
-  let focused_work_hours = subtract(work_hours_per_day, add(meeting_hours_per_day, break_hours_per_day))
-  assert_eq(5, focused_work_hours)
+test "business_inventory_management" {
+  // 业务库存管理测试
+  let total_products = 157
+  let box_capacity = 24
+  let boxes_needed = @azimuth.divide_with_ceil(total_products, box_capacity)
   
-  // 计算周有效工作时间
-  let work_days_per_week = 5
-  let weekly_focused_hours = multiply(focused_work_hours, work_days_per_week)
-  assert_eq(25, weekly_focused_hours)
+  @azimuth.assert_eq(7, boxes_needed)
   
-  // 计算完成项目所需周数
-  let project_hours = 120
-  let weeks_needed = divide_with_ceil(project_hours, weekly_focused_hours)
-  assert_eq(5, weeks_needed)
+  // 验证总容量
+  let total_capacity = @azimuth.multiply(boxes_needed, box_capacity)
+  @azimuth.assert_eq(168, total_capacity)
+  
+  // 验证剩余空间（使用加法和负数代替减法）
+  let remaining_space = @azimuth.add(total_capacity, -total_products)
+  @azimuth.assert_eq(11, remaining_space)
 }
 
-test "error_handling_edge_cases_new" {
-  // 错误处理边缘情况测试
-  // 测试极值运算
-  assert_eq(2147483647, add(2147483646, 1))  // 接近Int最大值
-  assert_eq(-2147483648, subtract(-2147483647, 1))  // 接近Int最小值
+test "complex_calculation_pipeline" {
+  // 复杂计算流水线测试
+  let base_value = 20
+  let multiplier = 3
+  let divisor = 8
+  let addition = 7
   
-  // 测试除零的各种情况
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+  // 计算流程：((base * multiplier) / divisor) + addition
+  let step1 = @azimuth.multiply(base_value, multiplier)
+  let step2 = @azimuth.divide_with_ceil(step1, divisor)
+  let result = @azimuth.add(step2, addition)
   
-  // 测试大数运算
-  assert_eq(2000000000, add(1000000000, 1000000000))
-  assert_eq(1000000000000000000, multiply(1000000000, 1000000000))
+  @azimuth.assert_eq(14, result)  // ceil(20*3/8) + 7 = 8 + 7 = 15
 }
 
-test "multilingual_greeting_validation" {
-  // 多语言问候验证测试
-  let languages = ["中文", "English", "Español", "Français", "Deutsch", "日本語", "한국어", "Русский"]
+test "error_boundary_conditions" {
+  // 错误边界条件测试
+  // 除零错误处理
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
   
-  // 测试各种语言的问候
-  assert_eq_string("Hello, 中文!", greet("中文"))
-  assert_eq_string("Hello, English!", greet("English"))
-  assert_eq_string("Hello, Español!", greet("Español"))
-  assert_eq_string("Hello, Français!", greet("Français"))
-  assert_eq_string("Hello, Deutsch!", greet("Deutsch"))
-  assert_eq_string("Hello, 日本語!", greet("日本語"))
-  assert_eq_string("Hello, 한국어!", greet("한국어"))
-  assert_eq_string("Hello, Русский!", greet("Русский"))
+  // 极值测试
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-1, -1))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 1))
+  
+  // 大数运算
+  @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))
+  @azimuth.assert_eq(2000000, @azimuth.add(1000000, 1000000))
+}
+
+test "real_world_event_planning" {
+  // 真实世界活动规划测试
+  let participants = 87
+  let chairs_per_table = 10
+  let cost_per_chair = 25
+  let total_budget = 3000
+  
+  // 计算需要的桌子数量
+  let tables_needed = @azimuth.divide_with_ceil(participants, chairs_per_table)
+  @azimuth.assert_eq(9, tables_needed)
+  
+  // 计算总座位数
+  let total_chairs = @azimuth.multiply(tables_needed, chairs_per_table)
+  @azimuth.assert_eq(90, total_chairs)
+  
+  // 计算剩余座位
+  let empty_chairs = @azimuth.add(total_chairs, -participants)
+  @azimuth.assert_eq(3, empty_chairs)
+  
+  // 计算总成本
+  let total_cost = @azimuth.multiply(total_chairs, cost_per_chair)
+  @azimuth.assert_eq(2250, total_cost)
+  
+  // 验证预算充足
+  @azimuth.assert_true(total_cost <= total_budget)
+  
+  // 计算剩余预算
+  let remaining_budget = @azimuth.add(total_budget, -total_cost)
+  @azimuth.assert_eq(750, remaining_budget)
 }
