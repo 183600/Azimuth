@@ -1,86 +1,93 @@
-// 简单的 azimuth 测试用例 - 10个标准 MoonBit 测试用例
+// 简单的 Azimuth 测试用例
+// 包含10个基本测试用例
 
-test "simple_addition" {
-  // 简单加法测试
-  assert_eq(10, add(3, 7))
+test "add_basic_test" {
+  // 测试基本加法
+  assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
   assert_eq(-5, add(-2, -3))
 }
 
-test "simple_multiplication" {
-  // 简单乘法测试
-  assert_eq(15, multiply(3, 5))
-  assert_eq(0, multiply(0, 10))
+test "multiply_basic_test" {
+  // 测试基本乘法
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(0, 5))
   assert_eq(-6, multiply(-2, 3))
 }
 
-test "simple_greeting" {
-  // 简单问候测试
+test "greet_basic_test" {
+  // 测试基本问候功能
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
-test "simple_division_ceil" {
-  // 简单向上取整除法测试
+test "divide_with_ceil_basic_test" {
+  // 测试基本向上取整除法
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(0, divide_with_ceil(0, 5))
 }
 
-test "temperature_conversion" {
-  // 温度转换测试
-  let celsius = 25
-  let fahrenheit = add(divide_with_ceil(multiply(celsius, 9), 5), 32)
-  assert_eq(77, fahrenheit)
+test "subtract_basic_test" {
+  // 测试基本减法
+  assert_eq(2, subtract(5, 3))
+  assert_eq(-2, subtract(3, 5))
+  assert_eq(10, subtract(10, 0))
+  assert_eq(0, subtract(5, 5))
 }
 
-test "array_index_calculation" {
-  // 数组索引计算测试
-  let rows = 4
-  let cols = 5
-  let row_index = 2
-  let col_index = 3
-  let linear_index = add(multiply(row_index, cols), col_index)
-  assert_eq(13, linear_index)
+test "mathematical_properties_test" {
+  // 测试数学性质
+  let a = 7
+  let b = 13
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
 }
 
-test "loan_calculation" {
-  // 贷款计算测试
-  let loan_amount = 10000
-  let interest_rate = 5
-  let total_interest = divide_with_ceil(multiply(loan_amount, interest_rate), 100)
-  let total_payment = add(loan_amount, total_interest)
-  assert_eq(500, total_interest)
-  assert_eq(10500, total_payment)
+test "business_packaging_test" {
+  // 业务包装计算测试
+  let total_items = 35
+  let items_per_box = 8
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  
+  assert_eq(5, boxes_needed)
+  
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, items_per_box)
+  assert_eq(40, total_capacity)
 }
 
-test "game_score" {
-  // 游戏得分测试
-  let base_score = 1000
+test "complex_workflow_test" {
+  // 复杂工作流测试
+  let base_value = 12
   let multiplier = 3
-  let bonus = 500
-  let penalty = 200
-  let final_score = add(add(multiply(base_score, multiplier), bonus), -penalty)
-  assert_eq(3300, final_score)
+  let divisor = 5
+  let addition = 7
+  
+  // 计算流程
+  let step1 = multiply(base_value, multiplier)
+  let step2 = divide_with_ceil(step1, divisor)
+  let result = add(step2, addition)
+  
+  assert_eq(14, result)
 }
 
-test "binary_conversion" {
-  // 二进制转换测试
-  let weight_1 = 1
-  let weight_2 = 2
-  let weight_4 = 4
-  let weight_8 = 8
-  let total = add(add(add(weight_1, weight_2), weight_4), weight_8)
-  assert_eq(15, total)
+test "error_handling_test" {
+  // 错误处理测试
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
 }
 
-test "prime_check" {
-  // 质数检查测试
-  let number = 17
-  let remainder_2 = number % 2
-  let remainder_3 = number % 3
-  let remainder_5 = number % 5
-  assert_eq(1, remainder_2)
-  assert_eq(2, remainder_3)
-  assert_eq(2, remainder_5)
+test "unicode_test" {
+  // Unicode测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, café!", greet("café"))
 }
