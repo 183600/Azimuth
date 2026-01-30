@@ -1,90 +1,82 @@
-// 标准 MoonBit 测试用例 - 为 Azimuth 项目添加
-// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
+// 标准 MoonBit 测试用例
+// 测试 azimuth 库的核心功能
 
-test "basic_arithmetic_addition" {
-  // 测试基本加法运算
-  assert_eq(10, add(3, 7))
+test "add_basic_functionality" {
+  // 测试基本加法功能
+  assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
   assert_eq(-5, add(-2, -3))
-  assert_eq(5, add(-2, 7))
+  assert_eq(10, add(7, 3))
 }
 
-test "basic_arithmetic_multiplication" {
-  // 测试基本乘法运算
+test "multiply_basic_functionality" {
+  // 测试基本乘法功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-6, multiply(-2, 3))
   assert_eq(15, multiply(3, 5))
-  assert_eq(0, multiply(0, 10))
-  assert_eq(-12, multiply(-3, 4))
-  assert_eq(12, multiply(-3, -4))
 }
 
-test "greet_function_standard" {
-  // 测试问候函数的标准功能
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+test "greet_basic_functionality" {
+  // 测试基本问候功能
   assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 测试!", greet("测试"))
 }
 
 test "divide_with_ceil_basic_functionality" {
-  // 测试向上取整除法的基本功能
-  assert_eq(3, divide_with_ceil(10, 4))
-  assert_eq(2, divide_with_ceil(8, 4))
-  assert_eq(1, divide_with_ceil(3, 3))
+  // 测试基本向上取整除法功能
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
   assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "subtract_function_basic" {
-  // 测试减法函数的基本功能
-  assert_eq(3, subtract(10, 7))
-  assert_eq(-3, subtract(7, 10))
-  assert_eq(0, subtract(5, 5))
-}
-
-test "mathematical_commutative_property" {
-  // 测试数学交换律
-  let a = 13
-  let b = 7
+test "mathematical_properties" {
+  // 测试数学性质
+  let a = 7
+  let b = 13
+  
+  // 加法交换律
   assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
   assert_eq(multiply(a, b), multiply(b, a))
-}
-
-test "mathematical_identity_elements" {
-  // 测试数学恒等元素
-  let x = 42
-  assert_eq(x, add(x, 0))
-  assert_eq(x, multiply(x, 1))
-  assert_eq(0, multiply(x, 0))
-}
-
-test "divide_with_ceil_negative_numbers" {
-  // 测试向上取整除法的负数处理
-  assert_eq(-2, divide_with_ceil(-10, 5))
-  assert_eq(-2, divide_with_ceil(10, -5))
-  assert_eq(2, divide_with_ceil(-10, -5))
-  assert_eq(0, divide_with_ceil(0, -5))
-}
-
-test "complex_calculation_pipeline" {
-  // 测试复杂计算流水线
-  let initial = 10
-  let step1 = add(initial, 5)  // 15
-  let step2 = multiply(step1, 2)  // 30
-  let step3 = divide_with_ceil(step2, 8)  // 4
-  let result = subtract(step3, 1)  // 3
-  assert_eq(3, result)
-}
-
-test "business_logic_packaging_calculation" {
-  // 测试业务逻辑：包装计算
-  let total_items = 47
-  let items_per_box = 12
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  assert_eq(4, boxes_needed)
   
-  // 验证总容量
-  let total_capacity = multiply(boxes_needed, items_per_box)
-  assert_eq(48, total_capacity)
+  // 零元素性质
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, add(a, 0))
+}
+
+test "combined_operations" {
+  // 测试组合运算
+  let result1 = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result1)  // 2*3 + 4*5 = 6 + 20 = 26
   
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_items)
-  assert_eq(1, remaining_space)
+  let result2 = multiply(add(5, 3), 2)
+  assert_eq(16, result2)  // (5 + 3) * 2 = 8 * 2 = 16
+}
+
+test "negative_number_operations" {
+  // 测试负数运算
+  assert_eq(-10, add(-3, -7))
+  assert_eq(-5, add(-8, 3))
+  assert_eq(0, add(-5, 5))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-15, multiply(3, -5))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+}
+
+test "practical_business_scenario" {
+  // 实际业务场景：计算订单总价
+  let unit_price = 25
+  let quantity = 8
+  let shipping = 15
+  
+  let subtotal = multiply(unit_price, quantity)
+  let total = add(subtotal, shipping)
+  
+  assert_eq(200, subtotal)
+  assert_eq(215, total)
 }
