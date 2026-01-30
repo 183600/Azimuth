@@ -136,7 +136,9 @@
     "azimuth_concise_test_suite.mbt",
     "simple_azimuth_tests.mbt",
     "new_standard_moonbit_tests.mbt",
-    "simple_test_verification.mbt"
+    "simple_test_verification.mbt",
+    "azimuth_premium_quality_tests.mbt",
+    "high_quality_azimuth_tests.mbt"
   ],
   "import": [
     "moonbitlang/core/builtin",
