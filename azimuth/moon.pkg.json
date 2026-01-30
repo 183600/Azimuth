@@ -168,7 +168,8 @@
     "new_quality_test_cases.mbt",
     "xyz_user_added_tests.mbt",
     "user_simple_test.mbt",
-    "azimuth_new_quality_tests.mbt"
+    "azimuth_new_quality_tests.mbt",
+    "azimuth_new_quality_test_cases.mbt"
   ],
   "import": [
     "moonbitlang/core/builtin",
