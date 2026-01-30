@@ -1,0 +1,1 @@
+{"name": "simple_test", "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil"], "files": ["lib.mbt", "azimuth_high_quality_tests.mbt"]}
