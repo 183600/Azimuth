@@ -1,9 +1,12 @@
 {
   "test-import": [
-    "azimuth"
+    "azimuth",
+    "moonbitlang/core",
+    "moonbitlang/core/builtin"
   ],
   "export": [],
   "test": [
+    "azimuth_standard_test.mbt",
     "standard_azimuth_basic_tests.mbt",
     "standard_azimuth_new_tests.mbt",
     "quality_standard_tests.mbt",
