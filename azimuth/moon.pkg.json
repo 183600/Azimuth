@@ -178,7 +178,8 @@
     "new_azimuth_premium_tests.mbt",
     "simple_azimuth_test.mbt",
     "final_test.mbt",
-    "azimuth_standard_tests.mbt"
+    "azimuth_standard_tests.mbt",
+    "azimuth_standard_enhanced_tests.mbt"
   ],
   "import": [
     "moonbitlang/core/builtin",
