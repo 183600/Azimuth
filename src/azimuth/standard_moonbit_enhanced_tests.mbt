@@ -1,137 +1,124 @@
-// 标准 MoonBit 增强测试用例
-// 针对 azimuth 库的核心功能进行补充测试
+// 新增的标准 MoonBit 测试用例
+// 针对 azimuth 库的核心功能进行全面测试
 
-test "power_calculation_simulation" {
-  // 模拟幂运算计算 (使用重复乘法)
-  let base = 3
-  let result = multiply(multiply(multiply(base, base), base), base)
-  assert_eq(81, result)  // 3^4 = 81
+test "add_function_commutative_property" {
+  // 测试加法交换律
+  let a = 15
+  let b = 27
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(42, add(15, 27))
+  assert_eq(42, add(27, 15))
 }
 
-test "factorial_calculation" {
-  // 模拟阶乘计算
-  let factorial = multiply(multiply(multiply(multiply(1, 2), 3), 4), 5)
-  assert_eq(120, factorial)  // 5! = 120
+test "multiply_function_distributive_property" {
+  // 测试乘法分配律
+  let a = 5
+  let b = 8
+  let c = 3
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)
 }
 
-test "percentage_calculations" {
-  // 百分比计算测试
-  let original_value = 200
-  let percentage = 25
-  
-  // 计算百分比值
-  let percentage_value = divide_with_ceil(multiply(original_value, percentage), 100)
-  
-  // 计算增加后的值
-  let increased_value = add(original_value, percentage_value)
-  
-  // 计算减少后的值
-  let decreased_value = add(original_value, -percentage_value)
-  
-  assert_eq(50, percentage_value)
-  assert_eq(250, increased_value)
-  assert_eq(150, decreased_value)
+test "divide_with_ceil_complex_scenarios" {
+  // 测试复杂除法场景
+  assert_eq(4, divide_with_ceil(100, 26))
+  assert_eq(7, divide_with_ceil(100, 15))
+  assert_eq(1, divide_with_ceil(3, 4))
+  assert_eq(0, divide_with_ceil(0, 7))
+  assert_eq(0, divide_with_ceil(50, 0))
 }
 
-test "time_conversion_calculations" {
-  // 时间转换计算
-  let hours = 2
-  let minutes = 45
-  
-  // 转换为总分钟数
-  let total_minutes = add(multiply(hours, 60), minutes)
-  
-  // 转换为总秒数
-  let total_seconds = multiply(total_minutes, 60)
-  
-  assert_eq(165, total_minutes)
-  assert_eq(9900, total_seconds)
+test "greet_function_unicode_support" {
+  // 测试问候函数的 Unicode 支持
+  assert_eq_string("Hello, 🌙!", greet("🌙"))
+  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
+  assert_eq_string("Hello, Ñoño!", greet("Ñoño"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
 }
 
-test "geometric_calculations" {
-  // 几何计算
-  let radius = 5
+test "combined_business_calculations" {
+  // 组合业务计算场景
+  let unit_price = 45
+  let quantity = 12
+  let tax_rate = 8
+  let shipping = 25
   
-  // 计算直径
-  let diameter = multiply(radius, 2)
+  let subtotal = multiply(unit_price, quantity)
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let total = add(add(subtotal, tax_amount), shipping)
   
-  // 计算周长 (简化为 π * d，使用π≈3)
-  let circumference = multiply(diameter, 3)
-  
-  // 计算面积 (简化为 π * r²，使用π≈3)
-  let area = multiply(multiply(radius, radius), 3)
-  
-  assert_eq(10, diameter)
-  assert_eq(30, circumference)
-  assert_eq(75, area)
+  assert_eq(540, subtotal)
+  assert_eq(44, tax_amount)
+  assert_eq(609, total)
 }
 
-test "temperature_conversion" {
-  // 温度转换计算 (简化版本)
-  let celsius = 25
+test "mathematical_sequence_calculations" {
+  // 数学序列计算
+  let first_term = 3
+  let common_diff = 4
+  let n_terms = 6
   
-  // 摄氏度转华氏度 (简化公式: F = C * 2 + 30)
-  let fahrenheit = add(multiply(celsius, 2), 30)
+  // 计算等差数列第n项
+  let nth_term = add(first_term, multiply(common_diff, n_terms - 1))
   
-  // 华氏度转摄氏度 (简化公式: C = (F - 30) / 2)
-  let back_to_celsius = divide_with_ceil(add(fahrenheit, -30), 2)
+  // 计算前n项和
+  let sum = divide_with_ceil(multiply(n_terms, add(first_term, nth_term)), 2)
   
-  assert_eq(80, fahrenheit)
-  assert_eq(25, back_to_celsius)
+  assert_eq(23, nth_term)
+  assert_eq(78, sum)
 }
 
-test "array_sum_simulation" {
-  // 模拟数组求和 (使用累加)
-  let value1 = 15
-  let value2 = 23
-  let value3 = 7
-  let value4 = 12
-  
-  let total_sum = add(add(add(value1, value2), value3), value4)
-  let average = divide_with_ceil(total_sum, 4)
-  
-  assert_eq(57, total_sum)
-  assert_eq(15, average)  // ceil(57/4) = ceil(14.25) = 15
-}
-
-test "compound_interest_simplified" {
-  // 简化的复利计算
-  let principal = 1000
-  let rate = 5  // 5%
-  
-  // 第一年
-  let year1 = add(principal, divide_with_ceil(multiply(principal, rate), 100))
-  
-  // 第二年
-  let year2 = add(year1, divide_with_ceil(multiply(year1, rate), 100))
-  
-  // 第三年
-  let year3 = add(year2, divide_with_ceil(multiply(year2, rate), 100))
-  
-  assert_eq(1050, year1)
-  assert_eq(1103, year2)
-  assert_eq(1158, year3)
-}
-
-test "batch_processing_simulation" {
-  // 批处理模拟计算
-  let batch_size = 25
-  let total_items = 180
-  
-  // 计算需要的批次数
-  let batches_needed = divide_with_ceil(total_items, batch_size)
-  
-  // 计算最后一批的实际项目数
-  let last_batch_size = add(total_items, -multiply(batches_needed - 1, batch_size))
-  
-  assert_eq(8, batches_needed)  // ceil(180/25) = 8
-  assert_eq(5, last_batch_size)  // 180 - 7*25 = 5
-}
-
-test "string_greeting_with_special_characters" {
-  // 测试特殊字符的问候
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, 123!", greet("123"))
+test "error_handling_and_edge_cases" {
+  // 错误处理和边界情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, multiply(0, -999))
+  assert_eq(0, add(0, 0))
   assert_eq_string("Hello, !", greet(""))
+}
+
+test "performance_simulation_large_numbers" {
+  // 性能模拟：大数运算
+  let base = 10000
+  let multiplier = 100
+  let iterations = 50
+  
+  let result = multiply(multiply(base, multiplier), iterations)
+  let optimized = divide_with_ceil(result, 10)
+  
+  assert_eq(50000000, result)
+  assert_eq(5000000, optimized)
+}
+
+test "real_world_inventory_tracking" {
+  // 真实世界库存跟踪
+  let initial_stock = 500
+  let daily_sales = 35
+  let days_of_week = 7
+  let new_shipment = 200
+  
+  let weekly_sales = multiply(daily_sales, days_of_week)
+  let stock_after_sales = add(initial_stock, -weekly_sales)
+  let final_stock = add(stock_after_sales, new_shipment)
+  
+  assert_eq(245, weekly_sales)
+  assert_eq(455, final_stock)
+}
+
+test "string_processing_with_mathematics" {
+  // 字符串处理与数学结合
+  let greeting_base = "Hello"
+  let target = "World"
+  let repeat_count = 3
+  
+  let full_greeting = greet(target)
+  let base_length = 5  // "Hello" 的长度
+  let target_length = 5  // "World" 的长度
+  let combined_length = add(base_length, target_length)
+  let estimated_display_time = multiply(combined_length, repeat_count)
+  
+  assert_eq_string("Hello, World!", full_greeting)
+  assert_eq(10, combined_length)
+  assert_eq(30, estimated_display_time)
 }

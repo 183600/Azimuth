@@ -27,7 +27,7 @@
     "test/simple_new_test.mbt",
     "test/azimuth_comprehensive_new_tests.mbt",
     "quality_standard_tests.mbt",
-    "standard_azimuth_tests.mbt",
+    ('standard_azimuth_tests.mbt',)
     "azimuth_quality_standard_tests.mbt",
     "standard_moonbit_core_tests.mbt",
     "test_single_new.mbt",
@@ -470,4 +470,6 @@
     "simple_verification_test_new.mbt",
     "azimuth_focused_unit_tests.mbt",
     "standard_enhanced_tests.mbt",
-    "azimuth_premium_enhanced_tests.mbt"                                                                                                                                           ]}
+    "azimuth_premium_enhanced_tests.mbt",
+    "standard_moonbit_enhanced_tests.mbt",
+    "new_standard_moonbit_tests.mbt"                                                                                                                                           ]}
