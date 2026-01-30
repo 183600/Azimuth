@@ -13,6 +13,7 @@
   ],
   "files": [
     "lib.mbt",
+    "azimuth_comprehensive_standard_tests.mbt",
     "standard_azimuth_unit_tests.mbt",
     "azimuth_new_supplementary_tests.mbt",
     "azimuth_enhanced_test_suite_new.mbt",
