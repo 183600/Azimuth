@@ -1,191 +1,159 @@
-// Azimuth 增强测试用例 - 10个高质量标准 MoonBit 测试用例
-// 测试覆盖基本函数、边界情况、实际应用场景和错误处理
+// 新增的高质量 MoonBit 测试用例
+// 针对 azimuth 库的核心功能进行全面测试
 
-test "array_sum_simulation" {
-  // 模拟数组求和操作
-  // 假设有数组 [5, 10, 15, 20, 25]，计算总和
-  let elem1 = 5
-  let elem2 = 10
-  let elem3 = 15
-  let elem4 = 20
-  let elem5 = 25
-  
-  let sum1 = add(elem1, elem2)
-  let sum2 = add(sum1, elem3)
-  let sum3 = add(sum2, elem4)
-  let total_sum = add(sum3, elem5)
-  
-  assert_eq(75, total_sum)
-  
-  // 计算平均值（向上取整）
-  let average = divide_with_ceil(total_sum, 5)
-  assert_eq(15, average)
+test "string_greeting_with_emoji" {
+  // 测试包含表情符号的字符串问候
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, 💻!", greet("💻"))
+  assert_eq_string("Hello, 🎯!", greet("🎯"))
 }
 
-test "factorial_calculation" {
-  // 模拟阶乘计算：5! = 5 × 4 × 3 × 2 × 1 = 120
-  let num1 = 5
-  let num2 = 4
-  let num3 = 3
-  let num4 = 2
-  let num5 = 1
-  
-  let step1 = multiply(num1, num2)  // 5 × 4 = 20
-  let step2 = multiply(step1, num3)  // 20 × 3 = 60
-  let step3 = multiply(step2, num4)  // 60 × 2 = 120
-  let factorial = multiply(step3, num5)  // 120 × 1 = 120
-  
-  assert_eq(120, factorial)
-}
-
-test "compound_interest_calculation" {
-  // 复利计算：本金1000，年利率5%，3年
-  let principal = 1000
+test "complex_financial_calculation" {
+  // 复杂的金融计算场景
+  let principal = 10000
   let rate_percent = 5
   let years = 3
   
-  // 第一年：1000 + 5% = 1050
-  let year1 = principal + divide_with_ceil(multiply(principal, rate_percent), 100)
+  // 计算复利（简化版本，使用向上取整）
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, rate_percent), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, rate_percent), 100))
   
-  // 第二年：1050 + 5% = 1103
-  let year2 = year1 + divide_with_ceil(multiply(year1, rate_percent), 100)
-  
-  // 第三年：1103 + 5% = 1158
-  let year3 = year2 + divide_with_ceil(multiply(year2, rate_percent), 100)
-  
-  assert_eq(1050, year1)
-  assert_eq(1103, year2)
-  assert_eq(1158, year3)
+  assert_eq(10500, year1_amount)
+  assert_eq(11025, year2_amount)
+  assert_eq(11576, year3_amount)
 }
 
-test "function_composition_pipeline" {
-  // 函数组合流水线测试
-  let input = 10
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_budget = 5000
+  let project_a_cost = 1200
+  let project_b_cost = 800
+  let project_c_cost = 1500
   
-  // 流水线：(input × 2) + 5，然后除以3向上取整，最后再乘以4
-  let step1 = multiply(input, 2)        // 10 × 2 = 20
-  let step2 = add(step1, 5)             // 20 + 5 = 25
-  let step3 = divide_with_ceil(step2, 3) // ceil(25/3) = 9
-  let final_result = multiply(step3, 4)  // 9 × 4 = 36
+  // 计算剩余预算
+  let allocated_budget = add(add(project_a_cost, project_b_cost), project_c_cost)
+  let remaining_budget = add(total_budget, -allocated_budget)
   
-  assert_eq(36, final_result)
+  // 计算可以支持的小项目数量
+  let small_project_cost = 300
+  let additional_projects = divide_with_ceil(remaining_budget, small_project_cost)
+  
+  assert_eq(3500, allocated_budget)
+  assert_eq(1500, remaining_budget)
+  assert_eq(5, additional_projects)
 }
 
-test "extreme_boundary_values" {
-  // 极端边界值测试
-  let max_safe_int = 1000000
-  let min_safe_int = -1000000
+test "time_zone_conversion" {
+  // 时区转换计算模拟
+  let local_time = 14  // 下午2点
+  let time_difference = 8  // 8小时时差
   
-  // 测试大数运算
-  let large_sum = add(max_safe_int, max_safe_int)
-  let large_product = multiply(1000, 1000)
+  // 计算远程时间
+  let remote_time = add(local_time, time_difference)
+  let adjusted_remote_time = if remote_time > 24 {
+    add(remote_time, -24)
+  } else {
+    remote_time
+  }
   
-  // 测试负数运算
-  let negative_sum = add(min_safe_int, max_safe_int)
-  let negative_product = multiply(-100, 100)
-  
-  assert_eq(2000000, large_sum)
-  assert_eq(1000000, large_product)
-  assert_eq(0, negative_sum)
-  assert_eq(-10000, negative_product)
+  assert_eq(22, adjusted_remote_time)
 }
 
-test "greeting_template_system" {
-  // 问候模板系统测试
-  let company = "TechCorp"
-  let department = "Engineering"
-  let project = "Azimuth"
+test "batch_processing_simulation" {
+  // 批处理模拟计算
+  let total_records = 1047
+  let batch_size = 100
   
-  // 构建完整的标识字符串
-  let full_identifier = company + " " + department + " - " + project
-  let formal_greeting = greet(full_identifier)
+  // 计算需要的批次数
+  let full_batches = divide_with_ceil(total_records, batch_size)
   
-  assert_eq_string("Hello, TechCorp Engineering - Azimuth!", formal_greeting)
+  // 计算最后一批的记录数
+  let last_batch_size = if total_records % batch_size == 0 {
+    batch_size
+  } else {
+    total_records % batch_size
+  }
   
-  // 测试数字和特殊字符
-  assert_eq_string("Hello, User-2024!", greet("User-2024"))
-  assert_eq_string("Hello, API_v2.0!", greet("API_v2.0"))
+  assert_eq(11, full_batches)
+  assert_eq(47, last_batch_size)
 }
 
-test "mathematical_identities_verification" {
-  // 数学恒等式验证
-  let x = 12
-  let y = 8
-  let z = 5
+test "inventory_turnover_calculation" {
+  // 库存周转率计算
+  let beginning_inventory = 500
+  let ending_inventory = 300
+  let cost_of_goods_sold = 2400
   
-  // 验证分配律：x × (y + z) = x × y + x × z
-  let distributive_left = multiply(x, add(y, z))
-  let distributive_right = add(multiply(x, y), multiply(x, z))
-  assert_eq(distributive_left, distributive_right)  // 12 × (8 + 5) = 12 × 8 + 12 × 5 = 156
+  // 计算平均库存
+  let average_inventory = divide_with_ceil(add(beginning_inventory, ending_inventory), 2)
   
-  // 验证结合律：(x + y) + z = x + (y + z)
-  let associative_left = add(add(x, y), z)
-  let associative_right = add(x, add(y, z))
-  assert_eq(associative_left, associative_right)  // (12 + 8) + 5 = 12 + (8 + 5) = 25
+  // 计算库存周转率
+  let inventory_turnover = divide_with_ceil(cost_of_goods_sold, average_inventory)
+  
+  assert_eq(400, average_inventory)
+  assert_eq(6, inventory_turnover)
 }
 
-test "real_world_inventory_management" {
-  // 真实世界库存管理场景
-  let warehouse_capacity = 1000
-  let product_a_qty = 250
-  let product_b_qty = 380
-  let product_c_qty = 180
+test "data_structure_simulation" {
+  // 数据结构模拟 - 栈操作
+  let initial_stack_size = 0
   
-  // 计算当前库存总量
-  let current_stock = add(add(product_a_qty, product_b_qty), product_c_qty)
+  // 模拟压栈操作
+  let push_operations = 5
+  let final_stack_size = add(initial_stack_size, push_operations)
   
-  // 计算剩余容量
-  let remaining_capacity = warehouse_capacity - current_stock
+  // 模拟弹栈操作
+  let pop_operations = 3
+  let remaining_stack_size = add(final_stack_size, -pop_operations)
   
-  // 计算库存利用率（向上取整百分比）
-  let utilization_rate = divide_with_ceil(multiply(current_stock, 100), warehouse_capacity)
-  
-  assert_eq(810, current_stock)
-  assert_eq(190, remaining_capacity)
-  assert_eq(81, utilization_rate)
+  assert_eq(5, final_stack_size)
+  assert_eq(2, remaining_stack_size)
 }
 
-test "error_handling_robustness" {
-  // 错误处理健壮性测试
-  // 测试除零错误的安全处理
-  let normal_division = divide_with_ceil(100, 25)
-  let zero_division_positive = divide_with_ceil(100, 0)
-  let zero_division_negative = divide_with_ceil(-100, 0)
-  let zero_division_zero = divide_with_ceil(0, 0)
+test "circular_buffer_calculation" {
+  // 循环缓冲区计算
+  let buffer_size = 10
+  let current_position = 8
+  let steps_forward = 5
   
-  assert_eq(4, normal_division)
-  assert_eq(0, zero_division_positive)
-  assert_eq(0, zero_division_negative)
-  assert_eq(0, zero_division_zero)
+  // 计算新位置（循环）
+  let total_steps = add(current_position, steps_forward)
+  let new_position = if total_steps >= buffer_size {
+    add(total_steps, -multiply(divide_with_ceil(total_steps, buffer_size), buffer_size))
+  } else {
+    total_steps
+  }
   
-  // 测试极值除法
-  let large_division = divide_with_ceil(1000000, 3)
-  let small_division = divide_with_ceil(1, 1000)
-  
-  assert_eq(333334, large_division)
-  assert_eq(1, small_division)
+  assert_eq(3, new_position)
 }
 
-test "performance_benchmark_simulation" {
-  // 性能基准测试模拟
-  let base_operations = 1000
-  let optimization_factor = 3
-  let overhead_percentage = 20
+test "temperature_conversion" {
+  // 温度转换计算模拟
+  let celsius = 25
+  let fahrenheit_offset = 32
+  let conversion_factor = 5
   
-  // 计算优化后的操作数
-  let optimized_ops = multiply(base_operations, optimization_factor)
+  // 摄氏度转华氏度（简化计算）
+  let fahrenheit = add(multiply(celsius, 9), divide_with_ceil(fahrenheit_offset * conversion_factor, conversion_factor))
+  let adjusted_fahrenheit = divide_with_ceil(fahrenheit, 5)
   
-  // 计算系统开销
-  let overhead = divide_with_ceil(multiply(optimized_ops, overhead_percentage), 100)
+  assert_eq(77, adjusted_fahrenheit)
+}
+
+test "load_balancing_simulation" {
+  // 负载均衡模拟
+  let total_requests = 157
+  let server_count = 4
   
-  // 计算实际性能
-  let actual_performance = optimized_ops - overhead
+  // 计算每台服务器的基本负载
+  let base_load_per_server = divide_with_ceil(total_requests, server_count)
   
-  // 计算性能提升倍数
-  let performance_gain = divide_with_ceil(actual_performance, base_operations)
+  // 计算剩余请求数
+  let distributed_requests = multiply(base_load_per_server, server_count)
+  let remaining_requests = add(total_requests, -distributed_requests)
   
-  assert_eq(3000, optimized_ops)
-  assert_eq(600, overhead)
-  assert_eq(2400, actual_performance)
-  assert_eq(3, performance_gain)
+  assert_eq(40, base_load_per_server)
+  assert_eq(-3, remaining_requests)
 }
