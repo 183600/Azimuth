@@ -347,6 +347,7 @@
       "simple_advanced_tests.mbt",
           "single_advanced_test.mbt",
           "azimuth_standard_unit_tests.mbt",      "azimuth_additional_enhanced_tests.mbt",
+      "azimuth_focused_unit_tests.mbt",
       "standard_moonbit_test_suite.mbt",
       "standard_azimuth_tests.mbt",
       "test/focused_core_tests.mbt",
@@ -458,4 +459,5 @@
     "standard_test_enhancements.mbt",
     "simple_verification_test_new.mbt",
     "standard_test_enhancements.mbt",
-    "simple_verification_test_new.mbt"                                                                                                                                           ]}
+    "simple_verification_test_new.mbt",
+    "azimuth_focused_unit_tests.mbt"                                                                                                                                           ]}
