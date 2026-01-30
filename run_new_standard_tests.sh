@@ -1,43 +1,31 @@
 #!/bin/bash
+echo "运行新创建的 Azimuth 标准测试用例..."
+cd /home/runner/work/Azimuth/Azimuth
 
-# 运行新标准测试用例的脚本
-echo "Running new standard MoonBit tests for Azimuth project..."
+# 创建一个临时的 moon.pkg.json，只包含我们的测试文件
+cp azimuth/moon.pkg.json azimuth/moon.pkg.json.backup 2>/dev/null || true
 
-# 设置路径
-PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
-CORE_PATH="$PROJECT_ROOT/core"
-AZIMUTH_PATH="$PROJECT_ROOT/src/azimuth"
+# 创建简化的配置文件
+cat > azimuth/moon.pkg.json << 'EOF'
+{
+  "name": "azimuth",
+  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil", "subtract"],
+  "files": ["lib.mbt", "azimuth_standard_test_cases_new.mbt"],
+  "import": ["moonbitlang/core/builtin", "moonbitlang/core"],
+  "test-import": ["moonbitlang/core/builtin", "azimuth"],
+  "link": {
+    "azimuth/test": "self"
+  }
+}
+EOF
 
-# 编译 azimuth 包
-echo "Compiling azimuth package..."
-cd "$AZIMUTH_PATH"
-node "$PROJECT_ROOT/moonc.js" check -pkg azimuth -std-path "$CORE_PATH" lib.mbt
-if [ $? -ne 0 ]; then
-  echo "Error: azimuth/lib.mbt compilation failed"
-  exit 1
+echo "配置文件已创建，开始运行测试..."
+./moon test
+
+# 恢复原始配置文件
+if [ -f azimuth/moon.pkg.json.backup ]; then
+    mv azimuth/moon.pkg.json.backup azimuth/moon.pkg.json
+    echo "原始配置文件已恢复"
 fi
 
-# 生成 .mi 文件
-node "$PROJECT_ROOT/moonc.js" check -pkg azimuth -std-path "$CORE_PATH" lib.mbt -o azimuth.mi
-
-# 编译新标准测试文件
-echo "Compiling new standard tests..."
-cd test
-node "$PROJECT_ROOT/moonc.js" check -pkg azimuth_test -std-path "$CORE_PATH" -i ../azimuth.mi standard_moonbit_tests_new.mbt
-if [ $? -ne 0 ]; then
-  echo "Error: standard_moonbit_tests_new.mbt compilation failed"
-  exit 1
-fi
-
-# 统计测试数量
-TEST_COUNT=$(grep "^test " standard_moonbit_tests_new.mbt | wc -l)
-echo ""
-echo "Successfully compiled $TEST_COUNT test cases in standard_moonbit_tests_new.mbt"
-echo ""
-
-# 提取测试名称
-echo "Test cases found:"
-grep "^test " standard_moonbit_tests_new.mbt | sed 's/test "\(.*\)" {/- \1/'
-echo ""
-
-echo "All new standard tests compiled successfully!"
+echo "测试完成"
