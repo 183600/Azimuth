@@ -1,168 +1,248 @@
-// 标准 MoonBit 增强测试用例
-// 为 azimuth 库添加的高质量测试用例
+// 标准 MoonBit 增强测试用例 - 10个高质量测试用例
+// 为 azimuth 库添加额外的测试覆盖
 
-test "hexadecimal_conversion_calculation" {
-  // 十六进制转换计算测试
-  let hex_digit_1 = 1
-  let hex_digit_2 = 16
-  let hex_digit_3 = 256
+test "mathematical_commutativity_verification" {
+  // 验证数学交换律的全面测试
+  let a = 123
+  let b = 456
   
-  // 验证十六进制位权计算
-  let hex_value_FF = add(hex_digit_1, multiply(15, hex_digit_2))  // 0xFF = 15*16 + 15
-  let hex_value_1A2 = add(add(2, multiply(10, hex_digit_2)), multiply(1, hex_digit_3))  // 0x1A2 = 1*256 + 10*16 + 2
+  // 加法交换律验证
+  assert_eq(add(a, b), add(b, a))
   
-  assert_eq(241, hex_value_FF)
-  assert_eq(418, hex_value_1A2)
+  // 乘法交换律验证
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 使用负数验证
+  let neg_a = -123
+  let neg_b = -456
+  assert_eq(add(neg_a, neg_b), add(neg_b, neg_a))
+  assert_eq(multiply(neg_a, neg_b), multiply(neg_b, neg_a))
+  
+  // 混合符号验证
+  assert_eq(add(a, neg_b), add(neg_b, a))
+  assert_eq(multiply(a, neg_b), multiply(neg_b, a))
 }
 
-test "time_conversion_calculations" {
-  // 时间转换计算测试
-  let hours = 2
-  let minutes = 45
-  let seconds = 30
+test "divide_with_ceil_precision_boundary" {
+  // 向上取整除法的精度边界测试
+  // 测试接近整数边界的情况
+  assert_eq(2, divide_with_ceil(199, 100))
+  assert_eq(3, divide_with_ceil(201, 100))
+  assert_eq(1, divide_with_ceil(99, 100))
+  assert_eq(100, divide_with_ceil(9999, 100))
+  assert_eq(101, divide_with_ceil(10001, 100))
   
-  // 转换为总秒数
-  let total_seconds = add(add(multiply(hours, 3600), multiply(minutes, 60)), seconds)
-  assert_eq(9930, total_seconds)
-  
-  // 计算需要的分钟数（向上取整）
-  let minutes_needed = divide_with_ceil(total_seconds, 60)
-  assert_eq(166, minutes_needed)
-  
-  // 计算需要的小时数（向上取整）
-  let hours_needed = divide_with_ceil(total_seconds, 3600)
-  assert_eq(3, hours_needed)
+  // 测试大数精度
+  assert_eq(1000000, divide_with_ceil(999999999, 1000))
+  assert_eq(1000001, divide_with_ceil(1000000001, 1000))
 }
 
-test "geometry_area_calculations" {
-  // 几何面积计算测试
-  let rectangle_length = 12
-  let rectangle_width = 8
-  
-  // 计算矩形面积
-  let rectangle_area = multiply(rectangle_length, rectangle_width)
-  assert_eq(96, rectangle_area)
-  
-  // 计算正方形边长（从面积反推）
-  let square_area = 144
-  let square_side = divide_with_ceil(square_area, 12)  // 假设一边为12，计算另一边
-  assert_eq(12, square_side)
+test "greet_function_multilingual_support" {
+  // 问候函数的多语言支持测试
+  assert_eq_string("Hello, Español!", greet("Español"))
+  assert_eq_string("Hello, Français!", greet("Français"))
+  assert_eq_string("Hello, Deutsch!", greet("Deutsch"))
+  assert_eq_string("Hello, Português!", greet("Português"))
+  assert_eq_string("Hello, Italiano!", greet("Italiano"))
+  assert_eq_string("Hello, 中文!", greet("中文"))
+  assert_eq_string("Hello, 日本語!", greet("日本語"))
+  assert_eq_string("Hello, 한국어!", greet("한국어"))
 }
 
-test "statistical_calculations" {
-  // 统计计算测试
-  let values_sum = 450
-  let value_count = 15
+test "complex_resource_allocation" {
+  // 复杂资源分配场景测试
+  // 场景：多项目资源分配优化
+  let project_a_tasks = 47
+  let project_b_tasks = 63
+  let project_c_tasks = 29
+  let team_capacity_per_sprint = 40
   
-  // 计算平均值（使用整数除法）
-  let average = divide_with_ceil(values_sum, value_count)
-  assert_eq(30, average)
+  // 计算每个项目需要的冲刺数
+  let sprints_a = divide_with_ceil(project_a_tasks, team_capacity_per_sprint)
+  let sprints_b = divide_with_ceil(project_b_tasks, team_capacity_per_sprint)
+  let sprints_c = divide_with_ceil(project_c_tasks, team_capacity_per_sprint)
   
-  // 计算中位数位置（简化计算）
-  let median_position = divide_with_ceil(value_count, 2)
-  assert_eq(8, median_position)
+  assert_eq(2, sprints_a)  // ceil(47/40) = 2
+  assert_eq(2, sprints_b)  // ceil(63/40) = 2
+  assert_eq(1, sprints_c)  // ceil(29/40) = 1
   
-  // 验证总和重建
-  let reconstructed_sum = multiply(average, value_count)
-  assert_eq(450, reconstructed_sum)
+  // 计算总冲刺数和总任务处理能力
+  let total_sprints = add(add(sprints_a, sprints_b), sprints_c)
+  let total_capacity = multiply(total_sprints, team_capacity_per_sprint)
+  
+  assert_eq(5, total_sprints)
+  assert_eq(200, total_capacity)
+  
+  // 验证所有任务都能被处理
+  let total_tasks = add(add(project_a_tasks, project_b_tasks), project_c_tasks)
+  assert_true(total_capacity >= total_tasks)
 }
 
-test "inventory_turnover_calculation" {
-  // 库存周转率计算测试
-  let annual_sales = 12000
-  let average_inventory = 3000
+test "mathematical_identity_comprehensive" {
+  // 数学恒等式的全面验证测试
+  let x = 42
+  let y = 17
+  let z = 8
   
-  // 计算库存周转率
-  let turnover_rate = divide_with_ceil(annual_sales, average_inventory)
-  assert_eq(4, turnover_rate)
+  // 加法恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(x, add(0, x))
+  assert_eq(add(x, y), add(y, x))
   
-  // 计算平均销售周期（天）
-  let days_in_year = 365
-  let average_days = divide_with_ceil(days_in_year, turnover_rate)
-  assert_eq(92, average_days)
+  // 乘法恒等式
+  assert_eq(x, multiply(x, 1))
+  assert_eq(x, multiply(1, x))
+  assert_eq(0, multiply(x, 0))
+  assert_eq(0, multiply(0, x))
+  
+  // 减法恒等式
+  assert_eq(0, subtract(x, x))
+  assert_eq(x, subtract(x, 0))
+  assert_eq(-x, subtract(0, x))
+  
+  // 分配律验证
+  assert_eq(
+    multiply(x, add(y, z)),
+    add(multiply(x, y), multiply(x, z))
+  )
 }
 
-test "network_bandwidth_planning" {
-  // 网络带宽规划测试
-  let users = 50
-  let bandwidth_per_user = 10  // Mbps
-  let redundancy_factor = 2
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  // 全面测试除零错误处理
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(1, 0))
+  assert_eq(0, divide_with_ceil(-1, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  assert_eq(0, divide_with_ceil(-2147483648, 0))
   
-  // 计算总带宽需求
-  let base_bandwidth = multiply(users, bandwidth_per_user)
-  let total_bandwidth = multiply(base_bandwidth, redundancy_factor)
-  assert_eq(1000, total_bandwidth)
+  // 测试极值运算的稳定性
+  let max_int = 2147483647
+  let min_int = -2147483648
   
-  // 计算需要的连接数量（每连接最大100Mbps）
-  let max_bandwidth_per_connection = 100
-  let connections_needed = divide_with_ceil(total_bandwidth, max_bandwidth_per_connection)
-  assert_eq(10, connections_needed)
+  // 大数加法测试（避免溢出）
+  assert_eq(2147483646, add(2147483645, 1))
+  assert_eq(-2147483647, add(-2147483646, -1))
+  
+  // 大数乘法测试（使用较小的数避免溢出）
+  assert_eq(46340, multiply(46340, 1))
+  assert_eq(-46340, multiply(-46340, 1))
 }
 
-test "compound_interest_simplified" {
-  // 简化的复利计算测试
-  let principal = 10000
-  let annual_rate = 5  // 5%
+test "real_world_logistics_optimization" {
+  // 真实世界物流优化测试
+  // 场景：仓库货物装载优化
+  let product_a_weight = 15  // kg per unit
+  let product_b_weight = 23  // kg per unit
+  let product_c_weight = 8   // kg per unit
+  let truck_capacity = 1000  // kg per truck
   
-  // 简化的年复利计算
-  let year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
-  let year2 = add(year1, divide_with_ceil(multiply(year1, annual_rate), 100))
-  let year3 = add(year2, divide_with_ceil(multiply(year2, annual_rate), 100))
+  let quantity_a = 25
+  let quantity_b = 18
+  let quantity_c = 45
   
-  assert_eq(10500, year1)
-  assert_eq(11025, year2)
-  assert_eq(11576, year3)
+  // 计算每种产品的总重量
+  let total_weight_a = multiply(product_a_weight, quantity_a)  // 375 kg
+  let total_weight_b = multiply(product_b_weight, quantity_b)  // 414 kg
+  let total_weight_c = multiply(product_c_weight, quantity_c)  // 360 kg
   
-  // 计算总收益
-  let total_earnings = subtract(year3, principal)
-  assert_eq(1576, total_earnings)
+  // 计算总重量
+  let total_weight = add(add(total_weight_a, total_weight_b), total_weight_c)
+  assert_eq(1149, total_weight)
+  
+  // 计算需要的卡车数量
+  let trucks_needed = divide_with_ceil(total_weight, truck_capacity)
+  assert_eq(2, trucks_needed)
+  
+  // 验证总运力
+  let total_capacity = multiply(trucks_needed, truck_capacity)
+  assert_eq(2000, total_capacity)
+  
+  // 计算剩余运力
+  let remaining_capacity = subtract(total_capacity, total_weight)
+  assert_eq(851, remaining_capacity)
 }
 
-test "project_resource_allocation" {
-  // 项目资源分配测试
-  let total_tasks = 87
-  let team_members = 5
-  let working_days = 15
-  
-  // 计算每人每天需要完成的任务数
-  let total_person_days = multiply(team_members, working_days)
-  let tasks_per_person_day = divide_with_ceil(total_tasks, total_person_days)
-  assert_eq(2, tasks_per_person_day)
-  
-  // 验证总处理能力
-  let total_capacity = multiply(tasks_per_person_day, total_person_days)
-  assert_eq(150, total_capacity)
-  
-  // 计算效率利用率
-  let utilization = divide_with_ceil(multiply(total_tasks, 100), total_capacity)
-  assert_eq(58, utilization)
+test "string_processing_edge_cases" {
+  // 字符串处理边缘情况测试
+  // 测试各种特殊字符和格式
+  assert_eq_string("Hello, empty!", greet(""))
+  assert_eq_string("Hello, space!", greet(" "))
+  assert_eq_string("Hello,   multiple!", greet("  multiple"))
+  assert_eq_string("Hello, newline\n!", greet("newline\n"))
+  assert_eq_string("Hello, tab\t!", greet("tab\t"))
+  assert_eq_string("Hello, quote\"!", greet("quote\""))
+  assert_eq_string("Hello, apostrophe'!", greet("apostrophe'"))
+  assert_eq_string("Hello, backslash\\!", greet("backslash\\"))
+  assert_eq_string("Hello, emoji 🎊🎉!", greet("emoji 🎊🎉"))
+  assert_eq_string("Hello, mix3d123!", greet("mix3d123"))
 }
 
-test "string_pattern_validation" {
-  // 字符串模式验证测试
-  // 测试各种字符串格式
-  assert_eq_string("Hello, email@domain.com!", greet("email@domain.com"))
-  assert_eq_string("Hello, phone123456!", greet("phone123456"))
-  assert_eq_string("Hello, https://example.com!", greet("https://example.com"))
-  assert_eq_string("Hello, special#$%&chars!", greet("special#$%&chars"))
-  assert_eq_string("Hello, mixedCASE123!", greet("mixedCASE123"))
+test "algorithm_efficiency_comparison" {
+  // 算法效率比较测试
+  // 模拟不同算法的时间复杂度
+  let input_sizes = 1000
+  
+  // O(1) 常数时间算法
+  let constant_time = 5
+  
+  // O(n) 线性时间算法
+  let linear_time = multiply(input_sizes, 2)
+  
+  // O(n²) 二次时间算法（简化模拟）
+  let quadratic_time = multiply(input_sizes, divide_with_ceil(input_sizes, 100))
+  
+  // O(log n) 对数时间算法（简化模拟）
+  let logarithmic_time = divide_with_ceil(input_sizes, 10)
+  
+  // 验证算法复杂度特征
+  assert_eq(5, constant_time)
+  assert_eq(2000, linear_time)
+  assert_eq(10000, quadratic_time)
+  assert_eq(100, logarithmic_time)
+  
+  // 验证效率差异
+  assert_true(linear_time > constant_time)
+  assert_true(quadratic_time > linear_time)
+  assert_true(linear_time > logarithmic_time)
 }
 
-test "extreme_boundary_conditions" {
-  // 极端边界条件测试
-  // 测试大数运算
-  let large_num_1 = 10000
-  let large_num_2 = 20000
+test "comprehensive_business_workflow" {
+  // 综合业务工作流测试
+  // 场景：完整的产品生产到销售流程
+  let raw_materials_per_unit = 5
+  let production_units = 150
+  let packaging_capacity = 12
+  let shipping_capacity = 25
+  let retail_shelf_capacity = 8
   
-  assert_eq(30000, add(large_num_1, large_num_2))
-  assert_eq(200000000, multiply(large_num_1, large_num_2))
-  assert_eq(2, divide_with_ceil(large_num_2, large_num_1))
+  // 计算原材料需求
+  let total_raw_materials = multiply(raw_materials_per_unit, production_units)
+  assert_eq(750, total_raw_materials)
   
-  // 测试极小数运算
-  let small_num_1 = 1
-  let small_num_2 = 1
+  // 计算包装需求
+  let packages_needed = divide_with_ceil(production_units, packaging_capacity)
+  assert_eq(13, packages_needed)
   
-  assert_eq(2, add(small_num_1, small_num_2))
-  assert_eq(1, multiply(small_num_1, small_num_2))
-  assert_eq(1, divide_with_ceil(small_num_1, small_num_2))
+  // 计算运输批次
+  let shipping_batches = divide_with_ceil(packages_needed, shipping_capacity)
+  assert_eq(1, shipping_batches)
+  
+  // 计算零售货架需求
+  let shelves_needed = divide_with_ceil(production_units, retail_shelf_capacity)
+  assert_eq(19, shelves_needed)
+  
+  // 计算总包装容量
+  let total_packaging_capacity = multiply(packages_needed, packaging_capacity)
+  assert_eq(156, total_packaging_capacity)
+  
+  // 计算剩余包装空间
+  let remaining_packaging_space = subtract(total_packaging_capacity, production_units)
+  assert_eq(6, remaining_packaging_space)
+  
+  // 验证整个流程的一致性
+  assert_true(total_raw_materials > 0)
+  assert_true(packages_needed > 0)
+  assert_true(shelves_needed > 0)
+  assert_true(total_packaging_capacity >= production_units)
 }
