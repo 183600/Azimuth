@@ -1,0 +1,10 @@
+{
+  "name": "azimuth_test",
+  "test-import": [
+    "azimuth",
+    "moonbitlang/core/builtin"
+  ],
+  "test": [
+    "azimuth_premium_advanced_tests.mbt"
+  ]
+}
