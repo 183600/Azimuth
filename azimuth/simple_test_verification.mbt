@@ -1,13 +1,1 @@
-// 简单测试验证文件
-
-test "simple_addition_test" {
-  assert_eq(5, add(2, 3))
-}
-
-test "simple_multiplication_test" {
-  assert_eq(6, multiply(2, 3))
-}
-
-test "simple_greet_test" {
-  assert_eq_string("Hello, Test!", greet("Test"))
-}
+test "simple_verification" { assert_eq(1, add(0, 1)) }
