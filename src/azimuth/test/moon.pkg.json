@@ -265,5 +265,6 @@
                 "new_practical_application_tests.mbt",
                 "additional_enhanced_tests.mbt",
                 "quality_test_suite.mbt",
-                "quality_test_suite_final.mbt"
+                "quality_test_suite_final.mbt",
+                "quality_test_suite_new.mbt"
                 ]}
