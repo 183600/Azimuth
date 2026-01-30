@@ -8,6 +8,7 @@
     "azimuth"
   ],
   "test": [
+    "standard_azimuth_tests_new.mbt",
     "standard_moonbit_test_cases_new.mbt",
     "new_comprehensive_moonbit_tests.mbt",
     "test_new/standard_azimuth_basic_tests.mbt",
@@ -213,6 +214,7 @@
     "standard_test_suite.mbt",
     "standard_azimuth_enhanced_tests.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
+    "standard_azimuth_tests_new.mbt",
     "standard_moonbit_test_cases_new.mbt",
     "new_comprehensive_moonbit_tests.mbt",
     "test_new/standard_azimuth_basic_tests.mbt",
