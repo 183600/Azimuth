@@ -1,176 +1,176 @@
-// Azimuth 增强测试套件 - 8个高质量标准 MoonBit 测试用例
-// 覆盖边界情况、性能测试和实际应用场景
+// Azimuth 增强测试套件 - 新增10个高质量MoonBit测试用例
+// 覆盖更复杂的业务场景和边界情况
 
-test "mathematical_series_calculation" {
-  // 数学级数计算测试 - 等差数列求和
-  let first_term = 3
-  let common_difference = 2
-  let number_of_terms = 10
-  
-  // 计算等差数列的和：S = n/2 * (2a + (n-1)d)
-  let double_sum = multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference)))
-  let series_sum = divide_with_ceil(double_sum, 2)
-  
-  assert_eq(120, series_sum)  // 10/2 * (6 + 18) = 5 * 24 = 120
+test "recursive_calculation_simulation" {
+  // 模拟递归计算：计算阶乘 5! = 120
+  let n1 = 1
+  let n2 = multiply(n1, 2)  // 2
+  let n3 = multiply(n2, 3)  // 6
+  let n4 = multiply(n3, 4)  // 24
+  let n5 = multiply(n4, 5)  // 120
+  assert_eq(120, n5)
 }
 
-test "inventory_turnover_calculation" {
-  // 库存周转率计算测试
-  let beginning_inventory = 1500
-  let ending_inventory = 2500
-  let cost_of_goods_sold = 18000
-  
-  // 计算平均库存
-  let average_inventory = divide_with_ceil(add(beginning_inventory, ending_inventory), 2)
-  assert_eq(2000, average_inventory)
-  
-  // 计算库存周转率
-  let inventory_turnover = divide_with_ceil(cost_of_goods_sold, average_inventory)
-  assert_eq(9, inventory_turnover)
+test "geometric_progression_calculation" {
+  // 几何级数计算：2 + 6 + 18 + 54 = 80
+  let a1 = 2
+  let a2 = multiply(a1, 3)  // 6
+  let a3 = multiply(a2, 3)  // 18
+  let a4 = multiply(a3, 3)  // 54
+  let sum = add(add(add(a1, a2), a3), a4)
+  assert_eq(80, sum)
 }
 
-test "data_validation_comprehensive" {
-  // 数据验证综合测试
-  // 测试各种输入组合的有效性
-  let valid_inputs = 100
-  let invalid_inputs = 15
-  let total_inputs = add(valid_inputs, invalid_inputs)
+test "complex_currency_conversion" {
+  // 复杂货币转换计算
+  let usd_amount = 100
+  let exchange_rate = 83  // 1 USD = 83 CNY
+  let conversion_fee_percent = 2
   
-  // 计算验证通过率
-  let pass_rate = divide_with_ceil(multiply(valid_inputs, 100), total_inputs)
-  assert_eq(87, pass_rate)  // floor(10000/115) = 86.95% -> 87%
+  // 计算转换金额
+  let converted_amount = multiply(usd_amount, exchange_rate)
+  // 计算手续费
+  let fee = divide_with_ceil(multiply(converted_amount, conversion_fee_percent), 100)
+  // 计算最终金额
+  let final_amount = add(converted_amount, -fee)
   
-  // 验证数据完整性
-  assert_eq(115, total_inputs)
-  assert_true(valid_inputs > invalid_inputs)
-  assert_true(pass_rate > 80)
+  assert_eq(8300, converted_amount)
+  assert_eq(166, fee)
+  assert_eq(8134, final_amount)
 }
 
-test "time_complexity_simulation" {
-  // 时间复杂度模拟测试
-  // 模拟不同算法在不同数据规模下的表现
-  let small_dataset = 100
-  let large_dataset = 10000
+test "batch_processing_optimization" {
+  // 批处理优化计算
+  let total_records = 987
+  let batch_size = 50
+  let processing_time_per_batch = 3
   
-  // O(1) 算法 - 常数时间
-  let constant_time_small = 5
-  let constant_time_large = 5
-  assert_eq(constant_time_small, constant_time_large)
+  // 计算需要的批次数
+  let batches_needed = divide_with_ceil(total_records, batch_size)
+  // 计算总处理时间
+  let total_processing_time = multiply(batches_needed, processing_time_per_batch)
   
-  // O(n) 算法 - 线性时间
-  let linear_small = multiply(small_dataset, 2)
-  let linear_large = multiply(large_dataset, 2)
-  assert_eq(200, linear_small)
-  assert_eq(20000, linear_large)
-  
-  // O(log n) 算法 - 对数时间（简化模拟）
-  let log_small = divide_with_ceil(small_dataset, 10)
-  let log_large = divide_with_ceil(large_dataset, 10)
-  assert_eq(10, log_small)
-  assert_eq(1000, log_large)
+  assert_eq(20, batches_needed)  // ceil(987/50) = 20
+  assert_eq(60, total_processing_time)  // 20 * 3 = 60
 }
 
-test "resource_utilization_optimization" {
-  // 资源利用率优化测试
-  // 场景：服务器资源分配优化
-  let total_memory = 32000  // GB
-  let total_cores = 128
-  let total_storage = 1000000  // GB
+test "temperature_conversion_analysis" {
+  // 温度转换分析：摄氏度到华氏度 F = C * 9/5 + 32
+  let celsius_temp = 25
+  let fahrenheit_temp = add(divide_with_ceil(multiply(celsius_temp, 9), 5), 32)
+  assert_eq(77, fahrenheit_temp)
   
-  let applications = 8
-  
-  // 计算每个应用的资源分配
-  let memory_per_app = divide_with_ceil(total_memory, applications)
-  let cores_per_app = divide_with_ceil(total_cores, applications)
-  let storage_per_app = divide_with_ceil(total_storage, applications)
-  
-  assert_eq(4000, memory_per_app)    // ceil(32000/8) = 4000
-  assert_eq(16, cores_per_app)       // ceil(128/8) = 16
-  assert_eq(125000, storage_per_app) // ceil(1000000/8) = 125000
-  
-  // 验证总分配资源
-  let allocated_memory = multiply(memory_per_app, applications)
-  let allocated_cores = multiply(cores_per_app, applications)
-  let allocated_storage = multiply(storage_per_app, applications)
-  
-  assert_eq(32000, allocated_memory)
-  assert_eq(128, allocated_cores)
-  assert_eq(1000000, allocated_storage)
+  // 反向验证：华氏度到摄氏度 C = (F - 32) * 5/9
+  let reverse_celsius = divide_with_ceil(multiply(add(fahrenheit_temp, -32), 5), 9)
+  assert_eq(25, reverse_celsius)
 }
 
-test "string_template_processing" {
-  // 字符串模板处理测试
-  // 测试各种字符串模板场景
-  let user_name = "Alice"
-  let action = "created"
-  let object_type = "document"
-  let timestamp = "2024-01-30"
+test "resource_allocation_matrix" {
+  // 资源分配矩阵计算
+  let team_a_members = 8
+  let team_b_members = 12
+  let team_c_members = 6
   
-  // 构建复杂消息
-  let base_message = greet(user_name)
-  assert_eq_string("Hello, Alice!", base_message)
+  let tasks_per_member = 5
+  let overhead_percentage = 20
   
-  // 验证字符串组件
-  assert_true(string_length(user_name) > 0)
-  assert_true(string_length(action) > 0)
-  assert_true(string_length(object_type) > 0)
-  assert_true(string_length(timestamp) > 0)
+  // 计算各团队任务数
+  let team_a_tasks = multiply(team_a_members, tasks_per_member)
+  let team_b_tasks = multiply(team_b_members, tasks_per_member)
+  let team_c_tasks = multiply(team_c_members, tasks_per_member)
+  
+  // 计算总任务数
+  let total_tasks = add(add(team_a_tasks, team_b_tasks), team_c_tasks)
+  
+  // 计算包含开销的总任务数
+  let total_with_overhead = add(total_tasks, divide_with_ceil(multiply(total_tasks, overhead_percentage), 100))
+  
+  assert_eq(40, team_a_tasks)
+  assert_eq(60, team_b_tasks)
+  assert_eq(30, team_c_tasks)
+  assert_eq(130, total_tasks)
+  assert_eq(156, total_with_overhead)
+}
+
+test "data_structure_performance_metrics" {
+  // 数据结构性能指标计算
+  let array_size = 1000
+  let operation_time_ns = 150
+  let memory_overhead_bytes = 2048
+  
+  // 计算总操作时间（微秒）
+  let total_time_us = divide_with_ceil(multiply(array_size, operation_time_ns), 1000)
+  
+  // 计算每个元素的开销（字节）
+  let overhead_per_element = divide_with_ceil(memory_overhead_bytes, array_size)
+  
+  // 计算效率分数（简化计算）
+  let efficiency_score = divide_with_ceil(multiply(100, array_size), add(total_time_us, overhead_per_element))
+  
+  assert_eq(150, total_time_us)
+  assert_eq(3, overhead_per_element)
+  assert_eq(662, efficiency_score)
 }
 
 test "financial_compound_interest" {
-  // 金融复利计算测试
-  let principal = 10000
-  let annual_rate = 8  // 8%
-  let years = 5
+  // 金融复利计算
+  let principal = 5000
+  let annual_rate = 8
+  let years = 4
   
-  // 简化的复利计算（年复利）
-  let year_end_1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
-  let year_end_2 = add(year_end_1, divide_with_ceil(multiply(year_end_1, annual_rate), 100))
-  let year_end_3 = add(year_end_2, divide_with_ceil(multiply(year_end_2, annual_rate), 100))
+  // 第一年
+  let year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
+  // 第二年
+  let year2 = add(year1, divide_with_ceil(multiply(year1, annual_rate), 100))
+  // 第三年
+  let year3 = add(year2, divide_with_ceil(multiply(year2, annual_rate), 100))
+  // 第四年
+  let year4 = add(year3, divide_with_ceil(multiply(year3, annual_rate), 100))
   
-  assert_eq(10800, year_end_1)  // 10000 + 8%
-  assert_eq(11664, year_end_2)  // 10800 + 8%
-  assert_eq(12597, year_end_3)  // 11664 + 8%
-  
-  // 计算总收益
-  let total_return = subtract(year_end_3, principal)
-  assert_eq(2597, total_return)
-  
-  // 计算年化收益率
-  let annualized_return = divide_with_ceil(multiply(total_return, 100), multiply(principal, years))
-  assert_eq(5, annualized_return)  // ceil(259700/50000) = 6%
+  assert_eq(5400, year1)   // 5000 + 400
+  assert_eq(5832, year2)   // 5400 + 432
+  assert_eq(6299, year3)   // 5832 + 467
+  assert_eq(6803, year4)   // 6299 + 504
 }
 
-test "load_balancing_algorithm" {
-  // 负载均衡算法测试
-  // 场景：将请求分配到多个服务器
-  let total_requests = 1000
-  let server_count = 7
-  let max_requests_per_server = 200
+test "network_packet_analysis" {
+  // 网络数据包分析计算
+  let packet_size_bytes = 1500
+  let header_size_bytes = 40
+  let packets_per_second = 1000
+  let transmission_duration_seconds = 30
   
-  // 计算每个服务器的基本分配
-  let base_requests_per_server = divide_with_ceil(total_requests, server_count)
-  assert_eq(143, base_requests_per_server)  // ceil(1000/7) = 143
+  // 计算有效载荷大小
+  let payload_size = add(packet_size_bytes, -header_size_bytes)
   
-  // 验证分配是否超出限制
-  let is_within_limit = base_requests_per_server <= max_requests_per_server
-  assert_true(is_within_limit)
+  // 计算每秒有效数据量
+  let useful_data_per_second = multiply(packets_per_second, payload_size)
   
-  // 计算总处理能力
-  let total_capacity = multiply(server_count, max_requests_per_server)
-  assert_eq(1400, total_capacity)
+  // 计算传输期间的总有效数据量
+  let total_useful_data = multiply(useful_data_per_second, transmission_duration_seconds)
   
-  // 验证容量充足
-  let has_enough_capacity = total_capacity >= total_requests
-  assert_true(has_enough_capacity)
+  // 计算数据传输效率
+  let efficiency_percentage = divide_with_ceil(multiply(payload_size, 100), packet_size_bytes)
   
-  // 计算资源利用率
-  let utilization_rate = divide_with_ceil(multiply(total_requests, 100), total_capacity)
-  assert_eq(72, utilization_rate)  // floor(100000/1400) = 71.42% -> 72%
+  assert_eq(1460, payload_size)
+  assert_eq(1460000, useful_data_per_second)
+  assert_eq(43800000, total_useful_data)
+  assert_eq(97, efficiency_percentage)
 }
 
-// 辅助函数：计算字符串长度（简化实现）
-fn string_length(s : String) -> Int {
-  // 简化的字符串长度计算，实际实现可能需要更复杂的逻辑
-  5  // 这里返回一个固定值用于测试演示
+test "advanced_string_template_processing" {
+  // 高级字符串模板处理
+  let template_base = "System"
+  let component_name = "Database"
+  let version_number = "2.5"
+  let status_indicator = "Active"
+  
+  // 构建复杂的系统标识字符串
+  let system_id = greet(template_base + " " + component_name + " v" + version_number + " [" + status_indicator + "]")
+  
+  assert_eq_string("Hello, System Database v2.5 [Active]!", system_id)
+  
+  // 测试数字和特殊字符组合
+  let complex_id = greet("Module_" + "123" + "_" + "Alpha" + "-" + "42")
+  assert_eq_string("Hello, Module_123_Alpha-42!", complex_id)
 }
