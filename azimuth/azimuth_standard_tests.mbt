@@ -1,98 +1,107 @@
 // Azimuth 项目标准测试用例
-// 使用标准 MoonBit 测试语法，包含8个高质量测试用例
+// 包含10个高质量测试用例，覆盖主要功能
 
-test "add_function_comprehensive" {
-  // 全面测试加法函数
-  add(2, 3) = 5
-  add(0, 0) = 0
-  add(-5, 5) = 0
-  add(-3, -7) = -10
-  add(1000, 2000) = 3000
+test "add_function_comprehensive_test" {
+  // 测试加法函数的综合情况
+  add(10, 15) = 25
+  add(-5, 8) = 3
+  add(-10, -20) = -30
+  add(0, 100) = 100
+  add(2147483647, 0) = 2147483647
 }
 
 test "multiply_function_edge_cases" {
   // 测试乘法函数的边缘情况
-  multiply(3, 4) = 12
-  multiply(5, 0) = 0
-  multiply(-2, 3) = -6
-  multiply(-3, -3) = 9
-  multiply(100, 100) = 10000
+  multiply(12, 12) = 144
+  multiply(-8, 7) = -56
+  multiply(-9, -9) = 81
+  multiply(0, 999999) = 0
+  multiply(1, 2147483647) = 2147483647
 }
 
-test "subtract_function_validation" {
-  // 验证减法函数
-  subtract(10, 3) = 7
-  subtract(5, 5) = 0
-  subtract(3, 10) = -7
-  subtract(-5, -3) = -2
-  subtract(1000, 500) = 500
-}
-
-test "divide_with_ceil_business_logic" {
-  // 测试向上取整除法的业务逻辑
-  divide_with_ceil(10, 3) = 4
-  divide_with_ceil(9, 3) = 3
-  divide_with_ceil(1, 2) = 1
-  divide_with_ceil(0, 5) = 0
-  divide_with_ceil(5, 0) = 0
-  divide_with_ceil(-10, 3) = -3
-}
-
-test "greet_function_international_support" {
-  // 测试问候函数的国际字符支持
-  greet("World") = "Hello, World!"
-  greet("MoonBit") = "Hello, MoonBit!"
+test "greet_function_various_inputs" {
+  // 测试问候函数的各种输入
+  greet("Azimuth") = "Hello, Azimuth!"
   greet("") = "Hello, !"
-  greet("世界") = "Hello, 世界!"
-  greet("🚀") = "Hello, 🚀!"
-  greet("café") = "Hello, café!"
+  greet("123") = "Hello, 123!"
+  greet("测试") = "Hello, 测试!"
+  greet("🌙") = "Hello, 🌙!"
 }
 
-test "mathematical_properties_verification" {
-  // 验证数学性质
-  // 加法交换律
-  add(7, 13) = add(13, 7)
-  
-  // 乘法交换律
-  multiply(7, 13) = multiply(13, 7)
-  
-  // 加法恒等式
-  add(5, 0) = 5
-  
-  // 乘法恒等式
-  multiply(5, 1) = 5
-  multiply(5, 0) = 0
+test "divide_with_ceil_complex_scenarios" {
+  // 测试向上取整除法的复杂场景
+  divide_with_ceil(100, 9) = 12
+  divide_with_ceil(-25, 4) = -6
+  divide_with_ceil(37, -5) = -7
+  divide_with_ceil(-18, -3) = 6
+  divide_with_ceil(0, 7) = 0
 }
 
-test "complex_calculation_pipeline" {
-  // 测试复杂计算流水线
-  // 场景：计算项目资源需求
-  let team_size = 8
-  let tasks_per_person = 5
-  let total_tasks = multiply(team_size, tasks_per_person)
-  let tasks_per_sprint = 15
-  let sprints_needed = divide_with_ceil(total_tasks, tasks_per_sprint)
-  
-  // 验证计算结果
-  total_tasks = 40
-  sprints_needed = 3
+test "subtract_function_properties" {
+  // 测试减法函数的性质
+  subtract(50, 25) = 25
+  subtract(10, 30) = -20
+  subtract(-15, -5) = -10
+  subtract(100, 0) = 100
+  subtract(0, 0) = 0
 }
 
-test "resource_allocation_optimization" {
-  // 资源分配优化测试
-  // 场景：计算装盒问题
-  let total_items = 25
-  let items_per_box = 6
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  
-  // 验证需要的箱子数量
-  boxes_needed = 5
+test "mathematical_commutative_laws" {
+  // 测试数学交换律
+  add(17, 29) = add(29, 17)
+  multiply(13, 17) = multiply(17, 13)
+  add(-5, 12) = add(12, -5)
+  multiply(-4, 6) = multiply(6, -4)
+}
+
+test "business_calculation_scenario" {
+  // 业务计算场景：资源分配
+  let total_items = 157
+  let container_capacity = 25
+  let containers_needed = divide_with_ceil(total_items, container_capacity)
+  containers_needed = 7
   
   // 验证总容量
-  let total_capacity = multiply(boxes_needed, items_per_box)
-  total_capacity = 30
+  let total_capacity = multiply(containers_needed, container_capacity)
+  total_capacity = 175
   
   // 验证剩余空间
   let remaining_space = subtract(total_capacity, total_items)
-  remaining_space = 5
+  remaining_space = 18
+}
+
+test "mathematical_identity_elements" {
+  // 测试数学单位元
+  add(42, 0) = 42
+  multiply(42, 1) = 42
+  multiply(42, 0) = 0
+  subtract(42, 0) = 42
+  divide_with_ceil(42, 1) = 42
+}
+
+test "error_handling_boundary_conditions" {
+  // 错误处理和边界条件
+  divide_with_ceil(50, 0) = 0
+  divide_with_ceil(-50, 0) = 0
+  divide_with_ceil(0, 0) = 0
+  divide_with_ceil(1, 1) = 1
+  divide_with_ceil(-1, -1) = 1
+}
+
+test "complex_calculation_pipeline" {
+  // 复杂计算流水线
+  let base = 15
+  let multiplier = 4
+  let divisor = 7
+  let addition = 9
+  
+  // 计算流程：((base * multiplier) / divisor) + addition
+  let step1 = multiply(base, multiplier)
+  step1 = 60
+  
+  let step2 = divide_with_ceil(step1, divisor)
+  step2 = 9
+  
+  let result = add(step2, addition)
+  result = 18
 }
