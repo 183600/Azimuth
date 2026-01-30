@@ -1,174 +1,199 @@
-// 标准 MoonBit 增强测试用例
+// 新增的标准 MoonBit 测试用例
 // 针对 azimuth 库的额外测试，不超过10个测试用例
 
-test "enhanced_error_boundary_conditions" {
-  // 测试错误边界条件
-  // 测试极大值的运算
-  let large_positive = 2147483647
-  let large_negative = -2147483648
+test "financial_interest_calculation" {
+  // 金融利息计算场景
+  let principal = 10000
+  let interest_rate = 5
   
-  // 测试大数相加的边界情况
-  assert_eq(2147483646, add(large_positive, -1))
-  assert_eq(-2147483647, add(large_negative, 1))
+  // 简化的复利计算（每年计算一次）
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, interest_rate), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, interest_rate), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, interest_rate), 100))
   
-  // 测试大数相乘的安全情况
-  assert_eq(2147483647, multiply(large_positive, 1))
-  assert_eq(-2147483648, multiply(large_negative, 1))
+  // 验证结果（由于使用向上取整，结果会略高于标准复利计算）
+  assert_eq(11576, year3_amount)
 }
 
-test "enhanced_decimal_simulation_with_ceil" {
-  // 模拟小数运算的向上取整测试
-  // 模拟 1.1 + 2.2 = 3.3 -> 向上取整为 4
-  let simulated_decimal_1 = divide_with_ceil(11, 10)
-  let simulated_decimal_2 = divide_with_ceil(22, 10)
-  let sum = add(simulated_decimal_1, simulated_decimal_2)
+test "inventory_reorder_point" {
+  // 库存重新订购点计算
+  let daily_demand = 15
+  let lead_time_days = 7
+  let safety_stock = 20
   
-  assert_eq(2, simulated_decimal_1)  // ceil(1.1) = 2
-  assert_eq(3, simulated_decimal_2)  // ceil(2.2) = 3
-  assert_eq(5, sum)                  // 2 + 3 = 5
+  // 计算重新订购点
+  let demand_during_lead_time = multiply(daily_demand, lead_time_days)
+  let reorder_point = add(demand_during_lead_time, safety_stock)
+  
+  assert_eq(125, reorder_point)
 }
 
-test "enhanced_complex_financial_calculation" {
-  // 复杂金融计算：贷款分期计算
-  let loan_amount = 10000
-  let interest_rate = 5  // 5%
-  let months = 12
-  
-  // 计算月利率（简化为固定金额）
-  let monthly_interest = divide_with_ceil(multiply(loan_amount, interest_rate), 100)
-  let total_interest = multiply(monthly_interest, months)
-  let total_repayment = add(loan_amount, total_interest)
-  
-  // 计算每月还款额（向上取整）
-  let monthly_payment = divide_with_ceil(total_repayment, months)
-  
-  assert_eq(500, monthly_interest)
-  assert_eq(6000, total_interest)
-  assert_eq(16000, total_repayment)
-  assert_eq(1334, monthly_payment)  // ceil(16000/12) = 1334
-}
-
-test "enhanced_scientific_notation_simulation" {
-  // 模拟科学计数法运算
-  // 模拟 1.23 × 10^3 + 4.56 × 10^2
-  let mantissa1 = divide_with_ceil(123, 100)  // 1.23 -> 2
-  let exponent1 = 1000                         // 10^3
-  let mantissa2 = divide_with_ceil(456, 100)  // 4.56 -> 5
-  let exponent2 = 100                          // 10^2
-  
-  let term1 = multiply(mantissa1, exponent1)
-  let term2 = multiply(mantissa2, exponent2)
-  let result = add(term1, term2)
-  
-  assert_eq(2, mantissa1)
-  assert_eq(5, mantissa2)
-  assert_eq(2000, term1)
-  assert_eq(500, term2)
-  assert_eq(2500, result)
-}
-
-test "enhanced_resource_optimization" {
-  // 资源优化算法测试
-  let total_resources = 100
-  let task1_requirement = 23
-  let task2_requirement = 31
-  let task3_requirement = 19
-  
-  // 计算已分配资源
-  let allocated = add(add(task1_requirement, task2_requirement), task3_requirement)
-  
-  // 计算剩余资源
-  let remaining = add(total_resources, -allocated)
-  
-  // 计算可以支持的新任务数量（每个新任务需要7个资源）
-  let new_tasks_possible = divide_with_ceil(remaining, 7)
-  
-  assert_eq(73, allocated)
-  assert_eq(27, remaining)
-  assert_eq(4, new_tasks_possible)  // ceil(27/7) = 4
-}
-
-test "enhanced_time_zone_calculation" {
-  // 时区时间计算
-  let local_time = 14  // 下午2点
-  let time_difference = 8  // 时差8小时
-  
-  // 计算远程时间（模24小时运算的简化版本）
-  let remote_time = add(local_time, time_difference)
-  let adjusted_time = if remote_time >= 24 {
-    add(remote_time, -24)
-  } else {
-    remote_time
-  }
-  
-  assert_eq(22, remote_time)
-  assert_eq(22, adjusted_time)
-}
-
-test "enhanced_data_structure_simulation" {
-  // 模拟数据结构操作：栈操作
-  let stack_size_initial = 0
-  let push_operations = 5
-  let pop_operations = 3
-  
-  // 执行推入操作
-  let stack_after_push = add(stack_size_initial, push_operations)
-  
-  // 执行弹出操作
-  let final_stack_size = add(stack_after_push, -pop_operations)
-  
-  // 检查栈是否为空
-  let is_empty = if final_stack_size == 0 { 1 } else { 0 }
-  
-  assert_eq(5, stack_after_push)
-  assert_eq(2, final_stack_size)
-  assert_eq(0, is_empty)  // 栈不为空
-}
-
-test "enhanced_temperature_conversion" {
-  // 温度转换模拟：摄氏度到华氏度
-  let celsius = 25
-  
-  // 模拟公式：F = C × 9/5 + 32
-  let multiplied = multiply(celsius, 9)
-  let divided = divide_with_ceil(multiplied, 5)
-  let fahrenheit = add(divided, 32)
-  
-  assert_eq(225, multiplied)
-  assert_eq(45, divided)    // ceil(225/5) = 45
-  assert_eq(77, fahrenheit)
-}
-
-test "enhanced_batch_processing" {
-  // 批处理计算
-  let total_items = 1000
+test "data_batch_processing" {
+  // 数据批处理计算
+  let total_records = 1000
   let batch_size = 75
   
-  // 计算完整批次数
-  let full_batches = divide_with_ceil(total_items, batch_size)
+  // 计算需要的批次数
+  let full_batches = divide_with_ceil(total_records, batch_size)
   
-  // 计算最后一个批次的项目数
-  let last_batch_size = if total_items % batch_size == 0 {
-    batch_size
-  } else {
-    total_items - multiply(full_batches - 1, batch_size)
-  }
-  
-  assert_eq(14, full_batches)    // ceil(1000/75) = 14
-  assert_eq(25, last_batch_size) // 1000 - 13*75 = 25
+  assert_eq(14, full_batches)
 }
 
-test "enhanced_string_processing_with_numbers" {
-  // 字符串与数字的混合处理
-  let prefix = "Item"
-  let number = 42
-  let suffix = "Status"
+test "project_resource_allocation" {
+  // 项目资源分配计算
+  let total_budget = 50000
+  let team_members = 8
+  let project_duration_weeks = 12
   
-  // 构建复合字符串
-  let number_as_string = "42"  // 简化的数字转字符串
-  let composite_string = prefix + number_as_string + suffix
-  let final_greeting = greet(composite_string)
+  // 计算每人每周预算
+  let total_person_weeks = multiply(team_members, project_duration_weeks)
+  let budget_per_person_week = divide_with_ceil(total_budget, total_person_weeks)
   
-  assert_eq_string("Hello, Item42Status!", final_greeting)
-  assert_eq_string("Hello, Test123!", greet("Test123"))
+  assert_eq(521, budget_per_person_week)
+}
+
+test "network_data_transfer" {
+  // 网络数据传输计算
+  let file_size_mb = 850
+  let network_speed_mbps = 50
+  let overhead_percentage = 10
+  
+  // 计算基础传输时间
+  let base_transfer_time = divide_with_ceil(file_size_mb, network_speed_mbps)
+  
+  // 计算开销时间
+  let overhead_time = divide_with_ceil(multiply(base_transfer_time, overhead_percentage), 100)
+  
+  // 计算总传输时间
+  let total_transfer_time = add(base_transfer_time, overhead_time)
+  
+  assert_eq(19, total_transfer_time)
+}
+
+test "manufacturing_production_efficiency" {
+  // 制造业生产效率计算
+  let target_production = 1000
+  let actual_production = 950
+  let defect_rate = 2
+  
+  // 计算生产效率百分比
+  let efficiency_percentage = divide_with_ceil(multiply(actual_production, 100), target_production)
+  
+  // 计算合格产品数量
+  let good_products = actual_production - divide_with_ceil(multiply(actual_production, defect_rate), 100)
+  
+  assert_eq(95, efficiency_percentage)
+  assert_eq(931, good_products)
+}
+
+test "agricultural_planning" {
+  // 农业规划计算
+  let field_area_hectares = 25
+  let crop_yield_per_hectare = 800
+  let market_price_per_ton = 250
+  let labor_cost_per_hectare = 150
+  let fertilizer_cost_per_hectare = 80
+  
+  // 计算总产量
+  let total_yield = multiply(field_area_hectares, crop_yield_per_hectare)
+  
+  // 计算总收入
+  let total_revenue = multiply(total_yield, market_price_per_ton)
+  
+  // 计算总成本
+  let total_labor_cost = multiply(field_area_hectares, labor_cost_per_hectare)
+  let total_fertilizer_cost = multiply(field_area_hectares, fertilizer_cost_per_hectare)
+  let total_cost = add(total_labor_cost, total_fertilizer_cost)
+  
+  // 计算利润
+  let profit = add(total_revenue, -total_cost)
+  
+  assert_eq(20000, total_yield)
+  assert_eq(5000000, total_revenue)
+  assert_eq(5750, total_cost)
+  assert_eq(4994250, profit)
+}
+
+test "digital_storage_planning" {
+  // 数字存储规划计算
+  let file_size_mb = 125
+  let compression_ratio = 60
+  let redundancy_factor = 2
+  let storage_devices = 8
+  
+  // 计算压缩后大小
+  let compressed_size = divide_with_ceil(multiply(file_size_mb, compression_ratio), 100)
+  
+  // 计算包含冗余的总存储需求
+  let total_storage_needed = multiply(compressed_size, redundancy_factor)
+  
+  // 计算每个设备需要存储的容量
+  let storage_per_device = divide_with_ceil(total_storage_needed, storage_devices)
+  
+  assert_eq(75, compressed_size)
+  assert_eq(150, total_storage_needed)
+  assert_eq(19, storage_per_device)
+}
+
+test "energy_consumption_analysis" {
+  // 能源消耗分析计算
+  let daily_consumption_kwh = 120
+  let peak_hours_percentage = 30
+  let peak_rate_multiplier = 2
+  let base_rate_per_kwh = 8
+  let days_in_month = 30
+  
+  // 计算峰值和非峰值消耗
+  let peak_consumption = divide_with_ceil(multiply(daily_consumption_kwh, peak_hours_percentage), 100)
+  let off_peak_consumption = add(daily_consumption_kwh, -peak_consumption)
+  
+  // 计算每日成本
+  let daily_peak_cost = multiply(peak_consumption, multiply(base_rate_per_kwh, peak_rate_multiplier))
+  let daily_off_peak_cost = multiply(off_peak_consumption, base_rate_per_kwh)
+  let daily_total_cost = add(daily_peak_cost, daily_off_peak_cost)
+  
+  // 计算月度成本
+  let monthly_total_cost = multiply(daily_total_cost, days_in_month)
+  
+  assert_eq(36, peak_consumption)
+  assert_eq(84, off_peak_consumption)
+  assert_eq(576, daily_peak_cost)
+  assert_eq(672, daily_off_peak_cost)
+  assert_eq(1248, daily_total_cost)
+  assert_eq(37440, monthly_total_cost)
+}
+
+test "complex_business_calculation" {
+  // 复杂业务计算
+  let product_cost = 120
+  let quantity = 15
+  let tax_rate = 8
+  let shipping_cost_per_item = 5
+  let discount_threshold = 1000
+  let discount_amount = 50
+  
+  // 步骤1: 计算商品总价
+  let subtotal = multiply(product_cost, quantity)
+  
+  // 步骤2: 计算运费
+  let total_shipping = multiply(shipping_cost_per_item, quantity)
+  
+  // 步骤3: 计算税费
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  
+  // 步骤4: 计算折扣前总价
+  let pre_discount_total = add(add(subtotal, total_shipping), tax_amount)
+  
+  // 步骤5: 应用折扣（如果满足条件）
+  let final_total = if pre_discount_total > discount_threshold {
+    add(pre_discount_total, -discount_amount)
+  } else {
+    pre_discount_total
+  }
+  
+  assert_eq(1800, subtotal)
+  assert_eq(75, total_shipping)
+  assert_eq(144, tax_amount)
+  assert_eq(2019, pre_discount_total)
+  assert_eq(1969, final_total)
 }
