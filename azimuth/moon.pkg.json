@@ -50,6 +50,8 @@
     "enhanced_test_cases.mbt",
     "unique_enhanced_tests.mbt",
     "standard_test_cases.mbt",
+    "standard_test_cases_new.mbt",
+    "simple_standard_test.mbt",
     "standard_comprehensive_tests.mbt",
     "azimuth_advanced_test_suite.mbt",
     "azimuth_standard_tests.mbt",
