@@ -13,6 +13,7 @@
   ],
   "files": [
     "lib.mbt",
+    "azimuth_standard_unit_tests.mbt",
     "azimuth_additional_standard_tests.mbt",
     "standard_moonbit_tests.mbt",
     "standard_moonbit_quality_tests.mbt",
