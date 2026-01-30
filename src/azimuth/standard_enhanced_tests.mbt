@@ -1,162 +1,188 @@
 // 标准 MoonBit 增强测试用例
-// 针对 azimuth 库的全面功能测试
+// 为 azimuth 库添加的高质量测试，不超过10个测试用例
+
+test "subtract_function_comprehensive" {
+  // 全面测试减法函数
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(15, subtract(10, -5))
+  assert_eq(-15, subtract(-10, 5))
+}
+
+test "mathematical_invariant_properties" {
+  // 测试数学不变性质
+  let x = 42
+  
+  // 加法逆元
+  assert_eq(0, add(x, -x))
+  
+  // 减法的自反性
+  assert_eq(0, subtract(x, x))
+  
+  // 乘法单位元
+  assert_eq(x, multiply(x, 1))
+  
+  // 减去零
+  assert_eq(x, subtract(x, 0))
+}
+
+test "complex_financial_amortization" {
+  // 复杂金融摊销计算
+  let loan_principal = 120000
+  let annual_rate = 6
+  let loan_term_years = 30
+  
+  // 计算月利率（简化）
+  let monthly_rate = divide_with_ceil(annual_rate, 12)
+  
+  // 计算总月数
+  let total_months = multiply(loan_term_years, 12)
+  
+  // 简化的月供计算
+  let monthly_payment = divide_with_ceil(
+    add(loan_principal, divide_with_ceil(multiply(loan_principal, annual_rate), 100)),
+    total_months
+  )
+  
+  assert_eq(1, monthly_rate)
+  assert_eq(360, total_months)
+  assert_eq(367, monthly_payment)
+}
+
+test "resource_optimization_algorithm" {
+  // 资源优化算法测试
+  let total_resources = 1000
+  let project_a_needs = 234
+  let project_b_needs = 189
+  let project_c_needs = 156
+  
+  // 计算剩余资源
+  let allocated = add(add(project_a_needs, project_b_needs), project_c_needs)
+  let remaining = subtract(total_resources, allocated)
+  
+  // 计算可以支持的额外小项目数量
+  let small_project_size = 45
+  let additional_projects = divide_with_ceil(remaining, small_project_size)
+  
+  assert_eq(579, allocated)
+  assert_eq(421, remaining)
+  assert_eq(10, additional_projects)
+}
+
+test "error_boundary_comprehensive" {
+  // 综合错误边界测试
+  // 除零的各种情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  
+  // 极值减法
+  let max_val = 2147483647
+  let min_val = -2147483648
+  assert_eq(max_val, subtract(max_val, 0))
+  assert_eq(min_val, subtract(min_val, 0))
+}
+
+test "data_transformation_pipeline" {
+  // 数据转换流水线测试
+  let raw_data = 12345
+  
+  // 步骤1: 标准化处理
+  let normalized = divide_with_ceil(raw_data, 1000)
+  
+  // 步骤2: 应用系数
+  let scaled = multiply(normalized, 25)
+  
+  // 步骤3: 调整偏移
+  let adjusted = add(scaled, 100)
+  
+  // 步骤4: 最终标准化
+  let final_result = divide_with_ceil(adjusted, 3)
+  
+  assert_eq(13, normalized)
+  assert_eq(325, scaled)
+  assert_eq(425, adjusted)
+  assert_eq(142, final_result)
+}
+
+test "string_processing_advanced" {
+  // 高级字符串处理测试
+  // 测试各种特殊字符串组合
+  assert_eq_string("Hello, JSON_2024!", greet("JSON_2024"))
+  assert_eq_string("Hello, API_v2.0!", greet("API_v2.0"))
+  assert_eq_string("Hello, user@domain.com!", greet("user@domain.com"))
+  assert_eq_string("Hello, https://example.com!", greet("https://example.com"))
+  assert_eq_string("Hello, C++/Java/Python!", greet("C++/Java/Python"))
+}
 
 test "mathematical_sequence_calculation" {
-  // 数学序列计算：等差数列和等比数列
-  let first_term = 3
-  let common_diff = 4
-  let terms_count = 5
+  // 数学序列计算测试
+  // 计算等差数列前n项和: S = n/2 * (2a + (n-1)d)
+  let first_term = 7
+  let common_diff = 5
+  let num_terms = 12
   
-  // 计算等差数列第5项：a_n = a_1 + (n-1)d
-  let nth_term = add(first_term, multiply(common_diff, terms_count - 1))
-  assert_eq(19, nth_term)  // 3 + 4*4 = 19
+  let sum_n = divide_with_ceil(
+    multiply(num_terms, add(multiply(2, first_term), multiply(num_terms - 1, common_diff))),
+    2
+  )
   
-  // 计算前5项和：S_n = n/2 * (2a_1 + (n-1)d)
-  let sum_n = divide_with_ceil(multiply(terms_count, add(multiply(2, first_term), multiply(common_diff, terms_count - 1))), 2)
-  assert_eq(55, sum_n)  // 5/2 * (6 + 16) = 55
+  // 计算等比数列前n项和（简化版本）
+  let geo_first = 3
+  let geo_ratio = 2
+  let geo_terms = 8
+  let geo_sum = multiply(geo_first, multiply(geo_ratio, geo_terms))
+  
+  assert_eq(474, sum_n)
+  assert_eq(48, geo_sum)
 }
 
-test "financial_compound_interest" {
-  // 金融复利计算
-  let principal = 1000
-  let rate_percent = 5
-  let years = 3
+test "real_world_logistics_optimization" {
+  // 真实世界物流优化测试
+  let warehouse_capacity = 5000
+  let product_weights = [123, 234, 345, 456, 567]  // 模拟5种产品重量
+  let daily_demand = [45, 67, 23, 89, 34]  // 模拟每日需求
   
-  // 第一年：1000 + ceil(1000*5/100) = 1000 + 50 = 1050
-  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  // 计算每日总需求重量（简化计算）
+  let daily_weight = add(add(add(add(
+    multiply(123, 45), multiply(234, 67)
+  ), multiply(345, 23)), multiply(456, 89)), multiply(567, 34))
   
-  // 第二年：1050 + ceil(1050*5/100) = 1050 + 53 = 1103
-  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  // 计算需要的存储天数
+  let storage_days = divide_with_ceil(warehouse_capacity, daily_weight)
   
-  // 第三年：1103 + ceil(1103*5/100) = 1103 + 56 = 1159
-  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
+  // 计算安全库存水平（30%缓冲）
+  let safety_stock = divide_with_ceil(multiply(warehouse_capacity, 30), 100)
   
-  assert_eq(1050, year1)
-  assert_eq(1103, year2)
-  assert_eq(1159, year3)
+  assert_eq(119907, daily_weight)
+  assert_eq(1, storage_days)
+  assert_eq(1500, safety_stock)
 }
 
-test "inventory_optimization" {
-  // 库存优化算法
-  let demand_forecast = 150
-  let safety_stock = 30
-  let reorder_point = add(demand_forecast, safety_stock)
+test "performance_benchmark_simulation" {
+  // 性能基准模拟测试
+  let baseline_operations = 10000
+  let optimization_factor = 3
+  let overhead_percentage = 12
   
-  let current_stock = 100
-  let order_quantity = 200
+  // 计算优化后的性能
+  let optimized_ops = multiply(baseline_operations, optimization_factor)
   
-  // 如果当前库存低于再订购点，则订购
-  let should_order = current_stock < reorder_point
-  let new_stock = if should_order { add(current_stock, order_quantity) } else { current_stock }
+  // 计算系统开销
+  let system_overhead = divide_with_ceil(multiply(optimized_ops, overhead_percentage), 100)
   
-  assert_eq(180, reorder_point)
-  assert_eq(true, should_order)
-  assert_eq(300, new_stock)
-}
-
-test "temperature_conversion" {
-  // 温度转换计算（简化版本）
-  let celsius = 25
-  let fahrenheit = add(divide_with_ceil(multiply(celsius, 9), 5), 32)
+  // 计算实际性能
+  let actual_performance = subtract(optimized_ops, system_overhead)
   
-  // 验证转换公式：°F = (°C × 9/5) + 32
-  assert_eq(77, fahrenheit)  // 25*9/5 + 32 = 45 + 32 = 77
+  // 计算性能提升百分比
+  let improvement_percentage = divide_with_ceil(
+    multiply(subtract(actual_performance, baseline_operations), 100),
+    baseline_operations
+  )
   
-  // 负温度测试
-  let negative_celsius = -10
-  let negative_fahrenheit = add(divide_with_ceil(multiply(negative_celsius, 9), 5), 32)
-  assert_eq(14, negative_fahrenheit)  // -10*9/5 + 32 = -18 + 32 = 14
-}
-
-test "project_management_metrics" {
-  // 项目管理指标计算
-  let total_tasks = 45
-  let completed_tasks = 28
-  let team_members = 5
-  
-  // 完成率
-  let completion_rate = divide_with_ceil(multiply(completed_tasks, 100), total_tasks)
-  
-  // 剩余任务
-  let remaining_tasks = add(total_tasks, -completed_tasks)
-  
-  // 每人平均任务数
-  let tasks_per_member = divide_with_ceil(total_tasks, team_members)
-  
-  // 预计剩余天数（假设每人每天完成2个任务）
-  let days_remaining = divide_with_ceil(remaining_tasks, multiply(team_members, 2))
-  
-  assert_eq(63, completion_rate)  // ceil(28*100/45) = 63%
-  assert_eq(17, remaining_tasks)
-  assert_eq(9, tasks_per_member)
-  assert_eq(2, days_remaining)
-}
-
-test "data_structure_simulation" {
-  // 数据结构模拟：栈操作
-  let initial_stack = 0
-  let push1 = 10
-  let push2 = 20
-  let push3 = 30
-  
-  // 模拟栈的push操作（用加法表示）
-  let stack_after_push1 = add(initial_stack, push1)
-  let stack_after_push2 = add(stack_after_push1, push2)
-  let stack_after_push3 = add(stack_after_push2, push3)
-  
-  // 模拟栈的pop操作（用减法表示）
-  let stack_after_pop1 = add(stack_after_push3, -push3)
-  let stack_after_pop2 = add(stack_after_pop1, -push2)
-  
-  assert_eq(10, stack_after_push1)
-  assert_eq(30, stack_after_push2)
-  assert_eq(60, stack_after_push3)
-  assert_eq(30, stack_after_pop1)
-  assert_eq(10, stack_after_pop2)
-}
-
-test "network_throughput_calculation" {
-  // 网络吞吐量计算
-  let file_size_mb = 850
-  let network_speed_mbps = 50
-  let latency_ms = 10
-  let packet_overhead = 5
-  
-  // 基本传输时间
-  let base_time = divide_with_ceil(file_size_mb, network_speed_mbps)
-  
-  // 考虑延迟的总时间（简化计算）
-  let total_packets = divide_with_ceil(file_size_mb, 10)  // 假设每个包10MB
-  let total_latency = divide_with_ceil(multiply(total_packets, latency_ms), 1000)  // 转换为秒
-  let overhead_time = divide_with_ceil(multiply(total_packets, packet_overhead), network_speed_mbps)
-  
-  let total_time = add(add(base_time, total_latency), overhead_time)
-  
-  assert_eq(17, base_time)
-  assert_eq(1, total_latency)
-  assert_eq(1, overhead_time)
-  assert_eq(19, total_time)
-}
-
-test "string_processing_pipeline" {
-  // 字符串处理流水线
-  let base_name = "John"
-  let suffix = "Doe"
-  let title = "Mr"
-  
-  // 构建完整名称
-  let full_name = base_name + " " + suffix
-  let formal_name = title + " " + full_name
-  
-  // 使用greet函数处理
-  let casual_greeting = greet(base_name)
-  let formal_greeting = greet(formal_name)
-  
-  assert_eq_string("Hello, John!", casual_greeting)
-  assert_eq_string("Hello, Mr John Doe!", formal_greeting)
-  
-  // 测试特殊字符处理
-  let special_chars = "!@#$%^&*()"
-  let special_greeting = greet(special_chars)
-  assert_eq_string("Hello, !@#$%^&*()!", special_greeting)
+  assert_eq(30000, optimized_ops)
+  assert_eq(3600, system_overhead)
+  assert_eq(26400, actual_performance)
+  assert_eq(164, improvement_percentage)
 }
