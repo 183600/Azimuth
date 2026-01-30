@@ -5,6 +5,7 @@
     "moonbitlang/core/builtin"
   ],
   "test": [
+    "additional_enhanced_tests.mbt",
     "simple_new_test_file.mbt",
     "standard_concise_tests.mbt",
     "new_standard_moonbit_test_cases.mbt",
