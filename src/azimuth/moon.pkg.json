@@ -8,6 +8,8 @@
     "azimuth"
   ],
   "test": [
+    "standard_moonbit_test_cases_new.mbt",
+    "new_comprehensive_moonbit_tests.mbt",
     "test_new/standard_azimuth_basic_tests.mbt",
     "azimuth_concise_quality_tests.mbt",
     "premium_quality_test_cases.mbt",
@@ -208,6 +210,8 @@
     "azimuth_premium_quality_tests.mbt",
     "test/standard_test_cases.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
+    "standard_moonbit_test_cases_new.mbt",
+    "new_comprehensive_moonbit_tests.mbt",
     "test_new/standard_azimuth_basic_tests.mbt",
     "azimuth_concise_quality_tests.mbt",
     "azimuth_new_standard_unit_tests.mbt",
