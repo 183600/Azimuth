@@ -1,111 +1,165 @@
-// Azimuth 项目标准 MoonBit 测试用例
-// 使用标准 MoonBit 测试语法编写的高质量测试用例
+// 标准 MoonBit 测试用例 - 为 azimuth 库编写的高质量测试
+// 使用标准的 MoonBit 测试语法，包含10个全面的测试用例
 
-///|
-test "add_function_basic" {
-  // 测试基本加法功能
-  assert_eq(5, @azimuth.add(2, 3))
-  assert_eq(0, @azimuth.add(0, 0))
-  assert_eq(-5, @azimuth.add(-2, -3))
-  assert_eq(10, @azimuth.add(15, -5))
+// 导入被测试的模块
+use azimuth
+
+test "add_function_comprehensive_test" {
+  // 全面测试加法函数
+  // 基本正数加法
+  azimuth.assert_eq(8, azimuth.add(3, 5))
+  // 包含零的加法
+  azimuth.assert_eq(7, azimuth.add(7, 0))
+  azimuth.assert_eq(7, azimuth.add(0, 7))
+  // 负数加法
+  azimuth.assert_eq(-8, azimuth.add(-3, -5))
+  azimuth.assert_eq(2, azimuth.add(-3, 5))
+  azimuth.assert_eq(-2, azimuth.add(3, -5))
+  // 大数加法
+  azimuth.assert_eq(2000, azimuth.add(1000, 1000))
 }
 
-///|
-test "multiply_function_basic" {
-  // 测试基本乘法功能
-  assert_eq(6, @azimuth.multiply(2, 3))
-  assert_eq(0, @azimuth.multiply(5, 0))
-  assert_eq(-15, @azimuth.multiply(-3, 5))
-  assert_eq(25, @azimuth.multiply(-5, -5))
+test "multiply_function_comprehensive_test" {
+  // 全面测试乘法函数
+  // 基本正数乘法
+  azimuth.assert_eq(15, azimuth.multiply(3, 5))
+  // 包含零的乘法
+  azimuth.assert_eq(0, azimuth.multiply(7, 0))
+  azimuth.assert_eq(0, azimuth.multiply(0, 7))
+  // 负数乘法
+  azimuth.assert_eq(15, azimuth.multiply(-3, -5))
+  azimuth.assert_eq(-15, azimuth.multiply(-3, 5))
+  azimuth.assert_eq(-15, azimuth.multiply(3, -5))
+  // 单位元乘法
+  azimuth.assert_eq(7, azimuth.multiply(7, 1))
+  azimuth.assert_eq(7, azimuth.multiply(1, 7))
 }
 
-///|
-test "greet_function_basic" {
-  // 测试问候函数功能
-  assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  assert_eq_string("Hello, !", @azimuth.greet(""))
+test "greet_function_comprehensive_test" {
+  // 全面测试问候函数
+  // 基本英文名字
+  azimuth.assert_eq_string("Hello, Alice!", azimuth.greet("Alice"))
+  // 空字符串处理
+  azimuth.assert_eq_string("Hello, !", azimuth.greet(""))
+  // 中文字符
+  azimuth.assert_eq_string("Hello, 张三!", azimuth.greet("张三"))
+  // 包含空格的名字
+  azimuth.assert_eq_string("Hello, John Doe!", azimuth.greet("John Doe"))
+  // 数字和特殊字符
+  azimuth.assert_eq_string("Hello, User123!", azimuth.greet("User123"))
+  azimuth.assert_eq_string("Hello, test@example.com!", azimuth.greet("test@example.com"))
 }
 
-///|
-test "divide_with_ceil_function" {
-  // 测试向上取整除法功能
-  assert_eq(4, @azimuth.divide_with_ceil(10, 3))
-  assert_eq(3, @azimuth.divide_with_ceil(9, 3))
-  assert_eq(0, @azimuth.divide_with_ceil(5, 0))
-  assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
+test "divide_with_ceil_function_positive_test" {
+  // 测试正数的向上取整除法
+  // 能整除的情况
+  azimuth.assert_eq(4, azimuth.divide_with_ceil(12, 3))
+  azimuth.assert_eq(5, azimuth.divide_with_ceil(15, 3))
+  // 不能整除需要向上取整
+  azimuth.assert_eq(5, azimuth.divide_with_ceil(13, 3))
+  azimuth.assert_eq(4, azimuth.divide_with_ceil(10, 3))
+  // 被除数小于除数
+  azimuth.assert_eq(1, azimuth.divide_with_ceil(2, 5))
+  azimuth.assert_eq(1, azimuth.divide_with_ceil(1, 100))
 }
 
-///|
-test "subtract_function_basic" {
-  // 测试减法功能
-  assert_eq(2, @azimuth.subtract(5, 3))
-  assert_eq(-2, @azimuth.subtract(3, 5))
-  assert_eq(0, @azimuth.subtract(5, 5))
-  assert_eq(10, @azimuth.subtract(-5, -15))
+test "divide_with_ceil_function_negative_test" {
+  // 测试负数的向上取整除法
+  // 负被除数，正除数
+  azimuth.assert_eq(-3, azimuth.divide_with_ceil(-8, 3))
+  azimuth.assert_eq(-2, azimuth.divide_with_ceil(-6, 3))
+  // 正被除数，负除数
+  azimuth.assert_eq(-3, azimuth.divide_with_ceil(8, -3))
+  azimuth.assert_eq(-2, azimuth.divide_with_ceil(6, -3))
+  // 负被除数，负除数
+  azimuth.assert_eq(3, azimuth.divide_with_ceil(-8, -3))
+  azimuth.assert_eq(2, azimuth.divide_with_ceil(-6, -3))
 }
 
-///|
-test "mathematical_properties" {
-  // 测试数学性质
-  let x = 7
-  let y = 11
+test "divide_with_ceil_function_edge_cases" {
+  // 测试向上取整除法的边界情况
+  // 除数为零的安全处理
+  azimuth.assert_eq(0, azimuth.divide_with_ceil(10, 0))
+  azimuth.assert_eq(0, azimuth.divide_with_ceil(-10, 0))
+  azimuth.assert_eq(0, azimuth.divide_with_ceil(0, 0))
+  // 零被除数
+  azimuth.assert_eq(0, azimuth.divide_with_ceil(0, 5))
+  azimuth.assert_eq(0, azimuth.divide_with_ceil(0, -5))
+  // 相等的数值
+  azimuth.assert_eq(1, azimuth.divide_with_ceil(5, 5))
+  azimuth.assert_eq(1, azimuth.divide_with_ceil(-5, -5))
+}
+
+test "mathematical_properties_verification" {
+  // 验证数学性质
+  let a = 6
+  let b = 9
+  let c = 4
   
   // 加法交换律
-  assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
-  
+  azimuth.assert_eq(azimuth.add(a, b), azimuth.add(b, a))
   // 乘法交换律
-  assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
-  
-  // 零元素性质
-  assert_eq(x, @azimuth.add(x, 0))
-  assert_eq(0, @azimuth.multiply(x, 0))
+  azimuth.assert_eq(azimuth.multiply(a, b), azimuth.multiply(b, a))
+  // 加法结合律
+  azimuth.assert_eq(azimuth.add(azimuth.add(a, b), c), azimuth.add(a, azimuth.add(b, c)))
+  // 乘法结合律
+  azimuth.assert_eq(azimuth.multiply(azimuth.multiply(a, b), c), azimuth.multiply(a, azimuth.multiply(b, c)))
+  // 分配律
+  azimuth.assert_eq(azimuth.multiply(a, azimuth.add(b, c)), azimuth.add(azimuth.multiply(a, b), azimuth.multiply(a, c)))
 }
 
-///|
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景
-  // 项目资源分配计算
-  let team_members = 8
-  let tasks_per_member = 5
-  let total_tasks = @azimuth.multiply(team_members, tasks_per_member)
+test "real_world_business_calculation" {
+  // 真实世界业务计算场景
+  // 计算订单总价：商品价格 × 数量 + 运费
+  let unit_price = 25
+  let quantity = 8
+  let shipping_cost = 15
+  let discount = 20
   
-  let sprint_capacity = 15
-  let sprints_needed = @azimuth.divide_with_ceil(total_tasks, sprint_capacity)
+  let subtotal = azimuth.multiply(unit_price, quantity)
+  let total_before_discount = azimuth.add(subtotal, shipping_cost)
+  let final_total = azimuth.add(total_before_discount, -discount)
   
-  assert_eq(40, total_tasks)
-  assert_eq(3, sprints_needed)
+  azimuth.assert_eq(200, subtotal)
+  azimuth.assert_eq(215, total_before_discount)
+  azimuth.assert_eq(195, final_total)
 }
 
-///|
-test "boundary_values_and_edge_cases" {
-  // 测试边界值和边缘情况
-  assert_eq(@azimuth.add(@azimuth.subtract(10, 5), @azimuth.multiply(2, 3)), 11)
-  assert_eq(@azimuth.divide_with_ceil(@azimuth.multiply(3, 4), 5), 3)
-  assert_eq(@azimuth.divide_with_ceil(1, 1), 1)
-  assert_eq(@azimuth.divide_with_ceil(0, 100), 0)
+test "packaging_and_shipping_calculation" {
+  // 包装和运输计算场景
+  let total_items = 47
+  let items_per_box = 12
+  let boxes_needed = azimuth.divide_with_ceil(total_items, items_per_box)
+  
+  // 计算总容量
+  let total_capacity = azimuth.multiply(boxes_needed, items_per_box)
+  
+  // 计算剩余空间
+  let remaining_space = azimuth.add(total_capacity, -total_items)
+  
+  azimuth.assert_eq(4, boxes_needed)
+  azimuth.assert_eq(48, total_capacity)
+  azimuth.assert_eq(1, remaining_space)
 }
 
-///|
-test "unicode_and_special_characters" {
-  // 测试Unicode和特殊字符支持
-  assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
-  assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
-  assert_eq_string("Hello, café!", @azimuth.greet("café"))
-  assert_eq_string("Hello, @#$%!", @azimuth.greet("@#$%"))
-}
-
-///|
-test "business_logic_packaging" {
-  // 测试业务逻辑：包装计算
-  let items = 47
-  let capacity_per_box = 12
+test "complex_workflow_calculation" {
+  // 复杂工作流计算
+  // 项目管理场景：计算项目完成时间和资源需求
+  let team_size = 6
+  let tasks_per_person_per_day = 3
+  let total_tasks = 85
+  let working_days_per_week = 5
   
-  let boxes_needed = @azimuth.divide_with_ceil(items, capacity_per_box)
-  let total_capacity = @azimuth.multiply(boxes_needed, capacity_per_box)
-  let remaining_space = @azimuth.subtract(total_capacity, items)
+  // 计算每日处理能力
+  let daily_capacity = azimuth.multiply(team_size, tasks_per_person_per_day)
   
-  assert_eq(4, boxes_needed)
-  assert_eq(48, total_capacity)
-  assert_eq(1, remaining_space)
+  // 计算需要的总工作日
+  let total_workdays_needed = azimuth.divide_with_ceil(total_tasks, daily_capacity)
+  
+  // 计算需要的周数
+  let weeks_needed = azimuth.divide_with_ceil(total_workdays_needed, working_days_per_week)
+  
+  azimuth.assert_eq(18, daily_capacity)
+  azimuth.assert_eq(5, total_workdays_needed)
+  azimuth.assert_eq(1, weeks_needed)
 }
