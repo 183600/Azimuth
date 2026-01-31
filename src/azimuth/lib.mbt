@@ -9830,3 +9830,105 @@ test "error_handling_subtraction_robustness" {
   assert_eq(0, divide_with_ceil(subtract(5, 5), 2))  // 零除法
   assert_eq(1, divide_with_ceil(subtract(10, 3), 7))  // 向上取整边界
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "standard_basic_arithmetic_validation" {
+  // 基本算术运算验证测试
+  assert_eq(9, add(4, 5))
+  assert_eq(20, multiply(4, 5))
+  assert_eq(-1, subtract(4, 5))
+  assert_eq(2, divide_with_ceil(9, 5))
+}
+
+test "standard_mathematical_commutativity" {
+  // 数学交换律标准测试
+  assert_eq(add(15, 25), add(25, 15))
+  assert_eq(multiply(15, 25), multiply(25, 15))
+  assert_eq(add(-10, 20), add(20, -10))
+  assert_eq(multiply(-10, 20), multiply(20, -10))
+}
+
+test "standard_zero_element_properties" {
+  // 零元素性质标准测试
+  assert_eq(42, add(42, 0))
+  assert_eq(0, multiply(42, 0))
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 0))
+  assert_eq(42, subtract(42, 0))
+}
+
+test "standard_division_ceil_comprehensive" {
+  // 向上取整除法综合测试
+  assert_eq(5, divide_with_ceil(20, 4))
+  assert_eq(5, divide_with_ceil(21, 4))
+  assert_eq(0, divide_with_ceil(0, 10))
+  assert_eq(0, divide_with_ceil(15, 0))
+  assert_eq(-4, divide_with_ceil(-15, 4))
+  assert_eq(4, divide_with_ceil(-15, -4))
+}
+
+test "standard_string_greeting_international" {
+  // 国际化字符串问候测试
+  assert_eq_string("Hello, Global!", greet("Global"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, Café!", greet("Café"))
+  assert_eq_string("Hello, !", greet(""))
+}
+
+test "standard_business_packaging_calculation" {
+  // 业务包装计算标准测试
+  let products = 89
+  let package_capacity = 15
+  let packages_needed = divide_with_ceil(products, package_capacity)
+  assert_eq(6, packages_needed)
+  
+  let total_capacity = multiply(packages_needed, package_capacity)
+  assert_eq(90, total_capacity)
+  
+  let unused_space = subtract(total_capacity, products)
+  assert_eq(1, unused_space)
+}
+
+test "standard_complex_calculation_workflow" {
+  // 复杂计算工作流标准测试
+  let base = 12
+  let step1 = add(base, multiply(3, 4))  // 12 + 12 = 24
+  let step2 = divide_with_ceil(step1, 7)  // ceil(24/7) = 4
+  let step3 = multiply(step2, add(2, 3))  // 4 * 5 = 20
+  let final_result = subtract(step3, 8)   // 20 - 8 = 12
+  assert_eq(12, final_result)
+}
+
+test "standard_boundary_extreme_values" {
+  // 边界极值标准测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1001, divide_with_ceil(10001, 10))
+  assert_eq(500001, divide_with_ceil(1000001, 2))
+}
+
+test "standard_error_handling_robustness" {
+  // 错误处理健壮性标准测试
+  assert_eq(0, divide_with_ceil(1, 0))
+  assert_eq(0, divide_with_ceil(-1, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, multiply(1000000, 0))
+  assert_eq(1000000, add(1000000, 0))
+  assert_eq_string("Hello, !", greet(""))
+}
+
+test "standard_resource_allocation_optimization" {
+  // 资源分配优化标准测试
+  let total_budget = 15000
+  let departments = 4
+  let base_allocation = divide_with_ceil(total_budget, departments)
+  assert_eq(3750, base_allocation)
+  
+  let total_allocated = multiply(base_allocation, departments)
+  assert_eq(15000, total_allocated)
+  
+  let efficiency = divide_with_ceil(multiply(total_budget, 100), total_allocated)
+  assert_eq(100, efficiency)
+}
