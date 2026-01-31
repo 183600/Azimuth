@@ -241,6 +241,7 @@
         "xyz_user_tests.mbt",
         "user_standard_tests.mbt",
         "abc_user_tests.mbt",
-        "final_user_test.mbt"
+        "final_user_test.mbt",
+        "azimuth_standard_tests.mbt"
       ]
     }
