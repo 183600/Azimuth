@@ -78,8 +78,22 @@ azimuth/lib.mbt:8929:6-8929:42 [E0061] Warning (duplicate_test): Allowing repeat
 azimuth/lib.mbt:8973:6-8973:41 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "add_function_commutative_property" should be unique, but it is already used at azimuth/lib.mbt:5799:6.
 azimuth/lib.mbt:9001:6-9001:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "greet_function_unicode_support" should be unique, but it is already used at azimuth/lib.mbt:5824:6.
 azimuth/lib.mbt:9041:6-9041:37 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "error_handling_and_edge_cases" should be unique, but it is already used at azimuth/lib.mbt:3186:6.
+azimuth/lib.mbt:9325:6-9325:49 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "enhanced_resource_allocation_optimization" should be unique, but it is already used at azimuth/lib.mbt:6143:6.
+azimuth/lib.mbt:9387:6-9387:44 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "enhanced_financial_compound_interest" should be unique, but it is already used at azimuth/lib.mbt:6091:6.
 Generating azimuth.wasm...
 Testing azimuth...
+Checking azimuth_standard_test.mbt...
+azimuth_test/azimuth_standard_test.mbt:53:18-53:20 [E0051] Warning (ambiguous_precedence): Operator `!=` and `==` are ambiguous, add parenthesis to disambiguate.
+azimuth_test/azimuth_standard_test.mbt:54:18-54:20 [E0051] Warning (ambiguous_precedence): Operator `==` and `==` are ambiguous, add parenthesis to disambiguate.
+azimuth_test/azimuth_standard_test.mbt:76:17-76:19 [E0051] Warning (ambiguous_precedence): Operator `<` and `==` are ambiguous, add parenthesis to disambiguate.
+azimuth_test/azimuth_standard_test.mbt:77:17-77:19 [E0051] Warning (ambiguous_precedence): Operator `>` and `==` are ambiguous, add parenthesis to disambiguate.
+azimuth_test/azimuth_standard_test.mbt:78:18-78:20 [E0051] Warning (ambiguous_precedence): Operator `<=` and `==` are ambiguous, add parenthesis to disambiguate.
+azimuth_test/azimuth_standard_test.mbt:79:18-79:20 [E0051] Warning (ambiguous_precedence): Operator `>=` and `==` are ambiguous, add parenthesis to disambiguate.
+azimuth_test/azimuth_standard_test.mbt:80:18-80:20 [E0051] Warning (ambiguous_precedence): Operator `==` and `==` are ambiguous, add parenthesis to disambiguate.
+azimuth_test/azimuth_standard_test.mbt:81:18-81:20 [E0051] Warning (ambiguous_precedence): Operator `!=` and `==` are ambiguous, add parenthesis to disambiguate.
+azimuth_test/azimuth_standard_test.mbt:107:19-107:29 [E4032] The type Array is undefined.
+azimuth_test/azimuth_standard_test.mbt:107:32-107:34 [E0013] Warning (unresolved_type_variable): The type of this expression is Array[_/0], which contains unresolved type variables. The type variable is default to Unit.
+Error: azimuth_standard_test.mbt compilation failed
 Checking standard_azimuth_basic_tests.mbt...
 Found 10 tests in standard_azimuth_basic_tests.mbt
 test ... ok
@@ -105,8 +119,7 @@ test ... ok
 test ... ok
 test ... ok
 Checking quality_standard_tests.mbt...
-Found 10 tests in quality_standard_tests.mbt
-test ... ok
+Found 9 tests in quality_standard_tests.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -247,17 +260,74 @@ test ... ok
 test ... ok
 test ... ok
 Checking standard_moonbit_tests.mbt...
-Found 10 tests in standard_moonbit_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_moonbit_tests.mbt:6:3-6:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:6:26-6:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:7:3-7:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:7:25-7:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:8:3-8:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:8:26-8:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:9:3-9:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:9:25-9:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:15:16-15:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:16:18-16:26 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:17:17-17:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:22:3-22:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_moonbit_tests.mbt:22:39-22:44 [E4021] The value identifier greet is unbound.
+azimuth_test/standard_moonbit_tests.mbt:23:3-23:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_moonbit_tests.mbt:23:37-23:42 [E4021] The value identifier greet is unbound.
+azimuth_test/standard_moonbit_tests.mbt:24:3-24:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_moonbit_tests.mbt:24:32-24:37 [E4021] The value identifier greet is unbound.
+azimuth_test/standard_moonbit_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:29:16-29:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:30:16-30:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:31:3-31:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:31:16-31:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:32:3-32:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:32:16-32:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:37:3-37:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:37:16-37:24 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:38:3-38:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:38:17-38:25 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:39:16-39:24 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:46:13-46:16 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:46:24-46:27 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:47:13-47:21 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:47:29-47:37 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:53:3-53:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:53:16-53:19 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:54:3-54:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:54:16-54:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:55:16-55:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:60:3-60:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:60:17-60:33 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:61:3-61:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:61:17-61:33 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:62:3-62:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:62:16-62:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:63:3-63:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:63:16-63:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:69:15-69:18 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:70:15-70:23 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:71:15-71:31 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:72:16-72:24 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:73:3-73:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:80:22-80:38 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:81:3-81:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:84:24-84:32 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:85:3-85:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:88:25-88:33 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:89:3-89:12 [E4021] The value identifier assert_eq is unbound.
+Error: standard_moonbit_tests.mbt compilation failed
 Checking my_new_unit_tests.mbt...
 Found 10 tests in my_new_unit_tests.mbt
 test ... ok
@@ -1733,17 +1803,74 @@ azimuth_test/simple_test_cases.mbt:52:36-52:44 [E4021] The value identifier mult
 azimuth_test/simple_test_cases.mbt:53:3-53:12 [E4021] The value identifier assert_eq is unbound.
 Error: simple_test_cases.mbt compilation failed
 Checking standard_moonbit_tests.mbt...
-Found 10 tests in standard_moonbit_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_moonbit_tests.mbt:6:3-6:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:6:26-6:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:7:3-7:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:7:25-7:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:8:3-8:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:8:26-8:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:9:3-9:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:9:25-9:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:15:16-15:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:16:18-16:26 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:17:17-17:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:22:3-22:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_moonbit_tests.mbt:22:39-22:44 [E4021] The value identifier greet is unbound.
+azimuth_test/standard_moonbit_tests.mbt:23:3-23:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_moonbit_tests.mbt:23:37-23:42 [E4021] The value identifier greet is unbound.
+azimuth_test/standard_moonbit_tests.mbt:24:3-24:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_moonbit_tests.mbt:24:32-24:37 [E4021] The value identifier greet is unbound.
+azimuth_test/standard_moonbit_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:29:16-29:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:30:16-30:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:31:3-31:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:31:16-31:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:32:3-32:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:32:16-32:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:37:3-37:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:37:16-37:24 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:38:3-38:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:38:17-38:25 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:39:16-39:24 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:46:13-46:16 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:46:24-46:27 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:47:13-47:21 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:47:29-47:37 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:53:3-53:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:53:16-53:19 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:54:3-54:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:54:16-54:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:55:16-55:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:60:3-60:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:60:17-60:33 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:61:3-61:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:61:17-61:33 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:62:3-62:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:62:16-62:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:63:3-63:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:63:16-63:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:69:15-69:18 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:70:15-70:23 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:71:15-71:31 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:72:16-72:24 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:73:3-73:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:80:22-80:38 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:81:3-81:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:84:24-84:32 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:85:3-85:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:88:25-88:33 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:89:3-89:12 [E4021] The value identifier assert_eq is unbound.
+Error: standard_moonbit_tests.mbt compilation failed
 Checking standard_moonbit_tests_new.mbt...
 Found 10 tests in standard_moonbit_tests_new.mbt
 test ... ok
@@ -4556,17 +4683,74 @@ test ... ok
 test ... ok
 test ... ok
 Checking standard_moonbit_tests.mbt...
-Found 10 tests in standard_moonbit_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_moonbit_tests.mbt:6:3-6:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:6:26-6:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:7:3-7:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:7:25-7:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:8:3-8:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:8:26-8:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:9:3-9:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:9:25-9:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:15:16-15:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:16:18-16:26 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:17:17-17:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:22:3-22:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_moonbit_tests.mbt:22:39-22:44 [E4021] The value identifier greet is unbound.
+azimuth_test/standard_moonbit_tests.mbt:23:3-23:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_moonbit_tests.mbt:23:37-23:42 [E4021] The value identifier greet is unbound.
+azimuth_test/standard_moonbit_tests.mbt:24:3-24:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_moonbit_tests.mbt:24:32-24:37 [E4021] The value identifier greet is unbound.
+azimuth_test/standard_moonbit_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:29:16-29:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:30:16-30:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:31:3-31:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:31:16-31:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:32:3-32:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:32:16-32:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:37:3-37:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:37:16-37:24 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:38:3-38:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:38:17-38:25 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:39:16-39:24 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:46:13-46:16 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:46:24-46:27 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:47:13-47:21 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:47:29-47:37 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:53:3-53:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:53:16-53:19 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:54:3-54:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:54:16-54:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:55:16-55:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:60:3-60:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:60:17-60:33 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:61:3-61:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:61:17-61:33 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:62:3-62:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:62:16-62:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:63:3-63:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:63:16-63:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:69:15-69:18 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:70:15-70:23 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:71:15-71:31 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:72:16-72:24 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:73:3-73:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:80:22-80:38 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:81:3-81:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:84:24-84:32 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:85:3-85:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:88:25-88:33 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:89:3-89:12 [E4021] The value identifier assert_eq is unbound.
+Error: standard_moonbit_tests.mbt compilation failed
 Checking self_contained_standard_tests.mbt...
 azimuth_test/self_contained_standard_tests.mbt:5:17-5:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
 azimuth_test/self_contained_standard_tests.mbt:5:20-5:21 [E3002] Parse error, unexpected token `(`, you may expect `::`.
@@ -5076,17 +5260,74 @@ test ... ok
 test ... ok
 test ... ok
 Checking standard_moonbit_tests.mbt...
-Found 10 tests in standard_moonbit_tests.mbt
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
-test ... ok
+azimuth_test/standard_moonbit_tests.mbt:6:3-6:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:6:26-6:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:7:3-7:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:7:25-7:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:8:3-8:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:8:26-8:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:9:3-9:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:9:25-9:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+azimuth_test/standard_moonbit_tests.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:15:16-15:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:16:18-16:26 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:17:17-17:25 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:22:3-22:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_moonbit_tests.mbt:22:39-22:44 [E4021] The value identifier greet is unbound.
+azimuth_test/standard_moonbit_tests.mbt:23:3-23:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_moonbit_tests.mbt:23:37-23:42 [E4021] The value identifier greet is unbound.
+azimuth_test/standard_moonbit_tests.mbt:24:3-24:19 [E4021] The value identifier assert_eq_string is unbound.
+azimuth_test/standard_moonbit_tests.mbt:24:32-24:37 [E4021] The value identifier greet is unbound.
+azimuth_test/standard_moonbit_tests.mbt:29:3-29:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:29:16-29:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:30:16-30:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:31:3-31:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:31:16-31:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:32:3-32:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:32:16-32:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:37:3-37:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:37:16-37:24 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:38:3-38:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:38:17-38:25 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:39:16-39:24 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:46:3-46:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:46:13-46:16 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:46:24-46:27 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:47:13-47:21 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:47:29-47:37 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:53:3-53:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:53:16-53:19 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:54:3-54:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:54:16-54:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:55:3-55:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:55:16-55:24 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:60:3-60:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:60:17-60:33 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:61:3-61:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:61:17-61:33 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:62:3-62:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:62:16-62:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:63:3-63:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:63:16-63:32 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:69:15-69:18 [E4021] The value identifier add is unbound.
+azimuth_test/standard_moonbit_tests.mbt:70:15-70:23 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:71:15-71:31 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:72:16-72:24 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:73:3-73:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:80:22-80:38 [E4021] The value identifier divide_with_ceil is unbound.
+azimuth_test/standard_moonbit_tests.mbt:81:3-81:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:84:24-84:32 [E4021] The value identifier multiply is unbound.
+azimuth_test/standard_moonbit_tests.mbt:85:3-85:12 [E4021] The value identifier assert_eq is unbound.
+azimuth_test/standard_moonbit_tests.mbt:88:25-88:33 [E4021] The value identifier subtract is unbound.
+azimuth_test/standard_moonbit_tests.mbt:89:3-89:12 [E4021] The value identifier assert_eq is unbound.
+Error: standard_moonbit_tests.mbt compilation failed
 Checking azimuth_standard_test_suite.mbt...
 Found 10 tests in azimuth_standard_test_suite.mbt
 test ... ok
@@ -6167,6 +6408,6 @@ test ... ok
 test ... ok
 test ... ok
 
-1661 tests passed, 0 failed
+1620 tests passed, 0 failed
 
 All packages compiled and tests passed successfully!
