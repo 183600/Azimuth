@@ -1,144 +1,134 @@
 // 标准 MoonBit 综合测试用例
-// 针对 azimuth 库核心功能的全面测试
+// 针对 azimuth 库核心功能的高质量测试
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  assert_eq(8, Azimuth::add(3, 5))
-  assert_eq(-2, Azimuth::add(-7, 5))
-  assert_eq(0, Azimuth::add(0, 0))
-  assert_eq(15, Azimuth::multiply(3, 5))
-  assert_eq(-15, Azimuth::multiply(-3, 5))
-  assert_eq(0, Azimuth::multiply(0, 100))
+test "comprehensive_arithmetic_operations" {
+  // 综合测试基本算术运算
+  azimuth::assert_eq(15, azimuth::add(7, 8))
+  azimuth::assert_eq(-3, azimuth::add(-10, 7))
+  azimuth::assert_eq(0, azimuth::add(5, -5))
+  
+  azimuth::assert_eq(42, azimuth::multiply(6, 7))
+  azimuth::assert_eq(-24, azimuth::multiply(-4, 6))
+  azimuth::assert_eq(0, azimuth::multiply(0, 123))
+  
+  azimuth::assert_eq(10, azimuth::subtract(25, 15))
+  azimuth::assert_eq(-20, azimuth::subtract(5, 25))
+  azimuth::assert_eq(0, azimuth::subtract(100, 100))
 }
 
-test "divide_with_ceil_comprehensive" {
-  // 向上取整除法的全面测试
-  assert_eq(4, divide_with_ceil(10, 3))    // 3.333... -> 4
-  assert_eq(3, divide_with_ceil(9, 3))     // 3 -> 3
-  assert_eq(1, divide_with_ceil(1, 100))   // 0.01 -> 1
-  assert_eq(-3, divide_with_ceil(-10, 3))  // -3.333... -> -3
-  assert_eq(-4, divide_with_ceil(-11, 3))  // -3.666... -> -4
-  assert_eq(0, divide_with_ceil(5, 0))     // 除零保护
+test "comprehensive_divide_with_ceil" {
+  // 全面测试向上取整除法
+  azimuth::assert_eq(4, azimuth::divide_with_ceil(10, 3))
+  azimuth::assert_eq(3, azimuth::divide_with_ceil(9, 3))
+  azimuth::assert_eq(1, azimuth::divide_with_ceil(1, 100))
+  azimuth::assert_eq(0, azimuth::divide_with_ceil(5, 0))
+  azimuth::assert_eq(-3, azimuth::divide_with_ceil(-10, 3))
+  azimuth::assert_eq(4, azimuth::divide_with_ceil(-10, -3))
+  azimuth::assert_eq(2, azimuth::divide_with_ceil(4, 2))
+  azimuth::assert_eq(3, azimuth::divide_with_ceil(8, 3))
 }
 
-test "greeting_functionality" {
-  // 问候功能测试
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, User123!", greet("User123"))
+test "comprehensive_greet_function" {
+  // 全面测试问候函数
+  azimuth::assert_eq_string("Hello, 世界!", azimuth::greet("世界"))
+  azimuth::assert_eq_string("Hello, 🚀!", azimuth::greet("🚀"))
+  azimuth::assert_eq_string("Hello, MoonBit!", azimuth::greet("MoonBit"))
+  azimuth::assert_eq_string("Hello, !", azimuth::greet(""))
+  azimuth::assert_eq_string("Hello, 123!", azimuth::greet("123"))
+  azimuth::assert_eq_string("Hello, Test!", azimuth::greet("Test"))
 }
 
-test "mathematical_properties" {
-  // 数学性质验证
+test "comprehensive_mathematical_properties" {
+  // 验证数学性质
   let a = 12
-  let b = 7
+  let b = 8
   
   // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  azimuth::assert_eq(azimuth::add(a, b), azimuth::add(b, a))
   
   // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  azimuth::assert_eq(azimuth::multiply(a, b), azimuth::multiply(b, a))
   
-  // 单位元性质
-  assert_eq(a, add(a, 0))
-  assert_eq(a, multiply(a, 1))
-  assert_eq(0, multiply(a, 0))
+  // 加法单位元
+  azimuth::assert_eq(a, azimuth::add(a, 0))
+  
+  // 乘法单位元
+  azimuth::assert_eq(a, azimuth::multiply(a, 1))
+  
+  // 减法性质
+  azimuth::assert_eq(0, azimuth::subtract(a, a))
 }
 
-test "complex_business_calculations" {
+test "comprehensive_business_calculations" {
   // 复杂业务计算场景
   let unit_price = 45
-  let quantity = 6
+  let quantity = 12
+  let discount = 50
   let tax_rate = 8
-  let shipping = 15
-  let discount = 20
   
-  // 计算小计
-  let subtotal = multiply(unit_price, quantity)
+  let subtotal = azimuth::multiply(unit_price, quantity)
+  let discounted_total = azimuth::add(subtotal, -discount)
+  let tax_amount = azimuth::divide_with_ceil(azimuth::multiply(discounted_total, tax_rate), 100)
+  let final_total = azimuth::add(discounted_total, tax_amount)
   
-  // 计算税费
-  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  
-  // 计算总价
-  let total_before_discount = add(add(subtotal, tax), shipping)
-  let final_total = add(total_before_discount, -discount)
-  
-  assert_eq(270, subtotal)
-  assert_eq(22, tax)
-  assert_eq(307, total_before_discount)
-  assert_eq(287, final_total)
+  azimuth::assert_eq(540, subtotal)
+  azimuth::assert_eq(490, discounted_total)
+  azimuth::assert_eq(40, tax_amount)
+  azimuth::assert_eq(530, final_total)
 }
 
-test "packaging_and_logistics" {
-  // 包装和物流计算
-  let total_items = 58
-  let items_per_box = 12
-  let cost_per_box = 8
-  
-  // 计算需要的包装箱数量
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  
-  // 计算总包装成本
-  let total_packaging_cost = multiply(boxes_needed, cost_per_box)
-  
-  assert_eq(5, boxes_needed)        // ceil(58/12) = 5
-  assert_eq(40, total_packaging_cost)
-}
-
-test "financial_calculations" {
-  // 金融计算场景
-  let principal = 1000
-  let interest_rate = 6
-  let years = 3
-  
-  // 简化的复利计算（每年计算一次）
-  let year1_amount = add(principal, divide_with_ceil(multiply(principal, interest_rate), 100))
-  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, interest_rate), 100))
-  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, interest_rate), 100))
-  
-  assert_eq(1060, year1_amount)
-  assert_eq(1124, year2_amount)
-  assert_eq(1192, year3_amount)
-}
-
-test "time_and_resource_management" {
-  // 时间和资源管理
-  let total_tasks = 47
-  let tasks_per_day = 8
-  let working_days_per_week = 5
-  
-  // 计算需要的工作天数
-  let days_needed = divide_with_ceil(total_tasks, tasks_per_day)
-  
-  // 计算需要的周数
-  let weeks_needed = divide_with_ceil(days_needed, working_days_per_week)
-  
-  assert_eq(6, days_needed)   // ceil(47/8) = 6
-  assert_eq(2, weeks_needed)  // ceil(6/5) = 2
-}
-
-test "edge_cases_and_boundary_values" {
-  // 边界情况和极值测试
-  assert_eq(1, add(1, 0))
-  assert_eq(-1, add(-1, 0))
-  assert_eq(1, multiply(1, 1))
-  assert_eq(-1, multiply(-1, 1))
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1000000, add(500000, 500000))
-  assert_eq(1000000, multiply(1000, 1000))
-}
-
-test "error_handling_robustness" {
-  // 错误处理和健壮性测试
-  // 除零保护
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  
-  // 大数运算
+test "comprehensive_large_number_operations" {
+  // 大数精度测试
   let large_num = 100000
-  assert_eq(200000, add(large_num, large_num))
-  assert_eq(10000000000, multiply(large_num, large_num))
+  azimuth::assert_eq(200000, azimuth::add(large_num, large_num))
+  azimuth::assert_eq(10000000000, azimuth::multiply(large_num, large_num))
+  azimuth::assert_eq(1, azimuth::divide_with_ceil(large_num, large_num))
+  azimuth::assert_eq(0, azimuth::subtract(large_num, large_num))
+}
+
+test "comprehensive_negative_operations" {
+  // 负数运算测试
+  azimuth::assert_eq(-15, azimuth::add(-7, -8))
+  azimuth::assert_eq(3, azimuth::add(-10, 13))
+  azimuth::assert_eq(24, azimuth::multiply(-4, -6))
+  azimuth::assert_eq(-18, azimuth::multiply(3, -6))
+  azimuth::assert_eq(-5, azimuth::subtract(-10, -5))
+  azimuth::assert_eq(-15, azimuth::subtract(5, 20))
+  azimuth::assert_eq(-4, azimuth::divide_with_ceil(-11, 3))
+}
+
+test "comprehensive_packaging_scenario" {
+  // 实际包装场景计算
+  let product_count = 157
+  let box_capacity = 25
+  let boxes_needed = azimuth::divide_with_ceil(product_count, box_capacity)
+  
+  let remaining_items = azimuth::subtract(product_count, azimuth::multiply(boxes_needed - 1, box_capacity))
+  
+  azimuth::assert_eq(7, boxes_needed)
+  azimuth::assert_eq(7, remaining_items)
+}
+
+test "comprehensive_string_processing" {
+  // 字符串处理边界情况
+  azimuth::assert_eq_string("Hello, A!", azimuth::greet("A"))
+  azimuth::assert_eq_string("Hello,   !", azimuth::greet("   "))
+  azimuth::assert_eq_string("Hello, test@example.com!", azimuth::greet("test@example.com"))
+  azimuth::assert_eq_string("Hello, αβγδε!", azimuth::greet("αβγδε"))
+  azimuth::assert_eq_string("Hello, @#$%^&*()!", azimuth::greet("@#$%^&*()"))
+}
+
+test "comprehensive_algorithm_efficiency" {
+  // 算法效率模拟测试
+  let base_operations = 1000
+  let optimization_factor = 3
+  let overhead_percentage = 10
+  
+  let optimized_operations = azimuth::multiply(base_operations, optimization_factor)
+  let overhead = azimuth::divide_with_ceil(azimuth::multiply(optimized_operations, overhead_percentage), 100)
+  let effective_operations = azimuth::add(optimized_operations, -overhead)
+  
+  azimuth::assert_eq(3000, optimized_operations)
+  azimuth::assert_eq(300, overhead)
+  azimuth::assert_eq(2700, effective_operations)
 }
