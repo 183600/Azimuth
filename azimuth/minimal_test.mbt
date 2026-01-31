@@ -1,5 +1,4 @@
-// 简单测试 - 验证基本功能
-
-test "simple_addition_test" {
+// 最小测试用例
+test "minimal_add_test" {
   assert_eq(5, add(2, 3))
 }
