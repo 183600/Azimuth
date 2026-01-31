@@ -140,3 +140,52 @@ test "string format operations" {
   let formatted = "\{name} version \{version}"
   inspect(formatted, content="MoonBit version 0.1.0")
 }
+
+///|
+test "string case operations" {
+  let lower = "hello world"
+  let upper = "HELLO WORLD"
+  let mixed = "HeLLo WoRLd"
+  
+  // Test case comparisons
+  assert_true(lower == "hello world")
+  assert_true(upper == "HELLO WORLD")
+  assert_true(mixed == "HeLLo WoRLd")
+}
+
+///|
+test "string character access" {
+  let text = "MoonBit"
+  // Test first and last characters
+  inspect(text[0], content='M')
+  inspect(text[6], content='t')
+  
+  // Test string length
+  inspect(text.length(), content="7")
+}
+
+///|
+test "string searching and contains" {
+  let sentence = "The quick brown fox jumps over the lazy dog"
+  
+  // Test substring search
+  assert_true(sentence.contains("quick"))
+  assert_true(sentence.contains("fox"))
+  assert_false(sentence.contains("cat"))
+  
+  // Test start and end with
+  assert_true(sentence.starts_with("The"))
+  assert_true(sentence.ends_with("dog"))
+  assert_false(sentence.starts_with("quick"))
+  assert_false(sentence.ends_with("fox"))
+}
+
+///|
+test "string slicing operations" {
+  let text = "MoonBit Programming"
+  
+  // Test substring slicing
+  inspect(text.slice(0, 7), content="MoonBit")
+  inspect(text.slice(8, 19), content="Programming")
+  inspect(text.slice(0, text.length()), content="MoonBit Programming")
+}

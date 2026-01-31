@@ -151,3 +151,51 @@ test "int power and exponentiation" {
   inspect(Int::pow(3, 3), content="27")
   inspect(Int::pow(5, 2), content="25")
 }
+
+///|
+test "int division edge cases" {
+  // Test division by positive numbers
+  assert_eq(10 / 3, 3)
+  assert_eq(-10 / 3, -3)
+  assert_eq(10 / -3, -3)
+  assert_eq(-10 / -3, 3)
+  
+  // Test modulo operations
+  assert_eq(10 % 3, 1)
+  assert_eq(-10 % 3, -1)
+  assert_eq(10 % -3, 1)
+  assert_eq(-10 % -3, -1)
+  
+  // Test division with same numbers
+  assert_eq(5 / 5, 1)
+  assert_eq(-5 / -5, 1)
+  assert_eq(0 / 5, 0)
+}
+
+///|
+test "int shift operations edge cases" {
+  // Test left shift boundaries
+  assert_eq(1 << 30, 1073741824)
+  assert_eq(1 << 31, -2147483648)  // Overflow to min value
+  
+  // Test right shift with positive and negative
+  assert_eq(100 >> 3, 12)
+  assert_eq(-100 >> 3, -13)
+  
+  // Test shift by zero
+  assert_eq(42 << 0, 42)
+  assert_eq(42 >> 0, 42)
+}
+
+///|
+test "int mixed operations precedence" {
+  // Test operator precedence
+  assert_eq(2 + 3 * 4, 14)
+  assert_eq((2 + 3) * 4, 20)
+  assert_eq(10 - 2 * 3, 4)
+  assert_eq(10 + 20 / 5, 14)
+  
+  // Test bit operations with arithmetic
+  assert_eq(5 | 3 + 2, 5 | 5)
+  assert_eq(5 & 3 << 1, 5 & 6)
+}

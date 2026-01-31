@@ -1230,3 +1230,71 @@ test "list map and filter enhanced" {
   inspect(doubled, content="@list.from_array([2, 4, 6, 8, 10])")
   inspect(evens, content="@list.from_array([2, 4])")
 }
+
+///|
+test "list fold operations" {
+  let numbers = @list.from_array([1, 2, 3, 4, 5])
+  
+  // Test fold left (sum)
+  let sum = @list.fold_left((acc, x) => acc + x, 0, numbers)
+  inspect(sum, content="15")
+  
+  // Test fold left (product)
+  let product = @list.fold_left((acc, x) => acc * x, 1, numbers)
+  inspect(product, content="120")
+  
+  // Test fold left with string concatenation
+  let words = @list.from_array(["Hello", " ", "World", "!"])
+  let sentence = @list.fold_left((acc, x) => acc + x, "", words)
+  inspect(sentence, content="Hello World!")
+}
+
+///|
+test "list find and contains operations" {
+  let numbers = @list.from_array([10, 20, 30, 40, 50])
+  
+  // Test find
+  let found = @list.find(x => x > 25, numbers)
+  inspect(found, content="Some(30)")
+  
+  let not_found = @list.find(x => x > 100, numbers)
+  inspect(not_found, content="None")
+  
+  // Test contains
+  assert_true(@list.contains(30, numbers))
+  assert_false(@list.contains(25, numbers))
+}
+
+///|
+test "list reverse and concatenation" {
+  let list1 = @list.from_array([1, 2, 3])
+  let list2 = @list.from_array([4, 5, 6])
+  
+  // Test reverse
+  let reversed = @list.reverse(list1)
+  inspect(reversed, content="@list.from_array([3, 2, 1])")
+  
+  // Test concatenation
+  let concatenated = @list.append(list1, list2)
+  inspect(concatenated, content="@list.from_array([1, 2, 3, 4, 5, 6])")
+}
+
+///|
+test "list take and drop operations" {
+  let numbers = @list.from_array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+  
+  // Test take
+  let first_three = @list.take(3, numbers)
+  inspect(first_three, content="@list.from_array([1, 2, 3])")
+  
+  // Test drop
+  let drop_three = @list.drop(3, numbers)
+  inspect(drop_three, content="@list.from_array([4, 5, 6, 7, 8, 9, 10])")
+  
+  // Test edge cases
+  let take_all = @list.take(10, numbers)
+  inspect(take_all, content="@list.from_array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])")
+  
+  let take_none = @list.take(0, numbers)
+  inspect(take_none, content="@list.from_array([])")
+}
