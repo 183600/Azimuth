@@ -10498,3 +10498,191 @@ test "enhanced_mathematical_series_and_patterns" {
   let diff_of_squares = multiply(add(a, b), subtract(a, b))
   assert_eq(161, diff_of_squares)  // (15 + 8)(15 - 8) = 23 * 7 = 161
 }
+
+// 新增的8个标准 MoonBit 测试用例
+
+test "statistical_analysis_calculations" {
+  // 统计分析计算场景
+  let data1 = 85
+  let data2 = 92
+  let data3 = 78
+  let data4 = 96
+  let data5 = 89
+  
+  // 计算平均值（使用整数除法向上取整）
+  let sum = add(add(add(add(data1, data2), data3), data4), data5)
+  let average = divide_with_ceil(sum, 5)
+  
+  // 计算范围（最大值-最小值）
+  let max_val = 96
+  let min_val = 78
+  let range = subtract(max_val, min_val)
+  
+  assert_eq(440, sum)
+  assert_eq(88, average)
+  assert_eq(18, range)
+}
+
+test "physics_motion_calculations" {
+  // 物理运动计算场景
+  let initial_velocity = 10  // m/s
+  let acceleration = 3       // m/s²
+  let time = 5               // seconds
+  
+  // 计算最终速度：v = u + at
+  let final_velocity = add(initial_velocity, multiply(acceleration, time))
+  
+  // 计算位移：s = ut + 0.5at²（简化为整数计算）
+  let displacement = add(multiply(initial_velocity, time), divide_with_ceil(multiply(acceleration, multiply(time, time)), 2))
+  
+  assert_eq(25, final_velocity)  // 10 + 3*5 = 25
+  assert_eq(85, displacement)    // 10*5 + ceil(3*25/2) = 50 + ceil(75/2) = 50 + 38 = 88
+}
+
+test "financial_compound_interest" {
+  // 金融复利计算场景
+  let principal = 10000
+  let rate_percent = 8
+  let years = 3
+  
+  // 第一年：P + P*r/100
+  let amount_year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  
+  // 第二年：amount1 + amount1*r/100
+  let amount_year2 = add(amount_year1, divide_with_ceil(multiply(amount_year1, rate_percent), 100))
+  
+  // 第三年：amount2 + amount2*r/100
+  let amount_year3 = add(amount_year2, divide_with_ceil(multiply(amount_year2, rate_percent), 100))
+  
+  // 计算总利息
+  let total_interest = subtract(amount_year3, principal)
+  
+  assert_eq(10800, amount_year1)
+  assert_eq(11664, amount_year2)
+  assert_eq(12597, amount_year3)
+  assert_eq(2597, total_interest)
+}
+
+test "data_conversion_calculations" {
+  // 数据转换计算场景
+  let bytes = 2048
+  let kilobyte_in_bytes = 1024
+  let megabyte_in_kilobytes = 1024
+  
+  // 字节转千字节
+  let kilobytes = divide_with_ceil(bytes, kilobyte_in_bytes)
+  
+  // 千字节转兆字节（假设有更多数据）
+  let large_kilobytes = 2560
+  let megabytes = divide_with_ceil(large_kilobytes, megabyte_in_kilobytes)
+  
+  // 计算传输时间（假设传输速度为100 KB/s）
+  let transfer_rate = 100
+  let transfer_time = divide_with_ceil(large_kilobytes, transfer_rate)
+  
+  assert_eq(2, kilobytes)
+  assert_eq(3, megabytes)
+  assert_eq(26, transfer_time)
+}
+
+test "geometric_area_calculations" {
+  // 几何面积计算场景
+  let rectangle_length = 12
+  let rectangle_width = 8
+  let circle_radius = 5
+  
+  // 矩形面积
+  let rectangle_area = multiply(rectangle_length, rectangle_width)
+  
+  // 圆面积（简化为 πr²，π≈3.14，向上取整）
+  let circle_area = divide_with_ceil(multiply(314, multiply(circle_radius, circle_radius)), 100)
+  
+  // 三角形面积（底×高÷2）
+  let triangle_base = 10
+  let triangle_height = 6
+  let triangle_area = divide_with_ceil(multiply(triangle_base, triangle_height), 2)
+  
+  // 总面积
+  let total_area = add(add(rectangle_area, circle_area), triangle_area)
+  
+  assert_eq(96, rectangle_area)
+  assert_eq(79, circle_area)
+  assert_eq(30, triangle_area)
+  assert_eq(205, total_area)
+}
+
+test "recursive_algorithm_simulation" {
+  // 递归算法模拟（阶乘计算）
+  let n = 5
+  
+  // 模拟 5! = 5 × 4 × 3 × 2 × 1
+  let factorial_5 = multiply(5, multiply(4, multiply(3, multiply(2, 1))))
+  
+  // 模拟斐波那契数列第6项：F(6) = F(5) + F(4) = 5 + 3 = 8
+  let fib_1 = 1
+  let fib_2 = 1
+  let fib_3 = add(fib_1, fib_2)
+  let fib_4 = add(fib_2, fib_3)
+  let fib_5 = add(fib_3, fib_4)
+  let fib_6 = add(fib_4, fib_5)
+  
+  assert_eq(120, factorial_5)
+  assert_eq(2, fib_3)
+  assert_eq(3, fib_4)
+  assert_eq(5, fib_5)
+  assert_eq(8, fib_6)
+}
+
+test "cache_memory_calculation" {
+  // 缓存内存计算场景
+  let cache_line_size = 64    // bytes
+  let total_data_size = 2048  // bytes
+  let associativity = 8       // 8-way associative
+  
+  // 计算缓存行数
+  let cache_lines = divide_with_ceil(total_data_size, cache_line_size)
+  
+  // 计算缓存组数（假设总缓存大小）
+  let total_cache_size = 32768  // 32KB
+  let total_cache_lines = divide_with_ceil(total_cache_size, cache_line_size)
+  let cache_sets = divide_with_ceil(total_cache_lines, associativity)
+  
+  // 计算命中率（简化计算）
+  let hits = 1800
+  let total_access = add(hits, cache_lines)
+  let hit_rate_percent = divide_with_ceil(multiply(hits, 100), total_access)
+  
+  assert_eq(32, cache_lines)
+  assert_eq(512, total_cache_lines)
+  assert_eq(64, cache_sets)
+  assert_eq(98, hit_rate_percent)
+}
+
+test "load_balancing_distribution" {
+  // 负载均衡分配场景
+  let total_requests = 1000
+  let server_count = 7
+  let max_requests_per_server = 150
+  
+  // 平均分配请求
+  let avg_requests_per_server = divide_with_ceil(total_requests, server_count)
+  
+  // 计算需要的额外服务器数
+  let overloaded_servers = divide_with_ceil(avg_requests_per_server, max_requests_per_server)
+  let additional_servers = if overloaded_servers > 1 {
+    subtract(multiply(server_count, overloaded_servers), server_count)
+  } else {
+    0
+  }
+  
+  // 计算总服务器数
+  let total_servers = add(server_count, additional_servers)
+  
+  // 重新分配后的每服务器请求数
+  let redistributed_requests = divide_with_ceil(total_requests, total_servers)
+  
+  assert_eq(143, avg_requests_per_server)
+  assert_eq(0, additional_servers)
+  assert_eq(7, total_servers)
+  assert_eq(143, redistributed_requests)
+}
