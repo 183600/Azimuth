@@ -11220,3 +11220,222 @@ test "string_formatting_edge_cases" {
   assert_eq_string("Hello,   multiple   spaces!", greet("   multiple   spaces"))
   assert_eq_string("Hello, special@#$%^&*()chars!", greet("special@#$%^&*()chars"))
 }
+
+// Azimuth 增强标准测试用例 - 包含10个高质量的标准 MoonBit 测试用例
+
+test "comprehensive_arithmetic_operations" {
+  // 综合算术运算测试
+  assert_eq(15, add(7, 8))
+  assert_eq(-3, add(5, -8))
+  assert_eq(0, add(0, 0))
+  assert_eq(1000000, add(500000, 500000))
+  
+  assert_eq(56, multiply(7, 8))
+  assert_eq(-40, multiply(5, -8))
+  assert_eq(0, multiply(0, 12345))
+  assert_eq(1000000, multiply(1000, 1000))
+}
+
+test "divide_with_ceil_comprehensive" {
+  // 向上取整除法综合测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(10, 0))
+  
+  // 负数测试
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(-4, divide_with_ceil(10, -3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+}
+
+test "mathematical_properties_validation" {
+  // 数学性质验证测试
+  let x = 12
+  let y = 8
+  
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
+  
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 分配律
+  assert_eq(
+    multiply(x, add(y, 3)),
+    add(multiply(x, y), multiply(x, 3))
+  )
+  
+  // 恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(x, multiply(x, 1))
+  assert_eq(0, multiply(x, 0))
+}
+
+test "string_processing_international" {
+  // 字符串处理国际化测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, space test!", greet("space test"))
+}
+
+test "business_logistics_scenario" {
+  // 业务物流场景测试
+  let total_packages = 127
+  let truck_capacity = 20
+  let trucks_needed = divide_with_ceil(total_packages, truck_capacity)
+  
+  assert_eq(7, trucks_needed)
+  
+  // 验证总运力
+  let total_capacity = multiply(trucks_needed, truck_capacity)
+  assert_eq(140, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_packages)
+  assert_eq(13, remaining_space)
+}
+
+test "complex_calculation_workflow" {
+  // 复杂计算工作流测试
+  // 场景：项目资源规划
+  let team_size = 8
+  let tasks_per_person = 5
+  let days_per_task = 2
+  let buffer_percentage = 20
+  
+  // 计算基础任务量
+  let base_tasks = multiply(team_size, tasks_per_person)
+  assert_eq(40, base_tasks)
+  
+  // 计算基础天数
+  let base_days = multiply(base_tasks, days_per_task)
+  assert_eq(80, base_days)
+  
+  // 计算缓冲时间
+  let buffer_days = divide_with_ceil(multiply(base_days, buffer_percentage), 100)
+  assert_eq(16, buffer_days)
+  
+  // 计算总天数
+  let total_days = add(base_days, buffer_days)
+  assert_eq(96, total_days)
+}
+
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  // 除零错误的各种情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  
+  // 极值运算
+  let max_safe = 1000000
+  assert_eq(2000000, add(max_safe, max_safe))
+  assert_eq(1000000000000, multiply(max_safe, max_safe))
+  assert_eq(1, divide_with_ceil(max_safe, max_safe))
+}
+
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_budget = 25000
+  let departments = 4
+  let min_budget_per_dept = divide_with_ceil(total_budget, departments)
+  
+  assert_eq(6250, min_budget_per_dept)
+  
+  // 验证分配方案
+  let allocated_total = multiply(min_budget_per_dept, departments)
+  assert_eq(25000, allocated_total)
+  
+  // 测试不等额分配场景
+  let dept1 = divide_with_ceil(multiply(total_budget, 40), 100)  // 40%
+  let dept2 = divide_with_ceil(multiply(total_budget, 30), 100)  // 30%
+  let dept3 = divide_with_ceil(multiply(total_budget, 20), 100)  // 20%
+  let dept4 = divide_with_ceil(multiply(total_budget, 10), 100)  // 10%
+  
+  assert_eq(10000, dept1)
+  assert_eq(7500, dept2)
+  assert_eq(5000, dept3)
+  assert_eq(2500, dept4)
+  
+  let total_allocated = add(add(dept1, dept2), add(dept3, dept4))
+  assert_eq(25000, total_allocated)
+}
+
+test "performance_scalability_analysis" {
+  // 性能可扩展性分析测试
+  // 模拟不同规模的数据处理
+  let small_dataset = 100
+  let medium_dataset = 1000
+  let large_dataset = 10000
+  
+  // 线性算法模拟
+  let small_time = multiply(small_dataset, 2)
+  let medium_time = multiply(medium_dataset, 2)
+  let large_time = multiply(large_dataset, 2)
+  
+  assert_eq(200, small_time)
+  assert_eq(2000, medium_time)
+  assert_eq(20000, large_time)
+  
+  // 对数算法模拟（简化）
+  let small_log_time = divide_with_ceil(small_dataset, 10)
+  let medium_log_time = divide_with_ceil(medium_dataset, 10)
+  let large_log_time = divide_with_ceil(large_dataset, 10)
+  
+  assert_eq(10, small_log_time)
+  assert_eq(100, medium_log_time)
+  assert_eq(1000, large_log_time)
+  
+  // 验证算法效率差异
+  let small_efficiency = divide_with_ceil(small_time, small_log_time)
+  let medium_efficiency = divide_with_ceil(medium_time, medium_log_time)
+  let large_efficiency = divide_with_ceil(large_time, large_log_time)
+  
+  assert_eq(20, small_efficiency)
+  assert_eq(20, medium_efficiency)
+  assert_eq(20, large_efficiency)
+}
+
+test "real_world_event_planning_comprehensive" {
+  // 真实世界活动规划综合测试
+  let attendees = 256
+  let tables_available = 30
+  let chairs_per_table = 8
+  let cost_per_chair = 25
+  let total_budget = 8000
+  
+  // 计算需要的桌子数量
+  let tables_needed = divide_with_ceil(attendees, chairs_per_table)
+  assert_eq(32, tables_needed)
+  
+  // 检查桌子可用性
+  let tables_shortage = subtract(tables_needed, tables_available)
+  assert_eq(2, tables_shortage)
+  
+  // 计算总座位数
+  let total_seats = multiply(tables_needed, chairs_per_table)
+  assert_eq(256, total_seats)
+  
+  // 计算剩余座位
+  let remaining_seats = subtract(total_seats, attendees)
+  assert_eq(0, remaining_seats)
+  
+  // 计算总成本
+  let total_cost = multiply(total_seats, cost_per_chair)
+  assert_eq(6400, total_cost)
+  
+  // 验证预算充足性
+  let remaining_budget = subtract(total_budget, total_cost)
+  assert_eq(1600, remaining_budget)
+  
+  // 计算预算利用率
+  let budget_utilization = divide_with_ceil(multiply(total_cost, 100), total_budget)
+  assert_eq(80, budget_utilization)
+}
