@@ -1,136 +1,33 @@
-// Azimuth 项目简单标准测试套件
-// 使用标准 MoonBit 测试语法，测试核心功能
+// 简单的标准 MoonBit 测试用例
+// 包含 5 个基本测试用例
 
-test "basic_arithmetic_addition" {
-  // 测试基本加法运算
-  let result1 = 2 + 3
-  let result2 = 0 + 0
-  let result3 = -5 + -5
-  let result4 = 5 + -5
-  
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
+test "simple_add_test" {
+  azimuth::assert_eq(5, azimuth::add(2, 3))
+  azimuth::assert_eq(0, azimuth::add(0, 0))
+  azimuth::assert_eq(-1, azimuth::add(-2, 1))
 }
 
-test "basic_arithmetic_multiplication" {
-  // 测试基本乘法运算
-  let result1 = 2 * 3
-  let result2 = 5 * 0
-  let result3 = -2 * 3
-  let result4 = -2 * -3
-  
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
+test "simple_multiply_test" {
+  azimuth::assert_eq(6, azimuth::multiply(2, 3))
+  azimuth::assert_eq(0, azimuth::multiply(5, 0))
+  azimuth::assert_eq(-4, azimuth::multiply(-2, 2))
 }
 
-test "string_operations" {
-  // 测试字符串操作
-  let greeting1 = "Hello, " + "World!"
-  let greeting2 = "Hello, " + "MoonBit!"
-  let greeting3 = "Hello, " + ""
-  
-  inspect greeting1
-  inspect greeting2
-  inspect greeting3
+test "simple_greet_test" {
+  azimuth::assert_eq_string("Hello, World!", azimuth::greet("World"))
+  azimuth::assert_eq_string("Hello, MoonBit!", azimuth::greet("MoonBit"))
+  azimuth::assert_eq_string("Hello, !", azimuth::greet(""))
 }
 
-test "integer_division" {
-  // 测试整数除法
-  let result1 = 5 / 2
-  let result2 = 6 / 2
-  let result3 = 0 / 5
-  let result4 = -5 / 2
-  
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
+test "simple_divide_ceil_test" {
+  azimuth::assert_eq(4, azimuth::divide_with_ceil(10, 3))
+  azimuth::assert_eq(3, azimuth::divide_with_ceil(9, 3))
+  azimuth::assert_eq(0, azimuth::divide_with_ceil(0, 5))
+  azimuth::assert_eq(0, azimuth::divide_with_ceil(10, 0))
 }
 
-test "modulo_operations" {
-  // 测试取模运算
-  let result1 = 5 % 2
-  let result2 = 6 % 2
-  let result3 = 0 % 5
-  let result4 = -5 % 2
-  
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
-}
-
-test "boolean_expressions" {
-  // 测试布尔表达式
-  let result1 = 5 > 3
-  let result2 = 5 < 3
-  let result3 = 5 >= 5
-  let result4 = 5 <= 3
-  let result5 = 5 == 5
-  let result6 = 5 != 3
-  
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
-  inspect result5
-  inspect result6
-}
-
-test "complex_expressions" {
-  // 测试复杂表达式
-  let result1 = (2 + 3) * 4
-  let result2 = 10 * (5 + 3)
-  let result3 = 2 + 3 * 4
-  let result4 = (2 + 3) * (4 + 5)
-  
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
-}
-
-test "variable_assignments" {
-  // 测试变量赋值
-  let x = 10
-  let y = 20
-  let sum = x + y
-  let product = x * y
-  let difference = x - y
-  
-  inspect x
-  inspect y
-  inspect sum
-  inspect product
-  inspect difference
-}
-
-test "negative_number_operations" {
-  // 测试负数运算
-  let result1 = -5 + 3
-  let result2 = -5 * 3
-  let result3 = -5 - 3
-  let result4 = -15 / 3
-  
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
-}
-
-test "zero_operations" {
-  // 测试零运算
-  let result1 = 0 + 5
-  let result2 = 0 * 5
-  let result3 = 5 - 0
-  let result4 = 0 / 5
-  
-  inspect result1
-  inspect result2
-  inspect result3
-  inspect result4
+test "simple_subtract_test" {
+  azimuth::assert_eq(2, azimuth::subtract(5, 3))
+  azimuth::assert_eq(-3, azimuth::subtract(2, 5))
+  azimuth::assert_eq(0, azimuth::subtract(4, 4))
 }
