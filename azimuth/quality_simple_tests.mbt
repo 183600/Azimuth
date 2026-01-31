@@ -1,12 +1,10 @@
-// 高质量增强测试套件 - 针对 Azimuth 项目的核心功能
+// 高质量简单测试套件 - 针对 Azimuth 项目的核心功能
 // 包含10个精心设计的测试用例，覆盖实际应用场景
 
 test "financial_compound_interest" {
   // 金融复合利息计算
-  // 模拟银行存款的复合利息计算（简化版本）
   let principal = 10000
   let rate_percent = 5
-  let years = 3
   
   // 第一年：10000 + 5% = 10500（向上取整）
   let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
@@ -24,13 +22,11 @@ test "financial_compound_interest" {
 
 test "inventory_optimization" {
   // 库存优化算法
-  // 计算最优订货量，考虑存储成本和订货成本
   let monthly_demand = 500
   let ordering_cost = 100
   let holding_cost_per_unit = 2
   
-  // 经济订货量公式简化版本：sqrt(2 * D * S / H)
-  // 这里使用简化的整数运算
+  // 经济订货量公式简化版本
   let eoq_numerator = multiply(2, multiply(monthly_demand, ordering_cost))
   let eoq_denominator = holding_cost_per_unit
   let eoq_approximation = divide_with_ceil(eoq_numerator, eoq_denominator)
@@ -71,7 +67,7 @@ test "data_processing_pipeline" {
   // 数据处理管道性能测试
   let data_batches = 150
   let records_per_batch = 1000
-  let processing_time_per_record = 2  // 毫秒
+  let processing_time_per_record = 2
   
   // 计算总记录数
   let total_records = multiply(data_batches, records_per_batch)
@@ -82,8 +78,8 @@ test "data_processing_pipeline" {
   // 计算总处理时间
   let total_processing_time = multiply(data_batches, batch_processing_time)
   
-  // 计算需要的并行处理器数量（目标处理时间不超过1小时）
-  let target_time_ms = 3600000  // 1小时
+  // 计算需要的并行处理器数量
+  let target_time_ms = 3600000
   let required_processors = divide_with_ceil(total_processing_time, target_time_ms)
   
   assert_eq(150000, total_records)
@@ -116,7 +112,7 @@ test "telecommunications_bandwidth" {
 test "agricultural_yield_optimization" {
   // 农业产量优化计算
   let field_area_hectares = 50
-  let crop_yield_per_hectare = 8000  // kg
+  let crop_yield_per_hectare = 8000
   let moisture_loss_percent = 15
   let processing_efficiency_percent = 85
   
@@ -138,17 +134,15 @@ test "energy_consumption_forecasting" {
   // 能源消耗预测算法
   let base_consumption_kwh = 10000
   let growth_rate_percent = 8
-  let seasonal_multiplier_summer = 1.5  // 夏季消耗倍数
-  let seasonal_multiplier_winter = 1.8  // 冬季消耗倍数
   
   // 计算年度增长后的消耗
   let yearly_growth = divide_with_ceil(multiply(base_consumption_kwh, growth_rate_percent), 100)
   let new_base_consumption = add(base_consumption_kwh, yearly_growth)
   
-  // 计算夏季峰值消耗（使用整数近似）
+  // 计算夏季峰值消耗
   let summer_consumption = divide_with_ceil(multiply(new_base_consumption, 15), 10)
   
-  // 计算冬季峰值消耗（使用整数近似）
+  // 计算冬季峰值消耗
   let winter_consumption = divide_with_ceil(multiply(new_base_consumption, 18), 10)
   
   assert_eq(800, yearly_growth)
@@ -170,7 +164,7 @@ test "educational_performance_metrics" {
   // 计算目标平均分
   let target_score = add(average_score, divide_with_ceil(multiply(average_score, improvement_target_percent), 100))
   
-  // 计算需要的额外学习时间（假设每提高1分需要2小时）
+  // 计算需要的额外学习时间
   let additional_study_hours = multiply(target_score - average_score, 2)
   
   // 计算全班总学习时间
@@ -194,7 +188,7 @@ test "logistics_routing_optimization" {
   let total_distance = multiply(delivery_locations, average_distance_km)
   
   // 计算总包裹数
-  let total_packages = multiply(delivery_locations, 10)  // 假设每个地点10个包裹
+  let total_packages = multiply(delivery_locations, 10)
   
   // 计算总重量
   let total_weight = multiply(total_packages, average_package_weight)
@@ -215,7 +209,7 @@ test "logistics_routing_optimization" {
 test "healthcare_resource_planning" {
   // 医疗资源规划算法
   let patients_per_day = 200
-  let average_consultation_time = 30  // 分钟
+  let average_consultation_time = 30
   let doctor_working_hours = 8
   let emergency_reserve_percent = 20
   
