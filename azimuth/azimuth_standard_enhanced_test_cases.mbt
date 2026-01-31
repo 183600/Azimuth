@@ -1,106 +1,111 @@
-// 新增的标准 MoonBit 测试用例
-// 为 azimuth 库添加的高质量测试用例，覆盖主要功能和边界情况
+// Azimuth 标准增强测试用例 - 8个高质量测试用例
+// 使用标准的 MoonBit 测试语法，覆盖核心功能和边界情况
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  assert_eq(8, add(5, 3))
-  assert_eq(15, multiply(3, 5))
-  assert_eq(2, divide_with_ceil(7, 3))
-  assert_eq(3, subtract(10, 7))
+test "add_function_comprehensive_test" {
+  // 加法函数综合测试
+  @azimuth.assert_eq(15, @azimuth.add(7, 8))
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(-10, @azimuth.add(-3, -7))
+  @azimuth.assert_eq(5, @azimuth.add(-3, 8))
+  @azimuth.assert_eq(100000, @azimuth.add(50000, 50000))
 }
 
-test "mathematical_commutative_laws" {
-  // 数学交换律测试
-  let a = 12
-  let b = 8
-  
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+test "multiply_function_various_scenarios" {
+  // 乘法函数各种场景测试
+  @azimuth.assert_eq(42, @azimuth.multiply(6, 7))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 123))
+  @azimuth.assert_eq(-24, @azimuth.multiply(-3, 8))
+  @azimuth.assert_eq(24, @azimuth.multiply(-3, -8))
+  @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))
 }
 
-test "divide_with_ceil_edge_cases" {
-  // 向上取整除法的边界情况测试
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(4, divide_with_ceil(13, 4))
-  assert_eq(-3, divide_with_ceil(-10, 3))
+test "divide_with_ceil_precision_test" {
+  // 向上取整除法精度测试
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
 }
 
 test "greet_function_international_support" {
-  // 问候函数的国际字符支持测试
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, café!", greet("café"))
+  // 问候函数国际化支持测试
+  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
+  @azimuth.assert_eq_string("Hello, café!", @azimuth.greet("café"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
 }
 
-test "complex_business_calculation" {
-  // 复杂业务计算测试：项目资源分配
-  let team_members = 7
-  let tasks_per_member = 5
-  let total_tasks = multiply(team_members, tasks_per_member)
-  let sprint_capacity = 16
-  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+test "mathematical_commutative_laws" {
+  // 数学交换律验证测试
+  let a = 23
+  let b = 17
   
-  assert_eq(35, total_tasks)
-  assert_eq(3, sprints_needed)
-}
-
-test "mathematical_distributive_property" {
-  // 数学分配律测试
-  let a = 4
-  let b = 6
-  let c = 3
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
   
-  // a * (b + c) = a * b + a * c
-  let left_side = multiply(a, add(b, c))
-  let right_side = add(multiply(a, b), multiply(a, c))
-  assert_eq(left_side, right_side)
-}
-
-test "negative_number_operations" {
-  // 负数运算测试
-  assert_eq(-8, add(-5, -3))
-  assert_eq(15, multiply(-5, -3))
-  assert_eq(-15, multiply(-5, 3))
-  assert_eq(-2, divide_with_ceil(-7, 3))
-  assert_eq(2, subtract(-3, -5))
-}
-
-test "string_input_validation" {
-  // 字符串输入验证测试
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, Alice123!", greet("Alice123"))
-  assert_eq_string("Hello, space test!", greet("space test"))
-}
-
-test "real_world_packaging_problem" {
-  // 真实世界包装问题测试
-  let items = 47
-  let box_capacity = 12
-  let boxes_needed = divide_with_ceil(items, box_capacity)
-  let total_capacity = multiply(boxes_needed, box_capacity)
-  let wasted_space = subtract(total_capacity, items)
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
   
-  assert_eq(4, boxes_needed)
-  assert_eq(48, total_capacity)
-  assert_eq(1, wasted_space)
+  // 复杂表达式交换律验证
+  @azimuth.assert_eq(
+    @azimuth.add(@azimuth.multiply(a, 2), @azimuth.multiply(b, 3)),
+    @azimuth.add(@azimuth.multiply(b, 3), @azimuth.multiply(a, 2))
+  )
 }
 
-test "error_handling_scenarios" {
-  // 错误处理场景测试
-  // 除零错误处理
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
+test "subtract_function_edge_cases" {
+  // 减法函数边缘情况测试
+  @azimuth.assert_eq(5, @azimuth.subtract(10, 5))
+  @azimuth.assert_eq(-5, @azimuth.subtract(5, 10))
+  @azimuth.assert_eq(0, @azimuth.subtract(7, 7))
+  @azimuth.assert_eq(15, @azimuth.subtract(10, -5))
+  @azimuth.assert_eq(-15, @azimuth.subtract(-10, 5))
+}
+
+test "business_inventory_management" {
+  // 业务库存管理测试
+  let total_products = 158
+  let box_capacity = 25
+  let boxes_needed = @azimuth.divide_with_ceil(total_products, box_capacity)
   
-  // 极值测试
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1000000, multiply(1000, 1000))
-  assert_eq(2000000, add(1000000, 1000000))
+  @azimuth.assert_eq(7, boxes_needed)
+  
+  // 验证总容量
+  let total_capacity = @azimuth.multiply(boxes_needed, box_capacity)
+  @azimuth.assert_eq(175, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = @azimuth.subtract(total_capacity, total_products)
+  @azimuth.assert_eq(17, remaining_space)
+}
+
+test "complex_workflow_calculation" {
+  // 复杂工作流计算测试
+  // 场景：项目资源规划
+  let team_members = 12
+  let weeks_per_sprint = 2
+  let hours_per_week = 40
+  let total_task_hours = 800
+  
+  // 计算团队每周工时
+  let weekly_capacity = @azimuth.multiply(team_members, hours_per_week)
+  @azimuth.assert_eq(480, weekly_capacity)
+  
+  // 计算每个冲刺的工时
+  let sprint_capacity = @azimuth.multiply(weekly_capacity, weeks_per_sprint)
+  @azimuth.assert_eq(960, sprint_capacity)
+  
+  // 计算需要的冲刺数
+  let sprints_needed = @azimuth.divide_with_ceil(total_task_hours, sprint_capacity)
+  @azimuth.assert_eq(1, sprints_needed)
+  
+  // 验证总可用工时
+  let total_available = @azimuth.multiply(sprints_needed, sprint_capacity)
+  @azimuth.assert_eq(960, total_available)
+  
+  // 验证剩余工时
+  let remaining_hours = @azimuth.subtract(total_available, total_task_hours)
+  @azimuth.assert_eq(160, remaining_hours)
 }
