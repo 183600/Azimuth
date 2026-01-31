@@ -9932,3 +9932,178 @@ test "standard_resource_allocation_optimization" {
   let efficiency = divide_with_ceil(multiply(total_budget, 100), total_allocated)
   assert_eq(100, efficiency)
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "function_chaining_operations" {
+  // 测试函数链式调用
+  let step1 = add(5, 3)
+  let step2 = multiply(step1, 2)
+  let step3 = divide_with_ceil(step2, 4)
+  let final_result = add(step3, 1)
+  
+  assert_eq(8, step1)      // 5 + 3 = 8
+  assert_eq(16, step2)     // 8 * 2 = 16
+  assert_eq(4, step3)      // ceil(16/4) = 4
+  assert_eq(5, final_result) // 4 + 1 = 5
+}
+
+test "conditional_calculation_pattern" {
+  // 测试条件计算模式
+  let base_value = 100
+  let multiplier = 2
+  let condition = true
+  
+  let result = if condition {
+    multiply(base_value, multiplier)
+  } else {
+    add(base_value, 10)
+  }
+  
+  assert_eq(200, result)
+  
+  // 测试相反条件
+  let result_false = if !condition {
+    multiply(base_value, multiplier)
+  } else {
+    add(base_value, 10)
+  }
+  
+  assert_eq(110, result_false)
+}
+
+test "accumulative_pattern_simulation" {
+  // 模拟累加模式
+  let initial = 0
+  let increment1 = 5
+  let increment2 = 3
+  let increment3 = 7
+  
+  let accumulated1 = add(initial, increment1)
+  let accumulated2 = add(accumulated1, increment2)
+  let accumulated3 = add(accumulated2, increment3)
+  
+  assert_eq(5, accumulated1)
+  assert_eq(8, accumulated2)
+  assert_eq(15, accumulated3)
+}
+
+test "resource_allocation_algorithm" {
+  // 资源分配算法测试
+  let total_resources = 47
+  let team_size = 5
+  let resources_per_team = divide_with_ceil(total_resources, team_size)
+  
+  let allocated_resources = multiply(resources_per_team, team_size)
+  let leftover_resources = add(total_resources, -allocated_resources)
+  
+  assert_eq(10, resources_per_team)  // ceil(47/5) = 10
+  assert_eq(50, allocated_resources) // 10 * 5 = 50
+  assert_eq(-3, leftover_resources)  // 47 - 50 = -3
+}
+
+test "batch_processing_simulation" {
+  // 批处理模拟测试
+  let batch_size = 25
+  let items_per_batch = 6
+  let total_batches = divide_with_ceil(batch_size, items_per_batch)
+  
+  let processed_items = multiply(total_batches, items_per_batch)
+  let efficiency_percentage = divide_with_ceil(multiply(batch_size, 100), processed_items)
+  
+  assert_eq(5, total_batches)          // ceil(25/6) = 5
+  assert_eq(30, processed_items)       // 5 * 6 = 30
+  assert_eq(83, efficiency_percentage) // ceil(25*100/30) = 83
+}
+
+test "string_template_greeting_pattern" {
+  // 字符串模板问候模式测试
+  let title = "Dr."
+  let first_name = "Jane"
+  let last_name = "Smith"
+  
+  let formal_name = title + " " + first_name + " " + last_name
+  let formal_greeting = greet(formal_name)
+  
+  assert_eq_string("Hello, Dr. Jane Smith!", formal_greeting)
+  
+  // 测试 casual 模式
+  let casual_name = first_name
+  let casual_greeting = greet(casual_name)
+  
+  assert_eq_string("Hello, Jane!", casual_greeting)
+}
+
+test "mathematical_sequence_calculation" {
+  // 数学序列计算测试
+  let first_term = 2
+  let ratio = 3
+  let _terms = 4  // 使用下划线前缀表示未使用的变量
+  
+  // 计算等比数列：2, 6, 18, 54
+  let term1 = first_term
+  let term2 = multiply(term1, ratio)
+  let term3 = multiply(term2, ratio)
+  let term4 = multiply(term3, ratio)
+  
+  let sequence_sum = add(add(add(term1, term2), term3), term4)
+  
+  assert_eq(2, term1)
+  assert_eq(6, term2)
+  assert_eq(18, term3)
+  assert_eq(54, term4)
+  assert_eq(80, sequence_sum)
+}
+
+test "error_boundary_validation" {
+  // 错误边界验证测试
+  // 测试极端值组合
+  let extreme_positive = 2147483647
+  let extreme_negative = -2147483648
+  let zero_value = 0
+  
+  // 测试极端值加法
+  let extreme_sum = add(extreme_positive, extreme_negative)
+  assert_eq(-1, extreme_sum)
+  
+  // 测试极端值乘法
+  let extreme_product = multiply(extreme_negative, 1)
+  assert_eq(-2147483648, extreme_product)
+  
+  // 测试零值安全性
+  let zero_division = divide_with_ceil(extreme_positive, zero_value)
+  assert_eq(0, zero_division)
+}
+
+test "performance_metric_calculation" {
+  // 性能指标计算测试
+  let baseline_time = 100
+  let optimization_factor = 3
+  let overhead_percentage = 20
+  
+  let optimized_time = divide_with_ceil(baseline_time, optimization_factor)
+  let overhead_time = divide_with_ceil(multiply(optimized_time, overhead_percentage), 100)
+  let final_time = add(optimized_time, overhead_time)
+  
+  assert_eq(34, optimized_time)   // ceil(100/3) = 34
+  assert_eq(7, overhead_time)     // ceil(34*20/100) = 7
+  assert_eq(41, final_time)       // 34 + 7 = 41
+}
+
+test "data_transformation_pipeline" {
+  // 数据转换管道测试
+  let raw_data = 12345
+  let factor1 = 2
+  let factor2 = 3
+  let divisor = 4
+  
+  // 步骤1: 数据放大
+  let stage1 = multiply(raw_data, factor1)
+  // 步骤2: 进一步处理
+  let stage2 = add(stage1, multiply(raw_data, factor2))
+  // 步骤3: 标准化
+  let final_result = divide_with_ceil(stage2, divisor)
+  
+  assert_eq(24690, stage1)        // 12345 * 2 = 24690
+  assert_eq(61725, stage2)        // 24690 + 12345*3 = 24690 + 37035 = 61725
+  assert_eq(15432, final_result)  // ceil(61725/4) = 15432
+}
