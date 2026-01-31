@@ -38,6 +38,7 @@
     "azimuth_new_standard_test_cases.mbt",
     "azimuth_standard_test_cases_new.mbt",
     "lib.mbt",
+    "azimuth_standard_enhanced_tests.mbt",
     "azimuth_comprehensive_enhanced_tests.mbt",
     "azimuth_premium_test_cases.mbt",
     "standard_azimuth_tests.mbt",
