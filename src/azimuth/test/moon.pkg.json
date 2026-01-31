@@ -239,6 +239,7 @@
         "azimuth_standard_moonbit_tests.mbt",
         "../../azimuth_standard_test_cases.mbt",
         "simple_test_new3.mbt",
+        "standard_moonbit_test_cases_new.mbt",
     "my_enhanced_tests.mbt",
 "../concise_core_tests.mbt",
     "concise_core_tests.mbt",
