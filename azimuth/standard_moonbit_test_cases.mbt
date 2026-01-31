@@ -84,3 +84,124 @@ test "business_logic_packaging_calculation" {
   let remaining_space = subtract(total_capacity, total_items)
   assert_eq(5, remaining_space)
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "subtract_function_comprehensive" {
+  // 全面测试减法函数
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(15, subtract(10, -5))
+  assert_eq(-15, subtract(-10, 5))
+  assert_eq(0, subtract(0, 0))
+  assert_eq(1000000, subtract(1000000, 0))
+}
+
+test "error_handling_division_by_zero" {
+  // 测试除零错误处理
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+}
+
+test "mathematical_distributive_property" {
+  // 测试数学分配律
+  let a = 6
+  let b = 4
+  let c = 3
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)  // 6*(4+3) = 6*4 + 6*3 = 42
+}
+
+test "string_processing_edge_cases" {
+  // 测试字符串处理边缘情况
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, @#$%!", greet("@#$%"))
+}
+
+test "financial_calculation_scenario" {
+  // 金融计算场景：贷款分期计算
+  let loan_amount = 10000
+  let monthly_payment = 3500
+  let months_needed = divide_with_ceil(loan_amount, monthly_payment)
+  assert_eq(3, months_needed)  // ceil(10000/3500) = 3
+  
+  // 验证总支付金额
+  let total_payment = multiply(months_needed, monthly_payment)
+  assert_eq(10500, total_payment)
+}
+
+test "resource_optimization_problem" {
+  // 资源优化问题测试
+  let total_products = 250
+  let box_capacity = 30
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  assert_eq(9, boxes_needed)
+  
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(270, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(20, remaining_space)
+}
+
+test "performance_large_scale_operations" {
+  // 大规模运算性能测试
+  let iterations = 10000
+  let sum_result = add(iterations, iterations)
+  let product_result = multiply(100, iterations)
+  let division_result = divide_with_ceil(product_result, 50)
+  
+  assert_eq(20000, sum_result)
+  assert_eq(1000000, product_result)
+  assert_eq(20000, division_result)
+}
+
+test "complex_workflow_calculation" {
+  // 复杂工作流计算测试
+  let base_value = 10
+  let multiplier = 3
+  let divisor = 4
+  let addition = 5
+  
+  // 计算流程：((base * multiplier) / divisor) + addition
+  let step1 = multiply(base_value, multiplier)
+  let step2 = divide_with_ceil(step1, divisor)
+  let result = add(step2, addition)
+  
+  assert_eq(13, result)  // ceil(10*3/4) + 5 = 8 + 5 = 13
+}
+
+test "boundary_values_comprehensive" {
+  // 边界值综合测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, -1))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(2000000, add(1000000, 1000000))
+}
+
+test "real_world_event_planning" {
+  // 真实世界事件规划测试
+  let participants = 87
+  let chairs_per_table = 8
+  
+  // 计算需要的桌子数量
+  let tables_needed = divide_with_ceil(participants, chairs_per_table)
+  assert_eq(11, tables_needed)  // ceil(87/8) = 11
+  
+  // 计算总座位数
+  let total_seats = multiply(tables_needed, chairs_per_table)
+  assert_eq(88, total_seats)
+  
+  // 验证总座位数正确
+  assert_eq(88, total_seats)
+}
