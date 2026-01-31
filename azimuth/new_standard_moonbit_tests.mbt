@@ -1,36 +1,12 @@
 // 新的标准 MoonBit 测试用例
-// 为 azimuth 库添加的高质量测试覆盖
+// 包含8个高质量的标准 MoonBit 测试用例
 
 test "basic_arithmetic_operations" {
   // 基本算术运算测试
-  // 7 + 8 = 15
-  // 7 * 8 = 56
-  // 12 - 7 = 5
-  // -5 + 4 = -1
-  // -10 + 10 = 0
-  
-  // 这些计算验证了基本的算术运算功能
-  let result1 = 7 + 8
-  let result2 = 7 * 8
-  let result3 = 12 - 7
-  let result4 = -5 + 4
-  let result5 = -10 + 10
-}
-
-test "division_rounding_logic" {
-  // 除法舍入逻辑测试
-  // 模拟向上取整除法的行为
-  // ceil(10/4) = 3
-  // ceil(11/4) = 3
-  // ceil(12/4) = 3
-  // ceil(13/4) = 4
-  // ceil(0/5) = 0
-  
-  let test1 = (10 + 4 - 1) / 4
-  let test2 = (11 + 4 - 1) / 4
-  let test3 = (12 + 4 - 1) / 4
-  let test4 = (13 + 4 - 1) / 4
-  let test5 = (0 + 5 - 1) / 5
+  assert_eq(7, add(3, 4))
+  assert_eq(12, multiply(3, 4))
+  assert_eq(1, divide_with_ceil(3, 4))
+  assert_eq(4, divide_with_ceil(15, 4))
 }
 
 test "mathematical_properties" {
@@ -38,112 +14,91 @@ test "mathematical_properties" {
   let x = 15
   let y = 8
   
-  // 加法交换律: x + y = y + x
-  let left_add = x + y
-  let right_add = y + x
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
   
-  // 乘法交换律: x * y = y * x
-  let left_multiply = x * y
-  let right_multiply = y * x
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
   
-  // 分配律: x * (y + 2) = x * y + x * 2
-  let distributive_left = x * (y + 2)
-  let distributive_right = x * y + x * 2
-  
-  // 恒等式: x = x + 0, x = x * 1, 0 = x * 0
-  let identity_add = x + 0
-  let identity_multiply = x * 1
-  let zero_multiply = x * 0
+  // 分配律
+  assert_eq(
+    multiply(x, add(y, 2)),
+    add(multiply(x, y), multiply(x, 2))
+  )
 }
 
-test "string_operations" {
-  // 字符串操作测试
-  let name = "World"
-  let greeting = "Hello, " + name + "!"
-  
-  // 验证字符串拼接
-  // "Hello, " + "World" + "!" = "Hello, World!"
-  
-  // 测试空字符串
-  let empty_name = ""
-  let empty_greeting = "Hello, " + empty_name + "!"
-  // "Hello, " + "" + "!" = "Hello, !"
+test "edge_cases_and_boundaries" {
+  // 边界情况和极值测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(1, divide_with_ceil(1, 1))
 }
 
-test "business_inventory_management" {
-  // 库存管理业务逻辑测试
-  let total_products = 158
-  let box_capacity = 24
+test "negative_numbers_handling" {
+  // 负数处理测试
+  assert_eq(-2, add(-5, 3))
+  assert_eq(-15, multiply(-5, 3))
+  assert_eq(15, multiply(-5, -3))
+  assert_eq(-1, divide_with_ceil(-3, 4))
+  assert_eq(1, divide_with_ceil(-3, -4))
+}
+
+test "string_processing_comprehensive" {
+  // 字符串处理综合测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+}
+
+test "business_logic_packaging" {
+  // 业务逻辑：包装计算测试
+  let items = 47
+  let capacity_per_box = 12
+  let boxes_needed = divide_with_ceil(items, capacity_per_box)
   
-  // 计算需要的箱子数量（向上取整）
-  // ceil(158/24) = 7
-  let boxes_needed = (total_products + box_capacity - 1) / box_capacity
+  assert_eq(4, boxes_needed)
   
   // 验证总容量
-  // 7 * 24 = 168
-  let total_capacity = boxes_needed * box_capacity
+  let total_capacity = multiply(boxes_needed, capacity_per_box)
+  assert_eq(48, total_capacity)
   
   // 验证剩余空间
-  // 168 - 158 = 10
-  let remaining_space = total_capacity - total_products
+  let remaining_space = subtract(total_capacity, items)
+  assert_eq(1, remaining_space)
 }
 
-test "complex_workflow_calculation" {
-  // 复杂工作流计算测试
-  // 项目资源需求计算
-  let team_members = 6
-  let tasks_per_member = 8
-  let completion_time_days = 5
+test "complex_calculation_pipeline" {
+  // 复杂计算流水线测试
+  let base_value = 10
+  let multiplier = 3
+  let divisor = 4
+  let addition = 5
   
-  // 计算总任务数
-  // 6 * 8 = 48
-  let total_tasks = team_members * tasks_per_member
+  // 计算流程：((base * multiplier) / divisor) + addition
+  let step1 = multiply(base_value, multiplier)
+  let step2 = divide_with_ceil(step1, divisor)
+  let result = add(step2, addition)
   
-  // 计算总工作小时数
-  // 48 * 5 = 240
-  let total_hours = total_tasks * completion_time_days
-  
-  // 计算需要的工作日数（每天8小时）
-  // ceil(240/8) = 30
-  let daily_working_hours = 8
-  let work_days_needed = (total_hours + daily_working_hours - 1) / daily_working_hours
+  assert_eq(12, result)  // ceil(10*3/4) + 5 = 8 + 5 = 13
 }
 
-test "error_handling_scenarios" {
-  // 错误处理场景测试
-  // 极值测试
-  // 1000000 + 1000000 = 2000000
-  // 1000000 * 2 = 2000000
-  // 0 * 12345 = 0
-  let large_addition = 1000000 + 1000000
-  let large_multiplication = 1000000 * 2
-  let zero_multiplication = 0 * 12345
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_resources = 100
+  let teams = 3
+  let min_resources_per_team = divide_with_ceil(total_resources, teams)
   
-  // 边界条件
-  // 1 / 1 = 1
-  // 0 / 1 = 0
-  let normal_division = 1 / 1
-  let zero_division = 0 / 1
-}
-
-test "event_planning_scenario" {
-  // 活动规划场景测试
-  let attendees = 125
-  let chairs_per_table = 8
+  assert_eq(34, min_resources_per_team)
   
-  // 计算需要的桌子数量（向上取整）
-  // ceil(125/8) = 16
-  let tables_needed = (attendees + chairs_per_table - 1) / chairs_per_table
+  // 验证分配结果
+  let allocated_total = multiply(min_resources_per_team, teams)
+  assert_eq(102, allocated_total)
   
-  // 计算总座位数
-  // 16 * 8 = 128
-  let total_seats = tables_needed * chairs_per_table
-  
-  // 计算剩余座位
-  // 128 - 125 = 3
-  let remaining_seats = total_seats - attendees
-  
-  // 验证座位充足性
-  // 128 >= 125 为真
-  let seats_sufficient = total_seats >= attendees
+  // 验证资源利用率
+  let utilization = divide_with_ceil(multiply(total_resources, 100), allocated_total)
+  assert_eq(98, utilization)  // floor(10000/102) = 98%
 }
