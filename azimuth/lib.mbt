@@ -11100,3 +11100,123 @@ test "real_world_shipping_calculation" {
   let efficiency = divide_with_ceil(multiply(total_packages, 100), total_capacity)
   assert_eq(40, efficiency)  // ceil(5000/125) = 40
 }
+
+// 新增的标准 MoonBit 测试用例 - 10个高质量测试用例
+test "subtract_function_comprehensive" {
+  // 全面测试减法函数
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(15, subtract(10, -5))
+  assert_eq(-15, subtract(-10, 5))
+}
+
+test "mathematical_commutative_laws" {
+  // 验证数学交换律
+  let a = 23
+  let b = 17
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+}
+
+test "mathematical_associative_laws" {
+  // 验证数学结合律
+  let a = 5
+  let b = 8
+  let c = 12
+  
+  // 加法结合律
+  assert_eq(add(add(a, b), c), add(a, add(b, c)))
+  
+  // 乘法结合律
+  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
+}
+
+test "mathematical_distributive_law" {
+  // 验证数学分配律
+  let a = 7
+  let b = 9
+  let c = 4
+  
+  // 乘法对加法的分配律
+  assert_eq(
+    multiply(a, add(b, c)),
+    add(multiply(a, b), multiply(a, c))
+  )
+}
+
+test "divide_with_ceil_precision_cases" {
+  // 测试向上取整除法的精度情况
+  assert_eq(1, divide_with_ceil(1, 2))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(3, divide_with_ceil(5, 2))
+  assert_eq(4, divide_with_ceil(7, 2))
+  assert_eq(5, divide_with_ceil(9, 2))
+}
+
+test "greet_function_multilingual_support" {
+  // 测试问候函数的多语言支持
+  assert_eq_string("Hello, Español!", greet("Español"))
+  assert_eq_string("Hello, Français!", greet("Français"))
+  assert_eq_string("Hello, Deutsch!", greet("Deutsch"))
+  assert_eq_string("Hello, Português!", greet("Português"))
+  assert_eq_string("Hello, Italiano!", greet("Italiano"))
+}
+
+test "business_inventory_management" {
+  // 业务场景：库存管理测试
+  let total_products = 158
+  let box_capacity = 25
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  
+  assert_eq(7, boxes_needed)
+  
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(175, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(17, remaining_space)
+}
+
+test "complex_calculation_workflow" {
+  // 复杂计算工作流测试
+  let initial_value = 15
+  
+  // 计算步骤
+  let step1 = multiply(initial_value, 3)  // 45
+  let step2 = add(step1, 20)              // 65
+  let step3 = divide_with_ceil(step2, 8)  // 9
+  let step4 = multiply(step3, 2)          // 18
+  let final_result = subtract(step4, 5)   // 13
+  
+  assert_eq(13, final_result)
+}
+
+test "error_handling_boundary_conditions" {
+  // 错误处理和边界条件测试
+  // 除零的各种情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  
+  // 极值测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, -1))
+}
+
+test "string_formatting_edge_cases" {
+  // 字符串格式化边缘情况测试
+  assert_eq_string("Hello, empty!", greet(""))
+  assert_eq_string("Hello, space !", greet("space "))
+  assert_eq_string("Hello,  space!", greet(" space"))
+  assert_eq_string("Hello,   multiple   spaces!", greet("   multiple   spaces"))
+  assert_eq_string("Hello, special@#$%^&*()chars!", greet("special@#$%^&*()chars"))
+}
