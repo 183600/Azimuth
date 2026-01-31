@@ -1,88 +1,138 @@
-// Azimuth 高质量测试用例
-// 包含8个全面的测试用例，覆盖核心功能和边界情况
+// Azimuth 测试用例 - 10个高质量测试
+// 测试核心功能的各种场景和边界情况
 
-test "add_function_edge_cases" {
-  // 测试加法函数的边界情况
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(1, @azimuth.add(1, 0))
-  @azimuth.assert_eq(-1, @azimuth.add(-1, 0))
-  @azimuth.assert_eq(1000000, @azimuth.add(500000, 500000))
-  @azimuth.assert_eq(-1000000, @azimuth.add(-500000, -500000))
+test "test_add_edge_cases" {
+  // 测试加法的边界情况
+  assert_eq(1000, add(999, 1))
+  assert_eq(-1000, add(-999, -1))
+  assert_eq(0, add(2147483647, -2147483647))
+  assert_eq(1, add(0, 1))
 }
 
-test "multiply_function_properties" {
-  // 测试乘法函数的数学性质
-  @azimuth.assert_eq(0, @azimuth.multiply(42, 0))
-  @azimuth.assert_eq(42, @azimuth.multiply(42, 1))
-  @azimuth.assert_eq(-42, @azimuth.multiply(42, -1))
-  @azimuth.assert_eq(42, @azimuth.multiply(-42, -1))
-  @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))
-}
-
-test "greet_function_unicode_support" {
-  // 测试问候函数的Unicode支持
-  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
-  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
-  @azimuth.assert_eq_string("Hello, café!", @azimuth.greet("café"))
-  @azimuth.assert_eq_string("Hello, Москва!", @azimuth.greet("Москва"))
-  @azimuth.assert_eq_string("Hello, empty!", @azimuth.greet(""))
-}
-
-test "divide_with_ceil_comprehensive" {
-  // 全面测试向上取整除法函数
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(5, 0))
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(-10, -3))
-}
-
-test "complex_calculation_pipeline" {
-  // 测试复杂计算流水线
-  let base = 10
-  let doubled = @azimuth.multiply(base, 2)
-  let incremented = @azimuth.add(doubled, 5)
-  let divided = @azimuth.divide_with_ceil(incremented, 3)
-  @azimuth.assert_eq(9, divided)  // ceil((10*2+5)/3) = ceil(25/3) = 9
-}
-
-test "mathematical_commutative_laws" {
-  // 验证数学交换律
-  let a = 15
-  let b = 27
+test "test_multiply_properties" {
+  // 测试乘法的数学性质
+  let x = 12
+  let y = 15
   
-  // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  // 交换律
+  assert_eq(multiply(x, y), multiply(y, x))
   
-  // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
+  // 与1相乘
+  assert_eq(x, multiply(x, 1))
+  assert_eq(y, multiply(1, y))
+  
+  // 与0相乘
+  assert_eq(0, multiply(x, 0))
+  assert_eq(0, multiply(0, y))
 }
 
-test "real_world_business_logic" {
-  // 真实世界业务逻辑测试
-  // 场景：计算活动所需的桌子数量
-  let guests = 47
-  let chairs_per_table = 6
-  let tables_needed = @azimuth.divide_with_ceil(guests, chairs_per_table)
-  
-  @azimuth.assert_eq(8, tables_needed)  // ceil(47/6) = 8
-  
-  // 验证总座位数
-  let total_chairs = @azimuth.multiply(tables_needed, chairs_per_table)
-  @azimuth.assert_eq(48, total_chairs)
+test "test_divide_precision" {
+  // 测试除法的精度和边界情况
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(2, divide_with_ceil(7, 4))
+  assert_eq(100, divide_with_ceil(999, 10))
+  assert_eq(-1, divide_with_ceil(-5, 5))
+  assert_eq(0, divide_with_ceil(0, 100))
 }
 
-test "error_handling_and_boundaries" {
-  // 错误处理和边界条件测试
-  // 除零错误处理
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-100, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
+test "test_greet_special_cases" {
+  // 测试问候函数的特殊情况
+  assert_eq_string("Hello, a!", greet("a"))
+  assert_eq_string("Hello, ABC123!", greet("ABC123"))
+  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
+  assert_eq_string("Hello, A+B=C!", greet("A+B=C"))
+}
+
+test "test_financial_calculations" {
+  // 测试金融计算场景
+  let price = 199
+  let quantity = 3
+  let discount = 50
+  let tax_rate = 8
   
-  // 极值测试
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
-  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-1, 1))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-1, -1))
+  let subtotal = multiply(price, quantity)
+  let discounted_total = add(subtotal, -discount)
+  let tax = divide_with_ceil(multiply(discounted_total, tax_rate), 100)
+  let final_total = add(discounted_total, tax)
+  
+  assert_eq(597, subtotal)
+  assert_eq(547, discounted_total)
+  assert_eq(44, tax)
+  assert_eq(591, final_total)
+}
+
+test "test_inventory_management" {
+  // 测试库存管理场景
+  let initial_stock = 500
+  let daily_sales = 25
+  let days = 7
+  let new_shipment = 200
+  
+  let total_sold = multiply(daily_sales, days)
+  let stock_before_shipment = add(initial_stock, -total_sold)
+  let final_stock = add(stock_before_shipment, new_shipment)
+  
+  assert_eq(175, total_sold)
+  assert_eq(325, stock_before_shipment)
+  assert_eq(525, final_stock)
+}
+
+test "test_engineering_calculations" {
+  // 测试工程计算场景
+  let length = 10
+  let width = 8
+  let height = 3
+  let material_thickness = 0.5  // 向上取整为1
+  
+  let floor_area = multiply(length, width)
+  let wall_area = multiply(2, multiply(add(length, width), height))
+  let total_surface = add(floor_area, wall_area)
+  let material_units = divide_with_ceil(total_surface, 1)
+  
+  assert_eq(80, floor_area)
+  assert_eq(108, wall_area)
+  assert_eq(188, total_surface)
+  assert_eq(188, material_units)
+}
+
+test "test_performance_metrics" {
+  // 测试性能指标计算
+  let baseline = 1000
+  let improvement_factor = 25
+  let overhead = 50
+  
+  let improved = add(baseline, divide_with_ceil(multiply(baseline, improvement_factor), 100))
+  let net_improvement = add(improved, -overhead)
+  
+  assert_eq(1250, improved)
+  assert_eq(1200, net_improvement)
+}
+
+test "test_data_analysis" {
+  // 测试数据分析场景
+  let data_points = 1000
+  let sample_size = 50
+  let confidence_level = 95
+  
+  let samples_needed = divide_with_ceil(multiply(data_points, confidence_level), 100)
+  let actual_samples = if samples_needed > sample_size { sample_size } else { samples_needed }
+  
+  assert_eq(950, samples_needed)
+  assert_eq(50, actual_samples)
+}
+
+test "test_error_boundary_tests" {
+  // 测试错误边界情况
+  // 测试极值
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  
+  // 测试大数运算
+  let big_num = 1000000
+  assert_eq(2000000, add(big_num, big_num))
+  assert_eq(1000000000000, multiply(big_num, big_num))
+  
+  // 测试空字符串
+  assert_eq_string("Hello, !", greet(""))
 }

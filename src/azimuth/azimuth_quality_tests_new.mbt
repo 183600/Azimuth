@@ -31,6 +31,7 @@ test "quality_greet_unicode" {
   // 测试问候函数的Unicode支持
   assert_eq_string("Hello, 世界!", greet("世界"))
   assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, naïve!", greet("naïve"))
   assert_eq_string("Hello, !", greet(""))
 }
 

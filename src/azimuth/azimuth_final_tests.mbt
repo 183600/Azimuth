@@ -1,7 +1,7 @@
-// Azimuth 测试用例 - 10个高质量测试
+// Azimuth 最终测试用例 - 10个高质量测试
 // 测试核心功能的各种场景和边界情况
 
-test "test_add_edge_cases" {
+test "final_add_edge_cases" {
   // 测试加法的边界情况
   assert_eq(1000, add(999, 1))
   assert_eq(-1000, add(-999, -1))
@@ -9,7 +9,7 @@ test "test_add_edge_cases" {
   assert_eq(1, add(0, 1))
 }
 
-test "test_multiply_properties" {
+test "final_multiply_properties" {
   // 测试乘法的数学性质
   let x = 12
   let y = 15
@@ -26,7 +26,7 @@ test "test_multiply_properties" {
   assert_eq(0, multiply(0, y))
 }
 
-test "test_divide_precision" {
+test "final_divide_precision" {
   // 测试除法的精度和边界情况
   assert_eq(1, divide_with_ceil(5, 5))
   assert_eq(2, divide_with_ceil(7, 4))
@@ -35,7 +35,7 @@ test "test_divide_precision" {
   assert_eq(0, divide_with_ceil(0, 100))
 }
 
-test "test_greet_special_cases" {
+test "final_greet_special_cases" {
   // 测试问候函数的特殊情况
   assert_eq_string("Hello, a!", greet("a"))
   assert_eq_string("Hello, ABC123!", greet("ABC123"))
@@ -43,7 +43,7 @@ test "test_greet_special_cases" {
   assert_eq_string("Hello, A+B=C!", greet("A+B=C"))
 }
 
-test "test_financial_calculations" {
+test "final_financial_calculations" {
   // 测试金融计算场景
   let price = 199
   let quantity = 3
@@ -61,7 +61,7 @@ test "test_financial_calculations" {
   assert_eq(591, final_total)
 }
 
-test "test_inventory_management" {
+test "final_inventory_management" {
   // 测试库存管理场景
   let initial_stock = 500
   let daily_sales = 25
@@ -77,22 +77,25 @@ test "test_inventory_management" {
   assert_eq(525, final_stock)
 }
 
-test "test_engineering_calculations" {
+test "final_engineering_calculations" {
   // 测试工程计算场景
   let length = 10
   let width = 8
   let height = 3
+  let material_thickness = 0.5  // 向上取整为1
   
   let floor_area = multiply(length, width)
   let wall_area = multiply(2, multiply(add(length, width), height))
   let total_surface = add(floor_area, wall_area)
+  let material_units = divide_with_ceil(total_surface, 1)
   
   assert_eq(80, floor_area)
   assert_eq(108, wall_area)
   assert_eq(188, total_surface)
+  assert_eq(188, material_units)
 }
 
-test "test_performance_metrics" {
+test "final_performance_metrics" {
   // 测试性能指标计算
   let baseline = 1000
   let improvement_factor = 25
@@ -105,7 +108,7 @@ test "test_performance_metrics" {
   assert_eq(1200, net_improvement)
 }
 
-test "test_data_analysis" {
+test "final_data_analysis" {
   // 测试数据分析场景
   let data_points = 1000
   let sample_size = 50
@@ -118,7 +121,7 @@ test "test_data_analysis" {
   assert_eq(50, actual_samples)
 }
 
-test "test_error_boundary_tests" {
+test "final_error_boundary_tests" {
   // 测试错误边界情况
   // 测试极值
   assert_eq(0, divide_with_ceil(0, 0))
