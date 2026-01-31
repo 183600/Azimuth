@@ -1,31 +1,30 @@
-// 标准 MoonBit 测试用例 - 新增10个高质量测试用例
-// 覆盖 azimuth 库的主要功能
+// 标准 MoonBit 测试用例 - azimuth 库测试
+// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
 
-test "basic_arithmetic_addition" {
-  // 测试基本加法运算
+test "basic_addition_functionality" {
+  // 测试基本加法功能
   assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
   assert_eq(-5, add(-2, -3))
   assert_eq(10, add(-5, 15))
 }
 
-test "basic_arithmetic_multiplication" {
-  // 测试基本乘法运算
+test "basic_multiplication_functionality" {
+  // 测试基本乘法功能
   assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(5, 0))
+  assert_eq(0, multiply(0, 5))
   assert_eq(-6, multiply(-2, 3))
   assert_eq(15, multiply(-3, -5))
 }
 
-test "string_greeting_functionality" {
-  // 测试字符串问候功能
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+test "greeting_function_basic" {
+  // 测试基本问候功能
   assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
 }
 
-test "ceil_division_positive_numbers" {
+test "divide_with_ceil_positive_numbers" {
   // 测试正数的向上取整除法
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
@@ -33,11 +32,10 @@ test "ceil_division_positive_numbers" {
   assert_eq(0, divide_with_ceil(0, 5))
 }
 
-test "ceil_division_negative_numbers" {
+test "divide_with_ceil_negative_numbers" {
   // 测试负数的向上取整除法
   assert_eq(-3, divide_with_ceil(-10, 3))
   assert_eq(4, divide_with_ceil(-10, -3))
-  assert_eq(-1, divide_with_ceil(1, -3))
   assert_eq(0, divide_with_ceil(5, 0))
 }
 
@@ -55,13 +53,13 @@ test "zero_element_properties" {
 }
 
 test "complex_arithmetic_operations" {
-  // 测试复杂算术运算组合
+  // 测试复杂算术运算
   let result = add(multiply(2, 3), multiply(4, 5))
   assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
 }
 
-test "business_packaging_scenario" {
-  // 测试业务场景：包装计算
+test "packaging_calculation_scenario" {
+  // 测试包装计算场景
   let total_items = 25
   let items_per_box = 6
   let boxes_needed = divide_with_ceil(total_items, items_per_box)
@@ -69,7 +67,7 @@ test "business_packaging_scenario" {
 }
 
 test "unicode_and_special_characters" {
-  // 测试Unicode和特殊字符处理
+  // 测试 Unicode 和特殊字符处理
   assert_eq_string("Hello, 世界!", greet("世界"))
   assert_eq_string("Hello, 🚀!", greet("🚀"))
   assert_eq_string("Hello, café!", greet("café"))

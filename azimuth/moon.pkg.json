@@ -233,7 +233,8 @@
     "azimuth_new_standard_tests.mbt",
     "azimuth_standard_test_cases_2024.mbt",
     "azimuth_standard_tests_new.mbt",
-    "test/azimuth_new_standard_tests.mbt"  ],  "import": [    "moonbitlang/core/builtin",
+    "test/azimuth_new_standard_tests.mbt",
+    "standard_moonbit_tests_new.mbt"  ],  "import": [    "moonbitlang/core/builtin",
     "moonbitlang/core"
   ],
   "test-import": [
