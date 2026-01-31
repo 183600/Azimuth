@@ -228,7 +228,9 @@
     "test/standard_test_cases.mbt",
     "standard_test_suite.mbt",
     "standard_azimuth_enhanced_tests.mbt",
-    "enhanced_practical_tests.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
+    "enhanced_practical_tests.mbt",
+    "quality_comprehensive_tests.mbt",
+    "simple_quality_test.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
     "standard_azimuth_core_tests.mbt",
     "comprehensive_quality_test_suite.mbt",
