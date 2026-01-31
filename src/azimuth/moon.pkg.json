@@ -231,7 +231,8 @@
     "enhanced_practical_tests.mbt",
     "quality_comprehensive_tests.mbt",
     "simple_quality_test.mbt",
-    "standard_moonbit_tests.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
+    "standard_moonbit_tests.mbt",
+    "standard_moonbit_test_suite.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
     "standard_azimuth_core_tests.mbt",
     "comprehensive_quality_test_suite.mbt",
