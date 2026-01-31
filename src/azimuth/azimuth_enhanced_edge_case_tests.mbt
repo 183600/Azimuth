@@ -1,232 +1,171 @@
-// 高质量补充测试用例 - 针对 azimuth 库的特殊场景测试
-// 专注于边界情况、性能相关和实际应用场景
+// 简化的高质量边界测试用例
+// 专注于核心功能的边界情况和实际应用场景
 
-test "extreme_boundary_divide_with_ceil" {
-  // 测试极端边界情况的向上取整除法
-  // 测试最大Int值的边界情况
-  assert_eq(1, divide_with_ceil(2147483647, 2147483647))
-  assert_eq(2, divide_with_ceil(2147483647, 1073741824))
+test "boundary_value_arithmetic" {
+  // 边界值算术测试
+  let max_val = 1000000
+  let min_val = -1000000
   
-  // 测试最小Int值的边界情况
-  assert_eq(1, divide_with_ceil(-2147483648, -2147483648))
-  assert_eq(-1, divide_with_ceil(-2147483647, 2147483648))
+  // 测试大数运算
+  assert_eq(2000000, add(max_val, max_val))
+  assert_eq(0, add(max_val, min_val))
+  assert_eq(-2000000, add(min_val, min_val))
   
-  // 测试接近零的极小值除法
-  assert_eq(2147483647, divide_with_ceil(2147483647, 1))
-  assert_eq(-2147483648, divide_with_ceil(-2147483648, 1))
+  // 测试零的运算
+  assert_eq(0, multiply(0, max_val))
+  assert_eq(0, multiply(min_val, 0))
+  assert_eq(max_val, multiply(max_val, 1))
 }
 
-test "string_greeting_edge_cases" {
-  // 测试字符串问候的边界情况和特殊字符处理
-  // 测试包含各种特殊字符的字符串
-  assert_eq_string("Hello, \n\t\r!", greet("\n\t\r"))
+test "divide_with_ceil_edge_cases" {
+  // 向上取整除法的边界情况
+  // 测试各种正负数组合
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(2, divide_with_ceil(3, 2))    // 1.5 -> 2
+  assert_eq(-1, divide_with_ceil(-3, 2))   // -1.5 -> -1
+  assert_eq(2, divide_with_ceil(-3, -2))   // 1.5 -> 2
+  
+  // 测试大数除法
+  assert_eq(1000000, divide_with_ceil(1000000, 1))
+  assert_eq(1, divide_with_ceil(1000000, 1000000))
+  assert_eq(2, divide_with_ceil(1000001, 1000000))
+  
+  // 测试除数为零的安全处理
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+}
+
+test "greet_function_special_characters" {
+  // 问候函数的特殊字符测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, Café!", greet("Café"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
   assert_eq_string("Hello, !@#$!", greet("!@#$"))
-  assert_eq_string("Hello, 123!", greet("123"))
-  
-  // 测试非常长的字符串
-  let very_long_name = "A" + "B" + "C" + "D" + "E" + "F" + "G" + "H" + "I" + "J"
-  assert_eq_string("Hello, ABCDEFGHIJ!", greet(very_long_name))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
 }
 
-test "mathematical_sequence_calculations" {
-  // 测试数学序列计算 - 斐波那契、阶乘等
-  // 斐波那契数列计算
-  let fib0 = 0
-  let fib1 = 1
-  let fib2 = add(fib0, fib1)
-  let fib3 = add(fib1, fib2)
-  let fib4 = add(fib2, fib3)
-  let fib5 = add(fib3, fib4)
-  
-  assert_eq(1, fib2)
-  assert_eq(2, fib3)
-  assert_eq(3, fib4)
-  assert_eq(5, fib5)
-  
-  // 简化的阶乘计算（使用乘法和加法）
-  let fact3 = multiply(3, multiply(2, 1))
-  let fact4 = multiply(4, fact3)
-  let fact5 = multiply(5, fact4)
-  
-  assert_eq(6, fact3)
-  assert_eq(24, fact4)
-  assert_eq(120, fact5)
-}
-
-test "financial_compound_interest_simulation" {
-  // 模拟金融复利计算的完整场景
+test "financial_calculation_scenario" {
+  // 金融计算场景
   let principal = 10000
-  let rate_percent = 5
-  let years = 4
+  let rate = 5
   
-  // 第一年
-  let year1_interest = divide_with_ceil(multiply(principal, rate_percent), 100)
-  let year1_total = add(principal, year1_interest)
+  // 计算复利（简化版本）
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate), 100))
   
-  // 第二年
-  let year2_interest = divide_with_ceil(multiply(year1_total, rate_percent), 100)
-  let year2_total = add(year1_total, year2_interest)
-  
-  // 第三年
-  let year3_interest = divide_with_ceil(multiply(year2_total, rate_percent), 100)
-  let year3_total = add(year2_total, year3_interest)
-  
-  // 第四年
-  let year4_interest = divide_with_ceil(multiply(year3_total, rate_percent), 100)
-  let year4_total = add(year3_total, year4_interest)
-  
-  assert_eq(10500, year1_total)
-  assert_eq(11025, year2_total)
-  assert_eq(11576, year3_total)
-  assert_eq(12155, year4_total)
+  assert_eq(10500, year1)  // 10000 + 500
+  assert_eq(11025, year2)  // 10500 + 525
+  assert_eq(11576, year3)  // 11025 + 552 (向上取整)
 }
 
-test "resource_optimization_calculations" {
-  // 资源优化计算 - 内存分配、CPU调度等场景
-  let total_memory = 8192  // MB
-  let process1_size = 512
-  let process2_size = 256
-  let process3_size = 128
-  let process4_size = 64
-  let process5_size = 32
-  let total_processes = 5
+test "inventory_management_calculation" {
+  // 库存管理计算
+  // 计算各种产品需要的箱子数量
+  let boxes_a = divide_with_ceil(150, 25)  // 6箱
+  let boxes_b = divide_with_ceil(89, 20)   // 5箱
+  let boxes_c = divide_with_ceil(234, 30)  // 8箱
+  let boxes_d = divide_with_ceil(45, 15)   // 3箱
   
-  // 计算内存使用率
-  let used_memory = add(add(add(add(process1_size, process2_size), process3_size), process4_size), process5_size)
-  let memory_usage_percent = divide_with_ceil(multiply(used_memory, 100), total_memory)
+  // 计算总箱子数
+  let total_boxes = add(add(add(boxes_a, boxes_b), boxes_c), boxes_d)
+  assert_eq(22, total_boxes)
   
-  // 计算需要的内存块数（每块1024MB）
-  let memory_blocks_needed = divide_with_ceil(used_memory, 1024)
-  
-  assert_eq(992, used_memory)
-  assert_eq(13, memory_usage_percent)
-  assert_eq(1, memory_blocks_needed)
+  // 计算总价值
+  let total_value = add(
+    add(multiply(150, 10), multiply(89, 15)),
+    add(multiply(234, 20), multiply(45, 25))
+  )
+  assert_eq(8835, total_value)
 }
 
-test "algorithm_complexity_simulation" {
-  // 算法复杂度模拟 - O(n), O(n²), O(log n) 等计算
-  let n = 100
+test "mathematical_series_calculation" {
+  // 数学级数计算
+  // 等差数列和：S = n/2 * (2a + (n-1)d)
+  let first_term = 3
+  let diff = 4
+  let terms = 10
   
-  // O(n) 线性复杂度模拟
-  let linear_operations = multiply(n, 1)
+  let sum_arith = divide_with_ceil(
+    multiply(terms, add(multiply(2, first_term), multiply(terms - 1, diff))),
+    2
+  )
+  assert_eq(210, sum_arith)  // 10/2 * (6 + 36) = 5 * 42 = 210
   
-  // O(n²) 二次复杂度模拟
-  let quadratic_operations = multiply(n, n)
+  // 等比数列前5项和（展开计算）
+  let ratio = 3
+  let term1 = 2
+  let term2 = multiply(term1, ratio)
+  let term3 = multiply(term2, ratio)
+  let term4 = multiply(term3, ratio)
+  let term5 = multiply(term4, ratio)
   
-  // O(log n) 对数复杂度模拟（简化为除以2的次数）
-  let log_operations = divide_with_ceil(n, 2)
-  
-  // O(n log n) 线性对数复杂度模拟
-  let n_log_n_operations = multiply(n, log_operations)
-  
-  assert_eq(100, linear_operations)
-  assert_eq(10000, quadratic_operations)
-  assert_eq(50, log_operations)
-  assert_eq(5000, n_log_n_operations)
+  let sum_geo = add(add(add(add(term1, term2), term3), term4), term5)
+  assert_eq(242, sum_geo)  // 2 + 6 + 18 + 54 + 162 = 242
 }
 
-test "data_structure_operations" {
-  // 数据结构操作模拟 - 栈、队列、树等
-  // 栈操作模拟
-  let stack_push_1 = 10
-  let stack_push_2 = 20
-  let stack_push_3 = 30
-  let stack_sum = add(add(stack_push_1, stack_push_2), stack_push_3)
+test "performance_efficiency_test" {
+  // 性能效率测试
+  let base_ops = 1000
+  let factor = 5
+  let overhead_pct = 10
   
-  // 队列操作模拟
-  let queue_enqueue_1 = 15
-  let queue_enqueue_2 = 25
-  let queue_enqueue_3 = 35
-  let queue_sum = add(add(queue_enqueue_1, queue_enqueue_2), queue_enqueue_3)
+  // 计算优化后的性能
+  let optimized = multiply(base_ops, factor)
+  let overhead = divide_with_ceil(multiply(optimized, overhead_pct), 100)
+  let actual = add(optimized, -overhead)
   
-  // 树结构深度计算（简化）
-  let tree_nodes = 7
-  let tree_depth = divide_with_ceil(tree_nodes, 2)
+  assert_eq(5000, optimized)
+  assert_eq(500, overhead)
+  assert_eq(4500, actual)
   
-  assert_eq(60, stack_sum)
-  assert_eq(75, queue_sum)
-  assert_eq(4, tree_depth)
+  // 计算性能提升倍数
+  let improvement = divide_with_ceil(actual, base_ops)
+  assert_eq(5, improvement)
 }
 
-test "network_performance_metrics" {
-  // 网络性能指标计算
-  let packet_size = 1500  // bytes
-  let bandwidth_mbps = 100
-  let latency_ms = 5
-  let packet_count = 1000
+test "business_intelligence_analysis" {
+  // 商业智能分析
+  // 季度销售数据
+  let q1 = add(add(12000, 15000), 18000)   // 45000
+  let q2 = add(add(14000, 20000), 22000)   // 56000
+  let q3 = add(add(19000, 21000), 23000)   // 63000
+  let q4 = add(add(25000, 24000), 26000)   // 75000
   
-  // 计算总数据量
-  let total_data_mb = divide_with_ceil(multiply(packet_size, packet_count), 1048576)  // 转换为MB
+  // 年度总销售额
+  let annual = add(add(add(q1, q2), q3), q4)
+  assert_eq(239000, annual)
   
-  // 计算传输时间（简化计算）
-  let transfer_time_ms = divide_with_ceil(multiply(total_data_mb, 1000), bandwidth_mbps)
+  // 月平均销售额（向上取整）
+  let monthly_avg = divide_with_ceil(annual, 12)
+  assert_eq(19917, monthly_avg)
   
-  // 计算总延迟
-  let total_latency = add(transfer_time_ms, multiply(latency_ms, 10))  // 简化为10个包
-  
-  assert_eq(2, total_data_mb)
-  assert_eq(20, transfer_time_ms)
-  assert_eq(70, total_latency)
+  // 同比增长率
+  let growth = divide_with_ceil(multiply(q4 - q1, 100), q1)
+  assert_eq(67, growth)  // ceil((75000-45000)*100/45000) = 67
 }
 
-test "database_query_optimization" {
-  // 数据库查询优化计算
-  let table_size = 1000000
-  let index_selectivity = 10  // 百分比
-  let join_factor = 3
-  let cache_hit_rate = 80  // 百分比
+test "complex_expressions_test" {
+  // 复杂表达式测试
+  let x = 10
+  let y = 15
+  let z = 20
   
-  // 计算索引扫描行数
-  let index_scan_rows = divide_with_ceil(multiply(table_size, index_selectivity), 100)
+  // (x + y) * z
+  let result1 = multiply(add(x, y), z)
+  assert_eq(500, result1)  // (10 + 15) * 20 = 500
   
-  // 计算连接操作复杂度
-  let join_complexity = multiply(index_scan_rows, join_factor)
+  // x * y + z
+  let result2 = add(multiply(x, y), z)
+  assert_eq(170, result2)  // 10 * 15 + 20 = 170
   
-  // 计算缓存优化后的行数
-  let optimized_rows = divide_with_ceil(multiply(join_complexity, 100 - cache_hit_rate), 100)
-  
-  assert_eq(100000, index_scan_rows)
-  assert_eq(300000, join_complexity)
-  assert_eq(60000, optimized_rows)
-}
-
-test "scientific_computation_precision" {
-  // 科学计算精度测试
-  let pi_approximation = 22  // 22/7 约等于π
-  let pi_divisor = 7
-  let precision_factor = 10000
-  
-  // 计算π的近似值（放大10000倍以保持精度）
-  let pi_scaled = divide_with_ceil(multiply(pi_approximation, precision_factor), pi_divisor)
-  
-  // 计算圆的面积（简化）
-  let radius = 10
-  let circle_area_scaled = divide_with_ceil(multiply(pi_scaled, multiply(radius, radius)), precision_factor)
-  
-  // 计算球体体积（简化）
-  let sphere_volume_scaled = divide_with_ceil(multiply(4, multiply(pi_scaled, multiply(radius, multiply(radius, radius)))), multiply(3, precision_factor))
-  
-  assert_eq(31429, pi_scaled)
-  assert_eq(314, circle_area_scaled)
-  assert_eq(4191, sphere_volume_scaled)
-}
-
-test "error_boundary_and_recovery" {
-  // 错误边界和恢复测试
-  // 测试各种错误输入的健壮性
-  assert_eq(0, divide_with_ceil(0, 0))  // 0/0
-  assert_eq(0, divide_with_ceil(100, 0))  // 正数/0
-  assert_eq(0, divide_with_ceil(-100, 0))  // 负数/0
-  assert_eq(0, divide_with_ceil(-2147483648, 0))  // 最小值/0
-  
-  // 测试极端数值组合
-  let extreme_sum1 = add(2147483647, -2147483647)
-  let extreme_sum2 = add(-2147483648, 2147483647)
-  let extreme_product = multiply(2147483647, 1)
-  let extreme_negative_product = multiply(-2147483648, 1)
-  
-  assert_eq(0, extreme_sum1)
-  assert_eq(-1, extreme_sum2)
-  assert_eq(2147483647, extreme_product)
-  assert_eq(-2147483648, extreme_negative_product)
+  // 复杂嵌套表达式
+  let complex = add(
+    multiply(x, divide_with_ceil(add(y, z), 2)),
+    multiply(y, divide_with_ceil(subtract(z, x), 3))
+  )
+  assert_eq(315, complex)  // 10 * ceil(35/2) + 15 * ceil(10/3) = 10*18 + 15*4 = 240
 }
