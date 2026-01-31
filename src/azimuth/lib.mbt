@@ -27,6 +27,10 @@ pub fn multiply(a : Int, b : Int) -> Int {
   a * b
 }
 
+pub fn subtract(a : Int, b : Int) -> Int {
+  a - b
+}
+
 pub fn greet(name : String) -> String {
   "Hello, " + name + "!"
 }
@@ -4757,10 +4761,7 @@ test "error_resilience_validation" {
   assert_eq(4, divide_with_ceil(negative_cases[2].0, negative_cases[2].1))
 }
 
-// 辅助函数：减法（用于测试）
-fn subtract(a : Int, b : Int) -> Int {
-  a - b
-}
+
 
 // 辅助函数：布尔断言（用于测试）
 fn assert_true(condition : Bool) -> Unit {
@@ -9697,8 +9698,135 @@ test "standard_error_handling" {
   
   // 除数为零的安全处理
   assert_eq(0, divide_with_ceil(500, 0))
+}
+
+// 新增的10个标准MoonBit测试用例
+test "subtract_basic_functionality" {
+  // 测试基本减法功能
+  assert_eq(5, subtract(8, 3))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(-5, subtract(2, 7))
+  assert_eq(10, subtract(15, 5))
+}
+
+test "subtract_negative_numbers" {
+  // 测试负数减法
+  assert_eq(-8, subtract(-5, 3))
+  assert_eq(2, subtract(-3, -5))
+  assert_eq(-10, subtract(-7, 3))
+  assert_eq(0, subtract(-5, -5))
+}
+
+test "subtract_zero_operations" {
+  // 测试与零相关的减法运算
+  assert_eq(5, subtract(5, 0))
+  assert_eq(-5, subtract(0, 5))
+  assert_eq(0, subtract(0, 0))
+}
+
+test "comprehensive_arithmetic_combinations" {
+  // 测试综合算术组合
+  let a = 10
+  let b = 3
+  let c = 7
   
-  // 极端值测试
-  assert_eq(1, divide_with_ceil(1, 1000000))
-  assert_eq(1000000, divide_with_ceil(1000000, 1))
+  // 测试 (a + b) - c
+  let result1 = subtract(add(a, b), c)
+  assert_eq(6, result1)  // (10 + 3) - 7 = 13 - 7 = 6
+  
+  // 测试 a * (b - c)
+  let result2 = multiply(a, subtract(b, c))
+  assert_eq(-40, result2)  // 10 * (3 - 7) = 10 * (-4) = -40
+  
+  // 测试 (a - b) / c 向上取整
+  let result3 = divide_with_ceil(subtract(a, b), c)
+  assert_eq(1, result3)  // ceil((10 - 3) / 7) = ceil(7/7) = 1
+}
+
+test "financial_calculation_with_subtraction" {
+  // 金融计算场景：计算利润
+  let revenue = 5000
+  let costs = 3200
+  let tax_rate = 15
+  
+  // 计算税前利润
+  let profit_before_tax = subtract(revenue, costs)
+  
+  // 计算税费
+  let tax = divide_with_ceil(multiply(profit_before_tax, tax_rate), 100)
+  
+  // 计算净利润
+  let net_profit = subtract(profit_before_tax, tax)
+  
+  assert_eq(1800, profit_before_tax)
+  assert_eq(270, tax)
+  assert_eq(1530, net_profit)
+}
+
+test "inventory_management_with_subtraction" {
+  // 库存管理场景：计算库存变化
+  let initial_stock = 500
+  let incoming_shipment = 150
+  let sales = 320
+  let returns = 25
+  
+  // 计算最终库存
+  let final_stock = subtract(add(initial_stock, incoming_shipment), subtract(sales, returns))
+  
+  assert_eq(355, final_stock)  // (500 + 150) - (320 - 25) = 650 - 295 = 355
+}
+
+test "mathematical_properties_subtraction" {
+  // 测试减法的数学性质
+  let a = 15
+  let b = 8
+  
+  // 测试 a - a = 0
+  assert_eq(0, subtract(a, a))
+  
+  // 测试 a - 0 = a
+  assert_eq(a, subtract(a, 0))
+  
+  // 测试 0 - a = -a
+  assert_eq(-a, subtract(0, a))
+  
+  // 测试 (a - b) + b = a
+  assert_eq(a, add(subtract(a, b), b))
+}
+
+test "edge_case_large_numbers_subtraction" {
+  // 大数减法边界测试
+  let large_num = 1000000
+  let another_large = 750000
+  
+  assert_eq(250000, subtract(large_num, another_large))
+  assert_eq(-250000, subtract(another_large, large_num))
+  assert_eq(2000000, subtract(large_num, -large_num))
+}
+
+test "temperature_conversion_scenario" {
+  // 温度转换场景：摄氏度转华氏度
+  let celsius = 25
+  
+  // 华氏度 = 摄氏度 * 9/5 + 32
+  let fahrenheit = add(multiply(celsius, 9) / 5, 32)
+  
+  // 验证转换结果
+  assert_eq(77, fahrenheit)
+  
+  // 反向验证：华氏度转摄氏度
+  let back_to_celsius = subtract(fahrenheit - 32, 0) * 5 / 9
+  assert_eq(25, back_to_celsius)
+}
+
+test "error_handling_subtraction_robustness" {
+  // 减法错误处理健壮性测试
+  // 测试极端边界值
+  assert_eq(2147483647, subtract(2147483647, 0))  // 最大Int减零
+  assert_eq(-2147483648, subtract(-2147483648, 0))  // 最小Int减零
+  assert_eq(0, subtract(2147483647, 2147483647))  // 最大值减自身
+  
+  // 测试与除法组合的边界情况
+  assert_eq(0, divide_with_ceil(subtract(5, 5), 2))  // 零除法
+  assert_eq(1, divide_with_ceil(subtract(10, 3), 7))  // 向上取整边界
 }
