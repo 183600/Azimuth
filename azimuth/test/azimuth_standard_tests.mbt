@@ -134,5 +134,5 @@ test "real_world_application_scenario" {
   @azimuth.assert_eq(3, remaining_seats)
   
   // 验证座位充足性
-  @azimuth.assert_true(available_seats >= participants)
+  assert_eq(1, if (available_seats >= participants) { 1 } else { 0 })
 }
