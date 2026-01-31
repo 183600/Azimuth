@@ -1,218 +1,246 @@
-// Azimuth 增强测试用例 - 新的高质量测试用例集
-// 包含实际应用场景和边界条件测试
+// Azimuth 增强测试用例 - 新增10个高质量标准 MoonBit 测试用例
+// 专注于覆盖不同的函数组合和业务场景
 
-test "advanced_calculator_operations" {
-  // 高级计算器操作测试
-  let base = 15
-  let multiplier = 4
-  let divisor = 7
+test "mathematical_series_calculation" {
+  // 数学级数计算测试
+  // 计算等差数列的和：1 + 3 + 5 + 7 + 9 = 25
+  let term1 = 1
+  let term2 = 3
+  let term3 = 5
+  let term4 = 7
+  let term5 = 9
   
-  // 复杂计算链
-  let step1 = multiply(base, multiplier)  // 15 * 4 = 60
-  let step2 = divide_with_ceil(step1, divisor)  // ceil(60/7) = 9
-  let step3 = add(step2, base)  // 9 + 15 = 24
-  let result = subtract(step3, multiplier)  // 24 - 4 = 20
+  let series_sum = azimuth::add(azimuth::add(azimuth::add(azimuth::add(term1, term2), term3), term4), term5)
+  azimuth::assert_eq(25, series_sum)
   
-  assert_eq(20, result)
+  // 验证级数性质：5项平均值应该是中间项
+  let average = azimuth::divide_with_ceil(series_sum, 5)
+  azimuth::assert_eq(5, average)
 }
 
-test "inventory_management_system" {
-  // 库存管理系统测试
-  let product_a = 45
-  let product_b = 32
-  let product_c = 67
-  let box_capacity = 20
-  
-  // 计算每种产品需要的箱子数量
-  let boxes_a = divide_with_ceil(product_a, box_capacity)  // ceil(45/20) = 3
-  let boxes_b = divide_with_ceil(product_b, box_capacity)  // ceil(32/20) = 2
-  let boxes_c = divide_with_ceil(product_c, box_capacity)  // ceil(67/20) = 4
-  
-  // 计算总箱子数和总产品数
-  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
-  let total_products = add(add(product_a, product_b), product_c)
-  
-  assert_eq(9, total_boxes)
-  assert_eq(144, total_products)
-  
-  // 计算总存储容量
-  let total_capacity = multiply(total_boxes, box_capacity)
-  assert_eq(180, total_capacity)
-  
-  // 计算剩余空间
-  let remaining_space = subtract(total_capacity, total_products)
-  assert_eq(36, remaining_space)
-}
-
-test "event_planning_scenario" {
-  // 活动规划场景测试
-  let guests = 125
-  let tables = 15
-  let chairs_per_table = 8
-  
-  // 计算需要的桌子数量
-  let tables_needed = divide_with_ceil(guests, chairs_per_table)  // ceil(125/8) = 16
-  assert_eq(16, tables_needed)
-  
-  // 检查桌子是否足够
-  let has_enough_tables = tables_needed <= tables
-  assert_false(has_enough_tables)  // 需要16张，但只有15张
-  
-  // 计算实际可容纳的客人数量
-  let actual_capacity = multiply(tables, chairs_per_table)
-  assert_eq(120, actual_capacity)
-  
-  // 计算无法容纳的客人数量
-  let guests_unseated = subtract(guests, actual_capacity)
-  assert_eq(5, guests_unseated)
-}
-
-test "financial_budget_allocation" {
-  // 财务预算分配测试
-  let total_budget = 50000
-  let departments = 4
-  let reserve_percentage = 10
-  
-  // 计算储备金
-  let reserve_amount = divide_with_ceil(multiply(total_budget, reserve_percentage), 100)
-  let available_budget = subtract(total_budget, reserve_amount)
-  
-  assert_eq(5000, reserve_amount)
-  assert_eq(45000, available_budget)
-  
-  // 计算每个部门的预算
-  let budget_per_dept = divide_with_ceil(available_budget, departments)
-  assert_eq(11250, budget_per_dept)
-  
-  // 计算总分配预算
-  let total_allocated = multiply(budget_per_dept, departments)
-  assert_eq(45000, total_allocated)
-  
-  // 验证分配正确性
-  assert_eq(available_budget, total_allocated)
-}
-
-test "temperature_conversion_system" {
-  // 温度转换系统测试（简化模拟）
-  let celsius_temps = 0
-  let conversion_factor = 9
-  let divisor = 5
-  let offset = 32
-  
-  // 模拟摄氏度转华氏度：F = (C * 9/5) + 32
-  let step1 = multiply(celsius_temps, conversion_factor)
-  let step2 = divide_with_ceil(step1, divisor)
-  let fahrenheit = add(step2, offset)
-  
-  assert_eq(32, fahrenheit)  // 0°C = 32°F
-  
-  // 测试另一个温度点
-  let celsius_temps_2 = 100
-  let step1_2 = multiply(celsius_temps_2, conversion_factor)
-  let step2_2 = divide_with_ceil(step1_2, divisor)
-  let fahrenheit_2 = add(step2_2, offset)
-  
-  assert_eq(212, fahrenheit_2)  // 100°C = 212°F
-}
-
-test "shipping_cost_calculator" {
-  // 运费计算器测试
-  let base_weight = 5
-  let additional_items = 3
-  let weight_per_item = 2
-  let cost_per_kg = 12
-  let base_cost = 25
-  
-  // 计算总重量
-  let additional_weight = multiply(additional_items, weight_per_item)
-  let total_weight = add(base_weight, additional_weight)
-  
-  assert_eq(11, total_weight)
-  
-  // 计算运费
-  let weight_cost = multiply(total_weight, cost_per_kg)
-  let total_cost = add(base_cost, weight_cost)
-  
-  assert_eq(132, weight_cost)
-  assert_eq(157, total_cost)
-}
-
-test "project_timeline_planning" {
-  // 项目时间规划测试
-  let total_tasks = 87
+test "resource_planning_optimization" {
+  // 资源规划优化测试
+  // 场景：项目团队资源分配
+  let total_tasks = 89
   let team_members = 5
-  let tasks_per_person_per_day = 3
-  let work_days_per_week = 5
+  let working_days = 15
   
-  // 计算每日处理能力
-  let daily_capacity = multiply(team_members, tasks_per_person_per_day)
-  assert_eq(15, daily_capacity)
+  // 计算每人每天需要完成的任务数
+  let total_person_days = multiply(team_members, working_days)
+  let tasks_per_person_day = divide_with_ceil(total_tasks, total_person_days)
+  assert_eq(2, tasks_per_person_day)  // ceil(89/75) = 2
   
-  // 计算需要的工作日
-  let work_days_needed = divide_with_ceil(total_tasks, daily_capacity)
-  assert_eq(6, work_days_needed)
-  
-  // 计算需要的周数
-  let weeks_needed = divide_with_ceil(work_days_needed, work_days_per_week)
-  assert_eq(2, weeks_needed)
-  
-  // 计算实际处理能力
-  let actual_capacity = multiply(work_days_needed, daily_capacity)
-  assert_eq(90, actual_capacity)
+  // 验证总处理能力
+  let total_capacity = multiply(tasks_per_person_day, total_person_days)
+  assert_eq(150, total_capacity)
   
   // 计算剩余处理能力
-  let spare_capacity = subtract(actual_capacity, total_tasks)
-  assert_eq(3, spare_capacity)
+  let surplus_capacity = subtract(total_capacity, total_tasks)
+  assert_eq(61, surplus_capacity)
 }
 
-test "user_greeting_localization" {
-  // 用户问候本地化测试
-  let user_names = ["Alice", "Bob", "Charlie", "世界", "🚀"]
+test "financial_compound_interest" {
+  // 金融复利计算测试
+  let principal = 10000
+  let interest_rate = 8  // 8%
   
-  // 测试各种用户名的问候
-  assert_eq_string("Hello, Alice!", greet("Alice"))
-  assert_eq_string("Hello, Bob!", greet("Bob"))
-  assert_eq_string("Hello, Charlie!", greet("Charlie"))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  // 计算每年的复利
+  let year1 = add(principal, divide_with_ceil(multiply(principal, interest_rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, interest_rate), 100))
   
-  // 测试特殊字符和边界情况
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello,   !", greet("   "))
-  assert_eq_string("Hello, @#$%!", greet("@#$%"))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, CamelCase!", greet("CamelCase"))
+  // 验证复利增长
+  assert_eq(10800, year1)  // 10000 + 8%
+  assert_eq(11664, year2)  // 10800 + 8%
+  
+  // 计算总收益
+  let total_profit = subtract(year2, principal)
+  assert_eq(1664, total_profit)
 }
 
-test "resource_optimization_problem" {
-  // 资源优化问题测试
-  let total_resources = 100
-  let project_a_needs = 35
-  let project_b_needs = 28
-  let project_c_needs = 42
+test "inventory_batch_processing" {
+  // 库存批次处理测试
+  // 场景：分批处理库存物品
+  let product_a_quantity = 156
+  let product_b_quantity = 89
+  let batch_size = 25
   
-  // 计算总需求
-  let total_needs = add(add(project_a_needs, project_b_needs), project_c_needs)
-  assert_eq(105, total_needs)
+  // 计算产品A需要的批次数
+  let batches_a = divide_with_ceil(product_a_quantity, batch_size)
+  assert_eq(7, batches_a)  // ceil(156/25) = 7
   
-  // 检查资源是否充足
-  let is_sufficient = total_resources >= total_needs
-  assert_false(is_sufficient)
+  // 计算产品B需要的批次数
+  let batches_b = divide_with_ceil(product_b_quantity, batch_size)
+  assert_eq(4, batches_b)  // ceil(89/25) = 4
   
-  // 计算资源缺口
-  let resource_gap = subtract(total_needs, total_resources)
-  assert_eq(5, resource_gap)
+  // 计算总批次数
+  let total_batches = add(batches_a, batches_b)
+  assert_eq(11, total_batches)
   
-  // 计算每个项目按比例分配的资源
-  let resource_a = divide_with_ceil(multiply(total_resources, project_a_needs), total_needs)
-  let resource_b = divide_with_ceil(multiply(total_resources, project_b_needs), total_needs)
-  let resource_c = divide_with_ceil(multiply(total_resources, project_c_needs), total_needs)
+  // 计算总处理能力
+  let total_capacity = multiply(total_batches, batch_size)
+  assert_eq(275, total_capacity)
   
-  assert_eq(34, resource_a)
-  assert_eq(27, resource_b)
-  assert_eq(40, resource_c)
+  // 验证所有物品都能被处理
+  let total_items = add(product_a_quantity, product_b_quantity)
+  assert_true(total_capacity >= total_items)
+}
+
+test "complex_string_formatting" {
+  // 复杂字符串格式化测试
+  // 测试各种特殊字符和格式的字符串处理
+  assert_eq_string("Hello, MoonBit 2024!", greet("MoonBit 2024"))
+  assert_eq_string("Hello, user@domain.com!", greet("user@domain.com"))
+  assert_eq_string("Hello, API_KEY_123!", greet("API_KEY_123"))
+  assert_eq_string("Hello, [JSON]!", greet("[JSON]"))
+  assert_eq_string("Hello, (parentheses)!", greet("(parentheses)"))
+  assert_eq_string("Hello, {braces}!", greet("{braces}"))
+}
+
+test "algorithm_efficiency_comparison" {
+  // 算法效率比较测试
+  let input_size = 1000
   
-  // 验证总分配资源
-  let total_allocated = add(add(resource_a, resource_b), resource_c)
-  assert_eq(101, total_allocated)
+  // 模拟线性算法 O(n)
+  let linear_operations = multiply(input_size, 3)
+  assert_eq(3000, linear_operations)
+  
+  // 模拟对数算法 O(log n) - 简化计算
+  let log_operations = divide_with_ceil(input_size, 10)
+  assert_eq(100, log_operations)
+  
+  // 模拟平方算法 O(n²) - 简化计算
+  let quadratic_operations = divide_with_ceil(multiply(input_size, input_size), 500)
+  assert_eq(2000, quadratic_operations)
+  
+  // 验证效率差异
+  assert_true(linear_operations > log_operations)
+  assert_true(quadratic_operations > linear_operations)
+}
+
+test "event_seating_arrangement" {
+  // 活动座位安排测试
+  let attendees = 267
+  let tables_per_room = 12
+  let chairs_per_table = 8
+  let available_rooms = 3
+  
+  // 计算每个房间的座位数
+  let seats_per_room = multiply(tables_per_room, chairs_per_table)
+  assert_eq(96, seats_per_room)
+  
+  // 计算总座位数
+  let total_seats = multiply(seats_per_room, available_rooms)
+  assert_eq(288, total_seats)
+  
+  // 计算需要的房间数
+  let rooms_needed = divide_with_ceil(attendees, seats_per_room)
+  assert_eq(3, rooms_needed)
+  
+  // 验证座位充足
+  assert_true(total_seats >= attendees)
+  
+  // 计算剩余座位
+  let remaining_seats = subtract(total_seats, attendees)
+  assert_eq(21, remaining_seats)
+}
+
+test "mathematical_number_theory" {
+  // 数论数学测试
+  // 测试数的性质和关系
+  let number = 42
+  
+  // 测试因数分解相关计算
+  let factor1 = 6
+  let factor2 = 7
+  let product_check = multiply(factor1, factor2)
+  assert_eq(number, product_check)
+  
+  // 测试倍数关系
+  let multiple1 = multiply(number, 2)
+  let multiple2 = multiply(number, 3)
+  let multiple3 = multiply(number, 5)
+  
+  assert_eq(84, multiple1)
+  assert_eq(126, multiple2)
+  assert_eq(210, multiple3)
+  
+  // 测试数的分割
+  let half = divide_with_ceil(number, 2)
+  let third = divide_with_ceil(number, 3)
+  let quarter = divide_with_ceil(number, 4)
+  
+  assert_eq(21, half)
+  assert_eq(14, third)
+  assert_eq(11, quarter)
+  
+  // 验证分割后的重组
+  let reconstructed = add(multiply(half, 2), multiply(number, 0))
+  assert_eq(42, reconstructed)
+}
+
+test "production_pipeline_optimization" {
+  // 生产线优化测试
+  // 场景：多阶段生产流程优化
+  let raw_materials = 500
+  let stage1_efficiency = 85  // 85%
+  let stage2_efficiency = 90  // 90%
+  let packaging_capacity = 12
+  
+  // 第一阶段产出
+  let stage1_output = divide_with_ceil(multiply(raw_materials, stage1_efficiency), 100)
+  assert_eq(425, stage1_output)
+  
+  // 第二阶段产出
+  let stage2_output = divide_with_ceil(multiply(stage1_output, stage2_efficiency), 100)
+  assert_eq(383, stage2_output)
+  
+  // 计算需要的包装批次
+  let packaging_batches = divide_with_ceil(stage2_output, packaging_capacity)
+  assert_eq(32, packaging_batches)
+  
+  // 计算总包装能力
+  let total_packaging_capacity = multiply(packaging_batches, packaging_capacity)
+  assert_eq(384, total_packaging_capacity)
+  
+  // 验证包装能力充足
+  assert_true(total_packaging_capacity >= stage2_output)
+}
+
+test "comprehensive_system_integration" {
+  // 综合系统集成测试
+  // 场景：复杂的系统集成计算
+  
+  // 系统配置参数
+  let users = 1250
+  let requests_per_user = 45
+  let processing_time_per_request = 3  // 毫秒
+  let server_capacity = 10000  // 每秒请求数
+  let buffer_percentage = 20  // 20% 缓冲
+  
+  // 计算总请求数
+  let total_requests = multiply(users, requests_per_user)
+  assert_eq(56250, total_requests)
+  
+  // 计算总处理时间（毫秒）
+  let total_processing_time = multiply(total_requests, processing_time_per_request)
+  assert_eq(168750, total_processing_time)
+  
+  // 转换为秒
+  let total_seconds = divide_with_ceil(total_processing_time, 1000)
+  assert_eq(169, total_seconds)
+  
+  // 计算需要的缓冲容量
+  let buffer_capacity = divide_with_ceil(multiply(server_capacity, buffer_percentage), 100)
+  assert_eq(2000, buffer_capacity)
+  
+  // 计算总系统容量
+  let total_system_capacity = add(server_capacity, buffer_capacity)
+  assert_eq(12000, total_system_capacity)
+  
+  // 计算需要的处理时间（秒）
+  let required_time = divide_with_ceil(total_requests, total_system_capacity)
+  assert_eq(5, required_time)
+  
+  // 验证系统在合理时间内完成
+  assert_true(required_time <= total_seconds)
 }
