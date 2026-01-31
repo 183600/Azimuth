@@ -1,7 +1,1 @@
-{
-  "import": ["moonbitlang/core/builtin", "moonbitlang/core/quickcheck"],
-  "test-import": ["moonbitlang/core/array"],
-  "targets": {
-    "panic_test.mbt": ["not", "native", "llvm"]
-  }
-}
+{"import": ["moonbitlang/core/builtin", "moonbitlang/core/quickcheck"], "test-import": ["moonbitlang/core/array", "moonbitlang/core/test"], "targets": {"panic_test.mbt": ["not", "native", "llvm"]}}

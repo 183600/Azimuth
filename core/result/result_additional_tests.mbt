@@ -12,88 +12,166 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Additional comprehensive test cases for result module with error handling
-
-test "result_basic_creation" {
-  let ok_result : Result[Int, String] = Ok(42)
-  let err_result : Result[Int, String] = Err("Error occurred")
+///|
+test "result basic operations" {
+  let ok_value = Ok(42)
+  let err_value = Err("error")
   
-  let is_ok1 = ok_result.is_ok()
-  let is_err1 = ok_result.is_err()
-  let is_ok2 = err_result.is_ok()
-  let is_err2 = err_result.is_err()
-  
-  // Simple validation
-  let _ = if (is_ok1 && !is_err1 && !is_ok2 && is_err2) { 1 } else { 0 }
+  assert_eq(ok_value.is_ok(), true)
+  assert_eq(ok_value.is_err(), false)
+  assert_eq(err_value.is_ok(), false)
+  assert_eq(err_value.is_err(), true)
 }
 
-test "result_unwrap_operations" {
-  let ok_result : Result[Int, String] = Ok(42)
-  let err_result : Result[Int, String] = Err("Error occurred")
+///|
+test "result unwrap operations" {
+  let ok_value = Ok(42)
+  let err_value = Err("error")
   
-  let unwrap1 = ok_result.unwrap()
-  let unwrap_or1 = ok_result.unwrap_or(0)
-  let unwrap_or2 = err_result.unwrap_or(100)
+  assert_eq(ok_value.unwrap(), 42)
+  assert_eq(ok_value.unwrap_or(0), 42)
+  assert_eq(err_value.unwrap_or(0), 0)
+  assert_eq(ok_value.unwrap_or_else(|| 0), 42)
+  assert_eq(err_value.unwrap_or_else(|| 0), 0)
   
-  // Simple validation
-  let _ = unwrap1 + unwrap_or1 + unwrap_or2
+  // Test expect
+  assert_eq(ok_value.expect("Should not panic"), 42)
 }
 
-test "result_map" {
-  let ok_result : Result[Int, String] = Ok(5)
-  let err_result : Result[Int, String] = Err("Error occurred")
+///|
+test "result map operations" {
+  let ok_value = Ok(5)
+  let err_value = Err("error")
   
-  let mapped_ok = ok_result.map(fn(x) { x * 2 })
-  let mapped_err = err_result.map(fn(x) { x * 2 })
+  let mapped_ok = ok_value.map(fn(x) { x * 2 })
+  let mapped_err = err_value.map(fn(x) { x * 2 })
   
-  let is_ok1 = mapped_ok.is_ok()
-  let is_ok2 = mapped_err.is_ok()
+  assert_eq(mapped_ok, Ok(10))
+  assert_eq(mapped_err, Err("error"))
   
-  // Simple validation
-  let _ = if (is_ok1 && !is_ok2) { 1 } else { 0 }
+  // Test map_or
+  assert_eq(ok_value.map_or(0, fn(x) { x * 2 }), 10)
+  assert_eq(err_value.map_or(0, fn(x) { x * 2 }), 0)
+  
+  // Test map_or_else
+  assert_eq(ok_value.map_or_else(|| 0, fn(x) { x * 2 }), 10)
+  assert_eq(err_value.map_or_else(|| 0, fn(x) { x * 2 }), 0)
 }
 
-test "result_and_then" {
-  let ok_result : Result[Int, String] = Ok(5)
-  let err_result : Result[Int, String] = Err("Error occurred")
+///|
+test "result map_err operations" {
+  let ok_value = Ok(5)
+  let err_value = Err("error")
   
-  let and_then_ok = ok_result.and_then(fn(x) { if (x > 0) { Ok(x * 2) } else { Err("Negative") } })
-  let and_then_err = err_result.and_then(fn(x) { if (x > 0) { Ok(x * 2) } else { Err("Negative") } })
+  let mapped_err_ok = ok_value.map_err(fn(e) { e + " mapped" })
+  let mapped_err_err = err_value.map_err(fn(e) { e + " mapped" })
   
-  let is_ok1 = and_then_ok.is_ok()
-  let is_ok2 = and_then_err.is_ok()
-  
-  // Simple validation
-  let _ = if (is_ok1 && !is_ok2) { 1 } else { 0 }
+  assert_eq(mapped_err_ok, Ok(5))
+  assert_eq(mapped_err_err, Err("error mapped"))
 }
 
-test "result_equality" {
-  let ok1 : Result[Int, String] = Ok(42)
-  let ok2 : Result[Int, String] = Ok(42)
-  let ok3 : Result[Int, String] = Ok(100)
-  let err1 : Result[Int, String] = Err("Error")
-  let err2 : Result[Int, String] = Err("Error")
-  let err3 : Result[Int, String] = Err("Different error")
+///|
+test "result and_then operations" {
+  let ok_value = Ok(5)
+  let err_value = Err("error")
   
-  let eq1 = ok1 == ok2
-  let eq2 = ok1 == ok3
-  let eq3 = err1 == err2
-  let eq4 = err1 == err3
-  let eq5 = ok1 == err1
+  let and_then_ok = ok_value.and_then(fn(x) { if x > 3 { Ok(x * 2) } else { Err("too small") } })
+  let and_then_err = err_value.and_then(fn(x) { Ok(x * 2) })
+  let and_then_fail = ok_value.and_then(fn(x) { if x < 3 { Ok(x * 2) } else { Err("too large") } })
   
-  // Simple validation
-  let _ = if (eq1 && !eq2 && eq3 && !eq4 && !eq5) { 1 } else { 0 }
+  assert_eq(and_then_ok, Ok(10))
+  assert_eq(and_then_err, Err("error"))
+  assert_eq(and_then_fail, Err("too large"))
 }
 
-test "result_basic_operations" {
-  let ok_result : Result[Int, String] = Ok(10)
-  let err_result : Result[Int, String] = Err("Error")
+///|
+test "result or_else operations" {
+  let ok_value = Ok(5)
+  let err_value = Err("error")
   
-  let is_ok = ok_result.is_ok()
-  let is_err = err_result.is_err()
-  let unwrap = ok_result.unwrap()
-  let unwrap_or = err_result.unwrap_or(0)
+  let or_else_ok = ok_value.or_else(fn(e) { if e == "error" { Ok(100) } else { Err("other") } })
+  let or_else_err = err_value.or_else(fn(e) { if e == "error" { Ok(100) } else { Err("other") } })
+  let or_else_fail = err_value.or_else(fn(e) { if e == "other" { Ok(100) } else { Err("fallback") } })
   
-  // Simple validation
-  let _ = if (is_ok && is_err) { unwrap + unwrap_or } else { 0 }
+  assert_eq(or_else_ok, Ok(5))
+  assert_eq(or_else_err, Ok(100))
+  assert_eq(or_else_fail, Err("fallback"))
+}
+
+///|
+test "result unwrap_or_default" {
+  let ok_value = Ok(42)
+  let err_value = Err("error")
+  
+  assert_eq(ok_value.unwrap_or_default(), 42)
+  assert_eq(err_value.unwrap_or_default(), 0)  // Default for Int is 0
+}
+
+///|
+test "result equality" {
+  let ok1 = Ok(42)
+  let ok2 = Ok(42)
+  let ok3 = Ok(43)
+  let err1 = Err("error")
+  let err2 = Err("error")
+  let err3 = Err("different")
+  
+  assert_eq(ok1 == ok2, true)
+  assert_eq(ok1 == ok3, false)
+  assert_eq(ok1 == err1, false)
+  assert_eq(err1 == err2, true)
+  assert_eq(err1 == err3, false)
+  assert_eq(err1 == ok1, false)
+  
+  assert_eq(ok1 != ok2, false)
+  assert_eq(ok1 != ok3, true)
+  assert_eq(ok1 != err1, true)
+  assert_eq(err1 != err2, false)
+  assert_eq(err1 != err3, true)
+  assert_eq(err1 != ok1, true)
+}
+
+///|
+test "result contains" {
+  let ok_value = Ok(42)
+  let err_value = Err("error")
+  
+  assert_eq(ok_value.contains(42), true)
+  assert_eq(ok_value.contains(43), false)
+  assert_eq(err_value.contains(42), false)
+  
+  // Test contains_err
+  assert_eq(ok_value.contains_err("error"), false)
+  assert_eq(err_value.contains_err("error"), true)
+  assert_eq(err_value.contains_err("different"), false)
+}
+
+///|
+test "result transpose" {
+  let ok_some = Ok(Some(42))
+  let ok_none = Ok(None[Int])
+  let err_some = Err("error")
+  
+  let transposed_some = ok_some.transpose()
+  let transposed_none = ok_none.transpose()
+  let transposed_err = err_some.transpose()
+  
+  assert_eq(transposed_some, Some(Ok(42)))
+  assert_eq(transposed_none, None[Result[Int, String]])
+  assert_eq(transposed_err, Some(Err("error")))
+}
+
+///|
+test "result flatten" {
+  let nested_ok = Ok(Ok(42))
+  let nested_err_inner = Ok(Err("inner error"))
+  let nested_err_outer = Err("outer error")
+  
+  let flattened_ok = nested_ok.flatten()
+  let flattened_err_inner = nested_err_inner.flatten()
+  let flattened_err_outer = nested_err_outer.flatten()
+  
+  assert_eq(flattened_ok, Ok(42))
+  assert_eq(flattened_err_inner, Err("inner error"))
+  assert_eq(flattened_err_outer, Err("outer error"))
 }
