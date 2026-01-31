@@ -194,6 +194,7 @@
     "simple_azimuth_test.mbt",
     "final_test.mbt",
     "azimuth_standard_tests.mbt",
+    "standard_moonbit_tests_core.mbt",
       "azimuth_standard_enhanced_tests.mbt",
       "standard_quality_test_cases_new.mbt",
       "simple_high_quality_tests.mbt",
