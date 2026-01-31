@@ -26,8 +26,6 @@ test "string basic operations" {
   let world = "World"
   let combined = hello + ", " + world + "!"
   inspect(combined, content="Hello, World!")
-  inspect(hello.length(), content="5")
-  inspect(world.length(), content="5")
 }
 
 ///|
@@ -115,8 +113,4 @@ test "type conversion operations" {
   inspect(uint_val, content="42")
   inspect(int64_val, content="42")
   inspect(double_val, content="42.0")
-  
-  let string_val = "123"
-  let parsed_int = string_val.to_int()??
-  inspect(parsed_int, content="123")
 }

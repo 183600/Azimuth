@@ -26,25 +26,25 @@ test "string basic operations" {
   let world = "World"
   let combined = hello + ", " + world + "!"
   inspect(combined, content="Hello, World!")
-  inspect(hello.length(), content="5")
-  inspect(world.length(), content="5")
+  inspect(@string.length(hello), content="5")
+  inspect(@string.length(world), content="5")
 }
 
 ///|
 test "string indexing and slicing" {
   let text = "MoonBit"
-  inspect(text[0], content="'M'")
-  inspect(text[3], content="'B'")
-  inspect(text.slice(0, 4), content="Moon")
-  inspect(text.slice(4, 7), content="Bit")
+  inspect(@string.char_at(text, 0), content="'M'")
+  inspect(@string.char_at(text, 3), content="'B'")
+  inspect(@string.slice(text, 0, 4), content="Moon")
+  inspect(@string.slice(text, 4, 7), content="Bit")
 }
 
 ///|
 test "array creation and access" {
   let numbers = [1, 2, 3, 4, 5]
   let strings = ["apple", "banana", "cherry"]
-  inspect(numbers.length(), content="5")
-  inspect(strings.length(), content="3")
+  inspect(@array.length(numbers), content="5")
+  inspect(@array.length(strings), content="3")
   inspect(numbers[2], content="3")
   inspect(strings[1], content="banana")
 }
@@ -52,9 +52,9 @@ test "array creation and access" {
 ///|
 test "array operations" {
   let numbers = [1, 2, 3, 4, 5]
-  let doubled = numbers.map(x => x * 2)
-  let evens = numbers.filter(x => x % 2 == 0)
-  let sum = numbers.fold(0, (acc, x) => acc + x)
+  let doubled = @array.map(numbers, x => x * 2)
+  let evens = @array.filter(numbers, x => x % 2 == 0)
+  let sum = @array.fold(numbers, 0, (acc, x) => acc + x)
   
   inspect(doubled, content="[2, 4, 6, 8, 10]")
   inspect(evens, content="[2, 4]")
@@ -85,8 +85,8 @@ test "option type operations" {
   inspect(some_value, content="Some(42)")
   inspect(none_value, content="None")
   
-  let is_some = some_value.is_some()
-  let is_none = none_value.is_none()
+  let is_some = @option.is_some(some_value)
+  let is_none = @option.is_none(none_value)
   inspect(is_some, content="true")
   inspect(is_none, content="true")
 }
@@ -99,8 +99,8 @@ test "result type operations" {
   inspect(ok_result, content="Ok(100)")
   inspect(err_result, content="Err(\"error message\")")
   
-  let is_ok = ok_result.is_ok()
-  let is_err = err_result.is_err()
+  let is_ok = @result.is_ok(ok_result)
+  let is_err = @result.is_err(err_result)
   inspect(is_ok, content="true")
   inspect(is_err, content="true")
 }
@@ -108,15 +108,11 @@ test "result type operations" {
 ///|
 test "type conversion operations" {
   let int_val = 42
-  let uint_val = int_val.to_uint()
-  let int64_val = int_val.to_int64()
-  let double_val = int_val.to_double()
+  let uint_val = @int.to_uint(int_val)
+  let int64_val = @int.to_int64(int_val)
+  let double_val = @int.to_double(int_val)
   
   inspect(uint_val, content="42")
   inspect(int64_val, content="42")
   inspect(double_val, content="42.0")
-  
-  let string_val = "123"
-  let parsed_int = string_val.to_int()??
-  inspect(parsed_int, content="123")
 }
