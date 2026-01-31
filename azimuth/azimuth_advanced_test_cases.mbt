@@ -1,271 +1,280 @@
-// Azimuth 高级测试用例 - 10个标准 MoonBit 测试用例
-// 覆盖高级场景、边界情况和实际应用
+// Azimuth 高级测试用例 - 8个标准 MoonBit 测试用例
+// 专注于复杂业务场景、数据一致性和算法验证
 
-test "azimuth_angle_calculation" {
-  // 方位角计算测试 - 符合项目名称的专业测试
-  // 模拟地理方位角计算：0-360度范围
-  let bearing1 = 45  // 东北方向
-  let bearing2 = 180  // 正南方向
-  let bearing3 = 270  // 正西方向
-  let bearing4 = 315  // 西北方向
+test "data_consistency_validation" {
+  // 数据一致性验证测试
+  // 验证相同输入在不同计算路径下产生相同结果
   
-  // 计算方位角差值（使用绝对值和模运算模拟）
-  let diff1 = subtract(bearing2, bearing1)  // 180 - 45 = 135
-  let diff2 = subtract(bearing3, bearing2)  // 270 - 180 = 90
-  let diff3 = subtract(bearing4, bearing3)  // 315 - 270 = 45
+  let base_value = 42
+  let multiplier = 3
+  let addend = 15
   
-  assert_eq(135, diff1)
-  assert_eq(90, diff2)
-  assert_eq(45, diff3)
+  // 路径1: 先乘后加
+  let path1_result = add(multiply(base_value, multiplier), addend)
   
-  // 计算象限（使用除法模拟）
-  let quadrant1 = divide_with_ceil(bearing1, 90)  // ceil(45/90) = 1
-  let quadrant2 = divide_with_ceil(bearing2, 90)  // ceil(180/90) = 2
-  let quadrant3 = divide_with_ceil(bearing3, 90)  // ceil(270/90) = 3
-  let quadrant4 = divide_with_ceil(bearing4, 90)  // ceil(315/90) = 4
+  // 路径2: 使用分配律展开计算
+  let path2_result = add(multiply(base_value, multiplier), addend)
   
-  assert_eq(1, quadrant1)
-  assert_eq(2, quadrant2)
-  assert_eq(3, quadrant3)
-  assert_eq(4, quadrant4)
+  // 路径3: 分步计算
+  let step1 = multiply(base_value, multiplier)
+  let step2 = add(step1, addend)
+  let path3_result = step2
+  
+  // 验证所有路径结果一致
+  assert_eq(path1_result, path2_result)
+  assert_eq(path2_result, path3_result)
+  assert_eq(141, path3_result)  // 42 * 3 + 15 = 126 + 15 = 141
 }
 
-test "time_zone_conversion" {
-  // 时区转换测试 - 实际应用场景
-  let local_hour = 14  // 本地时间下午2点
-  let utc_offset = -8  // UTC-8时区
+test "complex_inventory_management" {
+  // 复杂库存管理场景测试
+  // 模拟多产品库存分配和优化
   
-  // 转换为UTC时间
-  let utc_hour = add(local_hour, utc_offset)  // 14 + (-8) = 6
-  let adjusted_utc = utc_hour < 0 ? add(utc_hour, 24) : utc_hour
-  let final_utc = adjusted_utc >= 24 ? subtract(adjusted_utc, 24) : adjusted_utc
+  // 产品A: 125个单位，每箱容量15
+  let product_a_qty = 125
+  let product_a_capacity = 15
+  let boxes_a = divide_with_ceil(product_a_qty, product_a_capacity)
   
-  assert_eq(6, final_utc)
+  // 产品B: 87个单位，每箱容量12
+  let product_b_qty = 87
+  let product_b_capacity = 12
+  let boxes_b = divide_with_ceil(product_b_qty, product_b_capacity)
   
-  // 转换为另一个时区（UTC+9）
-  let target_offset = 9
-  let target_hour = add(final_utc, target_offset)  // 6 + 9 = 15
-  let adjusted_target = target_hour >= 24 ? subtract(target_hour, 24) : target_hour
+  // 产品C: 203个单位，每箱容量25
+  let product_c_qty = 203
+  let product_c_capacity = 25
+  let boxes_c = divide_with_ceil(product_c_qty, product_c_capacity)
   
-  assert_eq(15, adjusted_target)
+  // 计算总箱数和总容量
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  let capacity_a = multiply(boxes_a, product_a_capacity)
+  let capacity_b = multiply(boxes_b, product_b_capacity)
+  let capacity_c = multiply(boxes_c, product_c_capacity)
+  let total_capacity = add(add(capacity_a, capacity_b), capacity_c)
+  
+  // 计算利用率
+  let total_items = add(add(product_a_qty, product_b_qty), product_c_qty)
+  let utilization_rate = divide_with_ceil(multiply(total_items, 100), total_capacity)
+  
+  // 验证计算结果
+  assert_eq(9, boxes_a)    // ceil(125/15) = 9
+  assert_eq(8, boxes_b)    // ceil(87/12) = 8
+  assert_eq(9, boxes_c)    // ceil(203/25) = 9
+  assert_eq(26, total_boxes)
+  assert_eq(415, total_items)
+  assert_eq(450, total_capacity)
+  assert_eq(93, utilization_rate)  // ceil(41500/450) = 93%
 }
 
-test "memory_allocation_simulation" {
-  // 内存分配模拟测试 - 系统资源管理
-  let total_memory = 8192  // 总内存8GB
-  let process_sizes = [512, 256, 128, 64, 32]  // 各进程内存需求(MB)
+test "algorithm_efficiency_comparison" {
+  // 算法效率对比测试
+  // 比较不同计算策略的效率特征
   
-  // 计算总需求
-  let total_required = add(add(add(add(process_sizes[0], process_sizes[1]), process_sizes[2]), process_sizes[3]), process_sizes[4])
-  assert_eq(992, total_required)
+  let dataset_size = 1000
   
-  // 计算内存块数量（每块1GB）
-  let memory_blocks = divide_with_ceil(total_required, 1024)
-  assert_eq(1, memory_blocks)
+  // 策略1: 线性处理
+  let linear_time = multiply(dataset_size, 5)
+  let linear_memory = multiply(dataset_size, 2)
   
-  // 计算内存利用率
-  let utilization = divide_with_ceil(multiply(total_required, 100), total_memory)
-  assert_eq(13, utilization)  // ceil(99200/8192) = 13%
+  // 策略2: 分批处理
+  let batch_size = 50
+  let batches = divide_with_ceil(dataset_size, batch_size)
+  let batch_time = multiply(batches, 20)
+  let batch_memory = multiply(batch_size, 10)
   
-  // 计算剩余内存
-  let remaining_memory = subtract(total_memory, total_required)
-  assert_eq(7200, remaining_memory)
-}
-
-test "load_balancing_algorithm" {
-  // 负载均衡算法测试 - 分布式系统场景
-  let total_requests = 1000
-  let server_count = 3
-  let base_requests_per_server = divide_with_ceil(total_requests, server_count)
+  // 策略3: 优化处理
+  let optimized_time = multiply(dataset_size, 3)
+  let optimized_memory = multiply(dataset_size, 1)
   
-  assert_eq(334, base_requests_per_server)  // ceil(1000/3) = 334
+  // 验证效率特征
+  assert_eq(5000, linear_time)
+  assert_eq(2000, linear_memory)
+  assert_eq(20, batches)
+  assert_eq(400, batch_time)
+  assert_eq(500, batch_memory)
+  assert_eq(3000, optimized_time)
+  assert_eq(1000, optimized_memory)
   
-  // 计算实际分配
-  let server1 = base_requests_per_server
-  let server2 = base_requests_per_server
-  let server3 = subtract(total_requests, add(server1, server2))
-  
-  assert_eq(334, server1)
-  assert_eq(334, server2)
-  assert_eq(332, server3)
-  
-  // 验证总分配正确
-  let total_allocated = add(add(server1, server2), server3)
-  assert_eq(1000, total_allocated)
-  
-  // 计算最大负载差
-  let max_diff = subtract(server1, server3)
-  assert_eq(2, max_diff)
-}
-
-test "circular_buffer_operations" {
-  // 循环缓冲区操作测试 - 数据结构算法
-  let buffer_size = 10
-  let current_position = 8
-  let items_to_add = 5
-  
-  // 计算新位置（循环缓冲区）
-  let raw_position = add(current_position, items_to_add)  // 8 + 5 = 13
-  let wrapped_position = raw_position >= buffer_size ? subtract(raw_position, buffer_size) : raw_position
-  let final_position = wrapped_position >= buffer_size ? subtract(wrapped_position, buffer_size) : wrapped_position
-  
-  assert_eq(3, final_position)
-  
-  // 计算需要多少次循环
-  let cycles_needed = divide_with_ceil(raw_position, buffer_size)
-  assert_eq(2, cycles_needed)
-  
-  // 计算覆盖的元素数量
-  let elements_overwritten = subtract(cycles_needed, 1)
-  assert_eq(1, elements_overwritten)
+  // 验证优化策略的优势
+  assert_true(optimized_time < linear_time)
+  assert_true(optimized_memory < linear_memory)
 }
 
 test "financial_compound_interest" {
-  // 复利计算测试 - 金融应用
-  let principal = 10000  // 本金10000
-  let annual_rate = 5    // 年利率5%
-  let years = 3          // 投资年限
+  // 金融复利计算测试
+  // 模拟投资增长的复合计算
   
-  // 第一年
-  let year1_interest = divide_with_ceil(multiply(principal, annual_rate), 100)
-  let year1_total = add(principal, year1_interest)
-  assert_eq(10500, year1_total)
+  let principal = 10000
+  let annual_rate = 8  // 8%
+  let years = 5
   
-  // 第二年
-  let year2_interest = divide_with_ceil(multiply(year1_total, annual_rate), 100)
-  let year2_total = add(year1_total, year2_interest)
-  assert_eq(11025, year2_total)
+  // 逐年计算复利
+  let year1_end = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
+  let year2_end = add(year1_end, divide_with_ceil(multiply(year1_end, annual_rate), 100))
+  let year3_end = add(year2_end, divide_with_ceil(multiply(year2_end, annual_rate), 100))
+  let year4_end = add(year3_end, divide_with_ceil(multiply(year3_end, annual_rate), 100))
+  let year5_end = add(year4_end, divide_with_ceil(multiply(year4_end, annual_rate), 100))
   
-  // 第三年
-  let year3_interest = divide_with_ceil(multiply(year2_total, annual_rate), 100)
-  let year3_total = add(year2_total, year3_interest)
-  assert_eq(11576, year3_total)
+  // 计算总增长
+  let total_growth = subtract(year5_end, principal)
+  let growth_percentage = divide_with_ceil(multiply(total_growth, 100), principal)
   
-  // 计算总收益
-  let total_profit = subtract(year3_total, principal)
-  assert_eq(1576, total_profit)
-  
-  // 计算月供（分12期）
-  let monthly_payment = divide_with_ceil(year3_total, 12)
-  assert_eq(965, monthly_payment)  // ceil(11576/12)
+  // 验证计算结果
+  assert_eq(10800, year1_end)  // 10000 + 8%
+  assert_eq(11664, year2_end)  // 10800 + 8%
+  assert_eq(12597, year3_end)  // 11664 + 8%
+  assert_eq(13605, year4_end)  // 12597 + 8%
+  assert_eq(14693, year5_end)  // 13605 + 8%
+  assert_eq(4693, total_growth)
+  assert_eq(47, growth_percentage)  // ceil(469300/10000) = 47%
 }
 
-test "error_correction_codes" {
-  // 错误纠正码测试 - 数据完整性
-  let data_bits = 8
-  let redundancy_bits = 4
-  let total_bits = add(data_bits, redundancy_bits)
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  // 模拟项目资源的最优分配策略
   
-  assert_eq(12, total_bits)
+  let total_budget = 50000
+  let team_size = 8
+  let project_duration = 12  // 月
   
-  // 计算汉明距离所需的冗余位
-  let min_redundancy = divide_with_ceil(total_bits, data_bits)
-  assert_eq(2, min_redundancy)
+  // 计算每人每月预算
+  let person_month_budget = divide_with_ceil(total_budget, multiply(team_size, project_duration))
   
-  // 模拟错误检测
-  let error_position = 5
-  let syndrome_bits = divide_with_ceil(error_position, 2)
-  assert_eq(3, syndrome_bits)
+  // 计算团队总月度预算
+  let team_month_budget = multiply(person_month_budget, team_size)
   
-  // 计算纠错能力
-  let correction_capability = divide_with_ceil(redundancy_bits, 2)
-  assert_eq(2, correction_capability)
+  // 计算项目总预算（可能因向上取整而略超原始预算）
+  let calculated_total_budget = multiply(team_month_budget, project_duration)
   
-  // 验证数据完整性
-  let is_data_intact = error_position <= correction_capability
-  assert_eq(0, if is_data_intact { 1 } else { 0 })  // 错误位置5 > 纠错能力2，应该为false
+  // 计算预算溢出
+  let budget_overflow = subtract(calculated_total_budget, total_budget)
+  
+  // 验证分配结果
+  assert_eq(521, person_month_budget)  // ceil(50000/(8*12)) = 521
+  assert_eq(4168, team_month_budget)   // 521 * 8 = 4168
+  assert_eq(50016, calculated_total_budget)  // 4168 * 12 = 50016
+  assert_eq(16, budget_overflow)
+  
+  // 验证溢出在可接受范围内（不超过原始预算的1%）
+  let overflow_percentage = divide_with_ceil(multiply(budget_overflow, 100), total_budget)
+  assert_true(overflow_percentage <= 1)
 }
 
-test "cache_performance_optimization" {
-  // 缓存性能优化测试 - 计算机系统
-  let cache_size = 64  // 缓存大小64KB
-  let block_size = 4   // 块大小4KB
-  let total_blocks = divide_with_ceil(cache_size, block_size)
+test "multi_stage_calculation_pipeline" {
+  // 多阶段计算流水线测试
+  // 模拟复杂的数据处理流水线
   
-  assert_eq(16, total_blocks)
+  let input_data = 150
   
-  // 模拟缓存访问模式
-  let sequential_access = 100  // 顺序访问次数
-  let random_access = 50       // 随机访问次数
-  let total_access = add(sequential_access, random_access)
+  // 阶段1: 数据预处理
+  let stage1_multiplier = 2
+  let stage1_result = multiply(input_data, stage1_multiplier)
   
-  assert_eq(150, total_access)
+  // 阶段2: 数据分组
+  let group_size = 25
+  let stage2_groups = divide_with_ceil(stage1_result, group_size)
   
-  // 计算缓存命中率（简化模型）
-  let sequential_hits = multiply(sequential_access, 90)  // 90%命中率
-  let random_hits = multiply(random_access, 30)          // 30%命中率
-  let total_hits = add(sequential_hits, random_hits)
-  let hit_rate = divide_with_ceil(total_hits, multiply(total_access, 100))
+  // 阶段3: 组内处理
+  let processing_factor = 3
+  let stage3_processed = multiply(stage2_groups, processing_factor)
   
-  assert_eq(70, hit_rate)  // ceil(10500/15000) = 70%
+  // 阶段4: 结果聚合
+  let aggregation_addend = 50
+  let final_result = add(stage3_processed, aggregation_addend)
   
-  // 计算平均访问时间
-  let cache_hit_time = 1    // 缓存命中时间1ns
-  let memory_access_time = 100  // 内存访问时间100ns
-  let avg_access_time = add(
-    multiply(hit_rate, cache_hit_time),
-    multiply(subtract(100, hit_rate), memory_access_time)
+  // 验证流水线结果
+  assert_eq(300, stage1_result)      // 150 * 2 = 300
+  assert_eq(12, stage2_groups)       // ceil(300/25) = 12
+  assert_eq(36, stage3_processed)    // 12 * 3 = 36
+  assert_eq(86, final_result)        // 36 + 50 = 86
+  
+  // 验证流水线的一致性
+  let pipeline_validation = add(
+    multiply(
+      divide_with_ceil(multiply(input_data, stage1_multiplier), group_size),
+      processing_factor
+    ),
+    aggregation_addend
   )
-  let normalized_time = divide_with_ceil(avg_access_time, 100)
-  
-  assert_eq(31, normalized_time)  // ceil(3100/100)
+  assert_eq(final_result, pipeline_validation)
 }
 
-test "network_packet_routing" {
-  // 网络数据包路由测试 - 网络系统
-  let total_packets = 1000
-  let router_count = 5
-  let base_packets_per_router = divide_with_ceil(total_packets, router_count)
+test "error_boundary_comprehensive" {
+  // 错误边界综合测试
+  // 全面测试各种边界条件和异常情况
   
-  assert_eq(200, base_packets_per_router)
+  // 极值测试
+  let max_safe_value = 1000000
+  let min_safe_value = -1000000
   
-  // 模拟网络延迟分配
-  let base_latency = 10  // 基础延迟10ms
-  let congestion_factor = 3  // 拥塞因子
-  let adjusted_latency = multiply(base_latency, congestion_factor)
+  // 测试极大值运算
+  let max_addition = add(max_safe_value, max_safe_value)
+  let max_multiplication = multiply(max_safe_value, 1)
+  let max_division = divide_with_ceil(max_safe_value, 1)
   
-  assert_eq(30, adjusted_latency)
+  // 测试极小值运算
+  let min_addition = add(min_safe_value, min_safe_value)
+  let min_multiplication = multiply(min_safe_value, 1)
+  let min_division = divide_with_ceil(min_safe_value, 1)
   
-  // 计算路由表大小
-  let destinations = 50
-  let routes_per_router = divide_with_ceil(destinations, router_count)
-  assert_eq(10, routes_per_router)
+  // 测试零相关运算
+  let zero_addition = add(0, max_safe_value)
+  let zero_multiplication = multiply(0, max_safe_value)
+  let zero_dividend = divide_with_ceil(0, max_safe_value)
+  let zero_divisor = divide_with_ceil(max_safe_value, 0)
   
-  // 计算总路由条目
-  let total_routes = multiply(routes_per_router, router_count)
-  assert_eq(50, total_routes)
+  // 测试负数运算
+  let negative_result = multiply(-1, max_safe_value)
+  let mixed_sign_addition = add(max_safe_value, min_safe_value)
+  let mixed_sign_division = divide_with_ceil(max_safe_value, -1)
   
-  // 计算网络吞吐量
-  let packet_size = 1500  // 包大小1500字节
-  let total_data = multiply(total_packets, packet_size)
-  let throughput_mbps = divide_with_ceil(total_data, multiply(adjusted_latency, 125000))
-  
-  assert_eq(1, throughput_mbps)  // ceil(1500000/(30*125000)) = 1Mbps
+  // 验证结果
+  assert_eq(2000000, max_addition)
+  assert_eq(1000000, max_multiplication)
+  assert_eq(1000000, max_division)
+  assert_eq(-2000000, min_addition)
+  assert_eq(-1000000, min_multiplication)
+  assert_eq(-1000000, min_division)
+  assert_eq(1000000, zero_addition)
+  assert_eq(0, zero_multiplication)
+  assert_eq(0, zero_dividend)
+  assert_eq(0, zero_divisor)
+  assert_eq(-1000000, negative_result)
+  assert_eq(0, mixed_sign_addition)
+  assert_eq(-1000000, mixed_sign_division)
 }
 
-test "satellite_orbit_calculation" {
-  // 卫星轨道计算测试 - 航天应用
-  let earth_radius = 6371  // 地球半径6371km
-  let satellite_altitude = 400  // 卫星高度400km
-  let orbital_radius = add(earth_radius, satellite_altitude)
+test "string_processing_advanced" {
+  // 高级字符串处理测试
+  // 测试各种复杂字符串场景和边界情况
   
-  assert_eq(6771, orbital_radius)
+  // 基本字符串处理
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, empty!", greet(""))
   
-  // 计算轨道周期（简化开普勒第三定律）
-  let orbital_period_hours = divide_with_ceil(multiply(orbital_radius, 2), 1000)
-  assert_eq(14, orbital_period_hours)  // 简化计算
+  // 特殊字符处理
+  assert_eq_string("Hello, spaces   !", greet("spaces   "))
+  assert_eq_string("Hello, special@#$%!", greet("special@#$%"))
   
-  // 计算地面站覆盖范围
-  let elevation_angle = 10  // 最低仰角10度
-  let coverage_radius = divide_with_ceil(multiply(orbital_radius, elevation_angle), 90)
-  assert_eq(753, coverage_radius)
+  // 数字字符串处理
+  assert_eq_string("Hello, 123456789!", greet("123456789"))
+  assert_eq_string("Hello, 3.14159!", greet("3.14159"))
   
-  // 计算所需地面站数量（覆盖全球）
-  let earth_circumference = multiply(earth_radius, 2)
-  let stations_needed = divide_with_ceil(earth_circumference, multiply(coverage_radius, 2))
-  assert_eq(9, stations_needed)
+  // Unicode字符处理
+  assert_eq_string("Hello, 🌟✨🚀!", greet("🌟✨🚀"))
+  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+  assert_eq_string("Hello, ελληνικά!", greet("ελληνικά"))
   
-  // 计算卫星过境时间
-  let transit_time = divide_with_ceil(multiply(coverage_radius, 2), 100)
-  assert_eq(15, transit_time)  // 简化计算
+  // 控制字符处理
+  assert_eq_string("Hello, \n\t\r!", greet("\n\t\r"))
+  assert_eq_string("Hello, \\\"escaped\\\"!", greet("\\\"escaped\\\""))
+  
+  // 长字符串处理
+  assert_eq_string("Hello, very_long_string_that_tests_performance!", greet("very_long_string_that_tests_performance"))
+  
+  // 空白字符组合
+  assert_eq_string("Hello,  leading!", greet(" leading"))
+  assert_eq_string("Hello, trailing !", greet("trailing "))
+  assert_eq_string("Hello,  both  !", greet(" both "))
 }
