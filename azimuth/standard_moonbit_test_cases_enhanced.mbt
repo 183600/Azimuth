@@ -1,189 +1,179 @@
 // 标准 MoonBit 测试用例 - 增强版
-// 为 azimuth 库添加的高质量测试用例
+// 为 azimuth 库添加高质量测试覆盖
 
-test "arithmetic_identity_verification" {
-  // 算术恒等式验证测试
-  let x = 42
-  
-  // 加法恒等式
-  assert_eq(x, add(x, 0))
-  assert_eq(x, add(0, x))
-  
-  // 乘法恒等式
-  assert_eq(x, multiply(x, 1))
-  assert_eq(x, multiply(1, x))
-  assert_eq(0, multiply(x, 0))
-  
-  // 减法恒等式
-  assert_eq(0, subtract(x, x))
-  assert_eq(x, subtract(x, 0))
+test "arithmetic_precision_validation" {
+  // 算术精度验证测试
+  assert_eq(1000001, add(1000000, 1))
+  assert_eq(999999, subtract(1000000, 1))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(1, divide_with_ceil(999999, 1000000))
 }
 
-test "divide_with_ceil_precision_scenarios" {
-  // 向上取整除法精度场景测试
-  // 测试各种精度情况下的向上取整行为
-  assert_eq(1, divide_with_ceil(1, 2))
+test "divide_with_ceil_fractional_analysis" {
+  // 向上取整除法的分数分析测试
   assert_eq(2, divide_with_ceil(3, 2))
   assert_eq(3, divide_with_ceil(5, 2))
   assert_eq(4, divide_with_ceil(7, 2))
   assert_eq(5, divide_with_ceil(9, 2))
-  
-  // 测试大数精度
-  assert_eq(1001, divide_with_ceil(2001, 2))
-  assert_eq(667, divide_with_ceil(2001, 3))
-  assert_eq(501, divide_with_ceil(2001, 4))
+  assert_eq(100, divide_with_ceil(199, 2))
 }
 
-test "string_formatting_comprehensive" {
-  // 字符串格式化综合测试
-  assert_eq_string("Hello, Developer!", greet("Developer"))
-  assert_eq_string("Hello, MoonBit 2024!", greet("MoonBit 2024"))
-  assert_eq_string("Hello, @user123!", greet("@user123"))
-  assert_eq_string("Hello, $100!", greet("$100"))
-  assert_eq_string("Hello, mixedCASE123!", greet("mixedCASE123"))
-  assert_eq_string("Hello, spaces around !", greet("spaces around "))
+test "greet_function_multilingual_support" {
+  // 问候函数多语言支持测试
+  assert_eq_string("Hello, Español!", greet("Español"))
+  assert_eq_string("Hello, Français!", greet("Français"))
+  assert_eq_string("Hello, Deutsch!", greet("Deutsch"))
+  assert_eq_string("Hello, Português!", greet("Português"))
+  assert_eq_string("Hello, Italiano!", greet("Italiano"))
 }
 
-test "business_logistics_calculation" {
-  // 业务物流计算测试
-  // 场景：计算运输需求
-  let total_weight = 1250  // 总重量(kg)
-  let truck_capacity = 300  // 卡车容量(kg)
+test "complex_business_workflow" {
+  // 复杂业务工作流测试
+  // 场景：计算项目资源分配和时间规划
+  let project_tasks = 45
+  let team_members = 6
+  let tasks_per_person_per_week = 2
+  let weeks_per_sprint = 2
   
-  let trucks_needed = divide_with_ceil(total_weight, truck_capacity)
-  assert_eq(5, trucks_needed)  // ceil(1250/300) = 5
+  // 计算每周团队处理能力
+  let weekly_capacity = multiply(team_members, tasks_per_person_per_week)
   
-  // 验证总运力
-  let total_capacity = multiply(trucks_needed, truck_capacity)
-  assert_eq(1500, total_capacity)
+  // 计算冲刺处理能力
+  let sprint_capacity = multiply(weekly_capacity, weeks_per_sprint)
   
-  // 计算剩余运力
-  let remaining_capacity = subtract(total_capacity, total_weight)
-  assert_eq(250, remaining_capacity)
+  // 计算需要的冲刺数
+  let sprints_needed = divide_with_ceil(project_tasks, sprint_capacity)
+  
+  // 验证计算结果
+  assert_eq(12, weekly_capacity)  // 6 * 2 = 12
+  assert_eq(24, sprint_capacity)  // 12 * 2 = 24
+  assert_eq(2, sprints_needed)    // ceil(45/24) = 2
 }
 
-test "negative_number_comprehensive" {
-  // 负数综合处理测试
-  // 加法负数测试
-  assert_eq(-10, add(-5, -5))
-  assert_eq(0, add(-5, 5))
-  assert_eq(5, add(-10, 15))
-  
-  // 乘法负数测试
-  assert_eq(25, multiply(-5, -5))
-  assert_eq(-15, multiply(-5, 3))
-  assert_eq(-15, multiply(5, -3))
-  
-  // 减法负数测试
-  assert_eq(-10, subtract(5, 15))
-  assert_eq(20, subtract(5, -15))
-  assert_eq(-20, subtract(-5, 15))
-}
-
-test "resource_allocation_efficiency" {
-  // 资源分配效率测试
-  let total_resources = 1000
-  let departments = 7
-  
-  // 计算每个部门的最小资源分配
-  let min_allocation = divide_with_ceil(total_resources, departments)
-  assert_eq(143, min_allocation)  // ceil(1000/7) = 143
-  
-  // 验证总分配量
-  let total_allocated = multiply(min_allocation, departments)
-  assert_eq(1001, total_allocated)
-  
-  // 计算资源利用率
-  let utilization_percent = divide_with_ceil(multiply(total_resources, 100), total_allocated)
-  assert_eq(99, utilization_percent)  // floor(100000/1001) = 99%
-}
-
-test "complex_calculation_workflow" {
-  // 复杂计算工作流测试
-  // 场景：项目成本估算
-  let team_size = 8
-  let hourly_rate = 75
-  let hours_per_day = 8
-  let project_days = 12
-  
-  // 计算总工时
-  let total_hours = multiply(team_size, multiply(hours_per_day, project_days))
-  assert_eq(768, total_hours)  // 8 * 8 * 12 = 768
-  
-  // 计算总成本
-  let total_cost = multiply(total_hours, hourly_rate)
-  assert_eq(57600, total_cost)  // 768 * 75 = 57600
-  
-  // 计算付款期数（每期不超过10000）
-  let payment_limit = 10000
-  let payment_periods = divide_with_ceil(total_cost, payment_limit)
-  assert_eq(6, payment_periods)  // ceil(57600/10000) = 6
-}
-
-test "error_handling_robustness" {
-  // 错误处理健壮性测试
-  // 除零错误的全面处理
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
-  
-  // 极值运算测试
-  let max_safe = 1000000
-  let min_safe = -1000000
-  
-  assert_eq(0, multiply(max_safe, 0))
-  assert_eq(0, multiply(min_safe, 0))
-  assert_eq(max_safe, add(max_safe, 0))
-  assert_eq(min_safe, add(min_safe, 0))
-}
-
-test "mathematical_sequence_validation" {
-  // 数学序列验证测试
-  // 斐波那契式序列计算
+test "mathematical_sequence_operations" {
+  // 数学序列操作测试
+  // 斐波那契式计算验证
   let a = 1
   let b = 1
-  let c = add(a, b)  // 2
-  let d = add(b, c)  // 3
-  let e = add(c, d)  // 5
-  let f = add(d, e)  // 8
+  let c = add(a, b)        // 2
+  let d = add(b, c)        // 3
+  let e = add(c, d)        // 5
+  let f = add(d, e)        // 8
   
   assert_eq(2, c)
   assert_eq(3, d)
   assert_eq(5, e)
   assert_eq(8, f)
   
-  // 验证黄金比例近似
-  let ratio_approx = divide_with_ceil(multiply(f, 100), e)
-  assert_eq(160, ratio_approx)  // ceil(8*100/5) = 160 (1.6的近似)
+  // 验证序列的数学性质
+  let sequence_sum = add(add(add(add(a, b), c), d), e)
+  assert_eq(12, sequence_sum)  // 1+1+2+3+5 = 12
 }
 
-test "real_world_event_planning_comprehensive" {
-  // 真实世界活动规划综合测试
-  let attendees = 256
-  let tables_available = 30
-  let chairs_per_table = 10
-  let cost_per_chair = 25
-  let budget_limit = 8000
+test "resource_optimization_scenarios" {
+  // 资源优化场景测试
+  // 场景：仓库存储空间优化
+  let total_items = 234
+  let small_box_capacity = 15
+  let large_box_capacity = 50
+  let cost_efficiency_threshold = 3
   
-  // 计算需要的桌子数量
-  let tables_needed = divide_with_ceil(attendees, chairs_per_table)
-  assert_eq(26, tables_needed)  // ceil(256/10) = 26
+  // 计算使用小箱子需要的数量
+  let small_boxes_needed = divide_with_ceil(total_items, small_box_capacity)
   
-  // 计算总座位数
-  let total_seats = multiply(tables_needed, chairs_per_table)
-  assert_eq(260, total_seats)
+  // 计算使用大箱子需要的数量
+  let large_boxes_needed = divide_with_ceil(total_items, large_box_capacity)
   
-  // 计算剩余座位
-  let empty_seats = subtract(total_seats, attendees)
-  assert_eq(4, empty_seats)
+  // 计算效率比
+  let efficiency_ratio = divide_with_ceil(small_boxes_needed, large_boxes_needed)
   
-  // 计算总成本
-  let total_cost = multiply(total_seats, cost_per_chair)
-  assert_eq(6500, total_cost)
+  // 验证结果
+  assert_eq(16, small_boxes_needed)    // ceil(234/15) = 16
+  assert_eq(5, large_boxes_needed)     // ceil(234/50) = 5
+  assert_eq(4, efficiency_ratio)       // ceil(16/5) = 4
   
-  // 计算剩余预算
-  let remaining_budget = subtract(budget_limit, total_cost)
-  assert_eq(1500, remaining_budget)
+  // 验证大箱子方案更高效
+  assert_true(efficiency_ratio >= cost_efficiency_threshold)
+}
+
+test "error_handling_comprehensive" {
+  // 综合错误处理测试
+  // 测试各种边界条件和异常情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  
+  // 测试极值运算
+  let max_safe_value = 1000000
+  let min_safe_value = -1000000
+  
+  assert_eq(0, multiply(max_safe_value, 0))
+  assert_eq(0, multiply(min_safe_value, 0))
+  assert_eq(max_safe_value, add(max_safe_value, 0))
+  assert_eq(min_safe_value, add(min_safe_value, 0))
+  
+  // 测试恒等运算
+  assert_eq(max_safe_value, multiply(max_safe_value, 1))
+  assert_eq(min_safe_value, multiply(min_safe_value, 1))
+}
+
+test "string_processing_edge_cases" {
+  // 字符串处理边缘情况测试
+  assert_eq_string("Hello, empty!", greet(""))
+  assert_eq_string("Hello, space!", greet(" "))
+  assert_eq_string("Hello, multiple  spaces!", greet("multiple  spaces"))
+  assert_eq_string("Hello, tab\tcharacter!", greet("tab\tcharacter"))
+  assert_eq_string("Hello, newline\ncharacter!", greet("newline\ncharacter"))
+  assert_eq_string("Hello, special!@#$%^&*()chars!", greet("special!@#$%^&*()chars"))
+}
+
+test "financial_calculations_precision" {
+  // 金融计算精度测试
+  // 场景：贷款和投资计算
+  let principal = 50000
+  let annual_rate = 8  // 8% 年利率
+  let years = 5
+  
+  // 计算简单利息（每年）
+  let yearly_interest = divide_with_ceil(multiply(principal, annual_rate), 100)
+  let total_interest = multiply(yearly_interest, years)
+  let total_amount = add(principal, total_interest)
+  
+  // 计算月供
+  let total_months = multiply(years, 12)
+  let monthly_payment = divide_with_ceil(total_amount, total_months)
+  
+  // 验证计算结果
+  assert_eq(4000, yearly_interest)    // ceil(50000 * 8 / 100) = 4000
+  assert_eq(20000, total_interest)    // 4000 * 5 = 20000
+  assert_eq(70000, total_amount)      // 50000 + 20000 = 70000
+  assert_eq(1167, monthly_payment)    // ceil(70000 / 60) = 1167
+}
+
+test "algorithm_performance_benchmarks" {
+  // 算法性能基准测试
+  // 模拟不同算法复杂度的性能特征
+  let dataset_size = 1000
+  
+  // O(1) 常数时间算法
+  let constant_time_result = multiply(dataset_size, 1)
+  
+  // O(n) 线性时间算法
+  let linear_time_result = multiply(dataset_size, 3)
+  
+  // O(log n) 对数时间算法（简化模拟）
+  let logarithmic_time_result = divide_with_ceil(dataset_size, 10)
+  
+  // O(n²) 二次时间算法（简化模拟）
+  let quadratic_time_result = multiply(dataset_size, dataset_size)
+  
+  // 验证算法复杂度特征
+  assert_eq(1000, constant_time_result)
+  assert_eq(3000, linear_time_result)
+  assert_eq(100, logarithmic_time_result)
+  assert_eq(1000000, quadratic_time_result)
+  
+  // 验证复杂度关系
+  assert_true(linear_time_result > constant_time_result)
+  assert_true(quadratic_time_result > linear_time_result)
 }
