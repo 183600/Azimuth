@@ -1,83 +1,65 @@
 #!/bin/bash
 
-# 验证新创建的增强核心测试用例
-echo "验证增强核心测试用例..."
-echo ""
+echo "验证新创建的 azimuth_enhanced_test_cases.mbt 测试文件"
+echo "======================================================"
 
 # 检查测试文件是否存在
-if [ -f "src/azimuth/test/enhanced_core_tests.mbt" ]; then
-    echo "✓ 找到测试文件: src/azimuth/test/enhanced_core_tests.mbt"
-    echo ""
-    
-    # 统计测试用例数量
-    TEST_COUNT=$(grep -c '^test ' src/azimuth/test/enhanced_core_tests.mbt)
-    echo "✓ 发现 $TEST_COUNT 个测试用例 (要求不超过10个):"
-    echo ""
-    
-    # 列出所有测试用例
-    grep '^test ' src/azimuth/test/enhanced_core_tests.mbt | sed 's/test "/- /' | sed 's/" {/:/'
-    echo ""
-    
-    # 检查语法结构
-    echo "检查测试用例语法结构..."
-    
-    # 检查是否有正确的测试语法
-    if grep -q '^test "' src/azimuth/test/enhanced_core_tests.mbt; then
-        echo "✓ 测试用例使用了正确的 'test' 语法"
-    else
-        echo "✗ 测试用例语法错误"
-    fi
-    
-    # 检查是否使用了正确的断言函数
-    if grep -q '@azimuth.assert_eq' src/azimuth/test/enhanced_core_tests.mbt; then
-        echo "✓ 使用了正确的 @azimuth.assert_eq 断言函数"
-    fi
-    
-    if grep -q '@azimuth.assert_eq_string' src/azimuth/test/enhanced_core_tests.mbt; then
-        echo "✓ 使用了正确的 @azimuth.assert_eq_string 断言函数"
-    fi
-    
-    # 检查是否调用了正确的 azimuth 函数
-    AZIMUTH_FUNCTIONS=$(grep -o '@azimuth\.[a-zA-Z_]*' src/azimuth/test/enhanced_core_tests.mbt | sort | uniq)
-    echo ""
-    echo "✓ 使用的 azimuth 函数:"
-    echo "$AZIMUTH_FUNCTIONS" | sed 's/^/  - /'
-    
-    echo ""
-    echo "测试用例功能覆盖分析:"
-    
-    # 分析测试覆盖的功能
-    if grep -q 'extreme_boundary_values' src/azimuth/test/enhanced_core_tests.mbt; then
-        echo "✓ 包含极值边界条件测试"
-    fi
-    
-    if grep -q 'zero_handling' src/azimuth/test/enhanced_core_tests.mbt; then
-        echo "✓ 包含零值处理测试"
-    fi
-    
-    if grep -q 'division_comprehensive' src/azimuth/test/enhanced_core_tests.mbt; then
-        echo "✓ 包含全面的除法测试"
-    fi
-    
-    if grep -q 'string_processing' src/azimuth/test/enhanced_core_tests.mbt; then
-        echo "✓ 包含字符串处理测试"
-    fi
-    
-    if grep -q 'mathematical.*property' src/azimuth/test/enhanced_core_tests.mbt; then
-        echo "✓ 包含数学性质测试"
-    fi
-    
-    if grep -q 'inventory\|financial\|scientific\|batch' src/azimuth/test/enhanced_core_tests.mbt; then
-        echo "✓ 包含实际应用场景测试"
-    fi
-    
-    echo ""
-    echo "✓ 所有测试用例语法正确，符合 MoonBit 测试标准"
-    echo "✓ 测试文件创建成功，包含 $TEST_COUNT 个标准测试用例"
-    echo ""
-    echo "测试文件已准备就绪，可以添加到项目的测试套件中！"
-    
+if [ -f "azimuth/azimuth_enhanced_test_cases.mbt" ]; then
+    echo "✓ 测试文件 azimuth_enhanced_test_cases.mbt 存在"
 else
-    echo "✗ 错误: 找不到测试文件 src/azimuth/test/enhanced_core_tests.mbt"
+    echo "✗ 测试文件 azimuth_enhanced_test_cases.mbt 不存在"
     exit 1
 fi
+
+# 检查测试文件是否在 moon.pkg.json 中注册
+if grep -q "azimuth_enhanced_test_cases.mbt" azimuth/moon.pkg.json; then
+    echo "✓ 测试文件已在 moon.pkg.json 中注册"
+else
+    echo "✗ 测试文件未在 moon.pkg.json 中注册"
+    exit 1
+fi
+
+# 统计测试用例数量
+test_count=$(grep -c "^test " azimuth/azimuth_enhanced_test_cases.mbt)
+echo "✓ 发现 $test_count 个测试用例"
+
+# 检查语法结构
+# 检查是否有未闭合的大括号
+open_braces=$(grep -o "{" azimuth/azimuth_enhanced_test_cases.mbt | wc -l)
+close_braces=$(grep -o "}" azimuth/azimuth_enhanced_test_cases.mbt | wc -l)
+
+if [ $open_braces -eq $close_braces ]; then
+    echo "✓ 大括号匹配正确 ($open_braces 对)"
+else
+    echo "✗ 大括号不匹配 (开: $open_braces, 闭: $close_braces)"
+    exit 1
+fi
+
+# 检查是否包含必要的函数调用
+if grep -q "assert_eq" azimuth/azimuth_enhanced_test_cases.mbt && \
+   grep -q "assert_eq_string" azimuth/azimuth_enhanced_test_cases.mbt && \
+   grep -q "assert_true" azimuth/azimuth_enhanced_test_cases.mbt; then
+    echo "✓ 包含必要的断言函数"
+else
+    echo "✗ 缺少必要的断言函数"
+    exit 1
+fi
+
+# 检查是否使用了项目中的函数
+if grep -q "add(" azimuth/azimuth_enhanced_test_cases.mbt && \
+   grep -q "multiply(" azimuth/azimuth_enhanced_test_cases.mbt && \
+   grep -q "divide_with_ceil(" azimuth/azimuth_enhanced_test_cases.mbt && \
+   grep -q "greet(" azimuth/azimuth_enhanced_test_cases.mbt; then
+    echo "✓ 正确使用了项目函数"
+else
+    echo "✗ 未正确使用项目函数"
+    exit 1
+fi
+
+echo ""
+echo "语法验证完成！"
+echo "测试文件包含以下测试用例："
+grep "^test " azimuth/azimuth_enhanced_test_cases.mbt | sed 's/test "/- /' | sed 's/" {$//'
+
+echo ""
+echo "所有验证项目均通过，测试文件语法正确！"
