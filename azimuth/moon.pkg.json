@@ -155,6 +155,7 @@
     "test/quality_test_cases.mbt",
       "test/standard_moonbit_tests.mbt",
       "test/quality_enhanced_tests.mbt",
+      "test/enhanced_standard_test_cases.mbt",
       "simple_new_test.mbt",
       "standard_moonbit_test_cases_enhanced.mbt",
       "azimuth_comprehensive_test_suite.mbt",    "azimuth_simple_test_suite.mbt",
