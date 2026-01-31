@@ -1,198 +1,204 @@
-// 标准 MoonBit 测试套件 - 简化版
-// 为 azimuth 库提供基本的测试用例
+// 简单的 MoonBit 测试用例
+// 使用标准 MoonBit 库函数进行测试
 
-test "add_function_basic" {
-  // 测试加法函数的基本功能
-  let result1 = 2 + 3
-  if (result1 != 5) {
-    @builtin.abort("Test failed: 2 + 3 should be 5")
+test "basic_arithmetic_operations" {
+  // 测试基本算术运算
+  let a = 10
+  let b = 5
+  
+  // 加法
+  let sum = a + b
+  if sum != 15 {
+    @builtin.abort("Addition test failed")
   }
   
-  let result2 = 0 + 0
-  if (result2 != 0) {
-    @builtin.abort("Test failed: 0 + 0 should be 0")
+  // 减法
+  let diff = a - b
+  if diff != 5 {
+    @builtin.abort("Subtraction test failed")
   }
   
-  let result3 = -5 + 3
-  if (result3 != -2) {
-    @builtin.abort("Test failed: -5 + 3 should be -2")
+  // 乘法
+  let product = a * b
+  if product != 50 {
+    @builtin.abort("Multiplication test failed")
+  }
+  
+  // 除法
+  let quotient = a / b
+  if quotient != 2 {
+    @builtin.abort("Division test failed")
   }
 }
 
-test "multiply_function_basic" {
-  // 测试乘法函数的基本功能
-  let result1 = 2 * 3
-  if (result1 != 6) {
-    @builtin.abort("Test failed: 2 * 3 should be 6")
+test "string_operations" {
+  // 测试字符串操作
+  let hello = "Hello"
+  let world = "World"
+  let greeting = hello + ", " + world + "!"
+  
+  if greeting != "Hello, World!" {
+    @builtin.abort("String concatenation test failed")
   }
   
-  let result2 = 0 * 5
-  if (result2 != 0) {
-    @builtin.abort("Test failed: 0 * 5 should be 0")
-  }
-  
-  let result3 = -3 * 5
-  if (result3 != -15) {
-    @builtin.abort("Test failed: -3 * 5 should be -15")
-  }
-}
-
-test "string_concatenation" {
-  // 测试字符串连接
-  let result1 = "Hello, " + "World!"
-  if (result1 != "Hello, World!") {
-    @builtin.abort("Test failed: String concatenation")
-  }
-  
-  let result2 = "Hello, " + ""
-  if (result2 != "Hello, ") {
-    @builtin.abort("Test failed: Empty string concatenation")
+  // 测试空字符串
+  let empty = ""
+  if empty != "" {
+    @builtin.abort("Empty string test failed")
   }
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 12
-  let b = 8
+test "boolean_operations" {
+  // 测试布尔运算
+  let true_val = true
+  let false_val = false
   
-  // 加法交换律
-  let result1 = a + b
-  let result2 = b + a
-  if (result1 != result2) {
-    @builtin.abort("Test failed: Addition commutative property")
+  // 逻辑与
+  if true_val && false_val != false {
+    @builtin.abort("Logical AND test failed")
   }
   
-  // 乘法交换律
-  let result3 = a * b
-  let result4 = b * a
-  if (result3 != result4) {
-    @builtin.abort("Test failed: Multiplication commutative property")
-  }
-}
-
-test "divide_with_ceil_simulation" {
-  // 模拟向上取整除法功能
-  // 由于没有直接的函数，我们模拟除法行为
-  
-  // 测试整除情况
-  let dividend1 = 9
-  let divisor1 = 3
-  let result1 = dividend1 / divisor1
-  if (result1 != 3) {
-    @builtin.abort("Test failed: 9 / 3 should be 3")
+  // 逻辑或
+  if true_val || false_val != true {
+    @builtin.abort("Logical OR test failed")
   }
   
-  // 测试非整除情况（这里只测试整数除法）
-  let dividend2 = 10
-  let divisor2 = 3
-  let result2 = dividend2 / divisor2
-  // 整数除法结果
-  if (result2 != 3) {
-    @builtin.abort("Test failed: 10 / 3 should be 3 (integer division)")
+  // 逻辑非
+  if !true_val != false {
+    @builtin.abort("Logical NOT test failed")
   }
 }
 
-test "complex_business_calculation" {
-  // 测试复杂业务计算场景
-  let unit_price = 25
-  let quantity = 8
-  let tax_rate = 8
-  let shipping = 15
+test "comparison_operations" {
+  // 测试比较运算
+  let a = 10
+  let b = 5
+  let c = 10
   
-  // 计算小计
-  let subtotal = unit_price * quantity
-  
-  // 计算税费（简化计算）
-  let tax = (subtotal * tax_rate) / 100
-  
-  // 计算总价
-  let total = subtotal + tax + shipping
-  
-  if (subtotal != 200) {
-    @builtin.abort("Test failed: Subtotal should be 200")
+  // 等于
+  if a != c {
+    @builtin.abort("Equality test failed")
   }
   
-  if (tax != 16) {
-    @builtin.abort("Test failed: Tax should be 16")
+  // 不等于
+  if a == b {
+    @builtin.abort("Inequality test failed")
   }
   
-  if (total != 231) {
-    @builtin.abort("Test failed: Total should be 231")
+  // 大于
+  if a <= b {
+    @builtin.abort("Greater than test failed")
+  }
+  
+  // 小于
+  if b >= a {
+    @builtin.abort("Less than test failed")
   }
 }
 
-test "boundary_value_operations" {
-  // 测试边界值运算
-  let max_int = 2147483647
-  let small_number = 1
+test "conditional_expressions" {
+  // 测试条件表达式
+  let x = 10
+  let result = if x > 5 { "greater" } else { "less or equal" }
   
-  // 边界值加法
-  let result1 = (max_int - small_number) + small_number
-  if (result1 != max_int) {
-    @builtin.abort("Test failed: Boundary addition")
+  if result != "greater" {
+    @builtin.abort("Conditional expression test failed")
   }
   
-  // 边界值乘法（与零）
-  let result2 = max_int * 0
-  if (result2 != 0) {
-    @builtin.abort("Test failed: Boundary multiplication by zero")
-  }
-}
-
-test "error_handling_robustness" {
-  // 测试错误处理的健壮性
-  // 除数为零的情况（在整数除法中需要特殊处理）
-  let dividend = 100
-  let divisor = 0
+  let y = 3
+  let result2 = if y > 5 { "greater" } else { "less or equal" }
   
-  // 避免除零错误，使用条件判断
-  let result = if (divisor != 0) {
-    dividend / divisor
-  } else {
-    0  // 安全的默认值
-  }
-  
-  if (result != 0) {
-    @builtin.abort("Test failed: Division by zero should return 0")
+  if result2 != "less or equal" {
+    @builtin.abort("Conditional expression test 2 failed")
   }
 }
 
-test "real_world_application_scenarios" {
-  // 测试实际应用场景
-  // 场景1：包装计算
-  let total_items = 47
-  let items_per_box = 12
-  let boxes_needed = if (total_items % items_per_box == 0) {
-    total_items / items_per_box
-  } else {
-    (total_items / items_per_box) + 1
+test "function_definition_and_call" {
+  // 测试函数定义和调用
+  fn square(x : Int) -> Int {
+    x * x
   }
   
-  if (boxes_needed != 4) {
-    @builtin.abort("Test failed: Packaging calculation")
+  let result = square(5)
+  if result != 25 {
+    @builtin.abort("Function call test failed")
   }
   
-  // 场景2：时间计算
-  let tasks_per_day = 8
-  let total_tasks = 35
-  let days_needed = if (total_tasks % tasks_per_day == 0) {
-    total_tasks / tasks_per_day
-  } else {
-    (total_tasks / tasks_per_day) + 1
-  }
-  
-  if (days_needed != 5) {
-    @builtin.abort("Test failed: Time calculation")
+  let result2 = square(-3)
+  if result2 != 9 {
+    @builtin.abort("Function call test 2 failed")
   }
 }
 
-test "combined_calculation" {
-  // 测试组合计算
-  let result1 = 3 * 4
-  let result2 = 5 * 2
-  let combined = result1 + result2
+test "let_binding_and_scope" {
+  // 测试 let 绑定和作用域
+  let x = 10
   
-  if (combined != 22) {
-    @builtin.abort("Test failed: Combined calculation should be 22")
+  {
+    let x = 20  // 内部作用域的 x
+    if x != 20 {
+      @builtin.abort("Inner scope test failed")
+    }
+  }
+  
+  // 外部作用域的 x 不受影响
+  if x != 10 {
+    @builtin.abort("Outer scope test failed")
+  }
+}
+
+test "pattern_matching" {
+  // 测试模式匹配
+  let x = 5
+  let result = match x {
+    0 => "zero"
+    1 => "one"
+    5 => "five"
+    _ => "other"
+  }
+  
+  if result != "five" {
+    @builtin.abort("Pattern matching test failed")
+  }
+  
+  let y = 100
+  let result2 = match y {
+    0 => "zero"
+    1 => "one"
+    5 => "five"
+    _ => "other"
+  }
+  
+  if result2 != "other" {
+    @builtin.abort("Pattern matching test 2 failed")
+  }
+}
+
+test "list_operations" {
+  // 测试列表操作
+  let list = [1, 2, 3, 4, 5]
+  
+  // 访问元素
+  if list[0] != 1 {
+    @builtin.abort("List access test failed")
+  }
+  
+  if list[4] != 5 {
+    @builtin.abort("List access test 2 failed")
+  }
+  
+  // 列表长度
+  if list.length() != 5 {
+    @builtin.abort("List length test failed")
+  }
+}
+
+test "type_conversion" {
+  // 测试类型转换
+  let int_val = 42
+  let string_val = int_val.to_string()
+  
+  if string_val != "42" {
+    @builtin.abort("Type conversion test failed")
   }
 }

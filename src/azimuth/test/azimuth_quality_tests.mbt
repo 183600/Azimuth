@@ -1,138 +1,208 @@
-// Azimuth 测试用例 - 10个高质量测试
-// 测试核心功能的各种场景和边界情况
+// 新的高质量 MoonBit 测试用例 - 针对 azimuth 库
+// 使用完全限定的函数名来引用 azimuth 库中的函数
 
-test "test_add_edge_cases" {
-  // 测试加法的边界情况
-  assert_eq(1000, add(999, 1))
-  assert_eq(-1000, add(-999, -1))
-  assert_eq(0, add(2147483647, -2147483647))
-  assert_eq(1, add(0, 1))
+test "mathematical_identity_properties" {
+  // 测试数学单位元性质
+  // 加法单位元：a + 0 = a
+  @azimuth.assert_eq(42, @azimuth.add(42, 0))
+  @azimuth.assert_eq(-17, @azimuth.add(-17, 0))
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  
+  // 乘法单位元：a * 1 = a
+  @azimuth.assert_eq(42, @azimuth.multiply(42, 1))
+  @azimuth.assert_eq(-17, @azimuth.multiply(-17, 1))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 1))
 }
 
-test "test_multiply_properties" {
-  // 测试乘法的数学性质
-  let x = 12
-  let y = 15
+test "divide_with_ceil_edge_cases" {
+  // 测试向上取整除法的边界情况
+  // 完全整除的情况
+  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(10, 2))
+  @azimuth.assert_eq(7, @azimuth.divide_with_ceil(21, 3))
+  @azimuth.assert_eq(-5, @azimuth.divide_with_ceil(-15, 3))
   
-  // 交换律
-  assert_eq(multiply(x, y), multiply(y, x))
+  // 需要向上取整的情况
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(11, 3))
+  @azimuth.assert_eq(8, @azimuth.divide_with_ceil(15, 2))
   
-  // 与1相乘
-  assert_eq(x, multiply(x, 1))
-  assert_eq(y, multiply(1, y))
-  
-  // 与0相乘
-  assert_eq(0, multiply(x, 0))
-  assert_eq(0, multiply(0, y))
+  // 零除数安全处理
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-50, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
 }
 
-test "test_divide_precision" {
-  // 测试除法的精度和边界情况
-  assert_eq(1, divide_with_ceil(5, 5))
-  assert_eq(2, divide_with_ceil(7, 4))
-  assert_eq(100, divide_with_ceil(999, 10))
-  assert_eq(-1, divide_with_ceil(-5, 5))
-  assert_eq(0, divide_with_ceil(0, 100))
-}
-
-test "test_greet_special_cases" {
+test "greet_function_special_cases" {
   // 测试问候函数的特殊情况
-  assert_eq_string("Hello, a!", greet("a"))
-  assert_eq_string("Hello, ABC123!", greet("ABC123"))
-  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
-  assert_eq_string("Hello, A+B=C!", greet("A+B=C"))
+  // 空字符串和单字符
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))
+  
+  // 包含空格的字符串
+  @azimuth.assert_eq_string("Hello, John Doe!", @azimuth.greet("John Doe"))
+  @azimuth.assert_eq_string("Hello,  !", @azimuth.greet(" "))
+  
+  // 特殊字符和数字
+  @azimuth.assert_eq_string("Hello, user123!", @azimuth.greet("user123"))
+  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet("test@example.com"))
 }
 
-test "test_financial_calculations" {
-  // 测试金融计算场景
-  let price = 199
-  let quantity = 3
-  let discount = 50
-  let tax_rate = 8
+test "complex_arithmetic_expressions" {
+  // 测试复杂算术表达式
+  let x = 10
+  let y = 15
+  let z = 20
   
-  let subtotal = multiply(price, quantity)
-  let discounted_total = add(subtotal, -discount)
-  let tax = divide_with_ceil(multiply(discounted_total, tax_rate), 100)
-  let final_total = add(discounted_total, tax)
+  // 测试 (x + y) * z
+  let result1 = @azimuth.multiply(@azimuth.add(x, y), z)
+  @azimuth.assert_eq(500, result1)  // (10 + 15) * 20 = 25 * 20 = 500
   
-  assert_eq(597, subtotal)
-  assert_eq(547, discounted_total)
-  assert_eq(44, tax)
-  assert_eq(591, final_total)
+  // 测试 x * y + z
+  let result2 = @azimuth.add(@azimuth.multiply(x, y), z)
+  @azimuth.assert_eq(170, result2)  // 10 * 15 + 20 = 150 + 20 = 170
 }
 
-test "test_inventory_management" {
-  // 测试库存管理场景
-  let initial_stock = 500
-  let daily_sales = 25
-  let days = 7
-  let new_shipment = 200
+test "real_world_financial_calculation" {
+  // 实际金融计算场景：计算贷款月供
+  let principal = 200000  // 本金
+  let annual_rate = 5     // 年利率百分比
+  let years = 30          // 贷款年限
   
-  let total_sold = multiply(daily_sales, days)
-  let stock_before_shipment = add(initial_stock, -total_sold)
-  let final_stock = add(stock_before_shipment, new_shipment)
+  // 简化计算：月供 = (本金 + 总利息) / (年数 * 12)
+  let total_interest = @azimuth.divide_with_ceil(@azimuth.multiply(principal, annual_rate), 100)
+  let total_with_interest = @azimuth.add(principal, total_interest)
+  let total_months = @azimuth.multiply(years, 12)
+  let monthly_payment = @azimuth.divide_with_ceil(total_with_interest, total_months)
   
-  assert_eq(175, total_sold)
-  assert_eq(325, stock_before_shipment)
-  assert_eq(525, final_stock)
+  @azimuth.assert_eq(10000, total_interest)
+  @azimuth.assert_eq(210000, total_with_interest)
+  @azimuth.assert_eq(360, total_months)
+  @azimuth.assert_eq(584, monthly_payment)  // ceil(210000/360) = 584
 }
 
-test "test_engineering_calculations" {
-  // 测试工程计算场景
-  let length = 10
-  let width = 8
-  let height = 3
-  let material_thickness = 0.5  // 向上取整为1
+test "inventory_management_calculation" {
+  // 库存管理计算：计算补货需求
+  let current_stock = 150
+  let daily_sales = 12
+  let lead_time_days = 7  // 供应商交货时间
+  let safety_stock = 20   // 安全库存
   
-  let floor_area = multiply(length, width)
-  let wall_area = multiply(2, multiply(add(length, width), height))
-  let total_surface = add(floor_area, wall_area)
-  let material_units = divide_with_ceil(total_surface, 1)
+  // 计算在交货期间的销售量
+  let sales_during_lead = @azimuth.multiply(daily_sales, lead_time_days)
   
-  assert_eq(80, floor_area)
-  assert_eq(108, wall_area)
-  assert_eq(188, total_surface)
-  assert_eq(188, material_units)
+  // 计算再订货点
+  let reorder_point = @azimuth.add(sales_during_lead, safety_stock)
+  
+  // 计算需要补货的数量
+  let reorder_quantity = if current_stock <= reorder_point {
+    @azimuth.multiply(daily_sales, 30)  // 订购30天的库存
+  } else {
+    0
+  }
+  
+  @azimuth.assert_eq(84, sales_during_lead)
+  @azimuth.assert_eq(104, reorder_point)
+  @azimuth.assert_eq(360, reorder_quantity)
 }
 
-test "test_performance_metrics" {
-  // 测试性能指标计算
-  let baseline = 1000
-  let improvement_factor = 25
-  let overhead = 50
+test "data_processing_simulation" {
+  // 数据处理模拟：批量处理计算
+  let batch_size = 1000
+  let processing_time_per_item = 3  // 毫秒
+  let overhead_per_batch = 50       // 每批次开销（毫秒）
   
-  let improved = add(baseline, divide_with_ceil(multiply(baseline, improvement_factor), 100))
-  let net_improvement = add(improved, -overhead)
+  // 计算处理时间
+  let base_processing_time = @azimuth.multiply(batch_size, processing_time_per_item)
+  let total_batch_time = @azimuth.add(base_processing_time, overhead_per_batch)
   
-  assert_eq(1250, improved)
-  assert_eq(1200, net_improvement)
+  // 计算每小时可以处理的批次
+  let ms_per_hour = 3600000
+  let batches_per_hour = @azimuth.divide_with_ceil(ms_per_hour, total_batch_time)
+  
+  // 计算每小时可以处理的项目数
+  let items_per_hour = @azimuth.multiply(batches_per_hour, batch_size)
+  
+  @azimuth.assert_eq(3000, base_processing_time)
+  @azimuth.assert_eq(3050, total_batch_time)
+  @azimuth.assert_eq(1181, batches_per_hour)
+  @azimuth.assert_eq(1181000, items_per_hour)
 }
 
-test "test_data_analysis" {
-  // 测试数据分析场景
-  let data_points = 1000
-  let sample_size = 50
-  let confidence_level = 95
+test "engineering_tolerance_calculation" {
+  // 工程容差计算：零件尺寸验证
+  let nominal_dimension = 100  // 公称尺寸
+  let positive_tolerance = 2   // 正公差
+  let negative_tolerance = 1   // 负公差
+  let measured_value = 101     // 测量值
   
-  let samples_needed = divide_with_ceil(multiply(data_points, confidence_level), 100)
-  let actual_samples = if samples_needed > sample_size { sample_size } else { samples_needed }
+  // 计算上限和下限
+  let upper_limit = @azimuth.add(nominal_dimension, positive_tolerance)
+  let lower_limit = @azimuth.add(nominal_dimension, -negative_tolerance)
   
-  assert_eq(950, samples_needed)
-  assert_eq(50, actual_samples)
+  // 检查是否在容差范围内
+  let is_within_tolerance = 
+    if measured_value >= lower_limit && measured_value <= upper_limit {
+      1  // 合格
+    } else {
+      0  // 不合格
+    }
+  
+  // 计算偏差
+  let deviation = @azimuth.add(measured_value, -nominal_dimension)
+  
+  @azimuth.assert_eq(102, upper_limit)
+  @azimuth.assert_eq(99, lower_limit)
+  @azimuth.assert_eq(1, is_within_tolerance)
+  @azimuth.assert_eq(1, deviation)
 }
 
-test "test_error_boundary_tests" {
-  // 测试错误边界情况
-  // 测试极值
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
+test "statistical_analysis_basic" {
+  // 基础统计分析
+  let data_values = [15, 22, 18, 25, 20]  // 数据集
+  let n = 5  // 数据点数量
   
-  // 测试大数运算
-  let big_num = 1000000
-  assert_eq(2000000, add(big_num, big_num))
-  assert_eq(1000000000000, multiply(big_num, big_num))
+  // 计算总和
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(data_values[0], data_values[1]), data_values[2]), data_values[3]), data_values[4])
   
-  // 测试空字符串
-  assert_eq_string("Hello, !", greet(""))
+  // 计算平均值（向上取整）
+  let average = @azimuth.divide_with_ceil(sum, n)
+  
+  // 计算最大值和最小值
+  let max_value = 25
+  let min_value = 15
+  
+  // 计算范围
+  let range = @azimuth.add(max_value, -min_value)
+  
+  @azimuth.assert_eq(100, sum)
+  @azimuth.assert_eq(20, average)
+  @azimuth.assert_eq(10, range)
+}
+
+test "energy_efficiency_calculation" {
+  // 能效计算：设备能耗评估
+  let power_rating_watts = 1500    // 额定功率（瓦）
+  let hours_per_day = 8           // 每天使用小时数
+  let days_per_month = 30         // 每月天数
+  let cost_per_kwh = 12           // 每千瓦时费用（分）
+  
+  // 计算每日能耗（瓦时）
+  let daily_consumption_wh = @azimuth.multiply(power_rating_watts, hours_per_day)
+  
+  // 转换为千瓦时
+  let daily_consumption_kwh = @azimuth.divide_with_ceil(daily_consumption_wh, 1000)
+  
+  // 计算每月能耗
+  let monthly_consumption_kwh = @azimuth.multiply(daily_consumption_kwh, days_per_month)
+  
+  // 计算每月费用
+  let monthly_cost_cents = @azimuth.multiply(monthly_consumption_kwh, cost_per_kwh)
+  
+  // 转换为元（向上取整）
+  let monthly_cost_yuan = @azimuth.divide_with_ceil(monthly_cost_cents, 100)
+  
+  @azimuth.assert_eq(12000, daily_consumption_wh)
+  @azimuth.assert_eq(12, daily_consumption_kwh)
+  @azimuth.assert_eq(360, monthly_consumption_kwh)
+  @azimuth.assert_eq(4320, monthly_cost_cents)
+  @azimuth.assert_eq(44, monthly_cost_yuan)
 }
