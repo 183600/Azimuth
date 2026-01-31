@@ -244,7 +244,8 @@
     "quality_standard_test_cases.mbt",
     "standard_moonbit_test_suite_new.mbt",
     "standard_moonbit_test_suite.mbt",
-    "azimuth_enhanced_edge_case_tests.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
+    "azimuth_enhanced_edge_case_tests.mbt",
+    "user_added_comprehensive_tests.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
     "standard_azimuth_core_tests.mbt",
     "comprehensive_quality_test_suite.mbt",
@@ -520,4 +521,5 @@
     "quality_test_cases.mbt",
     "my_simple_tests.mbt",
     "enhanced_azimuth_core_tests.mbt",
-    "standard_moonbit_core_tests.mbt"                                                                                                                                           ]}
+            "standard_moonbit_core_tests.mbt",
+            "user_added_comprehensive_tests.mbt"                                                                                                                                           ]}
