@@ -12,6 +12,7 @@
     "subtract"
   ],
   "files": [
+    "standard_moonbit_test_cases_new.mbt",
     "minimal_test.mbt",
     "simple_new_tests.mbt",
     "standard_moonbit_tests_comprehensive.mbt",
