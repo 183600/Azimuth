@@ -246,7 +246,8 @@
     "advanced_moonbit_test_cases.mbt",
     "azimuth_simple_new_tests.mbt",
     "azimuth_advanced_test_cases.mbt",
-    "azimuth_simple_advanced_tests.mbt"
+    "azimuth_simple_advanced_tests.mbt",
+    "azimuth_core_standard_tests.mbt"
   ],
   "import": [
     "moonbitlang/core/builtin",
