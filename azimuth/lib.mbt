@@ -10107,3 +10107,139 @@ test "resource_allocation_fairness" {
   let fairness_ratio = divide_with_ceil(multiply(max_share, 100), min_share)
   assert_eq(160, fairness_ratio)  // ceil(40*100/25) = 160%
 }
+
+// 新增的10个高质量 MoonBit 测试用例
+test "enhanced_arithmetic_precision" {
+  // 增强算术精度测试
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1, divide_with_ceil(999999, 1000000))
+  assert_eq(1000000, divide_with_ceil(999999, 1))
+}
+
+test "advanced_boundary_analysis" {
+  // 高级边界值分析测试
+  assert_eq(1, add(1, 0))
+  assert_eq(-1, add(-1, 0))
+  assert_eq(0, multiply(1000000, 0))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(-1, divide_with_ceil(-1, 1))
+}
+
+test "comprehensive_error_handling" {
+  // 综合错误处理测试
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  assert_eq(0, divide_with_ceil(-2147483648, 0))
+}
+
+test "complex_workflow_optimization" {
+  // 复杂工作流优化测试
+  let team_size = 12
+  let sprints = 5
+  let hours_per_sprint = 40
+  let tasks_per_hour = 2
+  
+  let total_tasks = multiply(team_size, multiply(sprints, multiply(hours_per_sprint, tasks_per_hour)))
+  assert_eq(4800, total_tasks)
+  
+  let test_rounds = divide_with_ceil(total_tasks, 500)
+  assert_eq(10, test_rounds)
+}
+
+test "international_string_processing" {
+  // 国际化字符串处理测试
+  assert_eq_string("Hello, école!", greet("école"))
+  assert_eq_string("Hello, mañana!", greet("mañana"))
+  assert_eq_string("Hello, русский!", greet("русский"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+  assert_eq_string("Hello, 🎉🚀🌟!", greet("🎉🚀🌟"))
+}
+
+test "mathematical_invariants_verification" {
+  // 数学不变量验证测试
+  let x = 42
+  let y = 17
+  let z = 8
+  
+  assert_eq(add(add(x, y), z), add(x, add(y, z)))
+  assert_eq(multiply(multiply(x, y), z), multiply(x, multiply(y, z)))
+  assert_eq(multiply(x, add(y, z)), add(multiply(x, y), multiply(x, z)))
+}
+
+test "resource_allocation_algorithm" {
+  // 资源分配算法测试
+  let small_capacity = 50
+  let medium_capacity = 100
+  let large_capacity = 200
+  
+  let small_boxes = divide_with_ceil(300, small_capacity)
+  let medium_boxes = divide_with_ceil(400, medium_capacity)
+  let large_boxes = divide_with_ceil(300, large_capacity)
+  
+  let total_boxes = add(add(small_boxes, medium_boxes), large_boxes)
+  assert_eq(20, total_boxes)
+  
+  let total_capacity = add(
+    multiply(small_boxes, small_capacity),
+    add(multiply(medium_boxes, medium_capacity), multiply(large_boxes, large_capacity))
+  )
+  assert_eq(1100, total_capacity)
+}
+
+test "scalability_performance_metrics" {
+  // 可扩展性性能指标测试
+  let base_size = 100
+  let multiplier = 10
+  
+  let linear_result = multiply(base_size, multiplier)
+  assert_eq(1000, linear_result)
+  
+  let exponential_step1 = multiply(base_size, 2)
+  let exponential_step2 = multiply(exponential_step1, 2)
+  let exponential_step3 = multiply(exponential_step2, 2)
+  assert_eq(800, exponential_step3)
+  
+  let logarithmic_result = divide_with_ceil(base_size, 10)
+  assert_eq(10, logarithmic_result)
+}
+
+test "financial_data_integrity" {
+  // 财务数据完整性测试
+  let initial_amount = 10000
+  let interest_rate = 5
+  
+  let year1 = add(initial_amount, divide_with_ceil(multiply(initial_amount, interest_rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, interest_rate), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, interest_rate), 100))
+  
+  assert_eq(10500, year1)
+  assert_eq(11025, year2)
+  assert_eq(11576, year3)
+  
+  let total_growth = subtract(year3, initial_amount)
+  assert_eq(1576, total_growth)
+  
+  let growth_rate = divide_with_ceil(multiply(total_growth, 100), initial_amount)
+  assert_eq(16, growth_rate)
+}
+
+test "concurrent_system_simulation" {
+  // 并发系统模拟测试
+  let concurrent_tasks = 50
+  let workers = 8
+  let tasks_per_worker = divide_with_ceil(concurrent_tasks, workers)
+  
+  assert_eq(7, tasks_per_worker)
+  
+  let total_capacity = multiply(workers, tasks_per_worker)
+  assert_eq(56, total_capacity)
+  
+  let spare_capacity = subtract(total_capacity, concurrent_tasks)
+  assert_eq(6, spare_capacity)
+  
+  let can_handle_all = total_capacity - concurrent_tasks
+  assert_eq(6, can_handle_all)
+}
