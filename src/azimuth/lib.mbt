@@ -1170,6 +1170,181 @@ test "enhanced_percentage_calculation" {
   assert_eq(38, result)
 }
 
+// 新增的8个高质量MoonBit测试用例
+
+test "new_extreme_boundary_values" {
+  // 极端边界值测试：测试接近Int类型极限的数值
+  let large_positive = 2147483646
+  let large_negative = -2147483647
+  
+  // 测试大数加法
+  assert_eq(2147483647, add(large_positive, 1))
+  assert_eq(-2147483648, add(large_negative, -1))
+  
+  // 测试大数与零的运算
+  assert_eq(large_positive, add(large_positive, 0))
+  assert_eq(0, multiply(large_positive, 0))
+  
+  // 测试大数除法
+  assert_eq(1073741824, divide_with_ceil(large_positive, 2))
+  assert_eq(-1073741824, divide_with_ceil(large_negative, 2))
+}
+
+test "new_mathematical_identities" {
+  // 数学恒等式验证：验证基本的数学恒等式
+  let a = 15
+  let b = 25
+  let c = 35
+  
+  // 验证加法单位元：a + 0 = a
+  assert_eq(a, add(a, 0))
+  assert_eq(b, add(b, 0))
+  
+  // 验证乘法单位元：a * 1 = a
+  assert_eq(a, multiply(a, 1))
+  assert_eq(b, multiply(b, 1))
+  
+  // 验证乘法零元：a * 0 = 0
+  assert_eq(0, multiply(a, 0))
+  assert_eq(0, multiply(b, 0))
+  
+  // 验证分配律：a * (b + c) = a * b + a * c
+  let distributive_left = multiply(a, add(b, c))
+  let distributive_right = add(multiply(a, b), multiply(a, c))
+  assert_eq(distributive_left, distributive_right)
+}
+
+test "new_error_resilience" {
+  // 错误恢复能力测试：测试函数在异常输入下的行为
+  // 测试除零安全性
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 测试负数除法的边界情况
+  assert_eq(-1, divide_with_ceil(-1, 1))
+  assert_eq(1, divide_with_ceil(1, -1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  
+  // 测试极端除法情况
+  assert_eq(1, divide_with_ceil(1, 1000000))
+  assert_eq(1000000, divide_with_ceil(1000000, 1))
+}
+
+test "new_performance_stress" {
+  // 性能压力测试：模拟大量计算操作
+  let base_value = 42
+  let iterations = 1000
+  
+  // 模拟循环累加：base_value * iterations
+  let stress_add = multiply(base_value, iterations)
+  assert_eq(42000, stress_add)
+  
+  // 模拟复合计算：(base_value + 10) * (iterations - 100)
+  let stress_complex = multiply(add(base_value, 10), add(iterations, -100))
+  assert_eq(46200, stress_complex)
+  
+  // 模拟嵌套除法计算
+  let stress_division = divide_with_ceil(stress_add, 37)
+  assert_eq(1136, stress_division)
+}
+
+test "new_unicode_comprehensive" {
+  // Unicode综合测试：测试各种Unicode字符的处理
+  // 测试基本Unicode字符
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, ñáéíóú!", greet("ñáéíóú"))
+  
+  // 测试特殊符号和表情符号
+  assert_eq_string("Hello, 💻🚀🌍!", greet("💻🚀🌍"))
+  assert_eq_string("Hello, αβγδε!", greet("αβγδε"))
+  assert_eq_string("Hello, ♠♣♥♦!", greet("♠♣♥♦"))
+  
+  // 测试混合字符串
+  assert_eq_string("Hello, Hello世界🌍!", greet("Hello世界🌍"))
+  assert_eq_string("Hello, Test123@#$!", greet("Test123@#$"))
+}
+
+test "new_business_workflow" {
+  // 业务工作流测试：模拟完整的电商订单处理流程
+  let product_price = 89
+  let quantity = 7
+  let tax_rate = 8
+  let shipping_per_item = 5
+  let discount_threshold = 500
+  let discount_amount = 50
+  
+  // 步骤1：计算商品小计
+  let subtotal = multiply(product_price, quantity)
+  
+  // 步骤2：计算运费
+  let total_shipping = multiply(shipping_per_item, quantity)
+  
+  // 步骤3：计算税费
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  
+  // 步骤4：计算折扣前总价
+  let pre_discount_total = add(add(subtotal, total_shipping), tax_amount)
+  
+  // 步骤5：应用折扣（如果满足条件）
+  let final_total = if pre_discount_total > discount_threshold {
+    add(pre_discount_total, -discount_amount)
+  } else {
+    pre_discount_total
+  }
+  
+  // 验证计算结果
+  assert_eq(623, subtotal)
+  assert_eq(35, total_shipping)
+  assert_eq(50, tax_amount)
+  assert_eq(708, pre_discount_total)
+  assert_eq(658, final_total)
+}
+
+test "new_scientific_computing" {
+  // 科学计算场景：模拟物理和工程计算
+  let initial_velocity = 10  // m/s
+  let acceleration = 3       // m/s²
+  let time = 5               // s
+  
+  // 计算最终速度：v = u + at
+  let final_velocity = add(initial_velocity, multiply(acceleration, time))
+  
+  // 计算位移：s = ut + 0.5at²（简化为整数计算）
+  let displacement = add(multiply(initial_velocity, time), 
+                         divide_with_ceil(multiply(acceleration, multiply(time, time)), 2))
+  
+  // 计算动能：KE = 0.5mv²（假设质量m=10kg）
+  let mass = 10
+  let kinetic_energy = divide_with_ceil(multiply(mass, multiply(final_velocity, final_velocity)), 2)
+  
+  assert_eq(25, final_velocity)
+  assert_eq(63, displacement)
+  assert_eq(3125, kinetic_energy)
+}
+
+test "new_edge_case_strings" {
+  // 字符串边界情况：测试各种特殊字符串输入
+  // 测试空字符串和空白字符
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,  !", greet(" "))
+  assert_eq_string("Hello,   !", greet("  "))
+  
+  // 测试单字符
+  assert_eq_string("Hello, a!", greet("a"))
+  assert_eq_string("Hello, 1!", greet("1"))
+  assert_eq_string("Hello, !", greet("!"))
+  
+  // 测试长字符串
+  let long_name = "ThisIsAVeryLongNameThatMightBeUsedInSomeSpecialScenarioForTestingPurposes"
+  assert_eq_string("Hello, " + long_name + "!", greet(long_name))
+  
+  // 测试包含特殊字符的字符串
+  assert_eq_string("Hello, \t\n\r!", greet("\t\n\r"))
+  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))
+}
+
 // 新增的10个标准MoonBit测试用例
 test "recursive_factorial_simulation" {
   // 模拟递归计算阶乘：5! = 120
