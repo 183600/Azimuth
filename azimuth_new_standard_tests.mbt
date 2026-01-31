@@ -1,99 +1,118 @@
-// Azimuth 项目新增的标准 MoonBit 测试用例
-// 包含 8 个高质量测试用例，覆盖核心功能
+// 新增的标准 MoonBit 测试用例 - 10个高质量测试用例
+// 针对 azimuth 库的核心功能进行全面测试
 
-test "add_function_comprehensive" {
-  // 全面测试加法函数
-  assert_eq(10, add(7, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-10, add(-7, -3))
-  assert_eq(4, add(-7, 11))
-  assert_eq(1000000, add(500000, 500000))
+// 导入被测试的模块
+use azimuth
+
+test addition_identity_properties {
+  // 测试加法的单位元性质
+  azimuth.assert_eq(5, azimuth.add(5, 0))
+  azimuth.assert_eq(-3, azimuth.add(-3, 0))
+  azimuth.assert_eq(0, azimuth.add(0, 0))
+  azimuth.assert_eq(1000000, azimuth.add(1000000, 0))
 }
 
-test "multiply_function_edge_cases" {
-  // 测试乘法函数的边缘情况
-  assert_eq(0, multiply(0, 12345))
-  assert_eq(12345, multiply(1, 12345))
-  assert_eq(-12345, multiply(-1, 12345))
-  assert_eq(12345, multiply(-1, -12345))
-  assert_eq(1000000, multiply(1000, 1000))
+test multiplication_identity_properties {
+  // 测试乘法的单位元性质
+  azimuth.assert_eq(7, azimuth.multiply(7, 1))
+  azimuth.assert_eq(-10, azimuth.multiply(-10, 1))
+  azimuth.assert_eq(0, azimuth.multiply(0, 1))
+  azimuth.assert_eq(15, azimuth.multiply(15, 1))
 }
 
-test "greet_function_international" {
-  // 测试问候函数的国际字符支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+test divide_with_ceil_fractional_cases {
+  // 测试向上取整除法的小数情况
+  azimuth.assert_eq(2, azimuth.divide_with_ceil(3, 2))  // 1.5 -> 2
+  azimuth.assert_eq(3, azimuth.divide_with_ceil(8, 3))  // 2.666... -> 3
+  azimuth.assert_eq(7, azimuth.divide_with_ceil(13, 2)) // 6.5 -> 7
+  azimuth.assert_eq(12, azimuth.divide_with_ceil(100, 9)) // 11.111... -> 12
 }
 
-test "divide_with_ceil_business_logic" {
-  // 测试向上取整除法的业务逻辑场景
-  // 场景：计算需要的运输车辆数量
-  let packages = 47
-  let capacity_per_truck = 10
-  let trucks_needed = divide_with_ceil(packages, capacity_per_truck)
-  assert_eq(5, trucks_needed)
-  
-  // 验证总运力
-  let total_capacity = multiply(trucks_needed, capacity_per_truck)
-  assert_eq(50, total_capacity)
+test greet_function_empty_and_whitespace {
+  // 测试问候函数的空字符串和空白字符处理
+  azimuth.assert_eq_string("Hello, !", azimuth.greet(""))
+  azimuth.assert_eq_string("Hello,  !", azimuth.greet(" "))
+  azimuth.assert_eq_string("Hello,   !", azimuth.greet("  "))
+  azimuth.assert_eq_string("Hello, \t!", azimuth.greet("\t"))
 }
 
-test "complex_calculation_pipeline" {
-  // 测试复杂计算流水线
-  // 场景：计算项目完成时间
-  let tasks = 25
-  let people = 4
-  let tasks_per_person_per_day = 2
+test combined_arithmetic_expressions {
+  // 测试组合算术表达式
+  let x = 10
+  let y = 15
+  let z = 20
   
-  let daily_capacity = multiply(people, tasks_per_person_per_day)
-  let days_needed = divide_with_ceil(tasks, daily_capacity)
-  assert_eq(4, days_needed)  // ceil(25/(4*2)) = 4
+  // 测试 (x + y) * z
+  let result1 = azimuth.multiply(azimuth.add(x, y), z)
+  azimuth.assert_eq(500, result1)  // (10 + 15) * 20 = 25 * 20 = 500
   
-  // 验证总处理能力
-  let total_capacity = multiply(days_needed, daily_capacity)
-  assert_eq(32, total_capacity)
+  // 测试 x * y + z
+  let result2 = azimuth.add(azimuth.multiply(x, y), z)
+  azimuth.assert_eq(170, result2)  // 10 * 15 + 20 = 150 + 20 = 170
 }
 
-test "mathematical_properties_verification" {
-  // 验证数学性质
-  let x = 42
-  let y = 17
-  
-  // 加法交换律
-  assert_eq(add(x, y), add(y, x))
-  
-  // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
-  
-  // 分配律
-  assert_eq(
-    multiply(x, add(y, 3)),
-    add(multiply(x, y), multiply(x, 3))
-  )
+test negative_number_division_ceil {
+  // 测试负数的向上取整除法
+  azimuth.assert_eq(-2, azimuth.divide_with_ceil(-4, 2))   // -4/2 = -2 -> -2
+  azimuth.assert_eq(-1, azimuth.divide_with_ceil(-3, 2))   // -3/2 = -1.5 -> -1
+  azimuth.assert_eq(-3, azimuth.divide_with_ceil(-7, 2))   // -7/2 = -3.5 -> -3
+  azimuth.assert_eq(-5, azimuth.divide_with_ceil(-11, 2))  // -11/2 = -5.5 -> -5
 }
 
-test "resource_allocation_optimization" {
-  // 资源分配优化测试
-  let total_budget = 10000
-  let team_members = 6
+test large_scale_calculations {
+  // 测试大规模计算
+  let base = 10000
+  let multiplier = 100
+  let addition = 50000
   
-  // 使用向上取整确保覆盖所有情况
-  let max_share = divide_with_ceil(total_budget, team_members)
-  assert_eq(1667, max_share)  // ceil(10000/6) = 1667
+  // 测试大数乘法
+  let large_product = azimuth.multiply(base, multiplier)
+  azimuth.assert_eq(1000000, large_product)
   
-  // 验证总分配不超过预算
-  let total_allocated = multiply(max_share, team_members)
-  assert_eq(10002, total_allocated)
+  // 测试大数加法
+  let large_sum = azimuth.add(large_product, addition)
+  azimuth.assert_eq(1050000, large_sum)
 }
 
-test "string_processing_comprehensive_new" {
-  // 字符串处理综合测试
-  assert_eq_string("Hello, single!", greet("single"))
-  assert_eq_string("Hello, space test!", greet("space test"))
-  assert_eq_string("Hello, 12345!", greet("12345"))
-  assert_eq_string("Hello, !@#$%^!", greet("!@#$%^"))
-  assert_eq_string("Hello, mixedCASE!", greet("mixedCASE"))
+test real_world_budget_calculation {
+  // 测试实际世界的预算计算
+  let monthly_income = 5000
+  let rent = 1500
+  let utilities = 200
+  let food = 600
+  let transportation = 300
+  let entertainment = 200
+  
+  // 计算总支出
+  let total_expenses = azimuth.add(azimuth.add(azimuth.add(azimuth.add(rent, utilities), food), transportation), entertainment)
+  
+  // 计算剩余预算
+  let remaining_budget = azimuth.add(monthly_income, -total_expenses)
+  
+  azimuth.assert_eq(2800, total_expenses)
+  azimuth.assert_eq(2200, remaining_budget)
+}
+
+test string_greeting_with_numbers_and_symbols {
+  // 测试包含数字和符号的字符串问候
+  azimuth.assert_eq_string("Hello, User123!", azimuth.greet("User123"))
+  azimuth.assert_eq_string("Hello, test@example.com!", azimuth.greet("test@example.com"))
+  azimuth.assert_eq_string("Hello, A+B=C!", azimuth.greet("A+B=C"))
+  azimuth.assert_eq_string("Hello, 100%!", azimuth.greet("100%"))
+}
+
+test complex_division_scenarios {
+  // 测试复杂的除法场景
+  // 测试被除数小于除数的情况
+  azimuth.assert_eq(1, azimuth.divide_with_ceil(5, 10))
+  azimuth.assert_eq(1, azimuth.divide_with_ceil(1, 100))
+  azimuth.assert_eq(1, azimuth.divide_with_ceil(99, 100))
+  
+  // 测试被除数等于除数的情况
+  azimuth.assert_eq(1, azimuth.divide_with_ceil(10, 10))
+  azimuth.assert_eq(5, azimuth.divide_with_ceil(5, 1))
+  
+  // 测试被除数是除数的倍数
+  azimuth.assert_eq(3, azimuth.divide_with_ceil(15, 5))
+  azimuth.assert_eq(10, azimuth.divide_with_ceil(100, 10))
 }
