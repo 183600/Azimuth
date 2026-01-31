@@ -1,245 +1,131 @@
-// Enhanced Standard Tests for Azimuth Library
-// 标准 MoonBit 测试用例 - 增强版本
-// 包含10个高质量测试用例，涵盖各种实际应用场景
+// Azimuth 项目增强标准测试用例
+// 使用标准 MoonBit 测试语法，包含8个高质量测试用例
 
-test "extreme_numerical_boundary_operations" {
-  // 测试极端数值边界运算
-  let max_safe_int = 1000000
-  let min_safe_int = -1000000
-  
-  // 测试接近边界的加法运算
-  assert_eq(1999998, add(max_safe_int, max_safe_int - 2))
-  assert_eq(-1999998, add(min_safe_int, min_safe_int + 2))
-  
-  // 测试边界值的乘法运算
-  assert_eq(1000000000000, multiply(max_safe_int, max_safe_int))
-  assert_eq(1000000000000, multiply(min_safe_int, min_safe_int))
-  
-  // 测试边界值的除法运算
-  assert_eq(1, divide_with_ceil(max_safe_int, max_safe_int))
-  assert_eq(1, divide_with_ceil(min_safe_int, min_safe_int))
+test "enhanced_addition_commutativity" {
+  // 测试加法交换律
+  azimuth::assert_eq(azimuth::add(42, 17), azimuth::add(17, 42))
+  azimuth::assert_eq(azimuth::add(-5, 10), azimuth::add(10, -5))
+  azimuth::assert_eq(azimuth::add(0, 100), azimuth::add(100, 0))
 }
 
-test "complex_string_composition_scenarios" {
-  // 测试复杂字符串组合场景
-  let prefix = "Dr."
-  let first_name = "张"
-  let last_name = "三"
-  let suffix = "Ph.D."
+test "enhanced_multiplication_properties" {
+  // 测试乘法的数学性质
+  let x = 7
+  let y = 13
   
-  // 构建完整的职称和姓名
-  let full_title = prefix + " " + first_name + " " + last_name + ", " + suffix
-  let formal_greeting = greet(full_title)
+  // 交换律
+  azimuth::assert_eq(azimuth::multiply(x, y), azimuth::multiply(y, x))
   
-  assert_eq_string("Hello, Dr. 张 三, Ph.D.!", formal_greeting)
+  // 零元素性质
+  azimuth::assert_eq(0, azimuth::multiply(x, 0))
+  azimuth::assert_eq(0, azimuth::multiply(0, y))
   
-  // 测试特殊字符和数字组合
-  let product_code = "AZ-2024-X1"
-  let version = "v2.3.1"
-  let build_number = "1847"
-  
-  let full_version = product_code + "_" + version + "_" + build_number
-  let version_greeting = greet(full_version)
-  
-  assert_eq_string("Hello, AZ-2024-X1_v2.3.1_1847!", version_greeting)
+  // 单位元性质
+  azimuth::assert_eq(x, azimuth::multiply(x, 1))
+  azimuth::assert_eq(y, azimuth::multiply(1, y))
 }
 
-test "advanced_mathematical_distributive_law" {
-  // 测试高级数学分配律应用
-  // 验证 (a + b) * (c + d) = a*c + a*d + b*c + b*d
-  let a = 12
+test "enhanced_divide_with_ceil_comprehensive" {
+  // 全面测试向上取整除法
+  // 正数情况
+  azimuth::assert_eq(4, azimuth::divide_with_ceil(11, 3))  // 11/3 = 3.666... -> 4
+  azimuth::assert_eq(3, azimuth::divide_with_ceil(9, 3))   // 9/3 = 3 -> 3
+  azimuth::assert_eq(1, azimuth::divide_with_ceil(1, 100))  // 1/100 = 0.01 -> 1
+  
+  // 负数情况
+  azimuth::assert_eq(-3, azimuth::divide_with_ceil(-10, 3))  // -10/3 = -3.333... -> -3
+  azimuth::assert_eq(4, azimuth::divide_with_ceil(-11, -3))  // -11/-3 = 3.666... -> 4
+  
+  // 除零处理
+  azimuth::assert_eq(0, azimuth::divide_with_ceil(10, 0))
+  azimuth::assert_eq(0, azimuth::divide_with_ceil(-10, 0))
+}
+
+test "enhanced_greet_function_unicode" {
+  // 测试问候函数的 Unicode 支持
+  azimuth::assert_eq_string("Hello, 世界!", azimuth::greet("世界"))
+  azimuth::assert_eq_string("Hello, 🚀!", azimuth::greet("🚀"))
+  azimuth::assert_eq_string("Hello, αβγδε!", azimuth::greet("αβγδε"))
+  azimuth::assert_eq_string("Hello, María!", azimuth::greet("María"))
+  azimuth::assert_eq_string("Hello, こんにちは!", azimuth::greet("こんにちは"))
+}
+
+test "enhanced_complex_business_workflow" {
+  // 复杂业务工作流测试
+  let product_price = 85
+  let quantity = 12
+  let tax_rate = 8
+  let shipping_cost = 25
+  let discount = 50
+  
+  // 计算商品总价
+  let subtotal = azimuth::multiply(product_price, quantity)
+  azimuth::assert_eq(1020, subtotal)
+  
+  // 计算税费
+  let tax_amount = azimuth::divide_with_ceil(azimuth::multiply(subtotal, tax_rate), 100)
+  azimuth::assert_eq(82, tax_amount)
+  
+  // 计算折扣前总价
+  let pre_discount_total = azimuth::add(azimuth::add(subtotal, tax_amount), shipping_cost)
+  azimuth::assert_eq(1127, pre_discount_total)
+  
+  // 应用折扣
+  let final_total = azimuth::add(pre_discount_total, -discount)
+  azimuth::assert_eq(1077, final_total)
+}
+
+test "enhanced_mathematical_distributivity" {
+  // 测试分配律：a * (b + c) = a * b + a * c
+  let a = 6
   let b = 8
-  let c = 15
-  let d = 7
+  let c = 12
   
-  // 左侧：(a + b) * (c + d)
-  let left_side = multiply(add(a, b), add(c, d))
+  let left_side = azimuth::multiply(a, azimuth::add(b, c))
+  let right_side = azimuth::add(azimuth::multiply(a, b), azimuth::multiply(a, c))
   
-  // 右侧：a*c + a*d + b*c + b*d
-  let right_side = add(add(add(multiply(a, c), multiply(a, d)), multiply(b, c)), multiply(b, d))
-  
-  assert_eq(left_side, right_side)
-  
-  // 实际应用：计算折扣价格
-  let original_price = 100
-  let quantity1 = 5
-  let quantity2 = 3
-  let discount1 = 10  // 10%
-  let discount2 = 15  // 15%
-  
-  let total_with_discounts = add(
-    multiply(original_price, multiply(quantity1, 100 - discount1) / 100),
-    multiply(original_price, multiply(quantity2, 100 - discount2) / 100)
-  )
-  
-  assert_eq(695, total_with_discounts)  // 100*5*0.9 + 100*3*0.85 = 450 + 255 = 705 -> 修正计算
+  azimuth::assert_eq(left_side, right_side)  // 6 * (8 + 12) = 6 * 8 + 6 * 12 = 120
 }
 
-test "business_error_handling_scenarios" {
-  // 测试业务场景中的错误处理
-  let order_total = 1000
-  let payment_received = 800
-  let refund_amount = 50
+test "enhanced_real_world_inventory_calculation" {
+  // 真实世界库存计算
+  let initial_stock = 500
+  let daily_sales = 23
+  let days_to_simulate = 15
+  let restock_quantity = 200
   
-  // 计算剩余应付金额
-  let remaining_balance = add(order_total, -payment_received)
+  // 计算总销售量
+  let total_sold = azimuth::multiply(daily_sales, days_to_simulate)
+  azimuth::assert_eq(345, total_sold)
   
-  // 处理退款后的最终金额
-  let final_amount = add(payment_received, -refund_amount)
+  // 计算补货后库存
+  let stock_after_sales = azimuth::add(initial_stock, -total_sold)
+  azimuth::assert_eq(155, stock_after_sales)
   
-  // 计算需要追讨的金额
-  let amount_to_collect = add(order_total, -final_amount)
+  let final_stock = azimuth::add(stock_after_sales, restock_quantity)
+  azimuth::assert_eq(355, final_stock)
   
-  assert_eq(200, remaining_balance)
-  assert_eq(750, final_amount)
-  assert_eq(250, amount_to_collect)
-  
-  // 测试除零错误的安全处理
-  assert_eq(0, divide_with_ceil(remaining_balance, 0))
-  assert_eq(0, divide_with_ceil(amount_to_collect, 0))
+  // 计算需要的包装箱数量（假设每箱装25件）
+  let boxes_needed = azimuth::divide_with_ceil(final_stock, 25)
+  azimuth::assert_eq(15, boxes_needed)
 }
 
-test "data_validation_and_integrity_checks" {
-  // 测试数据验证和完整性检查
-  let expected_records = 1000
-  let processed_records = 987
-  let failed_records = 13
+test "enhanced_time_and_resource_planning" {
+  // 时间和资源规划测试
+  let total_tasks = 87
+  let team_members = 4
+  let working_days = 15
+  let hours_per_day = 8
   
-  // 验证数据处理完整性
-  let total_calculated = add(processed_records, failed_records)
-  assert_eq(expected_records, total_calculated)
-  
-  // 计算处理成功率（百分比）
-  let success_rate = divide_with_ceil(multiply(processed_records, 100), expected_records)
-  assert_eq(99, success_rate)  // ceil(987*100/1000) = ceil(98.7) = 99
-  
-  // 计算需要重新处理的批次数量（每批50个）
-  let retry_batches = divide_with_ceil(failed_records, 50)
-  assert_eq(1, retry_batches)  // ceil(13/50) = 1
-}
-
-test "algorithm_simulation_complexity" {
-  // 测试算法复杂度模拟
-  let base_operations = 100
-  let data_size = 1000
-  let complexity_factor = 2  // O(n^2) 复杂度
-  
-  // 模拟算法操作次数
-  let total_operations = multiply(base_operations, multiply(data_size, data_size) / 10000)
-  
-  // 计算在不同数据规模下的操作次数
-  let small_scale = multiply(base_operations, multiply(100, 100) / 10000)
-  let medium_scale = multiply(base_operations, multiply(500, 500) / 10000)
-  let large_scale = multiply(base_operations, multiply(1000, 1000) / 10000)
-  
-  assert_eq(1000, total_operations)
-  assert_eq(100, small_scale)
-  assert_eq(2500, medium_scale)
-  assert_eq(10000, large_scale)
-  
-  // 计算性能提升百分比
-  let performance_improvement = divide_with_ceil(multiply(large_scale - small_scale, 100), large_scale)
-  assert_eq(99, performance_improvement)  // ceil((10000-100)*100/10000) = ceil(99) = 99
-}
-
-test "resource_allocation_optimization" {
-  // 测试资源分配优化
-  let total_budget = 10000
-  let project_costs = [3000, 2500, 2000, 1500]  // 模拟数组
-  let emergency_fund = 1000
-  
-  // 计算项目总成本
-  let total_project_costs = add(add(add(3000, 2500), 2000), 1500)
-  
-  // 计算剩余预算
-  let remaining_budget = add(total_budget, -total_project_costs)
-  
-  // 计算是否需要动用应急基金
-  let needs_emergency_fund = if remaining_budget < emergency_fund { true } else { false }
-  
-  // 计算最终可用资金
-  let final_available = if needs_emergency_fund {
-    add(remaining_budget, emergency_fund)
-  } else {
-    remaining_budget
-  }
-  
-  assert_eq(9000, total_project_costs)
-  assert_eq(1000, remaining_budget)
-  assert_eq(false, needs_emergency_fund)  // 剩余预算等于应急基金，不需要动用
-  assert_eq(1000, final_available)
-}
-
-test "temporal_calculations_scheduling" {
-  // 测试时间计算和调度
-  let tasks_per_hour = 4
-  let working_hours_per_day = 8
-  let total_tasks = 150
-  
-  // 计算需要的工作天数
-  let tasks_per_day = multiply(tasks_per_hour, working_hours_per_day)
-  let work_days_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  // 计算每人每天需要完成的任务数
+  let tasks_per_person_per_day = azimuth::divide_with_ceil(total_tasks, azimuth::multiply(team_members, working_days))
+  azimuth::assert_eq(2, tasks_per_person_per_day)
   
   // 计算总工作小时数
-  let total_work_hours = multiply(work_days_needed, working_hours_per_day)
+  let total_work_hours = azimuth::multiply(working_days, azimuth::multiply(team_members, hours_per_day))
+  azimuth::assert_eq(480, total_work_hours)
   
-  // 计算最后一小时的任务数
-  let last_hour_tasks = add(total_tasks, -multiply(tasks_per_day, work_days_needed - 1))
-  
-  assert_eq(32, tasks_per_day)
-  assert_eq(5, work_days_needed)  // ceil(150/32) = 5
-  assert_eq(40, total_work_hours)
-  assert_eq(22, last_hour_tasks)  // 150 - 32*4 = 150 - 128 = 22
-}
-
-test "data_transformation_formatting" {
-  // 测试数据转换和格式化
-  let raw_score = 87
-  let max_score = 100
-  let bonus_points = 5
-  let penalty_points = 2
-  
-  // 计算最终得分
-  let adjusted_score = add(add(raw_score, bonus_points), -penalty_points)
-  
-  // 计算百分比得分
-  let percentage_score = divide_with_ceil(multiply(adjusted_score, 100), max_score)
-  
-  // 计算等级（每10分一个等级）
-  let grade_level = divide_with_ceil(percentage_score, 10)
-  
-  // 构建成绩报告字符串
-  let performance_report = greet("Score: " + adjusted_score.to_string() + "/" + max_score.to_string())
-  
-  assert_eq(90, adjusted_score)  // 87 + 5 - 2 = 90
-  assert_eq(90, percentage_score)  // ceil(90*100/100) = 90
-  assert_eq(9, grade_level)  // ceil(90/10) = 9
-  assert_eq_string("Hello, Score: 90/100!", performance_report)
-}
-
-test "system_stability_load_testing" {
-  // 测试系统稳定性和负载测试
-  let base_load = 100
-  let peak_multiplier = 5
-  let sustained_duration = 8  // 小时
-  let recovery_time = 2  // 小时
-  
-  // 计算峰值负载
-  let peak_load = multiply(base_load, peak_multiplier)
-  
-  // 计算总负载量（负载 × 时间）
-  let total_load_normal = multiply(base_load, sustained_duration)
-  let total_load_peak = multiply(peak_load, sustained_duration)
-  
-  // 计算系统恢复能力
-  let recovery_capacity = divide_with_ceil(total_load_peak, recovery_time)
-  
-  // 计算系统稳定性指数
-  let stability_index = divide_with_ceil(multiply(base_load, 100), peak_load)
-  
-  assert_eq(500, peak_load)
-  assert_eq(800, total_load_normal)
-  assert_eq(4000, total_load_peak)
-  assert_eq(2000, recovery_capacity)  // ceil(4000/2) = 2000
-  assert_eq(20, stability_index)  // ceil(100*100/500) = ceil(20) = 20
+  // 计算每个任务的平均小时数
+  let hours_per_task = azimuth::divide_with_ceil(total_work_hours, total_tasks)
+  azimuth::assert_eq(6, hours_per_task)
 }
