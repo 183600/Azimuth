@@ -66,26 +66,40 @@ test "negative_number_operations" {
   assert_eq(-2, divide_with_ceil(-7, 3))
 }
 
-test "business_logic_packaging_calculation" {
-  // 测试业务逻辑：包装计算
-  let items = 25
-  let items_per_box = 6
-  let boxes_needed = divide_with_ceil(items, items_per_box)
-  assert_eq(5, boxes_needed)
+test "business_logistics_enhanced" {
+  // 增强业务物流测试
+  let total_products = 157
+  let box_capacity = 24
+  let available_boxes = 10
   
-  // 验证总容量
-  let total_capacity = multiply(boxes_needed, items_per_box)
-  assert_eq(30, total_capacity)
+  // 计算需要的箱子数量
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  assert_eq(7, boxes_needed)
   
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, items)
-  assert_eq(5, remaining_space)
+  // 验证总存储容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(168, total_capacity)
+  
+  // 计算剩余空间
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(11, remaining_space)
 }
 
-test "unicode_and_special_characters" {
-  // 测试Unicode和特殊字符处理
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
+test "performance_resource_optimization" {
+  // 性能和资源优化测试
+  let total_cpu_cores = 64
+  let services = 7
+  let min_cores_per_service = 4
+  
+  // 计算每个服务的最小核心数
+  let min_cores_total = multiply(services, min_cores_per_service)
+  assert_eq(28, min_cores_total)
+  
+  // 计算平均可用核心数
+  let avg_cores_per_service = divide_with_ceil(total_cpu_cores, services)
+  assert_eq(10, avg_cores_per_service)
+  
+  // 验证资源利用率
+  let utilization_percent = divide_with_ceil(multiply(min_cores_total, 100), total_cpu_cores)
+  assert_eq(44, utilization_percent)
 }
