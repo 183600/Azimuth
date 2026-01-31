@@ -515,4 +515,5 @@
     "standard_moonbit_enhanced_tests.mbt",
     "new_standard_moonbit_tests.mbt",
     "standard_azimuth_enhanced_tests.mbt",
-    "quality_test_cases.mbt"                                                                                                                                           ]}
+    "quality_test_cases.mbt",
+    "my_simple_tests.mbt"                                                                                                                                           ]}
