@@ -17,6 +17,7 @@
     "comprehensive_quality_test_suite.mbt",
     "standard_moonbit_unit_tests.mbt",
     "quality_moonbit_tests.mbt",
+    "quality_moonbit_test_suite.mbt",
     "standard_azimuth_tests_new.mbt",
     "standard_moonbit_test_cases_new.mbt",
     "new_comprehensive_moonbit_tests.mbt",
