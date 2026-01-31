@@ -11439,3 +11439,174 @@ test "real_world_event_planning_comprehensive" {
   let budget_utilization = divide_with_ceil(multiply(total_cost, 100), total_budget)
   assert_eq(80, budget_utilization)
 }
+
+// 新增的高质量 MoonBit 测试用例 - 专注于边界情况和实际应用场景
+test "extreme_value_calculations_safe" {
+  // 测试安全范围内的极值计算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(-2000000, add(-1000000, -1000000))
+  assert_eq(0, add(1000000, -1000000))
+  assert_eq(1000000, multiply(1000, 1000))
+}
+
+test "divide_with_ceil_precision_edge_enhanced" {
+  // 测试向上取整除法的精度边缘情况
+  assert_eq(1, divide_with_ceil(1, 1000000))
+  assert_eq(1000000, divide_with_ceil(1000000, 1))
+  assert_eq(2, divide_with_ceil(1000001, 1000000))
+  assert_eq(500000, divide_with_ceil(1000000, 2))
+  assert_eq(333334, divide_with_ceil(1000000, 3))
+}
+
+test "complex_calculations_with_negative_enhanced" {
+  // 测试负数的复杂计算
+  let a = -15
+  let b = 8
+  let c = -3
+  
+  // 复杂表达式计算
+  let result = add(multiply(a, b), divide_with_ceil(multiply(b, c), 2))
+  assert_eq(-132, result)  // (-15*8) + ceil(8*(-3)/2) = -120 + ceil(-24/2) = -120 + (-12) = -132
+  
+  // 验证分配律在负数情况下仍然成立
+  assert_eq(
+    multiply(a, add(b, c)),
+    add(multiply(a, b), multiply(a, c))
+  )
+}
+
+test "string_processing_special_chars_enhanced" {
+  // 测试特殊字符的字符串处理
+  assert_eq_string("Hello, newline!", greet("newline\n"))
+  assert_eq_string("Hello, tab!", greet("tab\t"))
+  assert_eq_string("Hello, quote!", greet("quote\""))
+  assert_eq_string("Hello, backslash!", greet("backslash\\"))
+  assert_eq_string("Hello, mixed123!", greet("mixed123!@#$"))
+}
+
+test "resource_optimization_complex_enhanced" {
+  // 复杂资源优化场景测试
+  let project_a_tasks = 45
+  let project_b_tasks = 67
+  let project_c_tasks = 23
+  let team_capacity = 15
+  let buffer_percentage = 10
+  
+  // 计算每个项目需要的团队数量
+  let teams_a = divide_with_ceil(project_a_tasks, team_capacity)
+  let teams_b = divide_with_ceil(project_b_tasks, team_capacity)
+  let teams_c = divide_with_ceil(project_c_tasks, team_capacity)
+  
+  // 计算总团队数
+  let total_teams = add(add(teams_a, teams_b), teams_c)
+  assert_eq(10, total_teams)  // ceil(45/15) + ceil(67/15) + ceil(23/15) = 3 + 5 + 2 = 10
+  
+  // 添加缓冲
+  let buffer_teams = divide_with_ceil(multiply(total_teams, buffer_percentage), 100)
+  let final_teams = add(total_teams, buffer_teams)
+  assert_eq(11, final_teams)  // 10 + ceil(10*10/100) = 10 + 1 = 11
+}
+
+test "time_based_calculations_enhanced" {
+  // 基于时间的计算测试
+  let total_seconds = 3661  // 1小时1分钟1秒
+  let seconds_per_minute = 60
+  let seconds_per_hour = 3600
+  
+  // 计算小时数
+  let hours = divide_with_ceil(total_seconds, seconds_per_hour)
+  assert_eq(2, hours)  // ceil(3661/3600) = 2
+  
+  // 计算分钟数（剩余部分）
+  let remaining_seconds = subtract(total_seconds, multiply(hours - 1, seconds_per_hour))
+  let minutes = divide_with_ceil(remaining_seconds, seconds_per_minute)
+  assert_eq(2, minutes)  // ceil(61/60) = 2
+  
+  // 验证总时间覆盖
+  let calculated_total = add(multiply(hours - 1, seconds_per_hour), multiply(minutes - 1, seconds_per_minute))
+  assert_true(calculated_total <= total_seconds)
+}
+
+test "error_handling_comprehensive_enhanced" {
+  // 综合错误处理测试
+  // 测试各种除零情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  
+  // 测试极值运算的安全性
+  let max_safe = 1000000
+  let min_safe = -1000000
+  
+  // 这些运算应该在安全范围内
+  assert_eq(0, multiply(max_safe, 0))
+  assert_eq(0, multiply(min_safe, 0))
+  assert_eq(max_safe, add(max_safe, 0))
+  assert_eq(min_safe, add(min_safe, 0))
+}
+
+test "mathematical_series_enhanced" {
+  // 数学级数计算测试
+  // 计算等差数列前n项和
+  let first_term = 5
+  let common_difference = 3
+  let number_of_terms = 10
+  
+  // 使用公式：n/2 * (2a + (n-1)d)
+  let sum_formula = divide_with_ceil(
+    multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference))),
+    2
+  )
+  assert_eq(185, sum_formula)  // ceil(10/2 * (10 + 27)) = ceil(5 * 37) = 185
+  
+  // 验证通过逐项计算
+  let term1 = first_term
+  let term2 = add(term1, common_difference)
+  let term3 = add(term2, common_difference)
+  let term4 = add(term3, common_difference)
+  let term5 = add(term4, common_difference)
+  
+  let partial_sum = add(add(add(term1, term2), add(term3, term4)), term5)
+  assert_eq(65, partial_sum)  // 5 + 8 + 11 + 14 + 17 = 65
+}
+
+test "inventory_management_realistic" {
+  // 真实世界库存管理测试
+  let product_a_quantity = 127
+  let product_b_quantity = 89
+  let product_c_quantity = 156
+  
+  let box_capacity_a = 12
+  let box_capacity_b = 15
+  let box_capacity_c = 20
+  
+  // 计算每种产品需要的箱子数
+  let boxes_a = divide_with_ceil(product_a_quantity, box_capacity_a)
+  let boxes_b = divide_with_ceil(product_b_quantity, box_capacity_b)
+  let boxes_c = divide_with_ceil(product_c_quantity, box_capacity_c)
+  
+  assert_eq(11, boxes_a)  // ceil(127/12) = 11
+  assert_eq(6, boxes_b)   // ceil(89/15) = 6
+  assert_eq(8, boxes_c)   // ceil(156/20) = 8
+  
+  // 计算总箱子数和总容量
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  let total_capacity = add(
+    multiply(boxes_a, box_capacity_a),
+    add(multiply(boxes_b, box_capacity_b), multiply(boxes_c, box_capacity_c))
+  )
+  
+  assert_eq(25, total_boxes)
+  assert_eq(371, total_capacity)
+  
+  // 计算总产品数量
+  let total_products = add(add(product_a_quantity, product_b_quantity), product_c_quantity)
+  assert_eq(372, total_products)
+  
+  // 验证容量充足
+  assert_true(total_capacity >= total_products)
+  
+  // 计算空间利用率
+  let utilization = divide_with_ceil(multiply(total_products, 100), total_capacity)
+  assert_eq(100, utilization)  // ceil(37200/371) = 100
+}
