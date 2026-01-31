@@ -1,158 +1,213 @@
-// Azimuth 项目额外的标准 MoonBit 测试用例
-// 包含基本的数学运算和字符串处理功能的测试
+// 额外的标准 MoonBit 测试用例
+// 针对 azimuth 库的核心功能提供补充测试覆盖
 
-test "basic_arithmetic_operations" {
-  // 测试基本算术运算
-  @azimuth.assert_eq(15, @azimuth.add(7, 8))
-  @azimuth.assert_eq(0, @azimuth.add(5, -5))
-  @azimuth.assert_eq(-10, @azimuth.add(-3, -7))
-  
-  @azimuth.assert_eq(24, @azimuth.multiply(6, 4))
-  @azimuth.assert_eq(0, @azimuth.multiply(10, 0))
-  @azimuth.assert_eq(-18, @azimuth.multiply(-3, 6))
+test "subtract_function_comprehensive" {
+  // 全面测试 subtract 函数
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(10, subtract(10, 0))
+  assert_eq(-10, subtract(0, 10))
+  assert_eq(15, subtract(-5, -20))
+  assert_eq(-25, subtract(-10, 15))
 }
 
-test "divide_with_ceil_functionality" {
-  // 测试向上取整除法功能
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(5, 0))
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
+test "complex_financial_calculations" {
+  // 复杂金融计算场景
+  let principal = 10000
+  let rate1 = 5
+  let rate2 = 3
+  let years = 2
+  
+  // 计算复利：第一年
+  let interest1 = divide_with_ceil(multiply(principal, rate1), 100)
+  let amount1 = add(principal, interest1)
+  
+  // 计算复利：第二年（利率变化）
+  let interest2 = divide_with_ceil(multiply(amount1, rate2), 100)
+  let final_amount = add(amount1, interest2)
+  
+  assert_eq(500, interest1)
+  assert_eq(10500, amount1)
+  assert_eq(315, interest2)
+  assert_eq(10815, final_amount)
 }
 
-test "greet_function_variations" {
-  // 测试问候函数的各种变体
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
-  @azimuth.assert_eq_string("Hello, 中文!", @azimuth.greet("中文"))
+test "inventory_optimization" {
+  // 库存优化计算
+  let current_stock = 150
+  let daily_sales = 12
+  let restock_threshold = 30
+  let package_size = 50
+  
+  // 计算剩余天数
+  let days_until_empty = divide_with_ceil(current_stock, daily_sales)
+  
+  // 计算是否需要补货
+  let need_restock = if current_stock <= restock_threshold { 1 } else { 0 }
+  
+  // 计算建议订货量（按包装单位）
+  let suggested_order = multiply(need_restock, package_size)
+  
+  assert_eq(13, days_until_empty)
+  assert_eq(0, need_restock)
+  assert_eq(0, suggested_order)
 }
 
-test "practical_business_calculations" {
-  // 实际业务计算测试
-  let unit_price = 25
-  let quantity = 8
-  let tax_rate = 8
-  let shipping = 15
+test "mathematical_series_and_patterns" {
+  // 数学级数和模式计算
+  // 计算等差数列前n项和：S = n/2 * (2a + (n-1)d)
+  let first_term = 3
+  let common_diff = 4
+  let num_terms = 8
   
-  let subtotal = @azimuth.multiply(unit_price, quantity)
-  let tax = @azimuth.divide_with_ceil(@azimuth.multiply(subtotal, tax_rate), 100)
-  let total = @azimuth.add(@azimuth.add(subtotal, tax), shipping)
+  let sum_n = divide_with_ceil(
+    multiply(num_terms, add(multiply(2, first_term), multiply(num_terms - 1, common_diff))),
+    2
+  )
   
-  @azimuth.assert_eq(200, subtotal)
-  @azimuth.assert_eq(16, tax)
-  @azimuth.assert_eq(231, total)
+  // 计算等比数列前n项和（简化版）
+  let geo_first = 2
+  let ratio = 3
+  let geo_terms = 5
+  let geo_sum = add(add(add(add(geo_first, multiply(geo_first, ratio)), 
+    multiply(geo_first, multiply(ratio, ratio))), 
+    multiply(geo_first, multiply(ratio, multiply(ratio, ratio)))), 
+    multiply(geo_first, multiply(ratio, multiply(ratio, multiply(ratio, ratio)))))
+  
+  assert_eq(132, sum_n)
+  assert_eq(242, geo_sum)
 }
 
-test "mathematical_properties" {
-  // 数学性质测试
-  let x = 12
-  let y = 8
+test "error_boundary_and_robustness" {
+  // 错误边界和健壮性测试
+  // 测试极端值组合
+  let max_val = 2147483647
+  let min_val = -2147483648
   
-  // 交换律
-  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
-  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
+  // 测试大数减法
+  assert_eq(2147483647, subtract(max_val, 0))
+  assert_eq(-2147483648, subtract(min_val, 0))
+  assert_eq(0, subtract(max_val, max_val))
   
-  // 结合律
-  @azimuth.assert_eq(@azimuth.add(@azimuth.add(x, y), 5), @azimuth.add(x, @azimuth.add(y, 5)))
-  
-  // 分配律
-  @azimuth.assert_eq(@azimuth.multiply(x, @azimuth.add(y, 3)), @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, 3)))
+  // 测试除法的各种边界情况
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, -1))
+  assert_eq(0, divide_with_ceil(0, max_val))
+  assert_eq(0, divide_with_ceil(max_val, 0))
+  assert_eq(0, divide_with_ceil(min_val, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
 }
 
-test "packaging_and_shipping_calculations" {
-  // 包装和运输计算
-  let total_items = 47
-  let items_per_box = 12
-  let boxes_needed = @azimuth.divide_with_ceil(total_items, items_per_box)
-  
-  let weight_per_item = 2
-  let total_weight = @azimuth.multiply(total_items, weight_per_item)
-  
-  let shipping_cost_per_box = 8
-  let total_shipping = @azimuth.multiply(boxes_needed, shipping_cost_per_box)
-  
-  @azimuth.assert_eq(4, boxes_needed)
-  @azimuth.assert_eq(94, total_weight)
-  @azimuth.assert_eq(32, total_shipping)
+test "string_processing_internationalization" {
+  // 字符串处理和国际化测试
+  // 测试各种Unicode字符和特殊格式
+  assert_eq_string("Hello, 🌟✨🚀!", greet("🌟✨🚀"))
+  assert_eq_string("Hello, Café!", greet("Café"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, 北京!", greet("北京"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+  assert_eq_string("Hello, ירושלים!", greet("ירושלים"))
+  assert_eq_string("Hello, हिंदी!", greet("हिंदी"))
+  assert_eq_string("Hello, 한국어!", greet("한국어"))
+  assert_eq_string("Hello, 日本語!", greet("日本語"))
 }
 
-test "time_and_project_management" {
-  // 时间和项目管理计算
-  let tasks_per_day = 6
-  let total_tasks = 35
-  let days_needed = @azimuth.divide_with_ceil(total_tasks, tasks_per_day)
+test "engineering_calculations" {
+  // 工程计算测试
+  // 计算梁的承载能力（简化公式）
+  let beam_length = 10
+  let beam_width = 2
+  let material_strength = 500
+  let safety_factor = 2
   
-  let hours_per_day = 8
-  let total_hours = @azimuth.multiply(days_needed, hours_per_day)
+  // 计算截面模量
+  let section_modulus = multiply(beam_width, multiply(beam_length, beam_length))
   
-  @azimuth.assert_eq(6, days_needed)
-  @azimuth.assert_eq(48, total_hours)
+  // 计算允许应力
+  let allowable_stress = divide_with_ceil(material_strength, safety_factor)
+  
+  // 计算承载能力
+  let load_capacity = multiply(section_modulus, allowable_stress)
+  
+  assert_eq(40, section_modulus)
+  assert_eq(250, allowable_stress)
+  assert_eq(10000, load_capacity)
 }
 
-test "error_handling_and_edge_cases" {
-  // 错误处理和边界情况
-  // 测试零值运算
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 100))
-  @azimuth.assert_eq(0, @azimuth.multiply(100, 0))
-  @azimuth.assert_eq(5, @azimuth.add(5, 0))
-  @azimuth.assert_eq(5, @azimuth.add(0, 5))
+test "data_analysis_statistics" {
+  // 数据分析和统计测试
+  let data_points = [45, 67, 23, 89, 12, 56, 78, 34, 90, 41]
+  let num_points = 10
   
-  // 测试负数运算
-  @azimuth.assert_eq(-15, @azimuth.add(-8, -7))
-  @azimuth.assert_eq(20, @azimuth.multiply(-4, -5))
-  @azimuth.assert_eq(-20, @azimuth.multiply(4, -5))
+  // 计算总和（手动累加）
+  let sum_data = add(add(add(add(add(add(add(add(add(data_points[0], data_points[1]), 
+    data_points[2]), data_points[3]), data_points[4]), data_points[5]), 
+    data_points[6]), data_points[7]), data_points[8]), data_points[9])
   
-  // 测试除零保护
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-50, 0))
+  // 计算平均值
+  let average = divide_with_ceil(sum_data, num_points)
+  
+  // 计算最大值和最小值的差
+  let max_val = 90
+  let min_val = 12
+  let range = subtract(max_val, min_val)
+  
+  assert_eq(535, sum_data)
+  assert_eq(54, average)
+  assert_eq(78, range)
 }
 
-test "complex_multi_step_calculations" {
-  // 复杂多步计算
-  // 场景：计算订单总价，包含折扣和税费
-  let product_a_price = 45
-  let product_a_qty = 3
-  let product_b_price = 28
-  let product_b_qty = 2
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟测试
+  let input_size = 100
+  let constant_factor = 3
   
-  let subtotal_a = @azimuth.multiply(product_a_price, product_a_qty)
-  let subtotal_b = @azimuth.multiply(product_b_price, product_b_qty)
-  let subtotal = @azimuth.add(subtotal_a, subtotal_b)
+  // 模拟O(n)算法
+  let linear_complexity = multiply(input_size, constant_factor)
   
-  let discount = 20
-  let after_discount = @azimuth.add(subtotal, -discount)
+  // 模拟O(n^2)算法（简化版）
+  let quadratic_complexity = multiply(input_size, input_size)
   
-  let tax_rate = 10
-  let tax = @azimuth.divide_with_ceil(@azimuth.multiply(after_discount, tax_rate), 100)
+  // 模拟O(log n)算法（简化为除法）
+  let logarithmic_complexity = divide_with_ceil(input_size, 10)
   
-  let shipping = 12
-  let final_total = @azimuth.add(@azimuth.add(after_discount, tax), shipping)
+  // 计算性能比较
+  let linear_vs_quadratic = divide_with_ceil(quadratic_complexity, linear_complexity)
+  let linear_vs_logarithmic = divide_with_ceil(linear_complexity, logarithmic_complexity)
   
-  @azimuth.assert_eq(135, subtotal_a)
-  @azimuth.assert_eq(56, subtotal_b)
-  @azimuth.assert_eq(191, subtotal)
-  @azimuth.assert_eq(171, after_discount)
-  @azimuth.assert_eq(18, tax)
-  @azimuth.assert_eq(201, final_total)
+  assert_eq(300, linear_complexity)
+  assert_eq(10000, quadratic_complexity)
+  assert_eq(10, logarithmic_complexity)
+  assert_eq(34, linear_vs_quadratic)
+  assert_eq(30, linear_vs_logarithmic)
 }
 
-test "string_and_numeric_integration" {
-  // 字符串和数值集成测试
-  let customer_id = 12345
-  let customer_name = "张三"
-  let order_number = "ORD-2024-001"
+test "real_world_project_management" {
+  // 真实世界项目管理测试
+  let team_size = 8
+  let tasks_per_person = 5
+  let days_per_task = 3
+  let buffer_percentage = 20
   
-  let greeting1 = @azimuth.greet(customer_name)
-  let greeting2 = @azimuth.greet(order_number)
+  // 计算总任务数
+  let total_tasks = multiply(team_size, tasks_per_person)
   
-  // 计算订单相关数值
-  let base_amount = 100
-  let multiplier = customer_id % 10 + 1  // 使用客户ID的最后一位数作为倍数
-  let order_amount = @azimuth.multiply(base_amount, multiplier)
+  // 计算基础工期
+  let base_duration = multiply(tasks_per_person, days_per_task)
   
-  @azimuth.assert_eq_string("Hello, 张三!", greeting1)
-  @azimuth.assert_eq_string("Hello, ORD-2024-001!", greeting2)
-  @azimuth.assert_eq(600, order_amount)  // 100 * (5 + 1) = 600
+  // 计算缓冲时间
+  let buffer_time = divide_with_ceil(multiply(base_duration, buffer_percentage), 100)
+  
+  // 计算总工期
+  let total_duration = add(base_duration, buffer_time)
+  
+  // 计算总工作小时数（每天8小时）
+  let total_hours = multiply(total_duration, 8)
+  
+  assert_eq(40, total_tasks)
+  assert_eq(15, base_duration)
+  assert_eq(3, buffer_time)
+  assert_eq(18, total_duration)
+  assert_eq(144, total_hours)
 }
