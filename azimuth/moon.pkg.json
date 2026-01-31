@@ -219,7 +219,10 @@
     "azimuth_new_simple_tests.mbt",
     "simple_test_new.mbt",
     "azimuth_standard_tests.mbt",
-    "simple_test_verify.mbt"  ],  "import": [    "moonbitlang/core/builtin",
+    "simple_test_verify.mbt",
+    "azimuth_focused_tests.mbt",
+    "azimuth_simple_tests.mbt",
+    "minimal_test.mbt"  ],  "import": [    "moonbitlang/core/builtin",
     "moonbitlang/core"
   ],
   "test-import": [
