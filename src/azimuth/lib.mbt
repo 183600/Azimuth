@@ -9584,3 +9584,121 @@ test "enhanced_financial_compound_interest" {
   assert_eq(675, year3_interest)
   assert_eq(11911, year3_total)
 }
+
+// 新增的标准 MoonBit 测试用例 - 10个简洁的测试
+test "standard_addition_commutative" {
+  // 测试加法交换律
+  assert_eq(15, add(8, 7))
+  assert_eq(15, add(7, 8))
+  assert_eq(0, add(-5, 5))
+  assert_eq(0, add(5, -5))
+}
+
+test "standard_multiplication_identity" {
+  // 测试乘法单位元性质
+  assert_eq(7, multiply(7, 1))
+  assert_eq(7, multiply(1, 7))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, multiply(0, 5))
+}
+
+test "standard_greeting_multilingual" {
+  // 测试多语言问候功能
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, Español!", greet("Español"))
+  assert_eq_string("Hello, Русский!", greet("Русский"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+}
+
+test "standard_divide_ceil_comprehensive" {
+  // 全面测试向上取整除法
+  assert_eq(4, divide_with_ceil(11, 3))  // 11/3 = 3.666... -> 4
+  assert_eq(3, divide_with_ceil(9, 3))   // 9/3 = 3 -> 3
+  assert_eq(-3, divide_with_ceil(-10, 3)) // -10/3 = -3.333... -> -3
+  assert_eq(0, divide_with_ceil(100, 0))  // 除数为0的安全处理
+}
+
+test "standard_business_order_calculation" {
+  // 标准业务订单计算
+  let unit_price = 25
+  let quantity = 8
+  let tax_rate = 8
+  let shipping = 15
+  
+  let subtotal = multiply(unit_price, quantity)
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let total = add(add(subtotal, tax), shipping)
+  
+  assert_eq(200, subtotal)
+  assert_eq(16, tax)
+  assert_eq(231, total)
+}
+
+test "standard_packaging_calculation" {
+  // 标准包装计算
+  let total_items = 47
+  let items_per_box = 12
+  
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  
+  assert_eq(4, boxes_needed)  // ceil(47/12) = 4
+}
+
+test "standard_time_management" {
+  // 标准时间管理计算
+  let tasks_per_day = 6
+  let total_tasks = 35
+  
+  let workdays_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  let total_hours = multiply(workdays_needed, 8)
+  
+  assert_eq(6, workdays_needed)  // ceil(35/6) = 6
+  assert_eq(48, total_hours)     // 6 * 8 = 48
+}
+
+test "standard_financial_simple_interest" {
+  // 标准金融单利计算
+  let principal = 5000
+  let rate_percent = 5
+  let years = 2
+  
+  let total_interest = multiply(divide_with_ceil(multiply(principal, rate_percent), 100), years)
+  let final_amount = add(principal, total_interest)
+  
+  assert_eq(250, divide_with_ceil(multiply(principal, rate_percent), 100))
+  assert_eq(500, total_interest)
+  assert_eq(5500, final_amount)
+}
+
+test "standard_mathematical_properties" {
+  // 标准数学性质验证
+  let a = 10
+  let b = 15
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 分配律：a * (b + c) = a * b + a * c
+  let c = 5
+  let distributive_left = multiply(a, add(b, c))
+  let distributive_right = add(multiply(a, b), multiply(a, c))
+  assert_eq(distributive_left, distributive_right)
+}
+
+test "standard_error_handling" {
+  // 标准错误处理测试
+  // 零值运算
+  assert_eq(0, multiply(0, 1000))
+  assert_eq(1000, add(0, 1000))
+  assert_eq(0, divide_with_ceil(0, 100))
+  
+  // 除数为零的安全处理
+  assert_eq(0, divide_with_ceil(500, 0))
+  
+  // 极端值测试
+  assert_eq(1, divide_with_ceil(1, 1000000))
+  assert_eq(1000000, divide_with_ceil(1000000, 1))
+}
