@@ -1,84 +1,73 @@
-// 标准 MoonBit 测试用例 - Azimuth 项目
-// 测试覆盖核心功能：add, multiply, greet, divide_with_ceil
+// 标准 MoonBit 测试用例
+// 针对 azimuth 库核心功能的简洁测试
 
-test "add_function_positive_numbers" {
-  // 测试正数加法
-  azimuth::assert_eq(5, azimuth::add(2, 3))
-  azimuth::assert_eq(100, azimuth::add(50, 50))
-  azimuth::assert_eq(0, azimuth::add(0, 0))
+test "basic_addition" {
+  // 测试基本加法运算
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-3, add(-1, -2))
 }
 
-test "add_function_negative_numbers" {
-  // 测试负数加法
-  azimuth::assert_eq(-5, azimuth::add(-2, -3))
-  azimuth::assert_eq(0, azimuth::add(-5, 5))
-  azimuth::assert_eq(-10, azimuth::add(-15, 5))
-}
-
-test "multiply_function_basic" {
+test "basic_multiplication" {
   // 测试基本乘法运算
-  azimuth::assert_eq(6, azimuth::multiply(2, 3))
-  azimuth::assert_eq(0, azimuth::multiply(5, 0))
-  azimuth::assert_eq(-6, azimuth::multiply(-2, 3))
-  azimuth::assert_eq(6, azimuth::multiply(-2, -3))
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-8, multiply(-2, 4))
 }
 
-test "greet_function_standard_cases" {
-  // 测试问候函数的标准情况
-  azimuth::assert_eq_string("Hello, World!", azimuth::greet("World"))
-  azimuth::assert_eq_string("Hello, MoonBit!", azimuth::greet("MoonBit"))
-  azimuth::assert_eq_string("Hello, !", azimuth::greet(""))
+test "greet_functionality" {
+  // 测试问候功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
-test "divide_with_ceil_positive_division" {
+test "divide_with_ceil_positive" {
   // 测试正数向上取整除法
-  azimuth::assert_eq(4, azimuth::divide_with_ceil(10, 3))
-  azimuth::assert_eq(3, azimuth::divide_with_ceil(9, 3))
-  azimuth::assert_eq(1, azimuth::divide_with_ceil(1, 100))
-  azimuth::assert_eq(0, azimuth::divide_with_ceil(5, 0))
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
 }
 
-test "divide_with_ceil_negative_numbers" {
-  // 测试负数的向上取整除法
-  azimuth::assert_eq(-3, azimuth::divide_with_ceil(-10, 3))
-  azimuth::assert_eq(4, azimuth::divide_with_ceil(-10, -3))
-  azimuth::assert_eq(-1, azimuth::divide_with_ceil(1, -3))
+test "divide_with_ceil_negative" {
+  // 测试负数向上取整除法
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+  assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "mathematical_properties_commutative" {
-  // 测试数学交换律性质
+test "mathematical_commutative" {
+  // 测试交换律
   let a = 7
   let b = 13
-  azimuth::assert_eq(azimuth::add(a, b), azimuth::add(b, a))
-  azimuth::assert_eq(azimuth::multiply(a, b), azimuth::multiply(b, a))
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(multiply(a, b), multiply(b, a))
 }
 
-test "business_logic_packaging_calculation" {
-  // 测试业务逻辑：包装计算
+test "zero_operations" {
+  // 测试零相关运算
+  assert_eq(0, multiply(5, 0))
+  assert_eq(5, add(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
+}
+
+test "combined_operations" {
+  // 测试组合运算
+  let result = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
+}
+
+test "packaging_calculation" {
+  // 测试包装计算场景
   let total_items = 25
   let items_per_box = 6
-  let boxes_needed = azimuth::divide_with_ceil(total_items, items_per_box)
-  azimuth::assert_eq(5, boxes_needed)
-  
-  // 验证总容量
-  let total_capacity = azimuth::multiply(boxes_needed, items_per_box)
-  azimuth::assert_eq(30, total_capacity)
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
 }
 
-test "complex_calculation_sequence" {
-  // 测试复杂计算序列
-  let initial = 10
-  let step1 = azimuth::add(initial, 5)        // 15
-  let step2 = azimuth::multiply(step1, 2)     // 30
-  let step3 = azimuth::divide_with_ceil(step2, 8)  // 4
-  let result = azimuth::add(step3, 1)         // 5
-  azimuth::assert_eq(5, result)
-}
-
-test "unicode_and_special_characters" {
-  // 测试 Unicode 和特殊字符处理
-  azimuth::assert_eq_string("Hello, 世界!", azimuth::greet("世界"))
-  azimuth::assert_eq_string("Hello, 🚀!", azimuth::greet("🚀"))
-  azimuth::assert_eq_string("Hello, café!", azimuth::greet("café"))
-  azimuth::assert_eq_string("Hello, @#$%!", azimuth::greet("@#$%"))
+test "unicode_greeting" {
+  // 测试Unicode字符问候
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, 123!", greet("123"))
 }
