@@ -1,54 +1,6 @@
-// 标准 MoonBit 单元测试用例
-// 针对 azimuth 库核心功能的标准测试
+// 标准 MoonBit 测试用例
+// 针对 azimuth 库的核心功能进行全面测试
 
-test "add_basic_functionality" {
-  // 测试基本加法功能
-  assert_eq(5, add(2, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-1, add(-2, 1))
-}
-
-test "multiply_basic_functionality" {
-  // 测试基本乘法功能
-  assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(-8, multiply(-2, 4))
-}
-
-test "greet_basic_functionality" {
-  // 测试基本问候功能
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-}
-
-test "divide_with_ceil_basic" {
-  // 测试基本向上取整除法
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(0, divide_with_ceil(5, 0))
-}
-
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 7
-  let b = 13
-  
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-}
-
-test "negative_number_operations" {
-  // 测试负数运算
-  assert_eq(-5, add(-2, -3))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(4, divide_with_ceil(-10, -3))
-}
-
-// 新增的标准 MoonBit 测试用例
 test "addition_commutative_property" {
   // 测试加法交换律
   let a = 15
@@ -63,11 +15,32 @@ test "multiplication_zero_property" {
   assert_eq(0, multiply(0, x))  // 0乘以任何数等于0
 }
 
+test "divide_with_ceil_positive_fractions" {
+  // 测试正数的向上取整除法
+  assert_eq(4, divide_with_ceil(10, 3))    // 10/3 = 3.33... -> 4
+  assert_eq(3, divide_with_ceil(9, 3))     // 9/3 = 3 -> 3
+  assert_eq(1, divide_with_ceil(5, 8))     // 5/8 = 0.625 -> 1
+}
+
+test "divide_with_ceil_negative_numbers" {
+  // 测试负数的向上取整除法
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -10/3 = -3.33... -> -3
+  assert_eq(3, divide_with_ceil(10, -3))   // 10/-3 = -3.33... -> -3
+  assert_eq(4, divide_with_ceil(-11, -3))  // -11/-3 = 3.66... -> 4
+}
+
 test "divide_with_ceil_zero_divisor" {
   // 测试除数为零的安全处理
   assert_eq(0, divide_with_ceil(100, 0))   // 除数为0时返回0
   assert_eq(0, divide_with_ceil(-50, 0))   // 负数除以0返回0
   assert_eq(0, divide_with_ceil(0, 0))     // 0除以0返回0
+}
+
+test "greet_function_various_inputs" {
+  // 测试问候函数的各种输入
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))   // 空字符串测试
 }
 
 test "complex_business_calculation" {

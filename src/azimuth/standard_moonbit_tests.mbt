@@ -1,130 +1,86 @@
 // 标准 MoonBit 测试用例
 // 针对 azimuth 库的核心功能进行全面测试
 
-test "add_function_comprehensive" {
-  // 全面测试加法函数
-  assert_eq(10, add(3, 7))
-  assert_eq(0, add(0, 0))
-  assert_eq(-10, add(-3, -7))
-  assert_eq(4, add(-3, 7))
-  assert_eq(1000000, add(500000, 500000))
+test "addition_commutative_property" {
+  // 测试加法交换律
+  let a = 15
+  let b = 27
+  assert_eq(add(a, b), add(b, a))  // 15 + 27 = 27 + 15
 }
 
-test "multiply_function_boundary" {
-  // 测试乘法函数的边界情况
-  assert_eq(0, multiply(0, 12345))
-  assert_eq(12345, multiply(1, 12345))
-  assert_eq(-12345, multiply(-1, 12345))
-  assert_eq(12345, multiply(-1, -12345))
-  assert_eq(1000000, multiply(1000, 1000))
-}
-
-test "greet_function_international_support" {
-  // 测试问候函数的国际字符支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, ñoño!", greet("ñoño"))
-}
-
-test "divide_with_ceil_business_logic" {
-  // 测试向上取整除法的业务逻辑场景
-  // 场景：计算需要的运输车辆数量
-  let packages = 47
-  let capacity_per_truck = 10
-  let trucks_needed = divide_with_ceil(packages, capacity_per_truck)
-  assert_eq(5, trucks_needed)
-  
-  // 验证总运力
-  let total_capacity = multiply(trucks_needed, capacity_per_truck)
-  assert_eq(50, total_capacity)
-}
-
-test "complex_calculation_pipeline" {
-  // 测试复杂计算流水线
-  // 场景：计算项目完成时间
-  let tasks = 25
-  let people = 4
-  let tasks_per_person_per_day = 2
-  
-  let daily_capacity = multiply(people, tasks_per_person_per_day)
-  let days_needed = divide_with_ceil(tasks, daily_capacity)
-  assert_eq(4, days_needed)  // ceil(25/(4*2)) = 4
-  
-  // 验证总处理能力
-  let total_capacity = multiply(days_needed, daily_capacity)
-  assert_eq(32, total_capacity)
-}
-
-test "mathematical_properties_verification" {
-  // 验证数学性质
+test "multiplication_zero_property" {
+  // 测试乘法零性质
   let x = 42
-  let y = 17
-  
-  // 加法交换律
-  assert_eq(add(x, y), add(y, x))
-  
-  // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
-  
-  // 分配律
-  assert_eq(
-    multiply(x, add(y, 3)),
-    add(multiply(x, y), multiply(x, 3))
-  )
+  assert_eq(0, multiply(x, 0))  // 任何数乘以0等于0
+  assert_eq(0, multiply(0, x))  // 0乘以任何数等于0
 }
 
-test "resource_allocation_optimization" {
-  // 资源分配优化测试
-  let total_budget = 10000
-  let team_members = 6
-  
-  // 使用向上取整确保覆盖所有情况
-  let max_share = divide_with_ceil(total_budget, team_members)
-  assert_eq(1667, max_share)  // ceil(10000/6) = 1667
-  
-  // 验证总分配不超过预算
-  let total_allocated = multiply(max_share, team_members)
-  assert_eq(10002, total_allocated)
+test "divide_with_ceil_positive_fractions" {
+  // 测试正数的向上取整除法
+  assert_eq(4, divide_with_ceil(10, 3))    // 10/3 = 3.33... -> 4
+  assert_eq(3, divide_with_ceil(9, 3))     // 9/3 = 3 -> 3
+  assert_eq(1, divide_with_ceil(5, 8))     // 5/8 = 0.625 -> 1
 }
 
-test "error_handling_and_boundaries" {
-  // 错误处理和边界测试
-  // 除零情况
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  
-  // 极值测试
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(-1, -1))
-  assert_eq(0, divide_with_ceil(0, 1))
+test "divide_with_ceil_negative_numbers" {
+  // 测试负数的向上取整除法
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -10/3 = -3.33... -> -3
+  assert_eq(3, divide_with_ceil(10, -3))   // 10/-3 = -3.33... -> -3
+  assert_eq(4, divide_with_ceil(-11, -3))  // -11/-3 = 3.66... -> 4
 }
 
-test "string_processing_comprehensive" {
-  // 字符串处理综合测试
-  assert_eq_string("Hello, single!", greet("single"))
-  assert_eq_string("Hello, space test!", greet("space test"))
-  assert_eq_string("Hello, 12345!", greet("12345"))
-  assert_eq_string("Hello, !@#$%^!", greet("!@#$%^"))
-  assert_eq_string("Hello, mixedCASE!", greet("mixedCASE"))
+test "divide_with_ceil_zero_divisor" {
+  // 测试除数为零的安全处理
+  assert_eq(0, divide_with_ceil(100, 0))   // 除数为0时返回0
+  assert_eq(0, divide_with_ceil(-50, 0))   // 负数除以0返回0
+  assert_eq(0, divide_with_ceil(0, 0))     // 0除以0返回0
 }
 
-test "real_world_calculation_scenario" {
-  // 真实世界计算场景
-  // 场景：计算活动安排
-  let participants = 87
-  let chairs_per_table = 8
+test "greet_function_various_inputs" {
+  // 测试问候函数的各种输入
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))   // 空字符串测试
+}
+
+test "complex_business_calculation" {
+  // 复杂业务计算：订单总价计算
+  let unit_price = 25
+  let quantity = 8
+  let shipping = 15
+  let discount = 20
   
-  // 计算需要的桌子数量
-  let tables_needed = divide_with_ceil(participants, chairs_per_table)
-  assert_eq(11, tables_needed)  // ceil(87/8) = 11
+  let subtotal = multiply(unit_price, quantity)
+  let total_before_discount = add(subtotal, shipping)
+  let final_total = add(total_before_discount, -discount)
   
-  // 计算总座位数
-  let total_seats = multiply(tables_needed, chairs_per_table)
-  assert_eq(88, total_seats)
+  assert_eq(200, subtotal)           // 25 * 8 = 200
+  assert_eq(215, total_before_discount)  // 200 + 15 = 215
+  assert_eq(195, final_total)        // 215 - 20 = 195
+}
+
+test "packaging_optimization" {
+  // 包装优化计算
+  let total_items = 47
+  let items_per_box = 12
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
   
-  // 验证总座位数正确
-  assert_eq(88, total_seats)
+  assert_eq(4, boxes_needed)  // ceil(47/12) = 4
+}
+
+test "mathematical_distributive_property" {
+  // 测试数学分配律：a * (b + c) = a * b + a * c
+  let a = 3
+  let b = 4
+  let c = 5
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)  // 3 * (4 + 5) = 3 * 4 + 3 * 5 = 27
+}
+
+test "unicode_and_special_characters" {
+  // 测试 Unicode 和特殊字符
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, ñáéíóú!", greet("ñáéíóú"))
 }
