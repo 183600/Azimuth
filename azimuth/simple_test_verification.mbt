@@ -1,1 +1,18 @@
-test "simple_verification" { assert_eq(1, add(0, 1)) }
+// 简单的测试验证文件
+// 测试基本的 azimuth 功能
+
+test "simple_add_test" {
+  assert_eq(5, add(2, 3))
+}
+
+test "simple_multiply_test" {
+  assert_eq(6, multiply(2, 3))
+}
+
+test "simple_greet_test" {
+  assert_eq_string("Hello, World!", greet("World"))
+}
+
+test "simple_divide_with_ceil_test" {
+  assert_eq(4, divide_with_ceil(10, 3))
+}
