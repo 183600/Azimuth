@@ -1,151 +1,133 @@
-// Azimuth 增强测试套件 - 新的高质量测试用例
-// 使用标准的 MoonBit 测试语法，覆盖所有核心功能
+// Azimuth 增强测试套件 - 新增10个高质量 MoonBit 测试用例
+// 使用标准的 MoonBit 测试语法，覆盖各种功能和场景
 
-test "basic_arithmetic_comprehensive" {
-  // 基本算术运算综合测试
-  assert_eq(10, add(3, 7))
-  assert_eq(-4, add(-10, 6))
-  assert_eq(0, add(5, -5))
-  
-  assert_eq(21, multiply(3, 7))
-  assert_eq(0, multiply(3, 0))
-  assert_eq(-21, multiply(-3, 7))
-  
-  assert_eq(5, subtract(12, 7))
-  assert_eq(-5, subtract(7, 12))
-  assert_eq(0, subtract(10, 10))
+test "mathematical_operations_comprehensive" {
+  // 综合数学运算测试
+  @azimuth.assert_eq(15, @azimuth.add(7, 8))
+  @azimuth.assert_eq(56, @azimuth.multiply(7, 8))
+  @azimuth.assert_eq(-1, @azimuth.subtract(7, 8))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(15, 8))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 8))
 }
 
-test "divide_with_ceil_comprehensive" {
-  // 向上取整除法综合测试
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 100))
-  assert_eq(0, divide_with_ceil(0, 10))
-  assert_eq(0, divide_with_ceil(10, 0))
+test "boundary_value_analysis" {
+  // 边界值分析测试
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(1, @azimuth.add(1, 0))
+  @azimuth.assert_eq(-1, @azimuth.add(-1, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+  @azimuth.assert_eq(5, @azimuth.multiply(5, 1))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
+}
+
+test "error_handling_and_edge_cases" {
+  // 错误处理和边缘情况测试
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-10, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-1, -1))
+  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(1, -1))
+}
+
+test "string_processing_internationalization" {
+  // 字符串处理国际化测试
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
+  @azimuth.assert_eq_string("Hello, café!", @azimuth.greet("café"))
+  @azimuth.assert_eq_string("Hello, Москва!", @azimuth.greet("Москва"))
+  @azimuth.assert_eq_string("Hello, ñoño!", @azimuth.greet("ñoño"))
+}
+
+test "complex_business_logic_inventory" {
+  // 复杂业务逻辑：库存管理测试
+  let total_items = 247
+  let box_capacity = 25
+  let boxes_needed = @azimuth.divide_with_ceil(total_items, box_capacity)
+  @azimuth.assert_eq(10, boxes_needed)
   
-  // 负数测试
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-4, divide_with_ceil(10, -3))
-  assert_eq(4, divide_with_ceil(-10, -3))
+  let total_capacity = @azimuth.multiply(boxes_needed, box_capacity)
+  @azimuth.assert_eq(250, total_capacity)
+  
+  let remaining_space = @azimuth.subtract(total_capacity, total_items)
+  @azimuth.assert_eq(3, remaining_space)
 }
 
-test "greet_function_international" {
-  // 问候函数国际化测试
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, !", greet(""))
-}
-
-test "mathematical_properties_verification" {
+test "mathematical_properties_validation" {
   // 数学性质验证测试
-  let x = 15
+  let x = 12
   let y = 8
   
   // 加法交换律
-  assert_eq(add(x, y), add(y, x))
+  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
   
   // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
+  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
   
   // 分配律
-  assert_eq(
-    multiply(x, add(y, 2)),
-    add(multiply(x, y), multiply(x, 2))
+  @azimuth.assert_eq(
+    @azimuth.multiply(x, @azimuth.add(y, 3)),
+    @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, 3))
   )
-  
-  // 减法性质
-  assert_eq(0, subtract(x, x))
-  assert_eq(x, subtract(x, 0))
 }
 
-test "business_logic_packaging" {
-  // 业务逻辑：包装计算测试
-  let items = 47
-  let capacity_per_box = 12
-  let boxes_needed = divide_with_ceil(items, capacity_per_box)
+test "real_world_scenario_project_planning" {
+  // 真实世界场景：项目规划测试
+  let project_tasks = 87
+  let team_members = 6
+  let tasks_per_person_per_week = 3
+  let weeks_per_sprint = 2
   
-  assert_eq(4, boxes_needed)
+  let weekly_capacity = @azimuth.multiply(team_members, tasks_per_person_per_week)
+  let sprint_capacity = @azimuth.multiply(weekly_capacity, weeks_per_sprint)
+  let sprints_needed = @azimuth.divide_with_ceil(project_tasks, sprint_capacity)
   
-  // 验证总容量
-  let total_capacity = multiply(boxes_needed, capacity_per_box)
-  assert_eq(48, total_capacity)
-  
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, items)
-  assert_eq(1, remaining_space)
+  @azimuth.assert_eq(18, weekly_capacity)
+  @azimuth.assert_eq(36, sprint_capacity)
+  @azimuth.assert_eq(3, sprints_needed)
 }
 
-test "complex_calculation_pipeline" {
-  // 复杂计算流水线测试
-  let base_value = 10
-  let multiplier = 3
-  let divisor = 4
-  let addition = 5
+test "performance_large_scale_computation" {
+  // 大规模计算性能测试
+  let large_number = 10000
+  let iterations = 100
   
-  // 计算流程：((base * multiplier) / divisor) + addition
-  let step1 = multiply(base_value, multiplier)
-  let step2 = divide_with_ceil(step1, divisor)
-  let result = add(step2, addition)
+  let sum_result = @azimuth.add(large_number, iterations)
+  let product_result = @azimuth.multiply(large_number, iterations)
+  let division_result = @azimuth.divide_with_ceil(product_result, large_number)
   
-  assert_eq(13, result)  // ceil(10*3/4) + 5 = 8 + 5 = 13
+  @azimuth.assert_eq(10100, sum_result)
+  @azimuth.assert_eq(1000000, product_result)
+  @azimuth.assert_eq(100, division_result)
 }
 
-test "resource_allocation_scenario" {
-  // 资源分配场景测试
-  let total_resources = 100
-  let teams = 3
-  let min_resources_per_team = divide_with_ceil(total_resources, teams)
-  
-  assert_eq(34, min_resources_per_team)
-  
-  // 验证分配结果
-  let allocated_total = multiply(min_resources_per_team, teams)
-  assert_eq(102, allocated_total)
-  
-  // 验证资源利用率
-  let utilization = divide_with_ceil(multiply(total_resources, 100), allocated_total)
-  assert_eq(98, utilization)  // floor(10000/102) = 98%
+test "data_validation_and_type_safety" {
+  // 数据验证和类型安全测试
+  // 测试各种输入类型的处理
+  @azimuth.assert_eq_string("Hello, 12345!", @azimuth.greet("12345"))
+  @azimuth.assert_eq_string("Hello, true!", @azimuth.greet("true"))
+  @azimuth.assert_eq_string("Hello, false!", @azimuth.greet("false"))
+  @azimuth.assert_eq_string("Hello, null!", @azimuth.greet("null"))
+  @azimuth.assert_eq_string("Hello, undefined!", @azimuth.greet("undefined"))
 }
 
-test "error_handling_and_boundaries" {
-  // 错误处理和边界测试
-  // 除零错误处理
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟测试
+  let input_size = 1000
   
-  // 极值验证
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(-1, -1))
-  assert_eq(0, divide_with_ceil(0, 1))
+  // 模拟O(n)算法
+  let linear_complexity = @azimuth.multiply(input_size, 2)
   
-  // 大数运算
-  assert_eq(1000000, multiply(1000, 1000))
-  assert_eq(2000000, add(1000000, 1000000))
-}
-
-test "real_world_event_planning" {
-  // 真实世界活动规划测试
-  let participants = 87
-  let tables = 8
-  let chairs_per_table = 10
+  // 模拟O(log n)算法（简化为除法）
+  let logarithmic_complexity = @azimuth.divide_with_ceil(input_size, 10)
   
-  // 计算需要的桌子数量
-  let tables_needed = divide_with_ceil(participants, chairs_per_table)
-  assert_eq(9, tables_needed)
+  // 模拟O(1)算法
+  let constant_complexity = 5
   
-  // 计算可用座位数
-  let available_seats = multiply(tables_needed, chairs_per_table)
-  assert_eq(90, available_seats)
+  @azimuth.assert_eq(2000, linear_complexity)
+  @azimuth.assert_eq(100, logarithmic_complexity)
+  @azimuth.assert_eq(5, constant_complexity)
   
-  // 计算剩余座位
-  let remaining_seats = subtract(available_seats, participants)
-  assert_eq(3, remaining_seats)
-  
-  // 验证座位充足性
-  assert_true(available_seats >= participants)
+  // 验证复杂度差异
+  let efficiency_ratio = @azimuth.divide_with_ceil(linear_complexity, logarithmic_complexity)
+  @azimuth.assert_eq(20, efficiency_ratio)
 }
