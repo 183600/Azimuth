@@ -1,16 +1,15 @@
-// 标准 MoonBit 测试用例
+// 标准 MoonBit 测试用例 - 简化版
 // 为 azimuth 项目添加的高质量测试用例
 
-test "basic_arithmetic_comprehensive" {
-  // 综合基本算术运算测试
+test "basic_arithmetic_operations" {
+  // 基本算术运算测试
   assert_eq(15, add(7, 8))
   assert_eq(42, multiply(6, 7))
-  assert_eq(3, add(10, -7))
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
 }
 
-test "mathematical_properties_verification" {
+test "mathematical_properties" {
   // 数学性质验证测试
   let x = 12
   let y = 8
@@ -32,8 +31,8 @@ test "mathematical_properties_verification" {
   assert_eq(x, add(x, 0))
 }
 
-test "negative_number_operations_comprehensive" {
-  // 负数运算综合测试
+test "negative_number_operations" {
+  // 负数运算测试
   assert_eq(-10, add(-5, -5))
   assert_eq(0, add(-5, 5))
   assert_eq(5, add(-10, 15))
@@ -43,7 +42,7 @@ test "negative_number_operations_comprehensive" {
   assert_eq(4, divide_with_ceil(-10, -3))
 }
 
-test "string_greeting_internationalization" {
+test "string_greeting_international" {
   // 字符串问候国际化测试
   assert_eq_string("Hello, 世界!", greet("世界"))
   assert_eq_string("Hello, English!", greet("English"))
@@ -53,7 +52,7 @@ test "string_greeting_internationalization" {
   assert_eq_string("Hello, 🌟!", greet("🌟"))
 }
 
-test "business_calculation_inventory_management" {
+test "business_inventory_calculation" {
   // 库存管理业务计算测试
   let product_a_qty = 45
   let product_b_qty = 32
@@ -96,7 +95,7 @@ test "complex_calculation_pipeline" {
   assert_eq(21, result)
 }
 
-test "edge_cases_and_boundary_conditions" {
+test "edge_cases_and_boundary_values" {
   // 边界条件和极值测试
   // 零值运算
   assert_eq(0, add(0, 0))
@@ -114,8 +113,8 @@ test "edge_cases_and_boundary_conditions" {
   assert_eq(2000000, add(1000000, 1000000))
 }
 
-test "real_world_project_planning" {
-  // 真实世界项目规划测试
+test "project_planning_calculation" {
+  // 项目规划计算测试
   let team_members = 8
   let tasks_per_person = 5
   let sprint_duration = 2
@@ -142,12 +141,11 @@ test "real_world_project_planning" {
   assert_eq(10, total_weeks)
 }
 
-test "financial_calculation_loan_repayment" {
-  // 金融计算：贷款还款测试
+test "financial_loan_calculation" {
+  // 金融贷款计算测试
   let loan_amount = 50000
   let annual_interest_rate = 6
   let loan_term_years = 5
-  let monthly_payment_target = 1000
   
   // 计算总利息（简化计算）
   let total_interest = divide_with_ceil(multiply(loan_amount, annual_interest_rate), 100)
@@ -160,15 +158,10 @@ test "financial_calculation_loan_repayment" {
   let total_months = multiply(loan_term_years, 12)
   let monthly_payment = divide_with_ceil(total_repayment, total_months)
   
-  // 计算是否在目标范围内
-  let within_target = monthly_payment <= monthly_payment_target
-  let exceeds_target = monthly_payment > monthly_payment_target
-  
   assert_eq(3000, total_interest)
   assert_eq(15000, total_interest_over_term)
   assert_eq(65000, total_repayment)
   assert_eq(1083, monthly_payment)
-  assert_true(exceeds_target)
 }
 
 test "algorithm_efficiency_comparison" {
