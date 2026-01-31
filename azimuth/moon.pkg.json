@@ -185,6 +185,7 @@
     "azimuth_standard_tests.mbt",
       "azimuth_standard_enhanced_tests.mbt",
       "standard_quality_test_cases_new.mbt",
+      "simple_high_quality_tests.mbt",
     "standard_enhanced_tests.mbt",
     "quality_enhanced_test_suite.mbt",
     "quality_simple_tests.mbt",
