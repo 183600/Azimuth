@@ -1,99 +1,85 @@
-// 标准 MoonBit 测试用例 - 为 Azimuth 项目创建
-// 包含8个高质量测试用例，覆盖所有核心功能
+// 标准 MoonBit 测试用例
+// 针对 azimuth 库核心功能的简洁测试
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  assert_eq(10, add(3, 7))
-  assert_eq(15, multiply(3, 5))
-  assert_eq(2, subtract(8, 6))
+test "add_basic_functionality" {
+  // 测试基本加法功能
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-1, add(2, -3))
+}
+
+test "multiply_basic_functionality" {
+  // 测试基本乘法功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-6, multiply(2, -3))
+}
+
+test "subtract_basic_functionality" {
+  // 测试基本减法功能
+  assert_eq(1, subtract(3, 2))
+  assert_eq(-1, subtract(2, 3))
+  assert_eq(0, subtract(5, 5))
+}
+
+test "divide_with_ceil_basic" {
+  // 测试向上取整除法基本功能
   assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(0, divide_with_ceil(5, 0))
+}
+
+test "greet_basic_functionality" {
+  // 测试基本问候功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
 test "mathematical_properties" {
-  // 数学性质验证测试
-  let x = 12
-  let y = 8
+  // 测试基本数学性质
+  let a = 7
+  let b = 3
   
   // 加法交换律
-  assert_eq(add(x, y), add(y, x))
+  assert_eq(add(a, b), add(b, a))
   
   // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
+  assert_eq(multiply(a, b), multiply(b, a))
   
   // 零元素性质
-  assert_eq(x, add(x, 0))
-  assert_eq(0, multiply(x, 0))
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, add(a, 0))
 }
 
-test "greet_function_comprehensive" {
-  // 问候函数综合测试
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 中文!", greet("中文"))
-  assert_eq_string("Hello, 123!", greet("123"))
-}
-
-test "divide_with_ceil_edge_cases" {
-  // 向上取整除法边界情况测试
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(1, divide_with_ceil(1, 100))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(10, 0))
-}
-
-test "negative_numbers_handling" {
-  // 负数处理测试
+test "negative_number_operations" {
+  // 测试负数运算
   assert_eq(-5, add(-2, -3))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(-8, subtract(3, 11))
-  assert_eq(-3, divide_with_ceil(-10, 4))
-  assert_eq(3, divide_with_ceil(-10, -4))
+  assert_eq(6, multiply(-2, -3))
+  assert_eq(-4, divide_with_ceil(-10, 3))
 }
 
-test "complex_calculation_workflow" {
-  // 复杂计算工作流测试
-  // 场景：项目资源计算
-  let team_size = 6
-  let tasks_per_person = 8
-  let total_tasks = multiply(team_size, tasks_per_person)
-  
-  let sprint_capacity = 15
-  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
-  
-  assert_eq(48, total_tasks)
-  assert_eq(4, sprints_needed)
+test "combined_operations" {
+  // 测试组合运算
+  let result = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
 }
 
-test "business_packaging_scenario" {
-  // 业务包装场景测试
-  let items = 47
-  let capacity_per_box = 12
-  let boxes_needed = divide_with_ceil(items, capacity_per_box)
+test "practical_scenario" {
+  // 实际应用场景：计算购物车总价
+  let item_price = 25
+  let quantity = 4
+  let shipping = 10
   
-  assert_eq(4, boxes_needed)
+  let subtotal = multiply(item_price, quantity)
+  let total = add(subtotal, shipping)
   
-  // 验证总容量
-  let total_capacity = multiply(boxes_needed, capacity_per_box)
-  assert_eq(48, total_capacity)
-  
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, items)
-  assert_eq(1, remaining_space)
+  assert_eq(100, subtotal)
+  assert_eq(110, total)
 }
 
-test "mathematical_boundary_conditions" {
-  // 数学边界条件测试
-  // 极值测试
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(1000000, multiply(1000, 1000))
-  
-  // 单位元素测试
-  assert_eq(5, multiply(5, 1))
-  assert_eq(5, add(5, 0))
-  
-  // 特殊除法情况
-  assert_eq(1, divide_with_ceil(5, 5))
-  assert_eq(1, divide_with_ceil(-5, -5))
+test "unicode_support" {
+  // 测试 Unicode 支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
 }

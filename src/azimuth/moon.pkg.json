@@ -43,6 +43,7 @@
     "azimuth_standard_core_tests.mbt",
     "azimuth_new_standard_unit_tests.mbt",
     "standard_moonbit_tests.mbt",
+    "standard_moonbit_tests.mbt",
     "standard_moonbit_test_suite.mbt",
     "user_standard_moonbit_tests.mbt",
     "additional_standard_tests.mbt",
