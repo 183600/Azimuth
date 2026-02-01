@@ -248,7 +248,8 @@
     "azimuth_enhanced_edge_case_tests.mbt",
     "user_added_comprehensive_tests.mbt",
     "user_new_comprehensive_tests.mbt",
-    "standard_moonbit_tests.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
+    "standard_moonbit_tests.mbt",
+    "standard_enhanced_tests.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
     "standard_azimuth_core_tests.mbt",
     "comprehensive_quality_test_suite.mbt",
