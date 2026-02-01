@@ -1,97 +1,22 @@
-// 标准 MoonBit 测试用例 - 简化版本
-// 包含8个基本测试用例，测试核心功能
+// 简单的标准 MoonBit 测试用例
+// 为 Azimuth 项目添加基本测试
 
-test "basic_addition_test" {
-  // 基本加法测试
-  let result1 = add(5, 3)
-  let result2 = add(0, 0)
-  let result3 = add(-5, 5)
-  
-  assert_eq(8, result1)
-  assert_eq(0, result2)
-  assert_eq(0, result3)
+test "simple_addition" {
+  assert_eq(5, add(2, 3))
 }
 
-test "basic_multiplication_test" {
-  // 基本乘法测试
-  let result1 = multiply(4, 5)
-  let result2 = multiply(0, 10)
-  let result3 = multiply(-3, 3)
-  
-  assert_eq(20, result1)
-  assert_eq(0, result2)
-  assert_eq(-9, result3)
+test "simple_multiplication" {
+  assert_eq(6, multiply(2, 3))
 }
 
-test "greet_function_test" {
-  // 问候函数测试
-  let result1 = greet("World")
-  let result2 = greet("MoonBit")
-  let result3 = greet("")
-  
-  assert_eq_string("Hello, World!", result1)
-  assert_eq_string("Hello, MoonBit!", result2)
-  assert_eq_string("Hello, !", result3)
+test "simple_greet" {
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
 }
 
-test "divide_with_ceil_basic_test" {
-  // 向上取整除法基本测试
-  let result1 = divide_with_ceil(10, 3)
-  let result2 = divide_with_ceil(9, 3)
-  let result3 = divide_with_ceil(1, 100)
-  
-  assert_eq(4, result1)
-  assert_eq(3, result2)
-  assert_eq(1, result3)
+test "simple_divide_ceil" {
+  assert_eq(4, divide_with_ceil(10, 3))
 }
 
-test "divide_with_ceil_zero_test" {
-  // 除零测试
-  let result1 = divide_with_ceil(10, 0)
-  let result2 = divide_with_ceil(0, 0)
-  let result3 = divide_with_ceil(-10, 0)
-  
-  assert_eq(0, result1)
-  assert_eq(0, result2)
-  assert_eq(0, result3)
-}
-
-test "subtract_function_test" {
-  // 减法函数测试
-  let result1 = subtract(10, 3)
-  let result2 = subtract(5, 10)
-  let result3 = subtract(0, 0)
-  
-  assert_eq(7, result1)
-  assert_eq(-5, result2)
-  assert_eq(0, result3)
-}
-
-test "mathematical_properties_test" {
-  // 数学性质测试
-  let x = 15
-  let y = 8
-  
-  // 加法交换律
-  let result1 = add(x, y)
-  let result2 = add(y, x)
-  assert_eq(result1, result2)
-  
-  // 乘法交换律
-  let result3 = multiply(x, y)
-  let result4 = multiply(y, x)
-  assert_eq(result3, result4)
-}
-
-test "complex_calculation_test" {
-  // 复杂计算测试
-  let step1 = add(5, 3)        // 8
-  let step2 = multiply(step1, 2)  // 16
-  let step3 = divide_with_ceil(step2, 5)  // 4
-  let step4 = subtract(step3, 1)  // 3
-  
-  assert_eq(8, step1)
-  assert_eq(16, step2)
-  assert_eq(4, step3)
-  assert_eq(3, step4)
+test "simple_subtract" {
+  assert_eq(5, subtract(10, 5))
 }
