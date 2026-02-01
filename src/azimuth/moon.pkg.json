@@ -8,6 +8,8 @@
     "azimuth"
   ],
   "test": [
+    "minimal_test.mbt",
+    "simple_new_tests.mbt",
     "azimuth_standard_test_suite.mbt",
     "quality_test_suite.mbt",
     "azimuth_standard_test_cases_new.mbt",

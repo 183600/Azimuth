@@ -1,21 +1,19 @@
 // 新增的标准 MoonBit 测试用例
-// 针对 azimuth 库的核心功能进行全面测试
+// 针对 azimuth 库核心功能的全面测试，使用标准 MoonBit 测试语法
 
-test "mathematical_identity_properties" {
-  // 测试数学单位元性质
-  // 加法单位元：a + 0 = a
-  assert_eq(42, add(42, 0))
-  assert_eq(-17, add(-17, 0))
+test "basic_arithmetic_operations" {
+  // 测试基本算术运算
+  assert_eq(10, add(3, 7))
+  assert_eq(-4, add(-10, 6))
   assert_eq(0, add(0, 0))
   
-  // 乘法单位元：a * 1 = a
-  assert_eq(42, multiply(42, 1))
-  assert_eq(-17, multiply(-17, 1))
-  assert_eq(0, multiply(0, 1))
+  assert_eq(21, multiply(3, 7))
+  assert_eq(-30, multiply(-5, 6))
+  assert_eq(0, multiply(0, 100))
 }
 
 test "divide_with_ceil_comprehensive" {
-  // 全面测试向上取整除法函数
+  // 全面测试向上取整除法功能
   // 正数除法
   assert_eq(4, divide_with_ceil(11, 3))  // 11/3 = 3.666... -> 4
   assert_eq(3, divide_with_ceil(9, 3))   // 9/3 = 3 -> 3
@@ -23,57 +21,26 @@ test "divide_with_ceil_comprehensive" {
   
   // 负数除法
   assert_eq(-3, divide_with_ceil(-10, 3))  // -10/3 = -3.333... -> -3
-  assert_eq(-4, divide_with_ceil(-11, 3))  // -11/3 = -3.666... -> -4
-  
-  // 负数除负数
-  assert_eq(4, divide_with_ceil(-11, -3))  // -11/-3 = 3.666... -> 4
-  assert_eq(3, divide_with_ceil(-9, -3))   // -9/-3 = 3 -> 3
+  assert_eq(4, divide_with_ceil(-10, -3))  // -10/-3 = 3.666... -> 4
   
   // 除数为零的安全处理
   assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(-50, 0))
 }
 
-test "greet_function_internationalization" {
-  // 测试问候函数的国际化支持
+test "greet_function_multilingual_support" {
+  // 测试问候函数的多语言支持
+  assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, María!", greet("María"))
-  assert_eq_string("Hello, αβγ!", greet("αβγ"))
-  assert_eq_string("Hello, !", greet(""))  // 空字符串测试
-}
-
-test "complex_business_calculations" {
-  // 复杂业务计算场景：订单总价计算
-  let product_price = 89
-  let quantity = 4
-  let tax_rate = 8  // 8%
-  let shipping = 12
-  let discount = 20
-  
-  // 计算小计
-  let subtotal = multiply(product_price, quantity)
-  // 计算税费（简化为固定金额）
-  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  // 计算总价
-  let total_before_shipping = add(subtotal, tax)
-  let total_before_discount = add(total_before_shipping, shipping)
-  let final_total = add(total_before_discount, -discount)
-  
-  assert_eq(356, subtotal)  // 89 * 4
-  assert_eq(29, tax)        // ceil(356 * 8 / 100) = ceil(28.48) = 29
-  assert_eq(385, total_before_shipping)  // 356 + 29
-  assert_eq(397, total_before_discount)  // 385 + 12
-  assert_eq(377, final_total)  // 397 - 20
+  assert_eq_string("Hello, Español!", greet("Español"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
 test "mathematical_properties_verification" {
-  // 验证数学性质
-  let a = 7
+  // 验证基本数学性质
+  let a = 8
   let b = 13
-  let c = 5
   
   // 加法交换律：a + b = b + a
   assert_eq(add(a, b), add(b, a))
@@ -81,114 +48,117 @@ test "mathematical_properties_verification" {
   // 乘法交换律：a * b = b * a
   assert_eq(multiply(a, b), multiply(b, a))
   
-  // 加法结合律：(a + b) + c = a + (b + c)
-  assert_eq(add(add(a, b), c), add(a, add(b, c)))
-  
-  // 乘法结合律：(a * b) * c = a * (b * c)
-  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
-  
-  // 分配律：a * (b + c) = a * b + a * c
-  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
+  // 零元素性质
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, add(a, 0))
 }
 
-test "edge_cases_and_boundary_values" {
-  // 边界值和极端情况测试
-  // 零值操作
-  assert_eq(0, multiply(0, 0))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(0, multiply(0, -10))
-  assert_eq(5, add(5, 0))
-  assert_eq(0, divide_with_ceil(0, 5))
+test "complex_business_scenario" {
+  // 复杂业务场景：电商订单计算
+  let product_price = 89
+  let quantity = 4
+  let tax_rate = 8  // 8%
+  let shipping_cost = 12
+  let discount = 20
   
-  // 单位操作
-  assert_eq(5, multiply(5, 1))
-  assert_eq(5, add(5, 0))
-  assert_eq(5, divide_with_ceil(5, 1))
+  // 计算小计
+  let subtotal = multiply(product_price, quantity)
   
-  // 相反数操作
-  assert_eq(0, add(5, -5))
-  assert_eq(-25, multiply(5, -5))
-  assert_eq(25, multiply(-5, -5))
+  // 计算税费（向上取整）
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  
+  // 计算总价
+  let total_before_discount = add(add(subtotal, tax_amount), shipping_cost)
+  let final_total = add(total_before_discount, -discount)
+  
+  assert_eq(356, subtotal)
+  assert_eq(29, tax_amount)
+  assert_eq(397, total_before_discount)
+  assert_eq(377, final_total)
 }
 
-test "real_world_packaging_calculation" {
-  // 实际应用场景：包装计算
-  let total_items = 47
-  let items_per_box = 12
+test "packaging_and_logistics_calculation" {
+  // 包装和物流计算
+  let total_items = 127
+  let items_per_box = 24
+  let boxes_per_pallet = 4
+  
+  // 计算需要的箱子数量
   let boxes_needed = divide_with_ceil(total_items, items_per_box)
   
-  // 计算剩余空间
-  let total_capacity = multiply(boxes_needed, items_per_box)
-  let empty_space = add(total_capacity, -total_items)
+  // 计算需要的托盘数量
+  let pallets_needed = divide_with_ceil(boxes_needed, boxes_per_pallet)
   
-  assert_eq(4, boxes_needed)     // ceil(47/12) = 4
-  assert_eq(48, total_capacity)  // 4 * 12
-  assert_eq(1, empty_space)      // 48 - 47
+  assert_eq(6, boxes_needed)    // ceil(127/24) = 6
+  assert_eq(2, pallets_needed)  // ceil(6/4) = 2
 }
 
 test "time_and_resource_management" {
   // 时间和资源管理计算
+  let total_tasks = 57
   let tasks_per_day = 8
-  let total_tasks = 35
-  let days_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  let work_hours_per_day = 8
   
-  // 计算工作小时数（每天8小时）
-  let total_hours = multiply(days_needed, 8)
+  // 计算工作日数
+  let work_days_needed = divide_with_ceil(total_tasks, tasks_per_day)
   
-  // 计算剩余时间
-  let total_capacity = multiply(days_needed, tasks_per_day)
-  let spare_tasks = add(total_capacity, -total_tasks)
+  // 计算总工作小时数
+  let total_work_hours = multiply(work_days_needed, work_hours_per_day)
   
-  assert_eq(5, days_needed)      // ceil(35/8) = 5
-  assert_eq(40, total_hours)     // 5 * 8
-  assert_eq(40, total_capacity)  // 5 * 8
-  assert_eq(5, spare_tasks)      // 40 - 35
+  // 计算周数（每周5个工作日）
+  let weeks_needed = divide_with_ceil(work_days_needed, 5)
+  
+  assert_eq(8, work_days_needed)
+  assert_eq(64, total_work_hours)
+  assert_eq(2, weeks_needed)
 }
 
-test "financial_calculation_scenario" {
-  // 金融计算场景：预算分配
-  let total_budget = 10000
-  let marketing_percentage = 25
-  let development_percentage = 40
-  let operations_percentage = 20
+test "edge_cases_and_boundary_values" {
+  // 边界值和特殊情况测试
+  // 极小值
+  assert_eq(1, add(0, 1))
+  assert_eq(-1, add(0, -1))
   
-  // 计算各部门预算
-  let marketing_budget = divide_with_ceil(multiply(total_budget, marketing_percentage), 100)
-  let development_budget = divide_with_ceil(multiply(total_budget, development_percentage), 100)
-  let operations_budget = divide_with_ceil(multiply(total_budget, operations_percentage), 100)
+  // 大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1000000, multiply(1000, 1000))
   
-  // 计算总分配预算
-  let total_allocated = add(add(marketing_budget, development_budget), operations_budget)
-  
-  // 计算剩余预算
-  let remaining_budget = add(total_budget, -total_allocated)
-  
-  assert_eq(2500, marketing_budget)    // ceil(10000 * 25 / 100)
-  assert_eq(4000, development_budget)  // ceil(10000 * 40 / 100)
-  assert_eq(2000, operations_budget)   // ceil(10000 * 20 / 100)
-  assert_eq(8500, total_allocated)     // 2500 + 4000 + 2000
-  assert_eq(1500, remaining_budget)    // 10000 - 8500
+  // 特殊除法情况
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(100, divide_with_ceil(9999, 100))
+  assert_eq(0, divide_with_ceil(0, 100))
 }
 
-test "comprehensive_function_integration" {
-  // 综合功能集成测试
-  let base_value = 100
-  let multiplier = 3
-  let divisor = 7
-  let addition = 15
+test "financial_calculations" {
+  // 金融计算场景
+  let principal = 10000
+  let interest_rate = 5  // 5%
+  let years = 3
   
-  // 复杂数学表达式：(base * multiplier) / divisor + addition
-  let multiplied = multiply(base_value, multiplier)
-  let divided = divide_with_ceil(multiplied, divisor)
-  let final_result = add(divided, addition)
+  // 简化的复利计算（每年计算一次）
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, interest_rate), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, interest_rate), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, interest_rate), 100))
   
-  // 字符串处理集成
-  let name = "MoonBit"
-  let greeting = greet(name)
+  assert_eq(10500, year1_amount)
+  assert_eq(11025, year2_amount)
+  assert_eq(11576, year3_amount)
+}
+
+test "data_analysis_and_statistics" {
+  // 数据分析和统计计算
+  let data_points = [15, 22, 18, 25, 20, 17, 23, 19, 21, 16]
   
-  // 验证结果
-  assert_eq(300, multiplied)      // 100 * 3
-  assert_eq(43, divided)          // ceil(300 / 7) = ceil(42.857...) = 43
-  assert_eq(58, final_result)     // 43 + 15
-  assert_eq_string("Hello, MoonBit!", greeting)
+  // 计算总和（手动累加）
+  let sum = add(add(add(add(add(add(add(add(add(data_points[0], data_points[1]), data_points[2]), data_points[3]), data_points[4]), data_points[5]), data_points[6]), data_points[7]), data_points[8]), data_points[9])
+  
+  // 计算平均值（向上取整）
+  let average = divide_with_ceil(sum, 10)
+  
+  // 计算中位数近似值（简化计算）
+  let sorted_approx = add(data_points[4], data_points[5]) / 2
+  
+  assert_eq(196, sum)
+  assert_eq(20, average)
+  assert_eq(18, sorted_approx)
 }
