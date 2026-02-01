@@ -13134,3 +13134,237 @@ test "comprehensive_integration_test" {
   let final_surplus = subtract(total_raised, final_budget_required)
   assert_eq(4430, final_surplus)
 }
+
+
+// 新增的10个增强测试用例 - 为 Azimuth 项目添加的高质量测试
+test "enhanced_performance_large_numbers" {
+  // 性能测试：大数运算
+  let large_num1 = 999999
+  let large_num2 = 888888
+  
+  // 大数加法
+  assert_eq(1888887, add(large_num1, large_num2))
+  
+  // 大数乘法（调整数值以避免溢出）
+  assert_eq(888887112, multiply(large_num1, 888))
+  
+  // 大数除法向上取整
+  assert_eq(2, divide_with_ceil(large_num1, large_num2))
+  assert_eq(1, divide_with_ceil(large_num2, large_num1))
+  
+  // 极值测试
+  assert_eq(1999998, add(999999, 999999))
+  assert_eq(998001, multiply(999, 999))
+}
+
+test "enhanced_boundary_validation" {
+  // 数据验证和边界测试
+  // 零值测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 999999))
+  assert_eq(0, divide_with_ceil(0, 999999))
+  assert_eq(0, divide_with_ceil(999999, 0))
+  
+  // 单位值测试
+  assert_eq(1000000, add(999999, 1))
+  assert_eq(999999, multiply(999999, 1))
+  assert_eq(999999, multiply(1, 999999))
+  assert_eq(1, divide_with_ceil(999999, 999999))
+  
+  // 负数边界测试
+  assert_eq(-999999, add(-500000, -499999))
+  assert_eq(999999, multiply(-999999, -1))
+  assert_eq(-1, divide_with_ceil(-999999, 999999))
+}
+
+test "enhanced_project_cost_workflow" {
+  // 复杂计算工作流测试：项目成本和资源分配
+  let team_size = 15
+  let hourly_rate = 75
+  let project_hours = 160
+  let management_overhead = 20  // 百分比
+  
+  // 计算基础成本
+  let base_cost = multiply(team_size, multiply(hourly_rate, project_hours))
+  assert_eq(180000, base_cost)  // 15 * 75 * 160 = 180000
+  
+  // 计算管理费用
+  let overhead_cost = divide_with_ceil(multiply(base_cost, management_overhead), 100)
+  assert_eq(36000, overhead_cost)  // ceil(180000 * 20 / 100) = 36000
+  
+  // 计算总成本
+  let total_cost = add(base_cost, overhead_cost)
+  assert_eq(216000, total_cost)  // 180000 + 36000 = 216000
+  
+  // 计算每个冲刺的成本（假设4个冲刺）
+  let sprints = 4
+  let cost_per_sprint = divide_with_ceil(total_cost, sprints)
+  assert_eq(54000, cost_per_sprint)  // ceil(216000 / 4) = 54000
+}
+
+test "enhanced_server_resource_optimization" {
+  // 资源分配优化测试：服务器资源分配
+  let total_requests = 10000
+  let servers_available = 3
+  let requests_per_server = divide_with_ceil(total_requests, servers_available)
+  assert_eq(3334, requests_per_server)  // ceil(10000 / 3) = 3334
+  
+  // 计算实际处理能力
+  let actual_capacity = multiply(requests_per_server, servers_available)
+  assert_eq(10002, actual_capacity)  // 3334 * 3 = 10002
+  
+  // 计算资源利用率
+  let utilization = divide_with_ceil(multiply(total_requests, 100), actual_capacity)
+  assert_eq(100, utilization)  // ceil(1000000 / 10002) = 100
+  
+  // 计算剩余处理能力
+  let remaining_capacity = subtract(actual_capacity, total_requests)
+  assert_eq(2, remaining_capacity)
+}
+
+test "enhanced_string_special_characters" {
+  // 高级字符串处理测试：特殊字符和格式
+  assert_eq_string("Hello, JSON@API!", greet("JSON@API"))
+  assert_eq_string("Hello, URL/endpoint!", greet("URL/endpoint"))
+  assert_eq_string("Hello, query?param=value!", greet("query?param=value"))
+  assert_eq_string("Hello, email@domain.com!", greet("email@domain.com"))
+  assert_eq_string("Hello, phone+1234567890!", greet("phone+1234567890"))
+  assert_eq_string("Hello, version#1.2.3!", greet("version#1.2.3"))
+  
+  // 测试包含空格的复杂字符串
+  assert_eq_string("Hello, multi word string!", greet("multi word string"))
+  assert_eq_string("Hello,  leading and trailing !", greet(" leading and trailing "))
+}
+
+test "enhanced_mathematical_algorithms" {
+  // 数学算法实现测试
+  // 计算阶乘的一部分（简化版本）
+  let factorial_5 = multiply(multiply(5, 4), multiply(3, multiply(2, 1)))
+  assert_eq(120, factorial_5)
+  
+  // 计算幂运算（5^3）
+  let power_5_3 = multiply(multiply(5, 5), 5)
+  assert_eq(125, power_5_3)
+  
+  // 计算等差数列和（1+2+3+...+10）
+  let sum_1_to_10 = multiply(divide_with_ceil(add(1, 10), 2), 10)
+  assert_eq(55, sum_1_to_10)
+  
+  // 计算等比数列和（2+4+8+16）
+  let geometric_sum = add(add(2, 4), add(8, 16))
+  assert_eq(30, geometric_sum)
+}
+
+test "enhanced_time_management_calculations" {
+  // 基于时间的计算测试：项目时间管理和排期
+  let total_tasks = 125
+  let working_hours_per_day = 8
+  let tasks_per_hour = 2
+  let team_members = 4
+  
+  // 计算每日处理能力
+  let daily_capacity = multiply(team_members, multiply(working_hours_per_day, tasks_per_hour))
+  assert_eq(64, daily_capacity)  // 4 * 8 * 2 = 64
+  
+  // 计算需要的天数
+  let days_needed = divide_with_ceil(total_tasks, daily_capacity)
+  assert_eq(2, days_needed)  // ceil(125 / 64) = 2
+  
+  // 计算总工作小时数
+  let total_hours = multiply(days_needed, daily_capacity)
+  assert_eq(128, total_hours)  // 2 * 64 = 128
+  
+  // 计算剩余处理能力
+  let remaining_capacity = subtract(total_hours, total_tasks)
+  assert_eq(3, remaining_capacity)
+}
+
+test "enhanced_inventory_management" {
+  // 库存管理系统测试：多产品库存管理
+  // 产品A：234个，每箱15个
+  let product_a_qty = 234
+  let product_a_box = 15
+  let boxes_a = divide_with_ceil(product_a_qty, product_a_box)
+  assert_eq(16, boxes_a)  // ceil(234 / 15) = 16
+  
+  // 产品B：567个，每箱20个
+  let product_b_qty = 567
+  let product_b_box = 20
+  let boxes_b = divide_with_ceil(product_b_qty, product_b_box)
+  assert_eq(29, boxes_b)  // ceil(567 / 20) = 29
+  
+  // 产品C：89个，每箱10个
+  let product_c_qty = 89
+  let product_c_box = 10
+  let boxes_c = divide_with_ceil(product_c_qty, product_c_box)
+  assert_eq(9, boxes_c)  // ceil(89 / 10) = 9
+  
+  // 计算总箱子数
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  assert_eq(54, total_boxes)  // 16 + 29 + 9 = 54
+  
+  // 计算总存储容量
+  let total_capacity = add(
+    multiply(boxes_a, product_a_box),
+    add(multiply(boxes_b, product_b_box), multiply(boxes_c, product_c_box))
+  )
+  assert_eq(910, total_capacity)  // 16*15 + 29*20 + 9*10 = 240 + 580 + 90 = 910
+}
+
+test "enhanced_financial_calculations" {
+  // 金融计算测试：贷款和投资计算
+  let principal = 50000
+  let annual_rate = 6  // 百分比
+  let years = 5
+  
+  // 计算简单利息
+  let total_interest = divide_with_ceil(multiply(principal, multiply(annual_rate, years)), 100)
+  assert_eq(15000, total_interest)  // ceil(50000 * 6 * 5 / 100) = 15000
+  
+  // 计算总还款额
+  let total_payment = add(principal, total_interest)
+  assert_eq(65000, total_payment)  // 50000 + 15000 = 65000
+  
+  // 计算月还款额（假设60个月）
+  let months = multiply(years, 12)
+  let monthly_payment = divide_with_ceil(total_payment, months)
+  assert_eq(1084, monthly_payment)  // ceil(65000 / 60) = 1084
+  
+  // 计算实际总还款额
+  let actual_total = multiply(monthly_payment, months)
+  assert_eq(65040, actual_total)  // 1084 * 60 = 65040
+  
+  // 计算额外支付
+  let extra_payment = subtract(actual_total, total_payment)
+  assert_eq(40, extra_payment)
+}
+
+test "enhanced_error_handling_edge_cases" {
+  // 错误处理和边缘情况测试
+  // 除零错误的全面测试
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(1, 0))
+  assert_eq(0, divide_with_ceil(-1, 0))
+  assert_eq(0, divide_with_ceil(999999, 0))
+  assert_eq(0, divide_with_ceil(-999999, 0))
+  
+  // 极值运算测试
+  let max_safe = 1000000
+  let min_safe = -1000000
+  
+  assert_eq(0, multiply(max_safe, 0))
+  assert_eq(0, multiply(min_safe, 0))
+  assert_eq(max_safe, add(max_safe, 0))
+  assert_eq(min_safe, add(min_safe, 0))
+  
+  // 边界除法测试
+  assert_eq(1, divide_with_ceil(1, max_safe))
+  assert_eq(-1, divide_with_ceil(-1, max_safe))
+  assert_eq(max_safe, divide_with_ceil(max_safe, 1))
+  assert_eq(-max_safe, divide_with_ceil(-max_safe, 1))
+  
+  // 字符串边界测试
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, x!", greet("x"))
+  assert_eq_string("Hello, !", greet(" "))
+}
