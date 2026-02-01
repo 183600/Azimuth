@@ -13591,3 +13591,80 @@ test "azimuth_error_recovery_robustness" {
   assert_eq(999999, large_product)   // 999999 * 1 = 999999
   assert_eq(10001, large_division)   // ceil(1000099/100) = 10001
 }
+
+// 新增的标准 MoonBit 测试用例 - 8个高质量测试用例
+test "enhanced_mathematical_operations" {
+  // 增强数学运算测试
+  assert_eq(15, add(7, 8))
+  assert_eq(56, multiply(7, 8))
+  assert_eq(3, divide_with_ceil(22, 8))
+  assert_eq(1, divide_with_ceil(8, 15))
+}
+
+test "complex_business_calculations" {
+  // 复杂业务计算测试
+  let product_cost = 125
+  let tax_rate = 8
+  let total_cost = add(product_cost, divide_with_ceil(multiply(product_cost, tax_rate), 100))
+  assert_eq(135, total_cost)  // 125 + ceil(125*8/100) = 125 + 10 = 135
+}
+
+test "resource_planning_optimization" {
+  // 资源规划优化测试
+  let project_days = 45
+  let team_members = 6
+  let daily_hours = 8
+  let total_hours = multiply(project_days, multiply(team_members, daily_hours))
+  assert_eq(2160, total_hours)  // 45 * 6 * 8 = 2160
+}
+
+test "inventory_management_system" {
+  // 库存管理系统测试
+  let current_stock = 234
+  let safety_stock = 50
+  let reorder_quantity = 500
+  let daily_consumption = 15
+  let days_until_reorder = divide_with_ceil(subtract(current_stock, safety_stock), daily_consumption)
+  assert_eq(13, days_until_reorder)  // ceil((234-50)/15) = ceil(184/15) = 13
+}
+
+test "financial_calculations_comprehensive" {
+  // 综合金融计算测试
+  let principal = 10000
+  let annual_rate = 5
+  let years = 3
+  let simple_interest = divide_with_ceil(multiply(principal, multiply(annual_rate, years)), 100)
+  let total_amount = add(principal, simple_interest)
+  assert_eq(1500, simple_interest)  // ceil(10000*5*3/100) = 1500
+  assert_eq(11500, total_amount)   // 10000 + 1500 = 11500
+}
+
+test "data_processing_efficiency" {
+  // 数据处理效率测试
+  let data_records = 9876
+  let batch_size = 100
+  let processing_time_per_batch = 5
+  let batches_needed = divide_with_ceil(data_records, batch_size)
+  let total_processing_time = multiply(batches_needed, processing_time_per_batch)
+  assert_eq(99, batches_needed)        // ceil(9876/100) = 99
+  assert_eq(495, total_processing_time) // 99 * 5 = 495
+}
+
+test "unicode_string_processing" {
+  // Unicode字符串处理测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+}
+
+test "advanced_algorithmic_scenarios" {
+  // 高级算法场景测试
+  let array_size = 100
+  let chunk_size = 7
+  let full_chunks = divide_with_ceil(array_size, chunk_size)
+  let last_chunk_size = subtract(multiply(full_chunks, chunk_size), array_size)
+  assert_eq(15, full_chunks)      // ceil(100/7) = 15
+  assert_eq(5, last_chunk_size)   // 15*7 - 100 = 5
+}
