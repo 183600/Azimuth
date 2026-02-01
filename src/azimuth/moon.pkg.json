@@ -256,6 +256,7 @@
     "user_added_comprehensive_tests.mbt",
     "user_new_comprehensive_tests.mbt",
     "standard_moonbit_tests.mbt",
+    "my_standard_moonbit_tests.mbt",
     "standard_enhanced_tests.mbt",
     "azimuth_enhanced_tests.mbt",
     "standard_moonbit_tests.mbt",
