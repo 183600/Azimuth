@@ -32,6 +32,7 @@
         "simple_test_final.mbt",
         "azimuth_simple_test.mbt",
         "standard_azimuth_unit_tests.mbt",
+        "standard_azimuth_tests.mbt",
         "simple_azimuth_tests.mbt",
         "verify_simple_test.mbt",
         "standard_moonbit_test_cases_new.mbt",
