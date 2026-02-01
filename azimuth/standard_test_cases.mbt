@@ -74,3 +74,50 @@ test "packaging_calculation_business" {
   let boxes_needed = divide_with_ceil(total_items, items_per_box)
   assert_eq(5, boxes_needed)  // ceil(25/6) = 5
 }
+
+// 新增的测试用例 - 为 Azimuth 项目添加
+test "enhanced_addition_cases" {
+  // 增强加法测试用例
+  assert_eq(8, add(3, 5))
+  assert_eq(1000, add(500, 500))
+  assert_eq(-100, add(-50, -50))
+  assert_eq(0, add(-100, 100))
+}
+
+test "enhanced_multiplication_cases" {
+  // 增强乘法测试用例
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(-1000, multiply(-100, 10))
+  assert_eq(1000, multiply(-100, -10))
+  assert_eq(0, multiply(12345, 0))
+}
+
+test "international_greet_support" {
+  // 国际化问候支持测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+}
+
+test "complex_business_workflow" {
+  // 复杂业务工作流测试
+  // 场景：项目资源管理
+  let team_size = 8
+  let tasks_per_member = 6
+  let total_tasks = multiply(team_size, tasks_per_member)
+  
+  let sprint_capacity = 20
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  
+  assert_eq(48, total_tasks)  // 8 * 6 = 48
+  assert_eq(3, sprints_needed)  // ceil(48/20) = 3
+  
+  // 验证总处理能力
+  let total_capacity = multiply(sprints_needed, sprint_capacity)
+  assert_eq(60, total_capacity)  // 3 * 20 = 60
+  
+  // 验证剩余容量
+  let remaining_capacity = subtract(total_capacity, total_tasks)
+  assert_eq(12, remaining_capacity)  // 60 - 48 = 12
+}
