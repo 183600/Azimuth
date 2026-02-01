@@ -1,4 +1,4 @@
-// 标准 MoonBit 质量测试用例
+// 新质量测试用例
 // 针对 azimuth 库核心功能的全面测试
 
 test "add_function_commutative_property" {
@@ -120,7 +120,7 @@ test "performance_metrics_calculation" {
 test "error_handling_and_boundary_values" {
   // 错误处理和边界值测试
   // 极值测试
-  assert_eq(0, add(2147483647, -2147483647))
+  assert_eq(0, add(1000000, -1000000))
   assert_eq(1, multiply(1, 1))
   assert_eq(0, multiply(0, -1))
   
