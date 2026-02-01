@@ -1,52 +1,52 @@
-// 用户标准测试用例 - 10个标准测试
+// Azimuth 新增测试用例 - 10个标准测试
 // 使用标准 MoonBit 测试语法
 
-test "user_add_function_test" {
+test "add_function_test" {
   // 基本加法功能测试
   @azimuth.assert_eq(5, @azimuth.add(2, 3))
 }
 
-test "user_multiply_function_test" {
+test "multiply_function_test" {
   // 基本乘法功能测试
   @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
 }
 
-test "user_subtract_function_test" {
+test "subtract_function_test" {
   // 基本减法功能测试
   @azimuth.assert_eq(1, @azimuth.subtract(3, 2))
 }
 
-test "user_greet_function_test" {
+test "greet_function_test" {
   // 字符串处理测试
   @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
 }
 
-test "user_add_negative_test" {
+test "add_negative_test" {
   // 负数加法测试
   @azimuth.assert_eq(-1, @azimuth.add(-2, 1))
 }
 
-test "user_multiply_negative_test" {
+test "multiply_negative_test" {
   // 负数乘法测试
   @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
 }
 
-test "user_add_zero_test" {
+test "add_zero_test" {
   // 零加法测试
   @azimuth.assert_eq(3, @azimuth.add(0, 3))
 }
 
-test "user_multiply_zero_test" {
+test "multiply_zero_test" {
   // 零乘法测试
   @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
 }
 
-test "user_subtract_negative_test" {
+test "subtract_negative_test" {
   // 负数减法测试
   @azimuth.assert_eq(5, @azimuth.subtract(3, -2))
 }
 
-test "user_divide_with_ceil_test" {
+test "divide_with_ceil_test" {
   // 向上取整除法测试
   @azimuth.assert_eq(2, @azimuth.divide_with_ceil(5, 3))
 }

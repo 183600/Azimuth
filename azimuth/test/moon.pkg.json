@@ -249,6 +249,8 @@
         "my_standard_tests.mbt",
         "simple_my_test.mbt",
         "working_test.mbt",
-    "azimuth_standard_test.mbt"
+    "azimuth_standard_test.mbt",
+      "simple_standard_test.mbt",
+      "azimuth_new_tests.mbt"
       ]
     }
