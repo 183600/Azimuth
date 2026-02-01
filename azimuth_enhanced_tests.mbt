@@ -84,11 +84,10 @@ test "enhanced_batch_processing" {
   let batch_size = 25
   
   let full_batches = divide_with_ceil(total_items, batch_size)
-  let remainder = total_items % batch_size
-  let last_batch_size = if remainder == 0 {
+  let last_batch_size = if total_items % batch_size == 0 {
     batch_size
   } else {
-    remainder
+    total_items % batch_size
   }
   
   assert_eq(7, full_batches)
@@ -99,6 +98,7 @@ test "enhanced_geometric_progression" {
   // 测试等比数列：2, 6, 18, 54, 162
   let first_term = 2
   let ratio = 3
+  let num_terms = 5
   
   // 手动计算等比数列前5项的和
   let term1 = first_term
