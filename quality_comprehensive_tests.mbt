@@ -15,11 +15,11 @@
 ///|
 test "int arithmetic operations" {
   // Test basic arithmetic
-  assert_eq(10 + 5, 15)
-  assert_eq(10 - 5, 5)
-  assert_eq(10 * 5, 50)
-  assert_eq(10 / 3, 3)
-  assert_eq(10 % 3, 1)
+  inspect(10 + 5, content="15")
+  inspect(10 - 5, content="5")
+  inspect(10 * 5, content="50")
+  inspect(10 / 3, content="3")
+  inspect(10 % 3, content="1")
 }
 
 ///|
