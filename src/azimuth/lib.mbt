@@ -11036,3 +11036,90 @@ test "real_world_event_planning" {
   let chairs_per_table_revised = divide_with_ceil(max_total_chairs, tables_needed)
   assert_eq(8, chairs_per_table_revised)  // ceil(240/32) = 8（实际需要更多预算）
 }
+
+// 新增的简洁 MoonBit 测试用例
+// 针对 azimuth 库核心功能的高质量测试
+
+test "add_function_edge_cases_new" {
+  // 测试加法函数的边界情况
+  assert_eq(2147483647, add(2147483646, 1))  // 接近最大值
+  assert_eq(-2147483648, add(-2147483647, -1))  // 接近最小值
+  assert_eq(0, add(2147483647, -2147483647))  // 最大值与相反数
+}
+
+test "multiply_function_precision_new" {
+  // 测试乘法函数的精度
+  assert_eq(1, multiply(1, 1))
+  assert_eq(-1, multiply(-1, 1))
+  assert_eq(1, multiply(-1, -1))
+  assert_eq(1000000, multiply(1000, 1000))
+}
+
+test "divide_with_ceil_comprehensive_new" {
+  // 全面测试向上取整除法
+  assert_eq(1, divide_with_ceil(1, 1))  // 完全相等
+  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -10/3 = -3.333... -> -3
+  assert_eq(4, divide_with_ceil(-10, -3))  // -10/-3 = 3.666... -> 4
+  assert_eq(0, divide_with_ceil(5, 0))  // 除数为零
+}
+
+test "greet_function_international_new" {
+  // 测试问候函数的国际化支持
+  assert_eq_string("Hello, Español!", greet("Español"))
+  assert_eq_string("Hello, Русский!", greet("Русский"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+  assert_eq_string("Hello, 🌍!", greet("🌍"))
+}
+
+test "mathematical_identities_new" {
+  // 测试数学恒等式
+  let x = 42
+  assert_eq(x, add(x, 0))  // 加法单位元
+  assert_eq(x, multiply(x, 1))  // 乘法单位元
+  assert_eq(0, multiply(x, 0))  // 零乘积
+}
+
+test "complex_business_workflow_new" {
+  // 复杂业务工作流测试
+  let base_price = 100
+  let quantity = 5
+  let discount = 20
+  let tax = 15
+  
+  let subtotal = multiply(base_price, quantity)
+  let after_discount = add(subtotal, -discount)
+  let final_total = add(after_discount, tax)
+  
+  assert_eq(500, subtotal)
+  assert_eq(480, after_discount)
+  assert_eq(495, final_total)
+}
+
+test "resource_allocation_optimization_new" {
+  // 资源分配优化测试
+  let total_resources = 100
+  let team_size = 8
+  let projects = 3
+  
+  let resources_per_team = divide_with_ceil(total_resources, team_size)
+  let resources_per_project = divide_with_ceil(total_resources, projects)
+  
+  assert_eq(13, resources_per_team)  // ceil(100/8) = 13
+  assert_eq(34, resources_per_project)  // ceil(100/3) = 34
+}
+
+test "time_and_scheduling_calculations_new" {
+  // 时间和调度计算测试
+  let total_tasks = 45
+  let tasks_per_day = 8
+  let work_days_per_week = 5
+  
+  let days_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  let weeks_needed = divide_with_ceil(days_needed, work_days_per_week)
+  let total_hours = multiply(days_needed, 8)
+  
+  assert_eq(6, days_needed)  // ceil(45/8) = 6
+  assert_eq(2, weeks_needed)  // ceil(6/5) = 2
+  assert_eq(48, total_hours)  // 6 * 8 = 48
+}
