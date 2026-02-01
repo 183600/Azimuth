@@ -1,181 +1,152 @@
-// Azimuth 项目新增高质量测试用例
-// 使用标准 MoonBit 测试语法，包含10个全面的测试用例
+// 新增的高质量 MoonBit 测试用例
+// 覆盖边界条件、数学性质和实际应用场景
 
-test "basic_arithmetic_validation" {
-  // 基本算术验证测试
-  add(15, 25) = 40
-  add(-10, 20) = 10
-  add(-15, -25) = -40
-  
-  multiply(6, 7) = 42
-  multiply(-6, 7) = -42
-  multiply(-6, -7) = 42
-  
-  subtract(20, 8) = 12
-  subtract(8, 20) = -12
-}
-
-test "divide_with_ceil_comprehensive" {
-  // 向上取整除法综合测试
-  divide_with_ceil(10, 3) = 4
-  divide_with_ceil(15, 5) = 3
-  divide_with_ceil(1, 100) = 1
-  divide_with_ceil(0, 7) = 0
-  divide_with_ceil(25, 0) = 0
-  
-  // 负数测试
-  divide_with_ceil(-10, 3) = -3
-  divide_with_ceil(10, -3) = -4
-  divide_with_ceil(-10, -3) = 4
-}
-
-test "greet_function_multilingual" {
-  // 多语言问候函数测试
-  greet("World") = "Hello, World!"
-  greet("世界") = "Hello, 世界!"
-  greet("🌍") = "Hello, 🌍!"
-  greet("café") = "Hello, café!"
-  greet("") = "Hello, !"
-  greet("123") = "Hello, 123!"
-}
-
-test "mathematical_commutative_laws" {
-  // 数学交换律验证
+test "mathematical_commutative_law" {
+  // 验证加法和乘法交换律
   let a = 17
-  let b = 23
+  let b = 29
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(multiply(a, b), multiply(b, a))
   
-  // 加法交换律
-  add(a, b) = add(b, a)
-  
-  // 乘法交换律
-  multiply(a, b) = multiply(b, a)
-  
-  // 验证具体数值
-  add(17, 23) = 40
-  add(23, 17) = 40
-  multiply(17, 23) = 391
-  multiply(23, 17) = 391
+  // 使用负数验证
+  let c = -15
+  let d = 8
+  assert_eq(add(c, d), add(d, c))
+  assert_eq(multiply(c, d), multiply(d, c))
 }
 
-test "logistics_packaging_calculation" {
-  // 物流包装计算测试
-  let total_products = 87
-  let box_capacity = 12
-  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+test "divide_with_ceil_precision_edge_cases" {
+  // 测试向上取整除法的精度边界情况
+  assert_eq(1, divide_with_ceil(1, 2))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(1001, divide_with_ceil(2001, 2))
+  assert_eq(666667, divide_with_ceil(2000000, 3))
+  assert_eq(333334, divide_with_ceil(1000000, 3))
+}
+
+test "string_greeting_multilingual_support" {
+  // 测试多语言问候支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
+}
+
+test "complex_business_inventory_calculation" {
+  // 复杂业务库存计算场景
+  let product_a = 45
+  let product_b = 67
+  let product_c = 23
+  let box_capacity = 20
   
-  // 验证需要的箱子数量
-  boxes_needed = 8
+  // 计算每种产品需要的箱子数量
+  let boxes_a = divide_with_ceil(product_a, box_capacity)
+  let boxes_b = divide_with_ceil(product_b, box_capacity)
+  let boxes_c = divide_with_ceil(product_c, box_capacity)
   
-  // 验证总容量
-  let total_capacity = multiply(boxes_needed, box_capacity)
-  total_capacity = 96
+  // 计算总箱子数
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  assert_eq(9, total_boxes)  // ceil(45/20) + ceil(67/20) + ceil(23/20) = 3 + 4 + 2 = 9
   
-  // 验证剩余空间
+  // 计算总存储容量
+  let total_capacity = multiply(total_boxes, box_capacity)
+  assert_eq(180, total_capacity)
+  
+  // 计算剩余空间
+  let total_products = add(add(product_a, product_b), product_c)
   let remaining_space = subtract(total_capacity, total_products)
-  remaining_space = 9
+  assert_eq(45, remaining_space)
 }
 
-test "project_resource_planning" {
-  // 项目资源规划测试
-  let team_members = 9
-  let working_days = 22
-  let tasks_per_member_per_day = 3
+test "mathematical_distributive_property" {
+  // 验证数学分配律
+  let a = 7
+  let b = 12
+  let c = 5
   
-  // 计算总任务数
-  let total_tasks = multiply(team_members, multiply(working_days, tasks_per_member_per_day))
-  total_tasks = 594
+  // a * (b + c) = a * b + a * c
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)
   
-  // 计算每个冲刺的任务数
-  let sprint_duration = 2
-  let tasks_per_sprint = multiply(team_members, multiply(sprint_duration, tasks_per_member_per_day))
-  tasks_per_sprint = 54
-  
-  // 计算需要的冲刺数
-  let sprints_needed = divide_with_ceil(total_tasks, tasks_per_sprint)
-  sprints_needed = 11
+  // 使用负数验证
+  let x = -8
+  let y = 15
+  let z = -3
+  let left_neg = multiply(x, add(y, z))
+  let right_neg = add(multiply(x, y), multiply(x, z))
+  assert_eq(left_neg, right_neg)
 }
 
-test "financial_budget_allocation" {
-  // 财务预算分配测试
-  let total_budget = 50000
-  let departments = 6
+test "error_handling_division_by_zero_comprehensive" {
+  // 全面的除零错误处理测试
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  assert_eq(0, divide_with_ceil(-2147483648, 0))
+}
+
+test "arithmetic_sequence_operations" {
+  // 等差数列运算测试
+  let first_term = 3
+  let common_diff = 4
+  let n_terms = 6
+  
+  // 计算第n项：a_n = a_1 + (n-1)*d
+  let nth_term = add(first_term, multiply(subtract(n_terms, 1), common_diff))
+  assert_eq(23, nth_term)  // 3 + (6-1)*4 = 23
+  
+  // 计算前n项和：S_n = n/2 * (a_1 + a_n)
+  let sum_n = multiply(divide_with_ceil(n_terms, 2), add(first_term, nth_term))
+  assert_eq(78, sum_n)  // 6/2 * (3 + 23) = 78
+}
+
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_budget = 15000
+  let departments = 4
+  let min_budget_per_dept = 3000
   
   // 计算每个部门的基础预算
-  let base_allocation = divide_with_ceil(total_budget, departments)
-  base_allocation = 8334
+  let base_budget = divide_with_ceil(total_budget, departments)
+  assert_eq(3750, base_budget)  // ceil(15000/4) = 3750
   
-  // 计算总分配金额
-  let total_allocated = multiply(base_allocation, departments)
-  total_allocated = 50004
+  // 验证所有部门都能满足最低预算要求
+  assert_true(base_budget >= min_budget_per_dept)
   
-  // 计算预算溢出
-  let budget_overflow = subtract(total_allocated, total_budget)
-  budget_overflow = 4
+  // 计算总分配预算
+  let total_allocated = multiply(base_budget, departments)
+  assert_eq(15000, total_allocated)
+  
+  // 计算剩余预算
+  let remaining_budget = subtract(total_budget, multiply(min_budget_per_dept, departments))
+  assert_eq(3000, remaining_budget)
 }
 
-test "error_handling_edge_cases" {
-  // 错误处理边缘情况测试
-  // 除零错误处理
-  divide_with_ceil(0, 0) = 0
-  divide_with_ceil(100, 0) = 0
-  divide_with_ceil(-100, 0) = 0
-  
-  // 极值测试
-  divide_with_ceil(1, 1) = 1
-  divide_with_ceil(-1, -1) = 1
-  divide_with_ceil(0, 1) = 0
-  divide_with_ceil(0, -1) = 0
-  
-  // 大数测试
-  multiply(1000, 1000) = 1000000
-  add(500000, 500000) = 1000000
+test "string_greeting_edge_cases" {
+  // 字符串问候边界情况测试
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, a!", greet("a"))
+  assert_eq_string("Hello, A!", greet("A"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, @#$%!", greet("@#$%"))
+  assert_eq_string("Hello, mixedCASE123!", greet("mixedCASE123"))
 }
 
-test "complex_workflow_simulation" {
-  // 复杂工作流模拟测试
-  // 场景：生产流程优化
-  let raw_materials = 250
-  let processing_rate = 15
-  let quality_check_rate = 12
-  let packaging_rate = 20
+test "complex_calculation_pipeline" {
+  // 复杂计算流水线测试
+  let initial_value = 15
   
-  // 计算加工批次
-  let processing_batches = divide_with_ceil(raw_materials, processing_rate)
-  processing_batches = 17
+  // 计算步骤：((value * 2 + 10) / 5) * 3 - 8
+  let step1 = multiply(initial_value, 2)
+  let step2 = add(step1, 10)
+  let step3 = divide_with_ceil(step2, 5)
+  let step4 = multiply(step3, 3)
+  let final_result = subtract(step4, 8)
   
-  // 计算质检批次
-  let quality_check_batches = divide_with_ceil(raw_materials, quality_check_rate)
-  quality_check_batches = 21
-  
-  // 计算包装批次
-  let packaging_batches = divide_with_ceil(raw_materials, packaging_rate)
-  packaging_batches = 13
-  
-  // 计算总处理时间（假设每批次需要1个时间单位）
-  let total_time = add(processing_batches, add(quality_check_batches, packaging_batches))
-  total_time = 51
-}
-
-test "data_analysis_statistics" {
-  // 数据分析统计测试
-  // 模拟简单的统计分析
-  let data_points = 150
-  let sample_size = 25
-  let confidence_interval = 5
-  
-  // 计算样本数量
-  let samples_needed = divide_with_ceil(data_points, sample_size)
-  samples_needed = 6
-  
-  // 计算总样本容量
-  let total_sample_capacity = multiply(samples_needed, sample_size)
-  total_sample_capacity = 150
-  
-  // 计算误差范围
-  let margin_error = multiply(confidence_interval, samples_needed)
-  margin_error = 30
-  
-  // 计算置信度评分
-  let confidence_score = divide_with_ceil(multiply(100, subtract(total_sample_capacity, margin_error)), total_sample_capacity)
-  confidence_score = 80
+  // 手动计算验证：((15*2 + 10) / 5) * 3 - 8 = (40/5) * 3 - 8 = 8 * 3 - 8 = 24 - 8 = 16
+  assert_eq(16, final_result)
 }
