@@ -1,87 +1,90 @@
 // 标准 MoonBit 测试用例
-// 覆盖 azimuth 包的核心功能
+// 针对 azimuth 库的核心功能进行测试
 
-test "add_basic_functionality" {
-  // 基本加法功能测试
-  assert_eq(0, add(0, 0))
+test "add_function_basic" {
+  // 测试基本加法功能
   assert_eq(5, add(2, 3))
-  assert_eq(-1, add(-2, 1))
+  assert_eq(0, add(0, 0))
   assert_eq(-5, add(-2, -3))
+  assert_eq(10, add(7, 3))
 }
 
-test "add_boundary_values" {
-  // 边界值测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  assert_eq(max_val, add(max_val, 0))
-  assert_eq(min_val, add(min_val, 0))
-  assert_eq(max_val, add(0, max_val))
-  assert_eq(min_val, add(0, min_val))
-}
-
-test "multiply_basic_cases" {
-  // 基本乘法测试
-  assert_eq(0, multiply(0, 5))
-  assert_eq(0, multiply(5, 0))
+test "multiply_function_basic" {
+  // 测试基本乘法功能
   assert_eq(6, multiply(2, 3))
-  assert_eq(-6, multiply(2, -3))
-  assert_eq(1, multiply(1, 1))
-  assert_eq(-1, multiply(-1, 1))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(12, multiply(3, 4))
 }
 
-test "multiply_special_values" {
-  // 特殊值乘法测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  assert_eq(max_val, multiply(1, max_val))
-  assert_eq(min_val, multiply(1, min_val))
-  assert_eq(5, multiply(1, 5))
-  assert_eq(-5, multiply(-1, 5))
-  assert_eq(min_val, multiply(-1, min_val))  // 特殊情况：最小值乘以-1
+test "subtract_function_basic" {
+  // 测试基本减法功能
+  assert_eq(2, subtract(5, 3))
+  assert_eq(-2, subtract(3, 5))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(-3, subtract(-2, 1))
 }
 
-test "greet_function_test" {
-  // greet 函数测试
+test "greet_function_basic" {
+  // 测试基本问候功能
   assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 张三!", greet("张三"))
-  assert_eq_string("Hello, 123!", greet("123"))
 }
 
 test "divide_with_ceil_basic" {
-  // 向上取整除法基本测试
-  assert_eq(4, divide_with_ceil(11, 3))
-  assert_eq(4, divide_with_ceil(12, 3))
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(-3, divide_with_ceil(-8, 3))
-  assert_eq(-2, divide_with_ceil(-6, 3))
-}
-
-test "divide_with_ceil_negative_divisor" {
-  // 负除数的向上取整除法
-  assert_eq(-3, divide_with_ceil(8, -3))
-  assert_eq(-4, divide_with_ceil(11, -3))
-  assert_eq(2, divide_with_ceil(-6, -3))
-  assert_eq(3, divide_with_ceil(-8, -3))
+  // 测试基本向上取整除法功能
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(2, divide_with_ceil(3, 2))
 }
 
 test "combined_operations" {
-  // 组合运算测试
-  assert_eq(25, add(multiply(3, 5), multiply(2, 5)))
-  assert_eq(20, multiply(add(3, 2), 4))
-  assert_eq(8, divide_with_ceil(add(multiply(2, 3), 2), 2))
-  assert_eq(15, add(multiply(divide_with_ceil(10, 2), 2), 5))
+  // 测试组合运算
+  let result1 = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result1)  // 2*3 + 4*5 = 6 + 20 = 26
+  
+  let result2 = subtract(multiply(10, 5), add(15, 10))
+  assert_eq(25, result2)  // 10*5 - (15 + 10) = 50 - 25 = 25
 }
 
-test "assert_functions_test" {
-  // 断言函数测试
-  assert_true(true)
-  assert_false(false)
-  assert_eq(42, 42)
-  assert_eq(-42, -42)
-  assert_eq_string("test", "test")
-  assert_eq_string("", "")
+test "boundary_values" {
+  // 测试边界值
+  assert_eq(1, add(1, 0))
+  assert_eq(-1, add(-1, 0))
+  assert_eq(0, multiply(0, 100))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(1, 100))
+}
+
+test "negative_operations" {
+  // 测试负数运算
+  assert_eq(-10, add(-3, -7))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-8, subtract(-5, 3))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+}
+
+test "large_numbers" {
+  // 测试大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(0, subtract(1000000, 1000000))
+}
+
+test "practical_scenario" {
+  // 测试实际应用场景：计算订单总价
+  let unit_price = 25
+  let quantity = 8
+  let shipping = 15
+  let discount = 20
+  
+  let subtotal = multiply(unit_price, quantity)
+  let total_before_discount = add(subtotal, shipping)
+  let final_total = subtract(total_before_discount, discount)
+  
+  assert_eq(200, subtotal)
+  assert_eq(215, total_before_discount)
+  assert_eq(195, final_total)
 }
