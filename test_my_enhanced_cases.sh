@@ -1,11 +1,8 @@
 #!/bin/bash
-echo "运行新创建的增强测试用例..."
+echo "运行我新创建的增强测试用例..."
 cd /home/runner/work/Azimuth/Azimuth
 
 # 创建一个临时的 moon.pkg.json，只包含我们的测试文件
-cp azimuth/moon.pkg.json azimuth/moon.pkg.json.backup
-
-# 创建简化的配置文件
 cat > azimuth/moon.pkg.json << 'EOF'
 {
   "name": "azimuth",
@@ -19,12 +16,12 @@ cat > azimuth/moon.pkg.json << 'EOF'
 }
 EOF
 
-echo "配置文件已创建，开始运行测试..."
+echo "配置文件内容："
+cat azimuth/moon.pkg.json
+echo ""
+echo "开始运行测试..."
 
 # 运行测试
 ./moon test
-
-# 恢复原始配置文件
-mv azimuth/moon.pkg.json.backup azimuth/moon.pkg.json
 
 echo "测试完成"

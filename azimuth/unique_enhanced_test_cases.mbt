@@ -1,8 +1,8 @@
-// Azimuth 增强测试用例 - 10个高质量标准 MoonBit 测试
-// 覆盖各种边界条件、业务场景和综合测试
+// 独特的增强测试用例 - 10个高质量标准 MoonBit 测试
+// 避免与现有测试名称冲突，提供全面的测试覆盖
 
-test "boundary_value_analysis" {
-  // 边界值分析测试
+test "enhanced_boundary_analysis" {
+  // 增强边界值分析测试
   // 测试极值和边界情况
   assert_eq(0, add(0, 0))
   assert_eq(1, add(1, 0))
@@ -14,8 +14,8 @@ test "boundary_value_analysis" {
   assert_eq(0, divide_with_ceil(999, 0))
 }
 
-test "financial_calculation_scenario" {
-  // 金融计算场景测试
+test "loan_amortization_test" {
+  // 贷款摊销测试
   // 场景：贷款分期计算
   let loan_amount = 50000
   let monthly_payment = 2200
@@ -31,8 +31,8 @@ test "financial_calculation_scenario" {
   assert_eq(600, final_payment)
 }
 
-test "inventory_management_optimization" {
-  // 库存管理优化测试
+test "warehouse_packaging_optimization" {
+  // 仓库包装优化测试
   // 多产品库存装箱优化
   let product_a = 45  // 每箱装12个
   let product_b = 78  // 每箱装15个
@@ -53,8 +53,8 @@ test "inventory_management_optimization" {
   assert_eq(162, total_capacity)
 }
 
-test "mathematical_properties_verification" {
-  // 数学性质验证测试
+test "algebraic_laws_verification" {
+  // 代数定律验证测试
   let x = 17
   let y = 23
   let z = 5
@@ -72,8 +72,8 @@ test "mathematical_properties_verification" {
   assert_eq(subtract(x, y), add(x, multiply(y, -1)))
 }
 
-test "error_handling_and_robustness" {
-  // 错误处理和健壮性测试
+test "robust_error_handling" {
+  // 健壮错误处理测试
   // 除零错误的各种情况
   assert_eq(0, divide_with_ceil(0, 0))
   assert_eq(0, divide_with_ceil(100, 0))
@@ -91,8 +91,8 @@ test "error_handling_and_robustness" {
   assert_eq(1, divide_with_ceil(-1, -2))
 }
 
-test "internationalization_and_unicode" {
-  // 国际化和Unicode测试
+test "global_language_support" {
+  // 全球语言支持测试
   assert_eq_string("Hello, 世界!", greet("世界"))
   assert_eq_string("Hello, Москва!", greet("Москва"))
   assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
@@ -105,8 +105,8 @@ test "internationalization_and_unicode" {
   assert_eq_string("Hello, 한국어!", greet("한국어"))
 }
 
-test "complex_workflow_pipeline" {
-  // 复杂工作流流水线测试
+test "project_management_workflow" {
+  // 项目管理工作流测试
   // 场景：项目资源规划和时间估算
   let project_tasks = 125
   let team_members = 8
@@ -130,8 +130,8 @@ test "complex_workflow_pipeline" {
   assert_eq(98, efficiency)  // floor(12500/128) = 97%
 }
 
-test "performance_and_scalability" {
-  // 性能和可扩展性测试
+test "big_data_performance_test" {
+  // 大数据性能测试
   // 大数据量运算测试
   let batch_size = 10000
   let num_batches = 100
@@ -152,8 +152,8 @@ test "performance_and_scalability" {
   assert_eq(36, unused_capacity)
 }
 
-test "real_world_event_planning" {
-  // 真实世界活动规划测试
+test "conference_planning_scenario" {
+  // 会议规划场景测试
   // 场景：会议座位安排和预算计算
   let attendees = 247
   let tables_available = 30
@@ -187,8 +187,8 @@ test "real_world_event_planning" {
   assert_eq(7100, total_cost)
 }
 
-test "comprehensive_integration_test" {
-  // 综合集成测试
+test "business_budget_integration" {
+  // 业务预算集成测试
   // 多步骤业务逻辑集成测试
   let initial_budget = 50000
   let team_size = 12
