@@ -40,6 +40,7 @@
     "azimuth_new_standard_unit_tests.mbt",
     "standard_moonbit_tests.mbt",
     "standard_moonbit_test_suite.mbt",
+    "user_standard_moonbit_tests.mbt",
     "additional_standard_tests.mbt",
     "simple_high_quality_tests.mbt",
     "high_quality_test_cases.mbt",
