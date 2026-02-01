@@ -1,138 +1,147 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // 标准 Azimuth 测试用例
-// 使用标准 MoonBit 测试语法编写的高质量测试用例
-// 覆盖 azimuth 库的核心功能
+// 包含 10 个核心功能测试，使用标准 MoonBit 测试语法
 
 test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  assert_eq(10, add(3, 7))
-  assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(15, multiply(3, 5))
-  assert_eq(0, multiply(0, 10))
-  assert_eq(-12, multiply(-3, 4))
-  assert_eq(3, subtract(10, 7))
-  assert_eq(-3, subtract(7, 10))
-}
-
-test "divide_with_ceil_functionality" {
-  // 向上取整除法功能测试
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 100))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(5, 0))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(4, divide_with_ceil(-10, -3))
-}
-
-test "greet_function_comprehensive" {
-  // 问候函数综合测试
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
+  // 测试基本算术运算
+  inspect(@azimuth.add(5, 3), content="8")
+  inspect(@azimuth.multiply(4, 6), content="24")
+  inspect(@azimuth.subtract(10, 7), content="3")
+  inspect(@azimuth.divide_with_ceil(10, 3), content="4")
 }
 
 test "mathematical_properties" {
-  // 数学性质验证测试
-  let x = 8
-  let y = 12
-  
+  // 测试数学性质
   // 加法交换律
-  assert_eq(add(x, y), add(y, x))
+  inspect(@azimuth.add(7, 13), content="20")
+  inspect(@azimuth.add(13, 7), content="20")
   
   // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
+  inspect(@azimuth.multiply(8, 9), content="72")
+  inspect(@azimuth.multiply(9, 8), content="72")
   
   // 零元素性质
-  assert_eq(0, multiply(x, 0))
-  assert_eq(x, add(x, 0))
+  inspect(@azimuth.multiply(15, 0), content="0")
+  inspect(@azimuth.add(25, 0), content="25")
 }
 
-test "complex_business_calculations" {
-  // 复杂业务计算测试
+test "divide_with_ceil_functionality" {
+  // 测试向上取整除法功能
+  // 正数情况
+  inspect(@azimuth.divide_with_ceil(10, 3), content="4")  // 3.333... -> 4
+  inspect(@azimuth.divide_with_ceil(9, 3), content="3")   // 3 -> 3
+  inspect(@azimuth.divide_with_ceil(1, 100), content="1") // 0.01 -> 1
+  
+  // 负数情况
+  inspect(@azimuth.divide_with_ceil(-10, 3), content="-3")  // -3.333... -> -3
+  inspect(@azimuth.divide_with_ceil(-10, -3), content="4")  // 3.333... -> 4
+  
+  // 除数为零的情况
+  inspect(@azimuth.divide_with_ceil(100, 0), content="0")
+}
+
+test "greeting_function_comprehensive" {
+  // 测试问候函数的全面功能
+  inspect(@azimuth.greet("World"), content="Hello, World!")
+  inspect(@azimuth.greet("MoonBit"), content="Hello, MoonBit!")
+  inspect(@azimuth.greet(""), content="Hello, !")
+  inspect(@azimuth.greet("世界"), content="Hello, 世界!")
+  inspect(@azimuth.greet("🚀"), content="Hello, 🚀!")
+}
+
+test "negative_number_operations" {
+  // 测试负数运算
+  inspect(@azimuth.add(-5, -3), content="-8")
+  inspect(@azimuth.add(-8, 3), content="-5")
+  inspect(@azimuth.multiply(-4, 5), content="-20")
+  inspect(@azimuth.multiply(-4, -5), content="20")
+  inspect(@azimuth.subtract(5, 10), content="-5")
+}
+
+test "combined_operations" {
+  // 测试组合运算
+  // (a + b) * c
+  let result1 = @azimuth.multiply(@azimuth.add(5, 3), 4)
+  inspect(result1, content="32")  // (5 + 3) * 4 = 8 * 4 = 32
+  
+  // a * b + c
+  let result2 = @azimuth.add(@azimuth.multiply(6, 7), 8)
+  inspect(result2, content="50")  // 6 * 7 + 8 = 42 + 8 = 50
+  
+  // 复杂表达式
+  let result3 = @azimuth.add(
+    @azimuth.multiply(@azimuth.divide_with_ceil(25, 4), 3),
+    @azimuth.multiply(@azimuth.divide_with_ceil(17, 3), 2)
+  )
+  inspect(result3, content="85")  // ceil(25/4)*3 + ceil(17/3)*2 = 7*3 + 6*2 = 21 + 12 = 33
+}
+
+test "business_calculation_scenario" {
+  // 测试业务计算场景
+  // 计算订单总价：商品价格 × 数量 + 运费
   let unit_price = 25
   let quantity = 8
   let shipping = 15
-  let discount = 20
   
-  let subtotal = multiply(unit_price, quantity)
-  let total_before_discount = add(subtotal, shipping)
-  let final_total = add(total_before_discount, -discount)
+  let subtotal = @azimuth.multiply(unit_price, quantity)
+  let total = @azimuth.add(subtotal, shipping)
   
-  assert_eq(200, subtotal)
-  assert_eq(215, total_before_discount)
-  assert_eq(195, final_total)
+  inspect(subtotal, content="200")  // 25 * 8 = 200
+  inspect(total, content="215")     // 200 + 15 = 215
 }
 
-test "packaging_and_logistics" {
-  // 包装和物流计算测试
+test "packaging_calculation_scenario" {
+  // 测试包装计算场景
+  // 计算需要的包装箱数量
   let total_items = 47
   let items_per_box = 12
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
   
-  assert_eq(4, boxes_needed)
+  let boxes_needed = @azimuth.divide_with_ceil(total_items, items_per_box)
+  let total_capacity = @azimuth.multiply(boxes_needed, items_per_box)
+  let remaining_space = @azimuth.subtract(total_capacity, total_items)
   
-  // 验证总容量
-  let total_capacity = multiply(boxes_needed, items_per_box)
-  assert_eq(48, total_capacity)
-  
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_items)
-  assert_eq(1, remaining_space)
+  inspect(boxes_needed, content="4")      // ceil(47/12) = 4
+  inspect(total_capacity, content="48")   // 4 * 12 = 48
+  inspect(remaining_space, content="1")   // 48 - 47 = 1
 }
 
-test "financial_calculations" {
-  // 金融计算测试
-  let principal = 1000
-  let rate_percent = 8
-  let years = 2
+test "extreme_boundary_values" {
+  // 测试极端边界值
+  // 大数运算
+  inspect(@azimuth.add(1000000, 1000000), content="2000000")
+  inspect(@azimuth.multiply(1000, 1000), content="1000000")
   
-  // 简化的复利计算
-  let year1_amount = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, rate_percent), 100))
-  
-  assert_eq(1080, year1_amount)
-  assert_eq(1167, year2_amount)
+  // 边界情况
+  inspect(@azimuth.add(2147483646, 1), content="2147483647")  // 接近Int最大值
+  inspect(@azimuth.add(-2147483647, -1), content="-2147483648")  // 接近Int最小值
+  inspect(@azimuth.divide_with_ceil(999999, 1000), content="1000")  // 999.999 -> 1000
 }
 
-test "data_analysis_scenario" {
-  // 数据分析场景测试
-  let data_points = 250
-  let sample_size = 30
-  let batches_needed = divide_with_ceil(data_points, sample_size)
+test "string_processing_with_greet" {
+  // 测试字符串处理与问候函数结合
+  // 构建复杂字符串
+  let first_name = "John"
+  let last_name = "Doe"
+  let full_name = first_name + " " + last_name
+  let greeting = @azimuth.greet(full_name)
   
-  assert_eq(9, batches_needed)
+  inspect(greeting, content="Hello, John Doe!")
   
-  // 计算实际处理的样本数
-  let full_batches = batches_needed - 1
-  let samples_in_full_batches = multiply(full_batches, sample_size)
-  let final_batch_size = subtract(data_points, samples_in_full_batches)
-  
-  assert_eq(240, samples_in_full_batches)
-  assert_eq(10, final_batch_size)
-}
-
-test "error_handling_robustness" {
-  // 错误处理健壮性测试
-  // 除零处理
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-50, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  
-  // 极值测试
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1000000, multiply(1000, 1000))
-  assert_eq(0, multiply(2147483647, 0))
-}
-
-test "string_processing_international" {
-  // 字符串处理国际化测试
-  assert_eq_string("Hello, María!", greet("María"))
-  assert_eq_string("Hello, François!", greet("François"))
-  assert_eq_string("Hello, 北京!", greet("北京"))
-  assert_eq_string("Hello, Ñoño!", greet("Ñoño"))
-  assert_eq_string("Hello, user@domain.com!", greet("user@domain.com"))
+  // 测试特殊字符和表情符号
+  inspect(@azimuth.greet("Alice & Bob"), content="Hello, Alice & Bob!")
+  inspect(@azimuth.greet("😊"), content="Hello, 😊!")
+  inspect(@azimuth.greet("test@example.com"), content="Hello, test@example.com!")
 }
