@@ -44,6 +44,7 @@
         "minimal_test.mbt",
         "simple_new_tests.mbt",
         "standard_moonbit_tests_comprehensive.mbt",
+        "standard_moonbit_test_suite.mbt",
         "standard_test.mbt",
         "test/standard_moonbit_test_suite_new.mbt",
         "azimuth_enhanced_standard_test_cases.mbt",
