@@ -12,6 +12,7 @@
         "subtract"
     ],
     "files": [
+        "enhanced_comprehensive_tests.mbt",
         "simple_standard_tests_new.mbt",
             "standard_moonbit_tests_enhanced.mbt",
             "azimuth_unique_edge_tests.mbt",        "standard_moonbit_tests_concise.mbt",
