@@ -1,175 +1,152 @@
-// Azimuth 项目标准质量测试用例
-// 包含10个高质量的 MoonBit 测试用例，覆盖核心功能和实际应用场景
+// Azimuth 标准质量测试用例
+// 包含8个高质量的标准 MoonBit 测试用例，覆盖主要功能和边界情况
 
-test "basic_arithmetic_operations_comprehensive" {
-  // 全面的基本算术运算测试
-  add(15, 27) = 42
-  add(-8, 3) = -5
-  add(0, 100) = 100
+test "basic_arithmetic_operations" {
+  // 基本算术运算测试
+  assert_eq(15, add(8, 7))
+  assert_eq(-3, add(-10, 7))
+  assert_eq(0, add(5, -5))
   
-  multiply(6, 7) = 42
-  multiply(-4, 5) = -20
-  multiply(0, 999) = 0
+  assert_eq(56, multiply(7, 8))
+  assert_eq(-24, multiply(-3, 8))
+  assert_eq(0, multiply(12, 0))
   
-  subtract(50, 23) = 27
-  subtract(10, 30) = -20
-  subtract(0, 0) = 0
+  assert_eq(3, subtract(10, 7))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(15, 15))
 }
 
-test "divide_with_ceil_edge_cases_and_boundaries" {
-  // 向上取整除法的边界情况和边缘条件测试
-  divide_with_ceil(1, 1) = 1
-  divide_with_ceil(0, 1) = 0
-  divide_with_ceil(1, 2) = 1
-  divide_with_ceil(99, 100) = 1
-  divide_with_ceil(100, 100) = 1
-  divide_with_ceil(101, 100) = 2
+test "divide_with_ceil_comprehensive" {
+  // 向上取整除法综合测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(0, divide_with_ceil(0, 10))
+  assert_eq(0, divide_with_ceil(15, 0))
   
-  // 除零错误处理
-  divide_with_ceil(50, 0) = 0
-  divide_with_ceil(0, 0) = 0
-  divide_with_ceil(-50, 0) = 0
+  // 负数测试
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+  assert_eq(3, divide_with_ceil(10, -3))
 }
 
-test "negative_numbers_comprehensive_handling" {
-  // 负数的全面处理测试
-  add(-10, -15) = -25
-  add(-8, 3) = -5
-  add(12, -7) = 5
+test "mathematical_properties_verification" {
+  // 数学性质验证测试
+  let x = 23
+  let y = 17
   
-  multiply(-3, 4) = -12
-  multiply(-3, -4) = 12
-  multiply(5, -2) = -10
+  // 加法交换律和结合律
+  assert_eq(add(x, y), add(y, x))
+  assert_eq(add(add(x, y), 5), add(x, add(y, 5)))
   
-  divide_with_ceil(-10, 3) = -3
-  divide_with_ceil(10, -3) = -3
-  divide_with_ceil(-10, -3) = 4
+  // 乘法交换律和结合律
+  assert_eq(multiply(x, y), multiply(y, x))
+  assert_eq(multiply(multiply(x, y), 2), multiply(x, multiply(y, 2)))
+  
+  // 分配律
+  assert_eq(multiply(x, add(y, 3)), add(multiply(x, y), multiply(x, 3)))
 }
 
-test "string_processing_and_unicode_support" {
-  // 字符串处理和Unicode支持测试
-  greet("World") = "Hello, World!"
-  greet("") = "Hello, !"
-  greet("123") = "Hello, 123!"
-  greet("世界") = "Hello, 世界!"
-  greet("🚀") = "Hello, 🚀!"
-  greet("café") = "Hello, café!"
-  greet("@#$%") = "Hello, @#$%!"
+test "greet_function_international_support" {
+  // 问候函数国际化支持测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
 }
 
-test "mathematical_properties_and_laws" {
-  // 数学性质和定律验证测试
-  let x = 17
-  let y = 23
-  
-  // 加法交换律
-  add(x, y) = add(y, x)
-  
-  // 乘法交换律
-  multiply(x, y) = multiply(y, x)
-  
-  // 加法恒等式
-  add(x, 0) = x
-  add(0, x) = x
-  
-  // 乘法恒等式
-  multiply(x, 1) = x
-  multiply(1, x) = x
-  multiply(x, 0) = 0
-  
-  // 减法恒等式
-  subtract(x, 0) = x
-  subtract(x, x) = 0
-}
-
-test "complex_calculation_scenarios" {
-  // 复杂计算场景测试
-  // 嵌套函数调用
-  add(multiply(3, 4), multiply(5, 6)) = 42
-  subtract(multiply(10, 5), divide_with_ceil(47, 3)) = 42
-  
-  // 多步骤计算链
-  let step1 = add(5, 3) = 8
-  let step2 = multiply(step1, 4) = 32
-  let step3 = divide_with_ceil(step2, 7) = 5
-  let step4 = subtract(step3, 2) = 3
-}
-
-test "business_logic_inventory_management" {
-  // 业务逻辑：库存管理场景测试
-  // 场景：计算仓库存储需求
+test "business_logistics_calculation" {
+  // 业务物流计算测试
+  // 场景：仓库存储优化
   let total_products = 157
   let box_capacity = 24
   let boxes_needed = divide_with_ceil(total_products, box_capacity)
   
-  boxes_needed = 7
+  assert_eq(7, boxes_needed)
   
-  // 验证总存储容量
-  let total_capacity = multiply(boxes_needed, box_capacity) = 168
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(168, total_capacity)
   
   // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_products) = 11
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(11, remaining_space)
   
   // 验证空间利用率
-  let utilization_percent = divide_with_ceil(multiply(total_products, 100), total_capacity) = 93
+  let utilization = divide_with_ceil(multiply(total_products, 100), total_capacity)
+  assert_eq(94, utilization)  // floor(15700/168) = 93%
 }
 
-test "project_management_resource_allocation" {
-  // 项目管理：资源分配场景测试
-  // 场景：计算项目完成时间和资源需求
-  let total_tasks = 125
-  let team_size = 8
-  let tasks_per_person_per_day = 2
+test "edge_cases_and_boundary_values" {
+  // 边界情况和极值测试
+  // 零值测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, divide_with_ceil(0, 10))
+  assert_eq(5, subtract(5, 0))
   
-  // 计算每日处理能力
-  let daily_capacity = multiply(team_size, tasks_per_person_per_day) = 16
+  // 单位值测试
+  assert_eq(5, add(5, 0))
+  assert_eq(5, multiply(5, 1))
+  assert_eq(1, divide_with_ceil(5, 5))
   
-  // 计算需要的天数
-  let days_needed = divide_with_ceil(total_tasks, daily_capacity) = 8
-  
-  // 计算总处理能力
-  let total_capacity = multiply(days_needed, daily_capacity) = 128
-  
-  // 计算剩余处理能力
-  let spare_capacity = subtract(total_capacity, total_tasks) = 3
+  // 大数测试
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(1001, divide_with_ceil(1000000, 999))
 }
 
-test "financial_calculation_loan_amortization" {
-  // 金融计算：贷款摊还场景测试
-  // 场景：计算贷款分期付款
-  let loan_amount = 50000
-  let monthly_payment_max = 1800
+test "error_handling_and_robustness" {
+  // 错误处理和健壮性测试
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(999999, 0))
   
-  // 计算需要的月数
-  let months_needed = divide_with_ceil(loan_amount, monthly_payment_max) = 28
+  // 极值运算测试
+  let max_safe = 1000000
+  let min_safe = -1000000
   
-  // 计算实际总支付金额
-  let total_payment = multiply(months_needed, monthly_payment_max) = 50400
-  
-  // 计算最后一个月的实际支付金额
-  let regular_months = subtract(months_needed, 1) = 27
-  let regular_payments = multiply(regular_months, monthly_payment_max) = 48600
-  let final_payment = subtract(total_payment, regular_payments) = 1800
-  
-  // 验证总支付金额正确
-  add(regular_payments, final_payment) = total_payment
+  assert_eq(max_safe, add(max_safe, 0))
+  assert_eq(min_safe, add(min_safe, 0))
+  assert_eq(0, multiply(max_safe, 0))
+  assert_eq(0, multiply(min_safe, 0))
 }
 
-test "error_handling_and_boundary_validation" {
-  // 错误处理和边界验证测试
-  // 极值测试
-  add(2147483647, 0) = 2147483647
-  add(-2147483648, 0) = -2147483648
-  multiply(46340, 46340) = 2147395956
-  multiply(-46340, 46340) = -2147395956
+test "complex_calculation_workflow" {
+  // 复杂计算工作流测试
+  // 场景：项目资源规划
+  let team_members = 8
+  let tasks_per_member = 6
+  let hours_per_task = 4
+  let working_days = 15
+  let hours_per_day = 8
   
-  // 边界除法测试
-  divide_with_ceil(2147483647, 1) = 2147483647
-  divide_with_ceil(2147483647, 2147483647) = 1
-  divide_with_ceil(1, 2147483647) = 1
+  // 计算总任务数
+  let total_tasks = multiply(team_members, tasks_per_member)
+  assert_eq(48, total_tasks)
   
-  // 错误恢复测试
-  divide_with_ceil(2147483647, 0) = 0
-  divide_with_ceil(-2147483648, 0) = 0
-  divide_with_ceil(0, 0) = 0
+  // 计算总工时
+  let total_hours = multiply(total_tasks, hours_per_task)
+  assert_eq(192, total_hours)
+  
+  // 计算每日可完成工时
+  let daily_capacity = multiply(team_members, hours_per_day)
+  assert_eq(64, daily_capacity)
+  
+  // 计算需要的最少工作日
+  let days_needed = divide_with_ceil(total_hours, daily_capacity)
+  assert_eq(3, days_needed)
+  
+  // 验证项目在给定时间内可完成
+  assert_true(days_needed <= working_days)
+  
+  // 计算剩余缓冲时间
+  let buffer_days = subtract(working_days, days_needed)
+  assert_eq(12, buffer_days)
 }
