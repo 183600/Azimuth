@@ -124,6 +124,8 @@
     "azimuth_standard_tests.mbt",
     "azimuth_standard_test_cases.mbt",
     "standard_azimuth_tests.mbt",
+    "my_new_test_suite.mbt",
+    "test/my_new_test_suite.mbt",
     "standard_moonbit_test_cases.mbt",
     "standard_moonbit_test_suite.mbt",
     "standard_quality_tests.mbt",
