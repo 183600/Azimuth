@@ -11123,3 +11123,304 @@ test "time_and_scheduling_calculations_new" {
   assert_eq(2, weeks_needed)  // ceil(6/5) = 2
   assert_eq(48, total_hours)  // 6 * 8 = 48
 }
+
+// 新增的10个高质量 MoonBit 测试用例
+test "complex_ecommerce_order_calculation" {
+  // 复杂电商订单计算场景
+  let product_a_price = 299
+  let product_a_qty = 2
+  let product_b_price = 159
+  let product_b_qty = 3
+  let product_c_price = 89
+  let product_c_qty = 1
+  
+  // 计算商品小计
+  let subtotal_a = multiply(product_a_price, product_a_qty)
+  let subtotal_b = multiply(product_b_price, product_b_qty)
+  let subtotal_c = multiply(product_c_price, product_c_qty)
+  
+  // 计算订单总额
+  let order_total = add(add(subtotal_a, subtotal_b), subtotal_c)
+  
+  // 计算运费（每件商品15元，但总运费不超过100元）
+  let total_items = add(add(product_a_qty, product_b_qty), product_c_qty)
+  let calculated_shipping = multiply(total_items, 15)
+  let final_shipping = if calculated_shipping > 100 { 100 } else { calculated_shipping }
+  
+  // 计算税费（8%，向上取整）
+  let tax_amount = divide_with_ceil(multiply(order_total, 8), 100)
+  
+  // 计算最终总价
+  let final_total = add(add(order_total, final_shipping), tax_amount)
+  
+  assert_eq(598, subtotal_a)   // 299 * 2 = 598
+  assert_eq(477, subtotal_b)   // 159 * 3 = 477
+  assert_eq(89, subtotal_c)    // 89 * 1 = 89
+  assert_eq(1164, order_total) // 598 + 477 + 89 = 1164
+  assert_eq(90, total_items)   // 2 + 3 + 1 = 6
+  assert_eq(90, final_shipping) // 6 * 15 = 90 (< 100)
+  assert_eq(94, tax_amount)    // ceil(1164 * 8 / 100) = ceil(93.12) = 94
+  assert_eq(1348, final_total) // 1164 + 90 + 94 = 1348
+}
+
+test "advanced_mathematical_distributive_law" {
+  // 高级数学分配律测试：验证 (a + b) * (c + d) = a*c + a*d + b*c + b*d
+  let a = 7
+  let b = 11
+  let c = 5
+  let d = 13
+  
+  // 左侧：(a + b) * (c + d)
+  let left_side = multiply(add(a, b), add(c, d))
+  
+  // 右侧：a*c + a*d + b*c + b*d
+  let right_side = add(add(add(multiply(a, c), multiply(a, d)), multiply(b, c)), multiply(b, d))
+  
+  assert_eq(left_side, right_side)  // (7+11)*(5+13) = 18*18 = 324
+  assert_eq(324, left_side)
+}
+
+test "extreme_boundary_and_overflow_handling" {
+  // 极端边界和溢出处理测试
+  let near_max_int = 2147483640  // 接近Int最大值
+  let small_increment = 5
+  let large_divisor = 1000000
+  
+  // 测试接近最大值的加法
+  let near_max_result = add(near_max_int, small_increment)
+  
+  // 测试大数除法的精度
+  let precision_test_1 = divide_with_ceil(near_max_int, large_divisor)
+  let precision_test_2 = divide_with_ceil(999999, 1000)
+  let precision_test_3 = divide_with_ceil(1, 1000000)
+  
+  // 测试零的边界情况
+  let zero_boundary_1 = divide_with_ceil(0, -1)
+  let zero_boundary_2 = divide_with_ceil(-1, 2147483647)
+  
+  assert_eq(2147483645, near_max_result)
+  assert_eq(2148, precision_test_1)    // ceil(2147483640/1000000) = 2148
+  assert_eq(1000, precision_test_2)    // ceil(999999/1000) = 1000
+  assert_eq(1, precision_test_3)       // ceil(1/1000000) = 1
+  assert_eq(0, zero_boundary_1)        // ceil(0/-1) = 0
+  assert_eq(0, zero_boundary_2)        // ceil(-1/2147483647) = 0
+}
+
+test "comprehensive_unicode_and_internationalization" {
+  // 全面的Unicode和国际化工试
+  let asian_names = ["张三", "李四", "王五", "佐藤", "김철수"]
+  let european_names = ["Müller", "François", "José", "Øyvind", "Łukasz"]
+  let emoji_strings = ["🚀🌟", "🏆🎯", "💻📱", "🌍🌎", "🎨🎭"]
+  let mixed_strings = ["User@2024", "Data#Analysis", "API_v2.0", "JSON-XML", "SQL/NoSQL"]
+  
+  // 测试亚洲名字
+  assert_eq_string("Hello, 张三!", greet("张三"))
+  assert_eq_string("Hello, 김철수!", greet("김철수"))
+  
+  // 测试欧洲名字（带重音符号）
+  assert_eq_string("Hello, Müller!", greet("Müller"))
+  assert_eq_string("Hello, François!", greet("François"))
+  
+  // 测试Emoji字符串
+  assert_eq_string("Hello, 🚀🌟!", greet("🚀🌟"))
+  assert_eq_string("Hello, 🎨🎭!", greet("🎨🎭"))
+  
+  // 测试特殊字符组合
+  assert_eq_string("Hello, User@2024!", greet("User@2024"))
+  assert_eq_string("Hello, JSON-XML!", greet("JSON-XML"))
+}
+
+test "robust_error_handling_and_resilience" {
+  // 健壮的错误处理和恢复能力测试
+  // 测试各种除零情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  
+  // 测试极值运算的稳定性
+  let extreme_add_1 = add(2147483647, -2147483647)
+  let extreme_add_2 = add(-2147483648, 2147483647)
+  let extreme_mul_1 = multiply(2147483647, 0)
+  let extreme_mul_2 = multiply(-2147483648, 0)
+  
+  assert_eq(0, extreme_add_1)
+  assert_eq(-1, extreme_add_2)
+  assert_eq(0, extreme_mul_1)
+  assert_eq(0, extreme_mul_2)
+}
+
+test "performance_benchmark_and_optimization" {
+  // 性能基准测试和优化计算
+  let base_operations = 10000
+  let optimization_factor = 3
+  let overhead_percentage = 12
+  let parallel_factor = 4
+  
+  // 计算优化后的操作数
+  let optimized_ops = multiply(base_operations, optimization_factor)
+  
+  // 计算并行处理后的操作数
+  let parallel_ops = multiply(optimized_ops, parallel_factor)
+  
+  // 计算系统开销
+  let system_overhead = divide_with_ceil(multiply(parallel_ops, overhead_percentage), 100)
+  
+  // 计算实际性能
+  let actual_performance = add(parallel_ops, -system_overhead)
+  
+  // 计算性能提升比
+  let performance_ratio = divide_with_ceil(actual_performance, base_operations)
+  
+  assert_eq(30000, optimized_ops)
+  assert_eq(120000, parallel_ops)
+  assert_eq(14400, system_overhead)
+  assert_eq(105600, actual_performance)
+  assert_eq(11, performance_ratio)
+}
+
+test "resource_allocation_optimization_problem" {
+  // 资源分配优化问题
+  // 场景：将100个单位资源分配给4个项目，每个项目有最低需求和优先级
+  let total_resources = 100
+  let project_min_demand = 15
+  let project_bonus_factor = 2
+  let num_projects = 4
+  
+  // 计算最低分配总量
+  let min_total_allocation = multiply(project_min_demand, num_projects)
+  
+  // 计算剩余可分配资源
+  let remaining_resources = add(total_resources, -min_total_allocation)
+  
+  // 计算每个项目的基础分配
+  let base_allocation_per_project = project_min_demand
+  
+  // 计算每个项目的奖励分配（平均分配剩余资源）
+  let bonus_per_project = divide_with_ceil(remaining_resources, num_projects)
+  
+  // 计算每个项目的最终分配
+  let final_allocation_per_project = add(base_allocation_per_project, bonus_per_project)
+  
+  // 计算总分配量
+  let total_allocation = multiply(final_allocation_per_project, num_projects)
+  
+  assert_eq(60, min_total_allocation)
+  assert_eq(40, remaining_resources)
+  assert_eq(15, base_allocation_per_project)
+  assert_eq(10, bonus_per_project)
+  assert_eq(25, final_allocation_per_project)
+  assert_eq(100, total_allocation)
+}
+
+test "temporal_workflow_and_scheduling_complex" {
+  // 复杂的时间工作流和调度测试
+  let total_tasks = 127
+  let team_members = 8
+  let working_hours_per_day = 8
+  let working_days_per_week = 5
+  let tasks_per_person_per_hour = 2
+  
+  // 计算团队每小时处理能力
+  let hourly_team_capacity = multiply(team_members, tasks_per_person_per_hour)
+  
+  // 计算团队每日处理能力
+  let daily_team_capacity = multiply(hourly_team_capacity, working_hours_per_day)
+  
+  // 计算团队每周处理能力
+  let weekly_team_capacity = multiply(daily_team_capacity, working_days_per_week)
+  
+  // 计算需要的天数
+  let days_needed = divide_with_ceil(total_tasks, daily_team_capacity)
+  
+  // 计算需要的周数
+  let weeks_needed = divide_with_ceil(days_needed, working_days_per_week)
+  
+  // 计算总工作小时数
+  let total_work_hours = multiply(days_needed, working_hours_per_day)
+  
+  assert_eq(16, hourly_team_capacity)   // 8 * 2 = 16
+  assert_eq(128, daily_team_capacity)   // 16 * 8 = 128
+  assert_eq(640, weekly_team_capacity)  // 128 * 5 = 640
+  assert_eq(1, days_needed)             // ceil(127/128) = 1
+  assert_eq(1, weeks_needed)            // ceil(1/5) = 1
+  assert_eq(8, total_work_hours)        // 1 * 8 = 8
+}
+
+test "data_analysis_and_statistical_calculations" {
+  // 数据分析和统计计算测试
+  // 场景：分析季度销售数据并计算统计指标
+  let q1_sales = 45000
+  let q2_sales = 52000
+  let q3_sales = 48000
+  let q4_sales = 61000
+  
+  let q1_targets = 40000
+  let q2_targets = 50000
+  let q3_targets = 50000
+  let q4_targets = 60000
+  
+  // 计算年度总销售额
+  let annual_sales = add(add(add(q1_sales, q2_sales), q3_sales), q4_sales)
+  
+  // 计算年度总目标
+  let annual_targets = add(add(add(q1_targets, q2_targets), q3_targets), q4_targets)
+  
+  // 计算季度平均销售额（向上取整）
+  let quarterly_average = divide_with_ceil(annual_sales, 4)
+  
+  // 计算目标完成率百分比
+  let completion_rate = divide_with_ceil(multiply(annual_sales, 100), annual_targets)
+  
+  // 计算季度增长率
+  let q2_growth_rate = divide_with_ceil(multiply(q2_sales - q1_sales, 100), q1_sales)
+  let q3_growth_rate = divide_with_ceil(multiply(q3_sales - q2_sales, 100), q2_sales)
+  let q4_growth_rate = divide_with_ceil(multiply(q4_sales - q3_sales, 100), q3_sales)
+  
+  assert_eq(206000, annual_sales)
+  assert_eq(200000, annual_targets)
+  assert_eq(51500, quarterly_average)
+  assert_eq(103, completion_rate)
+  assert_eq(16, q2_growth_rate)
+  assert_eq(8, q3_growth_rate)
+  assert_eq(27, q4_growth_rate)
+}
+
+test "advanced_function_composition_and_pipeline" {
+  // 高级函数组合和流水线测试
+  // 场景：构建一个数据处理流水线
+  let initial_data = 42
+  let stage1_multiplier = 3
+  let stage2_addition = 17
+  let stage3_divisor = 5
+  let stage4_offset = 8
+  
+  // 流水线处理：((data * multiplier) + addition) / divisor + offset
+  let stage1_result = multiply(initial_data, stage1_multiplier)
+  let stage2_result = add(stage1_result, stage2_addition)
+  let stage3_result = divide_with_ceil(stage2_result, stage3_divisor)
+  let stage4_result = add(stage3_result, stage4_offset)
+  
+  // 构建更复杂的嵌套流水线
+  let complex_pipeline = divide_with_ceil(
+    add(
+      multiply(initial_data, stage1_multiplier),
+      multiply(add(initial_data, stage2_addition), stage3_divisor)
+    ),
+    add(stage4_offset, 2)
+  )
+  
+  // 测试函数组合的数学性质
+  let composition_test = add(
+    multiply(initial_data, add(stage1_multiplier, stage3_divisor)),
+    multiply(stage2_addition, stage3_divisor)
+  )
+  
+  assert_eq(126, stage1_result)    // 42 * 3 = 126
+  assert_eq(143, stage2_result)    // 126 + 17 = 143
+  assert_eq(29, stage3_result)     // ceil(143/5) = 29
+  assert_eq(37, stage4_result)     // 29 + 8 = 37
+  assert_eq(35, complex_pipeline)  // ceil((42*3 + (42+17)*5)/10) = ceil((126 + 295)/10) = ceil(421/10) = 43
+  assert_eq(336, composition_test) // 42*(3+5) + 17*5 = 42*8 + 85 = 336 + 85 = 421
+}
