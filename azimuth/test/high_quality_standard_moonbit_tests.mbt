@@ -123,6 +123,5 @@ test "real_world_application_scenario_tests" {
   let remaining_seats = subtract(available_seats, participants)
   assert_eq(3, remaining_seats)
   
-  // 验证座位充足性
-  assert_true(available_seats >= participants)
+  // 验证座位充足性 - 通过剩余座位数量验证
 }

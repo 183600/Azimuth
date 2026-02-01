@@ -173,7 +173,6 @@ test "boundary_edge_tests" {
   assert_eq_string("Hello,   !", greet("  "))
   assert_eq_string("Hello, special@chars!", greet("special@chars"))
 }
-}
 
 // 标准 MoonBit 测试用例 - 包含10个高质量测试用例
 test "add_function_basic" {
