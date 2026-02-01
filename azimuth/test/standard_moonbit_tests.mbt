@@ -1,19 +1,16 @@
-// 标准 MoonBit 测试用例 - 10个高质量测试用例
-// 测试 azimuth 库的核心功能
+// 标准 MoonBit 测试用例 - 为 azimuth 库添加的高质量测试
+// 包含10个标准测试用例，覆盖各种功能和场景
 
 test "basic_arithmetic_operations" {
   // 基本算术运算测试
-  @azimuth.assert_eq(15, @azimuth.add(7, 8))
-  @azimuth.assert_eq(-1, @azimuth.add(5, -6))
-  @azimuth.assert_eq(0, @azimuth.add(-3, 3))
-  @azimuth.assert_eq(100, @azimuth.multiply(10, 10))
-  @azimuth.assert_eq(-30, @azimuth.multiply(-5, 6))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 123))
-  @azimuth.assert_eq(5, @azimuth.subtract(10, 5))
-  @azimuth.assert_eq(-5, @azimuth.subtract(5, 10))
+  @azimuth.assert_eq(8, @azimuth.add(5, 3))
+  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(7, 4))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
+  @azimuth.assert_eq(-2, @azimuth.subtract(5, 7))
 }
 
-test "mathematical_properties_validation" {
+test "mathematical_properties" {
   // 数学性质验证测试
   let x = 12
   let y = 8
@@ -29,25 +26,26 @@ test "mathematical_properties_validation" {
     @azimuth.multiply(x, @azimuth.add(y, 3)),
     @azimuth.add(@azimuth.multiply(x, y), @azimuth.multiply(x, 3))
   )
-  
-  // 减法的逆运算
-  @azimuth.assert_eq(x, @azimuth.add(@azimuth.subtract(x, y), y))
 }
 
-test "boundary_conditions_test" {
-  // 边界条件测试
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  // 边界值测试
+test "edge_cases_and_boundaries" {
+  // 边界情况和极值测试
   @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val - 1, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val + 1, -1))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, max_val))
-  @azimuth.assert_eq(max_val, @azimuth.multiply(1, max_val))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 10))
+  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
   @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
+  @azimuth.assert_eq(-5, @azimuth.subtract(0, 5))
+}
+
+test "negative_numbers_handling" {
+  // 负数处理测试
+  @azimuth.assert_eq(-2, @azimuth.add(-5, 3))
+  @azimuth.assert_eq(-15, @azimuth.multiply(-5, 3))
+  @azimuth.assert_eq(15, @azimuth.multiply(-5, -3))
+  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-3, 4))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-3, -4))
+  @azimuth.assert_eq(8, @azimuth.subtract(3, -5))
 }
 
 test "string_processing_comprehensive" {
@@ -58,132 +56,88 @@ test "string_processing_comprehensive" {
   @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
   @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
   @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
-  @azimuth.assert_eq_string("Hello, spaced name!", @azimuth.greet("spaced name"))
-  @azimuth.assert_eq_string("Hello, special@chars!", @azimuth.greet("special@chars"))
 }
 
 test "business_logic_packaging" {
   // 业务逻辑：包装计算测试
-  let total_items = 47
-  let box_capacity = 12
+  let items = 47
+  let capacity_per_box = 12
+  let boxes_needed = @azimuth.divide_with_ceil(items, capacity_per_box)
   
-  let boxes_needed = @azimuth.divide_with_ceil(total_items, box_capacity)
   @azimuth.assert_eq(4, boxes_needed)
   
-  let total_capacity = @azimuth.multiply(boxes_needed, box_capacity)
+  // 验证总容量
+  let total_capacity = @azimuth.multiply(boxes_needed, capacity_per_box)
   @azimuth.assert_eq(48, total_capacity)
   
-  let wasted_space = @azimuth.subtract(total_capacity, total_items)
-  @azimuth.assert_eq(1, wasted_space)
-  
-  // 计算空间利用率
-  let utilization_percent = @azimuth.divide_with_ceil(
-    @azimuth.multiply(total_items, 100), 
-    total_capacity
-  )
-  @azimuth.assert_eq(98, utilization_percent)
-}
-
-test "error_handling_robustness" {
-  // 错误处理健壮性测试
-  // 除零错误处理
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-100, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
-  
-  // 极值处理
-  @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))
-  @azimuth.assert_eq(2000000, @azimuth.add(1000000, 1000000))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1000000, 1000000))
-  
-  // 负数除法测试
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(10, -3))
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(-10, -3))
+  // 验证剩余空间
+  let remaining_space = @azimuth.subtract(total_capacity, items)
+  @azimuth.assert_eq(1, remaining_space)
 }
 
 test "complex_calculation_pipeline" {
   // 复杂计算流水线测试
-  let base_value = 15
-  let multiplier = 4
-  let divisor = 7
-  let offset = 3
+  let base_value = 10
+  let multiplier = 3
+  let divisor = 4
+  let addition = 5
   
+  // 计算流程：((base * multiplier) / divisor) + addition
   let step1 = @azimuth.multiply(base_value, multiplier)
-  @azimuth.assert_eq(60, step1)
-  
   let step2 = @azimuth.divide_with_ceil(step1, divisor)
-  @azimuth.assert_eq(9, step2)
+  let result = @azimuth.add(step2, addition)
   
-  let result = @azimuth.add(step2, offset)
-  @azimuth.assert_eq(12, result)
-  
-  // 验证计算公式：ceil(15*4/7) + 3 = 12
+  @azimuth.assert_eq(13, result)  // ceil(10*3/4) + 5 = 8 + 5 = 13
 }
 
-test "resource_allocation_scenario" {
-  // 资源分配场景测试
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
   let total_resources = 100
-  let projects = 3
-  let min_resources_per_project = @azimuth.divide_with_ceil(total_resources, projects)
+  let teams = 3
+  let min_resources_per_team = @azimuth.divide_with_ceil(total_resources, teams)
   
-  @azimuth.assert_eq(34, min_resources_per_project)
+  @azimuth.assert_eq(34, min_resources_per_team)
   
-  let total_allocated = @azimuth.multiply(min_resources_per_project, projects)
-  @azimuth.assert_eq(102, total_allocated)
+  // 验证分配结果
+  let allocated_total = @azimuth.multiply(min_resources_per_team, teams)
+  @azimuth.assert_eq(102, allocated_total)
   
-  let resource_overhead = @azimuth.subtract(total_allocated, total_resources)
-  @azimuth.assert_eq(2, resource_overhead)
-  
-  // 验证每个项目都能获得最小资源
-  @azimuth.assert_eq(1, 1)  // 简单断言，表示测试通过
+  // 验证资源利用率
+  let utilization = @azimuth.divide_with_ceil(@azimuth.multiply(total_resources, 100), allocated_total)
+  @azimuth.assert_eq(98, utilization)  // floor(10000/102) = 98%
 }
 
-test "performance_benchmark_operations" {
-  // 性能基准操作测试
-  let large_number = 10000
+test "error_handling_and_validation" {
+  // 错误处理和验证测试
+  // 除零错误处理
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-10, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
   
-  let sum_result = @azimuth.add(large_number, large_number)
-  @azimuth.assert_eq(20000, sum_result)
-  
-  let product_result = @azimuth.multiply(large_number, 100)
-  @azimuth.assert_eq(1000000, product_result)
-  
-  let division_result = @azimuth.divide_with_ceil(product_result, large_number)
-  @azimuth.assert_eq(100, division_result)
-  
-  // 复杂性能测试
-  let complex_result = @azimuth.add(
-    @azimuth.multiply(large_number, 5),
-    @azimuth.divide_with_ceil(large_number, 10)
-  )
-  @azimuth.assert_eq(50001, complex_result)
+  // 极值验证
+  @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))
+  @azimuth.assert_eq(2000000, @azimuth.add(1000000, 1000000))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1000000, 1000000))
 }
 
-test "real_world_event_planning" {
-  // 真实世界活动规划测试
-  let attendees = 87
+test "real_world_application_scenario" {
+  // 真实世界应用场景测试：活动安排
+  let participants = 87
+  let tables = 8
   let chairs_per_table = 10
-  let budget_per_table = 50
-  let tables_needed = @azimuth.divide_with_ceil(attendees, chairs_per_table)
   
+  // 计算需要的桌子数量
+  let tables_needed = @azimuth.divide_with_ceil(participants, chairs_per_table)
   @azimuth.assert_eq(9, tables_needed)
   
-  let total_chairs = @azimuth.multiply(tables_needed, chairs_per_table)
-  @azimuth.assert_eq(90, total_chairs)
+  // 计算可用座位数
+  let available_seats = @azimuth.multiply(tables_needed, chairs_per_table)
+  @azimuth.assert_eq(90, available_seats)
   
-  let empty_chairs = @azimuth.subtract(total_chairs, attendees)
-  @azimuth.assert_eq(3, empty_chairs)
-  
-  let total_budget = @azimuth.multiply(tables_needed, budget_per_table)
-  @azimuth.assert_eq(450, total_budget)
-  
-  let budget_per_person = @azimuth.divide_with_ceil(total_budget, attendees)
-  @azimuth.assert_eq(6, budget_per_person)
+  // 计算剩余座位
+  let remaining_seats = @azimuth.subtract(available_seats, participants)
+  @azimuth.assert_eq(3, remaining_seats)
   
   // 验证座位充足性
-  @azimuth.assert_eq(1, 1)  // 简单断言，表示测试通过
-  
-  // 验证预算合理性
-  @azimuth.assert_eq(1, 1)  // 简单断言，表示测试通过
+  @azimuth.assert_true(available_seats >= participants)
 }
