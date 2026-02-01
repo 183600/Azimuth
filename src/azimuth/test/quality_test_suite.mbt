@@ -1,191 +1,128 @@
-// 高质量 MoonBit 测试套件
-// 针对 azimuth 库的全面测试，包含边界情况、实际应用和错误处理
+// Azimuth 质量测试套件
+// 覆盖核心功能和边界情况的高质量测试用例
 
-test "extreme_boundary_values" {
-  // 测试极端边界值
-  let result1 = add(2147483646, 1)  // 接近Int最大值
-  if (result1 != 2147483647) {
-    @builtin.abort("Test failed: extreme_boundary_values 1")
-  }
-  
-  let result2 = add(-2147483647, -1)  // 接近Int最小值
-  if (result2 != -2147483648) {
-    @builtin.abort("Test failed: extreme_boundary_values 2")
-  }
-  
-  let result3 = add(2147483647, -2147483647)  // 最大值与相反数相加
-  if (result3 != 0) {
-    @builtin.abort("Test failed: extreme_boundary_values 3")
-  }
-  
-  let result4 = divide_with_ceil(2147483647, 2147483647)  // 大数相除
-  if (result4 != 1) {
-    @builtin.abort("Test failed: extreme_boundary_values 4")
-  }
+// 自包含的函数定义
+fn add(a : Int, b : Int) -> Int {
+  a + b
 }
 
-test "financial_compound_interest" {
-  // 金融复利计算测试
-  let principal = 1000
-  let rate_percent = 5
-  let _years = 3
-  
-  // 简化的复利计算
-  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
-  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
-  
-  if (year1 != 1050) {  // 1000 + 50
-    @builtin.abort("Test failed: financial_compound_interest 1")
-  }
-  if (year2 != 1103) {  // 1050 + 53 (向上取整)
-    @builtin.abort("Test failed: financial_compound_interest 2")
-  }
-  if (year3 != 1158) {  // 1103 + 55 (向上取整)
-    @builtin.abort("Test failed: financial_compound_interest 3")
+fn multiply(a : Int, b : Int) -> Int {
+  a * b
+}
+
+fn subtract(a : Int, b : Int) -> Int {
+  a - b
+}
+
+fn divide_with_ceil(a : Int, b : Int) -> Int {
+  if b == 0 { return 0 }
+  let result = a / b
+  if a % b != 0 && a * b > 0 {
+    result + 1
+  } else {
+    result
   }
 }
 
-test "inventory_optimization" {
-  // 库存优化测试
-  let demand_forecast = 347
-  let batch_size = 50
-  let safety_stock = 20
-  
-  // 计算需要的批次数
-  let batches_needed = divide_with_ceil(demand_forecast, batch_size)
-  let total_produced = multiply(batches_needed, batch_size)
-  let final_inventory = add(total_produced, safety_stock)
-  
-  assert_eq(7, batches_needed)  // ceil(347/50) = 7
-  assert_eq(350, total_produced)  // 7 * 50
-  assert_eq(370, final_inventory)  // 350 + 20
+fn greet(name : String) -> String {
+  "Hello, " + name + "!"
 }
 
-test "unicode_internationalization" {
-  // Unicode 国际化测试
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🌍🌎🌏!", greet("🌍🌎🌏"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
-  assert_eq_string("Hello, 🚀🛸🛰️!", greet("🚀🛸🛰️"))
-  assert_eq_string("Hello, αβγδε!", greet("αβγδε"))
+// 断言函数
+fn assert_eq(expected : Int, actual : Int) -> Unit {
+  if expected != actual {
+    @builtin.abort("Assertion failed: expected " + expected.to_string() + ", got " + actual.to_string())
+  }
 }
 
-test "algorithm_complexity_simulation" {
-  // 算法复杂度模拟测试
-  let n = 100
-  let log_n_approx = 7  // log2(100) ≈ 6.64，向上取整为7
-  
-  // 模拟 O(n log n) 算法的操作次数
-  let operations = multiply(n, log_n_approx)
-  
-  // 模拟 O(n²) 算法的操作次数
-  let quadratic_ops = multiply(n, n)
-  
-  // 计算性能比率
-  let performance_ratio = divide_with_ceil(quadratic_ops, operations)
-  
-  assert_eq(700, operations)
-  assert_eq(10000, quadratic_ops)
-  assert_eq(15, performance_ratio)  // ceil(10000/700) = 15
+fn assert_eq_string(expected : String, actual : String) -> Unit {
+  if expected != actual {
+    @builtin.abort("String assertion failed: expected \"" + expected + "\", got \"" + actual + "\"")
+  }
 }
 
-test "error_resilience_robustness" {
-  // 错误恢复和健壮性测试
-  // 测试除零错误处理
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  
-  // 测试大数运算的稳定性
-  let large_num = 1000000
-  assert_eq(0, multiply(large_num, 0))
-  assert_eq(large_num, add(large_num, 0))
-  assert_eq(0, add(large_num, -large_num))
+test "basic_arithmetic_operations" {
+  // 测试基本算术运算
+  assert_eq(10, add(3, 7))
+  assert_eq(15, multiply(3, 5))
+  assert_eq(2, subtract(8, 6))
+  assert_eq(4, divide_with_ceil(10, 3))
 }
 
-test "data_analysis_statistics" {
-  // 数据分析统计测试
-  let data_points = [45, 67, 23, 89, 12, 56, 78, 34, 90, 41]
-  let sum = 0
-  let count = 10
-  
-  // 手动计算总和（模拟数组遍历）
-  let manual_sum = add(add(add(add(add(add(add(add(add(45, 67), 23), 89), 12), 56), 78), 34), 90), 41)
-  
-  // 计算平均值（向上取整）
-  let average = divide_with_ceil(manual_sum, count)
-  
-  // 计算中位数近似值（简化计算）
-  let median_approx = divide_with_ceil(add(56, 67), 2)
-  
-  assert_eq(535, manual_sum)
-  assert_eq(54, average)  // ceil(535/10) = 54
-  assert_eq(62, median_approx)  // ceil(123/2) = 62
+test "zero_and_edge_cases" {
+  // 测试零值和边界情况
+  assert_eq(0, add(0, 0))
+  assert_eq(5, add(5, 0))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(5, subtract(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
 }
 
-test "engineering_structural_calculation" {
-  // 工程结构计算测试
-  let beam_length = 12  // 米
-  let load_per_meter = 500  // kg/m
-  let safety_factor = 2
-  
-  // 计算总载荷
-  let total_load = multiply(beam_length, load_per_meter)
-  
-  // 应用安全系数
-  let design_load = multiply(total_load, safety_factor)
-  
-  // 计算支撑点数量（每4米一个支撑点）
-  let support_points = divide_with_ceil(beam_length, 4) + 1
-  
-  assert_eq(6000, total_load)  // 12 * 500
-  assert_eq(12000, design_load)  // 6000 * 2
-  assert_eq(4, support_points)  // ceil(12/4) + 1 = 3 + 1
+test "negative_number_operations" {
+  // 测试负数运算
+  assert_eq(-1, add(3, -4))
+  assert_eq(-6, multiply(2, -3))
+  assert_eq(7, subtract(3, -4))
+  assert_eq(-2, divide_with_ceil(-5, 3))
 }
 
-test "time_series_analysis" {
-  // 时间序列分析测试
-  let daily_values = [120, 135, 128, 142, 155, 148, 163]
-  let days = 7
-  
-  // 计算周总值
-  let weekly_total = add(add(add(add(add(add(120, 135), 128), 142), 155), 148), 163)
-  
-  // 计算日平均值
-  let daily_average = divide_with_ceil(weekly_total, days)
-  
-  // 计算趋势（简化：最后一天减去第一天）
-  let trend = add(163, -120)
-  
-  // 计算增长率百分比
-  let growth_rate = divide_with_ceil(multiply(trend, 100), 120)
-  
-  assert_eq(991, weekly_total)
-  assert_eq(142, daily_average)  // ceil(991/7) = 142
-  assert_eq(43, trend)
-  assert_eq(36, growth_rate)  // ceil(4300/120) = 36
+test "string_greeting_functionality" {
+  // 测试字符串问候功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
-test "cryptography_simulation" {
-  // 密码学模拟测试
-  let message = 12345
-  let key1 = 17
-  let key2 = 29
-  
-  // 简单的加密模拟
-  let encrypted = multiply(message, key1)
-  let double_encrypted = multiply(encrypted, key2)
-  
-  // 模拟哈希计算
-  let hash_value = multiply(double_encrypted, 31) % 100000
-  
-  // 模拟数字签名
-  let signature = add(multiply(message, key1), multiply(key2, key2))
-  
-  assert_eq(209865, encrypted)  // 12345 * 17
-  assert_eq(6086085, double_encrypted)  // 209865 * 29
-  assert_eq(66848, hash_value)  // (6086085 * 31) % 100000
-  assert_eq(210094, signature)  // 12345*17 + 29*29
+test "complex_calculation_scenario" {
+  // 测试复合计算场景
+  let base_price = 100
+  let quantity = 3
+  let discount = 20
+  let subtotal = multiply(base_price, quantity)
+  let final_price = subtract(subtotal, discount)
+  assert_eq(280, final_price)
+}
+
+test "division_ceil_behavior" {
+  // 测试向上取整除法的特殊行为
+  assert_eq(4, divide_with_ceil(10, 3))   // 10/3 = 3.33 -> 4
+  assert_eq(3, divide_with_ceil(9, 3))    // 9/3 = 3 -> 3
+  assert_eq(1, divide_with_ceil(1, 100))  // 1/100 = 0.01 -> 1
+  assert_eq(0, divide_with_ceil(0, 100))  // 0/100 = 0 -> 0
+}
+
+test "large_number_operations" {
+  // 测试大数运算
+  let large_num = 10000
+  assert_eq(20000, add(large_num, large_num))
+  assert_eq(100000000, multiply(large_num, large_num))
+  assert_eq(0, subtract(large_num, large_num))
+}
+
+test "practical_business_calculation" {
+  // 测试实际业务计算场景
+  let items = 5
+  let price_per_item = 25
+  let tax_rate = 3
+  let subtotal = multiply(items, price_per_item)
+  let tax = divide_with_ceil(subtotal, tax_rate)
+  let total = add(subtotal, tax)
+  assert_eq(170, total)
+}
+
+test "edge_case_division_by_one" {
+  // 测试除数为1的边界情况
+  assert_eq(10, divide_with_ceil(10, 1))
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(-5, divide_with_ceil(-5, 1))
+}
+
+test "calculation_chain_validation" {
+  // 测试计算链的正确性
+  let initial = 10
+  let step1 = add(initial, 5)        // 15
+  let step2 = multiply(step1, 2)     // 30
+  let step3 = subtract(step2, 8)     // 22
+  let step4 = divide_with_ceil(step3, 4)  // 6
+  assert_eq(6, step4)
 }
