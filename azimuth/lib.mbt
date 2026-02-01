@@ -12115,3 +12115,175 @@ test "error_handling_and_validation" {
   assert_eq(100000000, multiply(large_num, large_num))
   assert_eq(1, divide_with_ceil(large_num, large_num))
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "enhanced_arithmetic_operations" {
+  // 增强算术运算测试
+  assert_eq(100, add(45, 55))
+  assert_eq(-100, add(-45, -55))
+  assert_eq(10, add(-15, 25))
+  
+  assert_eq(1000, multiply(10, 100))
+  assert_eq(-1000, multiply(-10, 100))
+  assert_eq(1000, multiply(-10, -100))
+  
+  assert_eq(50, subtract(100, 50))
+  assert_eq(-50, subtract(50, 100))
+  assert_eq(0, subtract(50, 50))
+}
+
+test "enhanced_divide_with_ceil_operations" {
+  // 增强向上取整除法运算测试
+  assert_eq(7, divide_with_ceil(20, 3))
+  assert_eq(6, divide_with_ceil(18, 3))
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(0, divide_with_ceil(0, 10))
+  assert_eq(0, divide_with_ceil(15, 0))
+  
+  // 负数测试
+  assert_eq(-6, divide_with_ceil(-20, 3))
+  assert_eq(-7, divide_with_ceil(20, -3))
+  assert_eq(6, divide_with_ceil(-20, -3))
+}
+
+test "enhanced_greet_function_international" {
+  // 增强问候函数国际化测试
+  assert_eq_string("Hello, Universe!", greet("Universe"))
+  assert_eq_string("Hello, Beijing!", greet("Beijing"))
+  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, empty!", greet(""))
+  assert_eq_string("Hello, space !", greet("space "))
+}
+
+test "mathematical_identity_enhanced" {
+  // 增强数学恒等式测试
+  let x = 25
+  let y = 15
+  
+  // 加法恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(x, add(0, x))
+  
+  // 乘法恒等式
+  assert_eq(x, multiply(x, 1))
+  assert_eq(x, multiply(1, x))
+  assert_eq(0, multiply(x, 0))
+  
+  // 减法恒等式
+  assert_eq(0, subtract(x, x))
+  assert_eq(x, subtract(x, 0))
+}
+
+test "business_inventory_enhanced" {
+  // 增强库存管理业务测试
+  let total_products = 250
+  let box_capacity = 30
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  
+  assert_eq(9, boxes_needed)
+  
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(270, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(20, remaining_space)
+}
+
+test "complex_workflow_enhanced" {
+  // 增强复杂工作流测试
+  // 场景：项目管理
+  let team_size = 12
+  let weeks_per_sprint = 2
+  let tasks_per_person_per_week = 3
+  let total_tasks = 150
+  
+  // 计算每周处理能力
+  let weekly_capacity = multiply(team_size, tasks_per_person_per_week)
+  assert_eq(36, weekly_capacity)
+  
+  // 计算冲刺处理能力
+  let sprint_capacity = multiply(weekly_capacity, weeks_per_sprint)
+  assert_eq(72, sprint_capacity)
+  
+  // 计算需要的冲刺数
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  assert_eq(3, sprints_needed)
+}
+
+test "boundary_values_enhanced" {
+  // 增强边界值测试
+  // 极小值测试
+  assert_eq(1, add(1, 0))
+  assert_eq(0, multiply(1, 0))
+  assert_eq(1, divide_with_ceil(1, 1))
+  
+  // 极大值测试
+  assert_eq(20000, add(10000, 10000))
+  assert_eq(100000000, multiply(10000, 10000))
+  assert_eq(10001, divide_with_ceil(10000, 1))
+  
+  // 边界除法测试
+  assert_eq(1, divide_with_ceil(9999, 10000))
+  assert_eq(10000, divide_with_ceil(10000, 1))
+  assert_eq(1, divide_with_ceil(10000, 10000))
+}
+
+test "string_handling_enhanced" {
+  // 增强字符串处理测试
+  assert_eq_string("Hello, Developer!", greet("Developer"))
+  assert_eq_string("Hello, 2024!", greet("2024"))
+  assert_eq_string("Hello, @user!", greet("@user"))
+  assert_eq_string("Hello, $price!", greet("$price"))
+  assert_eq_string("Hello, #hashtag!", greet("#hashtag"))
+  assert_eq_string("Hello, mixedCASE123!", greet("mixedCASE123"))
+}
+
+test "error_resilience_enhanced" {
+  // 增强错误恢复能力测试
+  // 除零错误的全面测试
+  assert_eq(0, divide_with_ceil(1, 0))
+  assert_eq(0, divide_with_ceil(-1, 0))
+  assert_eq(0, divide_with_ceil(9999, 0))
+  assert_eq(0, divide_with_ceil(-9999, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 极值运算测试
+  let max_value = 1000000
+  let min_value = -1000000
+  
+  assert_eq(0, multiply(max_value, 0))
+  assert_eq(0, multiply(min_value, 0))
+  assert_eq(max_value, add(max_value, 0))
+  assert_eq(min_value, add(min_value, 0))
+}
+
+test "real_world_event_planning_new" {
+  // 真实世界事件规划测试
+  let attendees = 250
+  let chairs_per_table = 10
+  let cost_per_chair = 15
+  let total_budget = 4000
+  
+  // 计算需要的桌子数量
+  let tables_needed = divide_with_ceil(attendees, chairs_per_table)
+  assert_eq(25, tables_needed)
+  
+  // 计算总座位数
+  let total_seats = multiply(tables_needed, chairs_per_table)
+  assert_eq(250, total_seats)
+  
+  // 计算剩余座位
+  let remaining_seats = subtract(total_seats, attendees)
+  assert_eq(0, remaining_seats)
+  
+  // 计算总成本
+  let total_cost = multiply(total_seats, cost_per_chair)
+  assert_eq(3750, total_cost)
+  
+  // 计算剩余预算
+  let remaining_budget = subtract(total_budget, total_cost)
+  assert_eq(250, remaining_budget)
+}
