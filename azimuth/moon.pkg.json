@@ -40,6 +40,8 @@
     "azimuth_new_standard_test_cases.mbt",
     "azimuth_standard_test_cases_new.mbt",
     "lib.mbt",
+    "clean_standard_test.mbt",
+    "simple_clean_test.mbt",
     "azimuth_new_quality_tests.mbt",
     "azimuth_standard_enhanced_tests.mbt",
     "azimuth_comprehensive_enhanced_tests.mbt",
