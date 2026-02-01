@@ -1,115 +1,129 @@
-// 标准 MoonBit 测试用例
-// 针对 azimuth 库的核心功能进行全面测试
+// 新增的标准 MoonBit 测试用例
+// 测试 azimuth 库的核心功能和实际应用场景
 
-test "addition_identity_properties" {
-  // 测试加法的单位元性质
-  @azimuth.assert_eq(5, @azimuth.add(5, 0))
-  @azimuth.assert_eq(-3, @azimuth.add(-3, 0))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(1000000, @azimuth.add(1000000, 0))
+test "basic_arithmetic_commutativity" {
+  // 测试基本算术运算的交换律
+  let a = 15
+  let b = 27
+  
+  // 加法交换律: a + b = b + a
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  
+  // 乘法交换律: a * b = b * a
+  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
 }
 
-test "multiplication_identity_properties" {
-  // 测试乘法的单位元性质
-  @azimuth.assert_eq(7, @azimuth.multiply(7, 1))
-  @azimuth.assert_eq(-10, @azimuth.multiply(-10, 1))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 1))
-  @azimuth.assert_eq(15, @azimuth.multiply(15, 1))
+test "divide_with_ceil_precision_test" {
+  // 测试向上取整除法的精度
+  // 测试小数部分不同的情况
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(4, 3))  // 1.33 -> 2
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(8, 3))  // 2.66 -> 3
+  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(9, 2))  // 4.5 -> 5
+  
+  // 测试边界情况
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(5, 5))  // 1.0 -> 1
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100)) // 0.01 -> 1
 }
 
-test "divide_with_ceil_fractional_cases" {
-  // 测试向上取整除法的小数情况
-  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(3, 2))  // 1.5 -> 2
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(8, 3))  // 2.666... -> 3
-  @azimuth.assert_eq(7, @azimuth.divide_with_ceil(13, 2)) // 6.5 -> 7
-  @azimuth.assert_eq(12, @azimuth.divide_with_ceil(100, 9)) // 11.111... -> 12
+test "greeting_function_internationalization" {
+  // 测试问候函数的国际化支持
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 🌍!", @azimuth.greet("🌍"))
+  @azimuth.assert_eq_string("Hello, München!", @azimuth.greet("München"))
+  @azimuth.assert_eq_string("Hello, São Paulo!", @azimuth.greet("São Paulo"))
 }
 
-test "greet_function_empty_and_whitespace" {
-  // 测试问候函数的空字符串和空白字符处理
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello,  !", @azimuth.greet(" "))
-  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("  "))
-  @azimuth.assert_eq_string("Hello, \t!", @azimuth.greet("\t"))
+test "complex_business_calculation" {
+  // 测试复杂业务计算：订单总价计算
+  let product_price = 125
+  let quantity = 7
+  let tax_rate = 8  // 8%
+  let shipping_cost = 25
+  let discount = 50
+  
+  // 计算商品小计
+  let subtotal = @azimuth.multiply(product_price, quantity)
+  
+  // 计算税费（向上取整）
+  let tax_amount = @azimuth.divide_with_ceil(@azimuth.multiply(subtotal, tax_rate), 100)
+  
+  // 计算最终总价
+  let final_total = @azimuth.add(@azimuth.add(@azimuth.add(subtotal, tax_amount), shipping_cost), -discount)
+  
+  @azimuth.assert_eq(875, subtotal)
+  @azimuth.assert_eq(70, tax_amount)
+  @azimuth.assert_eq(920, final_total)
 }
 
-test "combined_arithmetic_expressions" {
-  // 测试组合算术表达式
-  let x = 10
-  let y = 15
-  let z = 20
+test "mathematical_sequence_fibonacci" {
+  // 测试数学序列：斐波那契数列前几项
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = @azimuth.add(fib1, fib2)      // 2
+  let fib4 = @azimuth.add(fib2, fib3)      // 3
+  let fib5 = @azimuth.add(fib3, fib4)      // 5
+  let fib6 = @azimuth.add(fib4, fib5)      // 8
   
-  // 测试 (x + y) * z
-  let result1 = @azimuth.multiply(@azimuth.add(x, y), z)
-  @azimuth.assert_eq(500, result1)  // (10 + 15) * 20 = 25 * 20 = 500
-  
-  // 测试 x * y + z
-  let result2 = @azimuth.add(@azimuth.multiply(x, y), z)
-  @azimuth.assert_eq(170, result2)  // 10 * 15 + 20 = 150 + 20 = 170
+  @azimuth.assert_eq(2, fib3)
+  @azimuth.assert_eq(3, fib4)
+  @azimuth.assert_eq(5, fib5)
+  @azimuth.assert_eq(8, fib6)
 }
 
-test "negative_number_division_ceil" {
-  // 测试负数的向上取整除法
-  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-4, 2))   // -4/2 = -2 -> -2
-  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-3, 2))   // -3/2 = -1.5 -> -1
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-7, 2))   // -7/2 = -3.5 -> -3
-  @azimuth.assert_eq(-5, @azimuth.divide_with_ceil(-11, 2))  // -11/2 = -5.5 -> -5
-}
-
-test "large_scale_calculations" {
-  // 测试大规模计算
-  let base = 10000
-  let multiplier = 100
-  let addition = 50000
+test "resource_allocation_scenario" {
+  // 测试资源分配场景
+  let total_budget = 5000
+  let project_costs = @azimuth.multiply(350, 8)  // 8个项目，每个350
+  let remaining_budget = @azimuth.add(total_budget, -project_costs)
   
-  // 测试大数乘法
-  let large_product = @azimuth.multiply(base, multiplier)
-  @azimuth.assert_eq(1000000, large_product)
+  // 计算可以支持的小项目数量
+  let small_project_cost = 200
+  let small_projects = @azimuth.divide_with_ceil(remaining_budget, small_project_cost)
   
-  // 测试大数加法
-  let large_sum = @azimuth.add(large_product, addition)
-  @azimuth.assert_eq(1050000, large_sum)
-}
-
-test "real_world_budget_calculation" {
-  // 测试实际世界的预算计算
-  let monthly_income = 5000
-  let rent = 1500
-  let utilities = 200
-  let food = 600
-  let transportation = 300
-  let entertainment = 200
-  
-  // 计算总支出
-  let total_expenses = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(rent, utilities), food), transportation), entertainment)
-  
-  // 计算剩余预算
-  let remaining_budget = @azimuth.add(monthly_income, -total_expenses)
-  
-  @azimuth.assert_eq(2800, total_expenses)
+  @azimuth.assert_eq(2800, project_costs)
   @azimuth.assert_eq(2200, remaining_budget)
+  @azimuth.assert_eq(11, small_projects)
 }
 
-test "string_greeting_with_numbers_and_symbols" {
-  // 测试包含数字和符号的字符串问候
-  @azimuth.assert_eq_string("Hello, User123!", @azimuth.greet("User123"))
-  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet("test@example.com"))
-  @azimuth.assert_eq_string("Hello, A+B=C!", @azimuth.greet("A+B=C"))
-  @azimuth.assert_eq_string("Hello, 100%!", @azimuth.greet("100%"))
+test "time_management_calculation" {
+  // 测试时间管理计算
+  let tasks_per_day = 6
+  let total_tasks = 47
+  let work_days_needed = @azimuth.divide_with_ceil(total_tasks, tasks_per_day)
+  
+  // 计算总工作小时数（每天8小时）
+  let total_hours = @azimuth.multiply(work_days_needed, 8)
+  
+  @azimuth.assert_eq(8, work_days_needed)
+  @azimuth.assert_eq(64, total_hours)
 }
 
-test "complex_division_scenarios" {
-  // 测试复杂的除法场景
-  // 测试被除数小于除数的情况
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(5, 10))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(99, 100))
+test "negative_number_complex_operations" {
+  // 测试负数的复杂运算
+  let base_value = -20
+  let increment = 15
+  let multiplier = -3
   
-  // 测试被除数等于除数的情况
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(10, 10))
-  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(5, 1))
+  // 复合运算
+  let result1 = @azimuth.add(base_value, increment)  // -20 + 15 = -5
+  let result2 = @azimuth.multiply(result1, multiplier)  // -5 * -3 = 15
+  let result3 = @azimuth.divide_with_ceil(result2, 4)  // ceil(15/4) = 4
   
-  // 测试被除数是除数的倍数
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(15, 5))
-  @azimuth.assert_eq(10, @azimuth.divide_with_ceil(100, 10))
+  @azimuth.assert_eq(-5, result1)
+  @azimuth.assert_eq(15, result2)
+  @azimuth.assert_eq(4, result3)
+}
+
+test "data_analysis_statistics" {
+  // 测试数据分析：基本统计计算
+  let data_points = [23, 45, 67, 89, 12, 34, 56, 78, 90, 41]
+  
+  // 计算总和（手动计算前5个数据点）
+  let sum_first_half = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(23, 45), 67), 89), 12), 34)
+  
+  // 计算平均值（向上取整）
+  let average_first_half = @azimuth.divide_with_ceil(sum_first_half, 5)
+  
+  @azimuth.assert_eq(270, sum_first_half)
+  @azimuth.assert_eq(54, average_first_half)
 }
