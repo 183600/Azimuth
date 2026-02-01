@@ -12,113 +12,97 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Additional comprehensive test cases for int module
-
-test "int_basic_arithmetic" {
-  let a = 10
-  let b = 3
+///|
+test "int max_value and min_value" {
+  inspect(@int.max_value, content="2147483647")
+  inspect(@int.min_value, content="-2147483648")
   
-  let sum = a + b
-  let diff = a - b
-  let product = a * b
-  let quotient = a / b
-  let remainder = a % b
+  // Test that max_value + 1 overflows to min_value
+  let overflow = @int.max_value + 1
+  inspect(overflow, content="-2147483648")
   
-  // Simple validation
-  let _ = sum + diff + product + quotient + remainder
+  // Test that min_value - 1 overflows to max_value  
+  let underflow = @int.min_value - 1
+  inspect(underflow, content="2147483647")
 }
 
-test "int_negative_arithmetic" {
-  let a = -10
-  let b = 3
+///|
+test "int abs function" {
+  // Test positive numbers
+  inspect(@int.abs(5), content="5")
+  inspect(@int.abs(100), content="100")
   
-  let sum = a + b
-  let diff = a - b
-  let product = a * b
-  let quotient = a / b
-  let remainder = a % b
+  // Test negative numbers
+  inspect(@int.abs(-5), content="5")
+  inspect(@int.abs(-100), content="100")
   
-  // Simple validation
-  let _ = sum + diff + product + quotient + remainder
+  // Test zero
+  inspect(@int.abs(0), content="0")
+  
+  // Test edge case: min_value (special case due to two's complement)
+  inspect(@int.abs(@int.min_value), content="-2147483648")
 }
 
-test "int_comparison_operations" {
-  let a = 5
-  let b = 10
-  let c = 5
+///|
+test "int to_be_bytes conversion" {
+  // Test big-endian byte conversion
+  let bytes1 = @int.to_be_bytes(0x12345678)
+  inspect(bytes1, content="[18, 52, 86, 120]")
   
-  let less_than = a < b
-  let less_than_equal = a <= b
-  let greater_than = b > a
-  let greater_than_equal = b >= a
-  let equal = a == c
-  let not_equal = a != b
+  let bytes2 = @int.to_be_bytes(-1)
+  inspect(bytes2, content="[255, 255, 255, 255]")
   
-  // Simple validation
-  let _ = less_than && less_than_equal && greater_than && greater_than_equal && equal && not_equal
+  let bytes3 = @int.to_be_bytes(0)
+  inspect(bytes3, content="[0, 0, 0, 0]")
 }
 
-test "int_bitwise_operations" {
-  let a = 6  // 110
-  let b = 3  // 011
+///|
+test "int to_le_bytes conversion" {
+  // Test little-endian byte conversion
+  let bytes1 = @int.to_le_bytes(0x12345678)
+  inspect(bytes1, content="[120, 86, 52, 18]")
   
-  let bitwise_and = a & b
-  let bitwise_or = a | b
-  let bitwise_xor = a ^ b
-  let left_shift = a << 1
-  let right_shift = a >> 1
+  let bytes2 = @int.to_le_bytes(-1)
+  inspect(bytes2, content="[255, 255, 255, 255]")
   
-  // Simple validation
-  let _ = bitwise_and + bitwise_or + bitwise_xor + left_shift + right_shift
+  let bytes3 = @int.to_le_bytes(0)
+  inspect(bytes3, content="[0, 0, 0, 0]")
 }
 
-test "int_boundary_values" {
-  let max_val = @int.max_value
-  let min_val = @int.min_value
+///|
+test "int arithmetic operations" {
+  // Test basic arithmetic
+  inspect(10 + 5, content="15")
+  inspect(10 - 5, content="5")
+  inspect(10 * 5, content="50")
+  inspect(10 / 3, content="3")
+  inspect(10 % 3, content="1")
   
-  // Test overflow scenarios
-  let max_plus_one = @int.max_value + 1
-  let min_minus_one = @int.min_value - 1
-  
-  // Simple validation
-  let _ = max_val + min_val + max_plus_one + min_minus_one
+  // Test with negative numbers
+  inspect(-10 + 5, content="-5")
+  inspect(-10 - 5, content="-15")
+  inspect(-10 * 5, content="-50")
+  inspect(-10 / 3, content="-3")
+  inspect(-10 % 3, content="-1")
 }
 
-test "int_absolute_value" {
-  let abs1 = Int::abs(5)
-  let abs2 = Int::abs(-5)
-  let abs3 = Int::abs(0)
-  let abs4 = Int::abs(2147483647)
-  let abs5 = Int::abs(-2147483648)
+///|
+test "int comparison operations" {
+  // Test equality
+  assert_eq(5, 5)
+  assert_not_eq(5, 10)
   
-  // Simple validation
-  let _ = abs1 + abs2 + abs3 + abs4 + abs5
-}
-
-test "int_basic_operations" {
-  let positive = 10
-  let negative = -10
-  let zero = 0
+  // Test ordering
+  assert_true(5 < 10)
+  assert_true(5 <= 10)
+  assert_true(5 <= 5)
+  assert_true(10 > 5)
+  assert_true(10 >= 5)
+  assert_true(10 >= 10)
   
-  let pos_check = positive > 0
-  let neg_check = negative < 0
-  let zero_check = zero == 0
-  
-  // Simple validation
-  let _ = pos_check && neg_check && zero_check
-}
-
-test "int_power_operations" {
-  let pow1 = 2.pow(0)
-  let pow2 = 2.pow(1)
-  let pow3 = 2.pow(2)
-  let pow4 = 2.pow(3)
-  let pow5 = 2.pow(4)
-  
-  let pow6 = 10.pow(0)
-  let pow7 = 10.pow(1)
-  let pow8 = 10.pow(2)
-  
-  // Simple validation
-  let _ = pow1 + pow2 + pow3 + pow4 + pow5 + pow6 + pow7 + pow8
+  // Test with negative numbers
+  assert_true(-10 < -5)
+  assert_true(-10 <= -5)
+  assert_true(-5 > -10)
+  assert_true(-5 >= -10)
 }
