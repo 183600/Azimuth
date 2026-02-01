@@ -48,6 +48,7 @@
     "test/azimuth_comprehensive_new_tests.mbt",
     "quality_standard_tests.mbt",
 "standard_azimuth_tests.mbt",
+"standard_enhanced_test_cases.mbt",
     "azimuth_quality_standard_tests.mbt",
     "standard_moonbit_core_tests.mbt",
     "test_single_new.mbt",
