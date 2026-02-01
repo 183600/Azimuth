@@ -13368,3 +13368,226 @@ test "enhanced_error_handling_edge_cases" {
   assert_eq_string("Hello, x!", greet("x"))
   assert_eq_string("Hello, !", greet(" "))
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "azimuth_core_mathematical_identities" {
+  // Azimuth 核心数学恒等式测试
+  let a = 123
+  let b = 456
+  
+  // 加法恒等式
+  assert_eq(a, add(a, 0))
+  assert_eq(b, add(0, b))
+  
+  // 乘法恒等式
+  assert_eq(a, multiply(a, 1))
+  assert_eq(b, multiply(1, b))
+  assert_eq(0, multiply(a, 0))
+  
+  // 减法恒等式
+  assert_eq(0, subtract(a, a))
+  assert_eq(a, subtract(a, 0))
+}
+
+test "azimuth_precision_calculations" {
+  // Azimuth 精度计算测试
+  // 测试高精度计算场景
+  let precise_value = 123456
+  let divisor = 789
+  
+  let quotient = divide_with_ceil(precise_value, divisor)
+  let remainder = subtract(precise_value, multiply(quotient - 1, divisor))
+  
+  assert_eq(157, quotient)  // ceil(123456/789) = 157
+  assert_eq(123, remainder)  // 123456 - 156*789 = 123
+}
+
+test "azimuth_business_inventory_management" {
+  // Azimuth 业务库存管理测试
+  // 模拟仓库库存管理场景
+  let product_a = 234
+  let product_b = 567
+  let product_c = 890
+  
+  let box_capacity = 50
+  
+  let boxes_a = divide_with_ceil(product_a, box_capacity)
+  let boxes_b = divide_with_ceil(product_b, box_capacity)
+  let boxes_c = divide_with_ceil(product_c, box_capacity)
+  
+  assert_eq(5, boxes_a)   // ceil(234/50) = 5
+  assert_eq(12, boxes_b)  // ceil(567/50) = 12
+  assert_eq(18, boxes_c)  // ceil(890/50) = 18
+  
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  let total_capacity = multiply(total_boxes, box_capacity)
+  
+  assert_eq(35, total_boxes)
+  assert_eq(1750, total_capacity)
+}
+
+test "azimuth_time_scheduling_optimization" {
+  // Azimuth 时间调度优化测试
+  // 模拟项目时间调度优化
+  let total_tasks = 147
+  let team_members = 8
+  let working_days = 15
+  
+  let daily_capacity_per_person = 3
+  let team_daily_capacity = multiply(team_members, daily_capacity_per_person)
+  let total_project_capacity = multiply(team_daily_capacity, working_days)
+  
+  assert_eq(24, team_daily_capacity)   // 8 * 3 = 24
+  assert_eq(360, total_project_capacity)  // 24 * 15 = 360
+  
+  let days_needed = divide_with_ceil(total_tasks, team_daily_capacity)
+  assert_eq(7, days_needed)  // ceil(147/24) = 7
+  
+  let actual_capacity = multiply(days_needed, team_daily_capacity)
+  let spare_capacity = subtract(actual_capacity, total_tasks)
+  
+  assert_eq(168, actual_capacity)  // 7 * 24 = 168
+  assert_eq(21, spare_capacity)    // 168 - 147 = 21
+}
+
+test "azimuth_resource_allocation_fairness" {
+  // Azimuth 资源分配公平性测试
+  // 确保资源分配的公平性
+  let total_resources = 1000
+  let participants = 7
+  
+  let base_share = divide_with_ceil(total_resources, participants)
+  let total_allocated = multiply(base_share, participants)
+  
+  assert_eq(143, base_share)      // ceil(1000/7) = 143
+  assert_eq(1001, total_allocated)  // 143 * 7 = 1001
+  
+  // 验证每个人至少获得基本份额
+  let min_fair_share = divide_with_ceil(total_resources, multiply(participants, 2))
+  assert_eq(72, min_fair_share)  // ceil(1000/14) = 72
+  
+  assert_true(base_share >= min_fair_share)
+}
+
+test "azimuth_string_processing_multilingual" {
+  // Azimuth 多语言字符串处理测试
+  // 测试多语言环境下的字符串处理
+  assert_eq_string("Hello, Azimuth!", greet("Azimuth"))
+  assert_eq_string("Hello, 测试!", greet("测试"))
+  assert_eq_string("Hello, Тест!", greet("Тест"))
+  assert_eq_string("Hello, テスト!", greet("テスト"))
+  assert_eq_string("Hello, 👋!", greet("👋"))
+  assert_eq_string("Hello, Café!", greet("Café"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, 🌍!", greet("🌍"))
+}
+
+test "azimuth_complex_financial_calculation" {
+  // Azimuth 复杂金融计算测试
+  // 模拟贷款和投资计算
+  let principal = 250000
+  let annual_rate = 6
+  let loan_years = 20
+  
+  // 计算总利息（简化计算）
+  let total_interest = divide_with_ceil(multiply(principal, multiply(annual_rate, loan_years)), 100)
+  let total_payment = add(principal, total_interest)
+  
+  assert_eq(300000, total_interest)  // ceil(250000 * 6 * 20 / 100) = 300000
+  assert_eq(550000, total_payment)   // 250000 + 300000 = 550000
+  
+  // 计算月还款额
+  let total_months = multiply(loan_years, 12)
+  let monthly_payment = divide_with_ceil(total_payment, total_months)
+  
+  assert_eq(240, total_months)      // 20 * 12 = 240
+  assert_eq(2292, monthly_payment)  // ceil(550000/240) = 2292
+  
+  // 验证实际总还款额
+  let actual_total = multiply(monthly_payment, total_months)
+  let overpayment = subtract(actual_total, total_payment)
+  
+  assert_eq(550080, actual_total)  // 2292 * 240 = 550080
+  assert_eq(80, overpayment)       // 550080 - 550000 = 80
+}
+
+test "azimuth_data_analysis_statistics" {
+  // Azimuth 数据分析统计测试
+  // 模拟基本统计分析
+  let data_points = 1000
+  let sample_size = 37
+  
+  // 计算需要的样本批次
+  let batches_needed = divide_with_ceil(data_points, sample_size)
+  assert_eq(28, batches_needed)  // ceil(1000/37) = 28
+  
+  // 计算实际处理的数据点
+  let actual_processed = multiply(batches_needed, sample_size)
+  let overflow = subtract(actual_processed, data_points)
+  
+  assert_eq(1036, actual_processed)  // 28 * 37 = 1036
+  assert_eq(36, overflow)           // 1036 - 1000 = 36
+  
+  // 计算处理效率
+  let efficiency_percent = divide_with_ceil(multiply(data_points, 100), actual_processed)
+  assert_eq(97, efficiency_percent)  // ceil(100000/1036) = 97
+}
+
+test "azimuth_logistics_optimization" {
+  // Azimuth 物流优化测试
+  // 模拟物流路径优化
+  let destinations = 15
+  let packages_per_destination = 23
+  let truck_capacity = 50
+  
+  let total_packages = multiply(destinations, packages_per_destination)
+  let trucks_needed = divide_with_ceil(total_packages, truck_capacity)
+  
+  assert_eq(345, total_packages)    // 15 * 23 = 345
+  assert_eq(7, trucks_needed)       // ceil(345/50) = 7
+  
+  // 计算总运力和剩余空间
+  let total_capacity = multiply(trucks_needed, truck_capacity)
+  let remaining_capacity = subtract(total_capacity, total_packages)
+  
+  assert_eq(350, total_capacity)     // 7 * 50 = 350
+  assert_eq(5, remaining_capacity)   // 350 - 345 = 5
+  
+  // 计算运输效率
+  let utilization = divide_with_ceil(multiply(total_packages, 100), total_capacity)
+  assert_eq(99, utilization)  // ceil(34500/350) = 99
+}
+
+test "azimuth_error_recovery_robustness" {
+  // Azimuth 错误恢复健壮性测试
+  // 测试系统在各种异常情况下的健壮性
+  let normal_value = 100
+  let zero_divisor = 0
+  let negative_value = -50
+  let large_value = 999999
+  
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(normal_value, zero_divisor))
+  assert_eq(0, divide_with_ceil(negative_value, zero_divisor))
+  assert_eq(0, divide_with_ceil(large_value, zero_divisor))
+  
+  // 极值运算测试
+  assert_eq(0, multiply(normal_value, zero_divisor))
+  assert_eq(0, multiply(negative_value, zero_divisor))
+  assert_eq(0, multiply(large_value, zero_divisor))
+  
+  // 边界值测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, -1))
+  
+  // 大数精度测试
+  let large_sum = add(large_value, normal_value)
+  let large_product = multiply(large_value, 1)
+  let large_division = divide_with_ceil(large_sum, normal_value)
+  
+  assert_eq(1000099, large_sum)      // 999999 + 100 = 1000099
+  assert_eq(999999, large_product)   // 999999 * 1 = 999999
+  assert_eq(10001, large_division)   // ceil(1000099/100) = 10001
+}
