@@ -237,6 +237,7 @@
     "azimuth_standard_test_suite.mbt",
     "simple_test.mbt",
       "standard_quality_test.mbt",
+      "azimuth_concise_standard_tests.mbt",
           "simple_test_case.mbt",
     "standard_moonbit_test_suite.mbt",
     "azimuth_enhanced_test_cases_new.mbt",
