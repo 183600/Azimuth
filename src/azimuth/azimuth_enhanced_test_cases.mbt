@@ -1,204 +1,157 @@
-// Azimuth 增强测试用例
-// 使用标准 MoonBit 测试语法，包含 8 个高质量测试用例
+// Enhanced test cases for azimuth library
+// 专注于边界条件、错误处理和复杂业务场景的测试
 
-test "mathematical_series_calculation" {
-  // 数学级数计算测试
-  // 计算等差数列前 n 项和：S = n/2 * (2a + (n-1)d)
-  let n = 10
-  let a = 3
-  let d = 2
-  
-  // 手动计算各项和
-  let term1 = a
-  let term2 = add(a, d)
-  let term3 = add(term2, d)
-  let term4 = add(term3, d)
-  let term5 = add(term4, d)
-  
-  let partial_sum = add(add(add(add(term1, term2), term3), term4), term5)
-  assert_eq(35, partial_sum)  // 3 + 5 + 7 + 9 + 11 = 35
-  
-  // 验证级数性质
-  let average = divide_with_ceil(add(term1, term5), 2)
-  let sum_formula = multiply(5, average)
-  assert_eq(35, sum_formula)
+test "extreme_boundary_values" {
+  // 测试极端边界值
+  assert_eq(2147483647, add(2147483646, 1))  // 接近Int最大值
+  assert_eq(-2147483648, add(-2147483647, -1))  // 接近Int最小值
+  assert_eq(0, add(2147483647, -2147483647))  // 最大值与相反数相加
 }
 
-test "resource_allocation_matrix" {
-  // 资源分配矩阵测试
-  // 场景：多项目多团队资源分配
-  let project_a_tasks = 45
-  let project_b_tasks = 38
-  let project_c_tasks = 27
-  
-  let team_x_capacity = 15
-  let team_y_capacity = 12
-  let team_z_capacity = 10
-  
-  // 为每个项目分配团队
-  let teams_for_a = divide_with_ceil(project_a_tasks, team_x_capacity)
-  let teams_for_b = divide_with_ceil(project_b_tasks, team_y_capacity)
-  let teams_for_c = divide_with_ceil(project_c_tasks, team_z_capacity)
-  
-  assert_eq(3, teams_for_a)  // ceil(45/15) = 3
-  assert_eq(4, teams_for_b)  // ceil(38/12) = 4
-  assert_eq(3, teams_for_c)  // ceil(27/10) = 3
-  
-  // 计算总团队需求
-  let total_teams = add(add(teams_for_a, teams_for_b), teams_for_c)
-  assert_eq(10, total_teams)
-  
-  // 计算总处理能力
-  let total_capacity = add(
-    multiply(teams_for_a, team_x_capacity),
-    add(multiply(teams_for_b, team_y_capacity), multiply(teams_for_c, team_z_capacity))
-  )
-  assert_eq(141, total_capacity)
+test "divide_with_ceil_comprehensive_edge_cases" {
+  // 全面测试向上取整除法的边界情况
+  assert_eq(1, divide_with_ceil(1, 1))  // 完全相等
+  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
+  assert_eq(100, divide_with_ceil(9999, 100))  // 99.99 -> 100
+  assert_eq(1, divide_with_ceil(-1, -1))  // 负数相等
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -10/3 = -3.333... -> -3
+  assert_eq(0, divide_with_ceil(0, 999999))  // 零除以大数
+  assert_eq(0, divide_with_ceil(999999, 0))  // 大数除以零（安全处理）
 }
 
-test "time_zone_conversion_logic" {
-  // 时区转换逻辑测试
-  // 场景：计算跨时区会议时间
-  let base_hour = 14  // 下午2点
-  let timezone_diff = 8  // 时差8小时
-  
-  // 向前转换时间
-  let forward_time = add(base_hour, timezone_diff)
-  let adjusted_forward = divide_with_ceil(forward_time, 24)
-  let final_forward = subtract(forward_time, multiply(adjusted_forward, 24))
-  assert_eq(22, final_forward)  // (14 + 8) % 24 = 22
-  
-  // 向后转换时间
-  let backward_time = subtract(base_hour, timezone_diff)
-  let adjusted_backward = divide_with_ceil(subtract(0, backward_time), 24)
-  let final_backward = add(backward_time, multiply(adjusted_backward, 24))
-  assert_eq(6, final_backward)  // (14 - 8 + 24) % 24 = 6
-}
-
-test "inventory_reorder_calculation" {
-  // 库存重新订购计算测试
-  // 场景：基于当前库存和消耗率计算重新订购点
-  let current_stock = 125
-  let daily_consumption = 8
-  let lead_time_days = 7
-  let safety_stock = 20
-  
-  // 计算 lead time 期间的总消耗
-  let lead_time_consumption = multiply(daily_consumption, lead_time_days)
-  assert_eq(56, lead_time_consumption)  // 8 * 7 = 56
-  
-  // 计算重新订购点
-  let reorder_point = add(lead_time_consumption, safety_stock)
-  assert_eq(76, reorder_point)  // 56 + 20 = 76
-  
-  // 计算剩余可使用天数
-  let days_until_reorder = divide_with_ceil(subtract(current_stock, reorder_point), daily_consumption)
-  assert_eq(7, days_until_reorder)  // ceil((125-76)/8) = 7
-}
-
-test "batch_processing_optimization" {
-  // 批处理优化测试
-  // 场景：优化批处理大小以提高效率
-  let total_items = 987
-  let min_batch_size = 50
-  let max_batch_size = 100
-  let processing_cost_per_batch = 10
-  
-  // 计算最小批次数
-  let min_batches = divide_with_ceil(total_items, max_batch_size)
-  assert_eq(10, min_batches)  // ceil(987/100) = 10
-  
-  // 计算最大批次数
-  let max_batches = divide_with_ceil(total_items, min_batch_size)
-  assert_eq(20, max_batches)  // ceil(987/50) = 20
-  
-  // 计算最优批次大小（接近平均值）
-  let optimal_batch_size = divide_with_ceil(add(min_batch_size, max_batch_size), 2)
-  let optimal_batches = divide_with_ceil(total_items, optimal_batch_size)
-  assert_eq(13, optimal_batches)  // ceil(987/75) = 13
-  
-  // 计算总处理成本
-  let total_cost = multiply(optimal_batches, processing_cost_per_batch)
-  assert_eq(130, total_cost)  // 13 * 10 = 130
-}
-
-test "financial_compound_interest" {
-  // 金融复利计算测试
-  // 场景：计算复利投资增长
+test "complex_financial_calculations" {
+  // 复杂金融计算场景
   let principal = 10000
-  let annual_rate = 5  // 5%
-  let years = 3
+  let rate1 = 5  // 第一年利率5%
+  let rate2 = 6  // 第二年利率6%
+  let rate3 = 7  // 第三年利率7%
   
-  // 简化的年复利计算（整数运算）
-  let year1_amount = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
-  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, annual_rate), 100))
-  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, annual_rate), 100))
+  // 计算复利（使用向上取整）
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate1), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate2), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate3), 100))
   
-  assert_eq(10500, year1_amount)  // 10000 + 500
-  assert_eq(11025, year2_amount)  // 10500 + 525
-  assert_eq(11576, year3_amount)  // 11025 + 551
-  
-  // 计算总收益
-  let total_return = subtract(year3_amount, principal)
-  assert_eq(1576, total_return)  // 11576 - 10000 = 1576
-  
-  // 计算年化收益率
-  let annual_return = divide_with_ceil(total_return, years)
-  assert_eq(525, annual_return)  // ceil(1576/3) = 525
+  assert_eq(10500, year1)  // 10000 + 500
+  assert_eq(11130, year2)  // 10500 + 630
+  assert_eq(11909, year3)  // 11130 + 779
 }
 
-test "load_balancing_algorithm" {
-  // 负载均衡算法测试
-  // 场景：将请求分配到多个服务器
-  let total_requests = 2547
-  let server_count = 8
-  let max_requests_per_server = 400
-  
-  // 平均分配请求
-  let base_requests_per_server = divide_with_ceil(total_requests, server_count)
-  assert_eq(319, base_requests_per_server)  // ceil(2547/8) = 319
-  
-  // 验证是否超过单服务器最大限制
-  let needs_scaling = base_requests_per_server > max_requests_per_server
-  assert_true(needs_scaling)
-  
-  // 计算需要的服务器数量
-  let required_servers = divide_with_ceil(total_requests, max_requests_per_server)
-  assert_eq(7, required_servers)  // ceil(2547/400) = 7
-  
-  // 计算实际每服务器负载
-  let actual_load_per_server = divide_with_ceil(total_requests, required_servers)
-  assert_eq(364, actual_load_per_server)  // ceil(2547/7) = 364
-  
-  // 验证负载均衡
-  let load_variance = subtract(actual_load_per_server, max_requests_per_server)
-  assert_eq(-36, load_variance)  // 实际负载在限制内
+test "advanced_string_processing" {
+  // 高级字符串处理测试
+  assert_eq_string("Hello, 🌟🚀💫!", greet("🌟🚀💫"))
+  assert_eq_string("Hello, Line1\nLine2!", greet("Line1\nLine2"))
+  assert_eq_string("Hello,   spaced   text   !", greet("  spaced   text  "))
+  assert_eq_string("Hello, emoji😀test!", greet("emoji😀test"))
 }
 
-test "digital_signal_processing" {
-  // 数字信号处理测试
-  // 场景：采样率和缓冲区计算
-  let sample_rate = 44100  // Hz
-  let buffer_duration_ms = 100  // 毫秒
-  let channels = 2  // 立体声
+test "mathematical_series_and_patterns" {
+  // 数学级数和模式测试
+  // 计算等差数列前n项和：1 + 3 + 5 + ... + (2n-1) = n²
+  let n = 10
+  let series_sum = n * n  // 10² = 100
   
-  // 计算缓冲区大小（样本数）
-  let buffer_duration_samples = divide_with_ceil(
-    multiply(sample_rate, buffer_duration_ms), 
-    1000
-  )
-  assert_eq(4410, buffer_duration_samples)  // ceil(44100*100/1000) = 4410
+  // 使用我们的函数验证
+  let term1 = 1
+  let term10 = 19  // 2*10-1
+  let average = divide_with_ceil(add(term1, term10), 2)
+  let calculated_sum = multiply(average, n)
   
-  // 计算总样本数（包括所有通道）
-  let total_samples = multiply(buffer_duration_samples, channels)
-  assert_eq(8820, total_samples)  // 4410 * 2 = 8820
+  assert_eq(100, series_sum)
+  assert_eq(100, calculated_sum)
+}
+
+test "real_world_inventory_optimization" {
+  // 真实世界库存优化场景
+  let demand_forecast = 1500
+  let safety_stock = 200
+  let reorder_point = 300
+  let economic_order_qty = 500
   
-  // 计算数据吞吐量（字节/秒，假设每样本2字节）
-  let bytes_per_sample = 2
-  let throughput_per_second = multiply(sample_rate, multiply(channels, bytes_per_sample))
-  assert_eq(176400, throughput_per_second)  // 44100 * 2 * 2 = 176400
+  // 计算最优订货策略
+  let total_needed = add(demand_forecast, safety_stock)
+  let orders_needed = divide_with_ceil(total_needed, economic_order_qty)
+  let final_order = if multiply(orders_needed, economic_order_qty) < reorder_point {
+    add(orders_needed, 1)
+  } else {
+    orders_needed
+  }
   
-  // 计算缓冲区间隔
-  let buffers_per_second = divide_with_ceil(1000, buffer_duration_ms)
-  assert_eq(10, buffers_per_second)  // ceil(1000/100) = 10
+  assert_eq(1700, total_needed)
+  assert_eq(4, orders_needed)  // ceil(1700/500) = 4
+  assert_eq(4, final_order)    // 4*500 = 2000 > 300
+}
+
+test "performance_benchmark_simulation" {
+  // 性能基准测试模拟
+  let base_operations = 1000
+  let optimization_factor = 3
+  let overhead_percentage = 15
+  
+  // 计算优化后的性能
+  let optimized_ops = multiply(base_operations, optimization_factor)
+  let overhead = divide_with_ceil(multiply(optimized_ops, overhead_percentage), 100)
+  let actual_performance = add(optimized_ops, -overhead)
+  let improvement_ratio = divide_with_ceil(actual_performance, base_operations)
+  
+  assert_eq(3000, optimized_ops)
+  assert_eq(450, overhead)
+  assert_eq(2550, actual_performance)
+  assert_eq(3, improvement_ratio)
+}
+
+test "error_resilience_and_robustness" {
+  // 错误恢复和健壮性测试
+  // 测试各种边界和异常情况
+  assert_eq(0, divide_with_ceil(0, 0))  // 0/0 安全处理
+  assert_eq(0, divide_with_ceil(-999999, 0))  // 负数/0 安全处理
+  assert_eq(0, multiply(0, -999999))  // 零乘法
+  assert_eq(-999999, add(0, -999999))  // 零加负数
+  assert_eq(999999, add(999999, 0))  // 正数加零
+}
+
+test "complex_business_workflow" {
+  // 复杂业务工作流测试
+  let product_cost = 120
+  let quantity = 15
+  let tax_rate = 8
+  let shipping_per_item = 5
+  let bulk_discount_threshold = 1500
+  let bulk_discount_amount = 100
+  
+  // 完整的订单处理流程
+  let subtotal = multiply(product_cost, quantity)
+  let total_shipping = multiply(shipping_per_item, quantity)
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let pre_discount_total = add(add(subtotal, total_shipping), tax_amount)
+  let final_total = if pre_discount_total > bulk_discount_threshold {
+    add(pre_discount_total, -bulk_discount_amount)
+  } else {
+    pre_discount_total
+  }
+  
+  assert_eq(1800, subtotal)
+  assert_eq(75, total_shipping)
+  assert_eq(144, tax_amount)
+  assert_eq(2019, pre_discount_total)
+  assert_eq(1919, final_total)  // 应用了批量折扣
+}
+
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟测试
+  let input_size = 100
+  let linear_factor = 2
+  let quadratic_factor = 1
+  let logarithmic_factor = 10
+  
+  // 模拟 O(n²) 算法复杂度
+  let linear_component = multiply(input_size, linear_factor)
+  let quadratic_component = multiply(input_size, input_size)
+  let log_component = divide_with_ceil(multiply(logarithmic_factor, input_size), 100)
+  
+  let total_complexity = add(add(linear_component, quadratic_component), log_component)
+  
+  assert_eq(200, linear_component)
+  assert_eq(10000, quadratic_component)
+  assert_eq(10, log_component)
+  assert_eq(10210, total_complexity)
 }
