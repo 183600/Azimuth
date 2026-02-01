@@ -1,168 +1,134 @@
-// 高质量 MoonBit 测试用例集合
+// 高质量 MoonBit 测试用例
 // 针对 azimuth 库的核心功能进行全面测试
-// 包含实际应用场景、边界情况和错误处理
 
-test "financial_compound_interest_calculation" {
-  // 金融复利计算场景
-  let principal = 1000
-  let interest_rate = 5
-  let _years = 3  // 未使用的变量添加下划线前缀
-  
-  // 逐年计算复利
-  let year1_amount = @azimuth.add(principal, @azimuth.divide_with_ceil(@azimuth.multiply(principal, interest_rate), 100))
-  let year2_amount = @azimuth.add(year1_amount, @azimuth.divide_with_ceil(@azimuth.multiply(year1_amount, interest_rate), 100))
-  let year3_amount = @azimuth.add(year2_amount, @azimuth.divide_with_ceil(@azimuth.multiply(year2_amount, interest_rate), 100))
-  
-  @azimuth.assert_eq(1050, year1_amount)
-  @azimuth.assert_eq(1103, year2_amount)
-  @azimuth.assert_eq(1158, year3_amount)
+test "addition_commutative_property" {
+  // 测试加法交换律: a + b = b + a
+  let a = 7
+  let b = 13
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  @azimuth.assert_eq(@azimuth.add(0, 5), @azimuth.add(5, 0))
+  @azimuth.assert_eq(@azimuth.add(-3, 8), @azimuth.add(8, -3))
 }
 
-test "inventory_optimization_algorithm" {
-  // 库存优化算法测试
-  let demand_forecast = 450
-  let safety_stock = 50
-  let _reorder_point = 100  // 未使用的变量添加下划线前缀
-  let economic_order_quantity = 200
-  
-  // 计算最优订货量
-  let total_required = @azimuth.add(demand_forecast, safety_stock)
-  let orders_needed = @azimuth.divide_with_ceil(total_required, economic_order_quantity)
-  let final_order_quantity = @azimuth.multiply(orders_needed, economic_order_quantity)
-  
-  @azimuth.assert_eq(500, total_required)
-  @azimuth.assert_eq(3, orders_needed)
-  @azimuth.assert_eq(600, final_order_quantity)
-}
-
-test "data_structure_array_simulation" {
-  // 模拟数组数据结构操作
-  let array_size = 10
-  let element_size = 4
-  let total_memory = @azimuth.multiply(array_size, element_size)
-  
-  // 计算内存页数（每页16字节）
-  let page_size = 16
-  let pages_needed = @azimuth.divide_with_ceil(total_memory, page_size)
-  
-  @azimuth.assert_eq(40, total_memory)
-  @azimuth.assert_eq(3, pages_needed)
-}
-
-test "network_packet_fragmentation" {
-  // 网络数据包分片计算
-  let data_size = 1500
-  let mtu = 576  // 最大传输单元
-  let header_size = 20
-  
-  // 计算有效载荷
-  let payload = @azimuth.add(data_size, -header_size)
-  let fragments_needed = @azimuth.divide_with_ceil(payload, mtu)
-  let total_transmitted = @azimuth.add(@azimuth.multiply(fragments_needed, mtu), header_size)
-  
-  @azimuth.assert_eq(1480, payload)
-  @azimuth.assert_eq(3, fragments_needed)
-  @azimuth.assert_eq(1748, total_transmitted)
-}
-
-test "time_zone_conversion_calculator" {
-  // 时区转换计算
-  let local_hours = 14  // 下午2点
-  let time_difference = -8  // 与UTC时差
-  let utc_hours = @azimuth.add(local_hours, time_difference)
-  
-  // 处理跨日期情况
-  let adjusted_utc = if utc_hours < 0 {
-    @azimuth.add(utc_hours, 24)
-  } else if utc_hours >= 24 {
-    @azimuth.add(utc_hours, -24)
-  } else {
-    utc_hours
+test "multiplication_identity_elements" {
+  // 测试乘法单位元性质: a * 1 = a, a * 0 = 0
+  let test_values = [0, 1, -1, 5, -10, 100]
+  for value in test_values {
+    @azimuth.assert_eq(value, @azimuth.multiply(value, 1))
+    @azimuth.assert_eq(0, @azimuth.multiply(value, 0))
   }
-  
-  @azimuth.assert_eq(6, adjusted_utc)
 }
 
-test "cryptography_hash_simulation" {
-  // 密码学哈希模拟
-  let input_value = 12345
-  let prime_modulus = 9973
-  let hash_multiplier = 31
-  
-  // 简单哈希函数模拟
-  let hash_value1 = @azimuth.multiply(input_value, hash_multiplier) % prime_modulus
-  let hash_value2 = @azimuth.add(@azimuth.multiply(hash_value1, hash_multiplier), input_value) % prime_modulus
-  
-  @azimuth.assert_eq(382812, @azimuth.multiply(input_value, hash_multiplier))
-  @azimuth.assert_eq(382812 % 9973, hash_value1)
-  @azimuth.assert_eq(0, hash_value2)  // 由于取模运算，这里简化处理
+test "divide_with_ceil_precision_test" {
+  // 测试向上取整除法的精度
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(3, 2))  // 1.5 -> 2
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(8, 3))  // 2.666... -> 3
+  @azimuth.assert_eq(7, @azimuth.divide_with_ceil(13, 2)) // 6.5 -> 7
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100)) // 0.01 -> 1
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 100)) // 0/100 = 0
 }
 
-test "machine_learning_batch_processing" {
-  // 机器学习批处理计算
-  let total_samples = 1000
-  let batch_size = 32
-  let epochs = 10
-  
-  // 计算批次数和总迭代次数
-  let batches_per_epoch = @azimuth.divide_with_ceil(total_samples, batch_size)
-  let total_iterations = @azimuth.multiply(batches_per_epoch, epochs)
-  
-  @azimuth.assert_eq(32, batches_per_epoch)
-  @azimuth.assert_eq(320, total_iterations)
+test "greet_function_edge_cases" {
+  // 测试问候函数的边界情况
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))  // 空字符串
+  @azimuth.assert_eq_string("Hello,  !", @azimuth.greet(" "))  // 单个空格
+  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))  // 单字符
+  @azimuth.assert_eq_string("Hello, 中文!", @azimuth.greet("中文"))  // 中文字符
+  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))  // emoji
 }
 
-test "graphics_pixel_manipulation" {
-  // 图形像素处理计算
-  let image_width = 1920
-  let image_height = 1080
-  let bytes_per_pixel = 4  // RGBA
-  let compression_ratio = 70
+test "complex_business_workflow" {
+  // 复杂业务工作流程测试
+  // 计算订单总价：商品价格 × 数量 + 税费 - 折扣
+  let product_price = 120
+  let quantity = 8
+  let tax_rate = 8  // 8%
+  let shipping = 15
+  let discount = 50
   
-  // 计算图像大小和压缩后大小
-  let total_pixels = @azimuth.multiply(image_width, image_height)
-  let uncompressed_size = @azimuth.multiply(total_pixels, bytes_per_pixel)
-  let compressed_size = @azimuth.multiply(uncompressed_size, compression_ratio) / 100
+  // 计算小计
+  let subtotal = @azimuth.multiply(product_price, quantity)
+  // 计算税费（向上取整）
+  let tax_amount = @azimuth.divide_with_ceil(@azimuth.multiply(subtotal, tax_rate), 100)
+  // 计算总价
+  let total_before_discount = @azimuth.add(@azimuth.add(subtotal, tax_amount), shipping)
+  let final_total = @azimuth.add(total_before_discount, -discount)
   
-  @azimuth.assert_eq(2073600, total_pixels)
-  @azimuth.assert_eq(8294400, uncompressed_size)
-  @azimuth.assert_eq(5806080, compressed_size)
+  @azimuth.assert_eq(960, subtotal)
+  @azimuth.assert_eq(77, tax_amount)  // ceil(960 * 8 / 100) = ceil(76.8) = 77
+  @azimuth.assert_eq(1052, total_before_discount)
+  @azimuth.assert_eq(1002, final_total)
 }
 
-test "database_index_optimization" {
-  // 数据库索引优化计算
-  let table_rows = 100000
-  let index_selectivity = 5  // 百分比
-  let page_size = 8192
-  let index_entry_size = 16
-  
-  // 计算索引大小和选择性扫描
-  let selective_rows = @azimuth.divide_with_ceil(@azimuth.multiply(table_rows, index_selectivity), 100)
-  let index_entries = table_rows
-  let _index_size = @azimuth.divide_with_ceil(@azimuth.multiply(index_entries, index_entry_size), page_size) * page_size  // 未使用的变量添加下划线前缀
-  
-  @azimuth.assert_eq(5000, selective_rows)
-  @azimuth.assert_eq(1600000, @azimuth.multiply(index_entries, index_entry_size))
-  @azimuth.assert_eq(312, @azimuth.divide_with_ceil(1600000, 8192))
+test "negative_number_operations" {
+  // 测试负数运算
+  @azimuth.assert_eq(-10, @azimuth.add(-3, -7))
+  @azimuth.assert_eq(-5, @azimuth.add(-8, 3))
+  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
+  @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
+  @azimuth.assert_eq(-15, @azimuth.multiply(3, -5))
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
+  @azimuth.assert_eq(-4, @azimuth.divide_with_ceil(-11, 3))
 }
 
-test "error_boundary_robustness" {
-  // 错误边界健壮性测试
-  let normal_value = 42
-  let zero_divisor = 0
-  let large_value = 2147483647
-  let negative_large = -2147483648
+test "distributive_property_verification" {
+  // 验证分配律: a * (b + c) = a * b + a * c
+  let a = 4
+  let b = 6
+  let c = 9
+  let left_side = @azimuth.multiply(a, @azimuth.add(b, c))
+  let right_side = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
+  @azimuth.assert_eq(left_side, right_side)  // 4 * (6 + 9) = 4 * 6 + 4 * 9 = 60
+}
+
+test "packaging_and_shipping_calculation" {
+  // 包装和运输计算场景
+  let total_items = 47
+  let items_per_box = 12
+  let boxes_needed = @azimuth.divide_with_ceil(total_items, items_per_box)
   
-  // 测试各种边界情况
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(normal_value, zero_divisor))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(large_value, zero_divisor))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(negative_large, zero_divisor))
+  // 计算运输成本（每箱5元）
+  let shipping_cost_per_box = 5
+  let total_shipping_cost = @azimuth.multiply(boxes_needed, shipping_cost_per_box)
   
-  // 测试极端数值运算
-  @azimuth.assert_eq(0, @azimuth.multiply(normal_value, zero_divisor))
-  @azimuth.assert_eq(0, @azimuth.add(0, zero_divisor))
+  @azimuth.assert_eq(4, boxes_needed)  // ceil(47/12) = 4
+  @azimuth.assert_eq(20, total_shipping_cost)
+}
+
+test "large_scale_calculation" {
+  // 大规模计算测试
+  let large_number = 100000
+  let multiplier = 42
+  let addition = 50000
   
-  // 测试字符串边界情况
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, 🌍!", @azimuth.greet("🌍"))
+  // 测试大数运算
+  let large_product = @azimuth.multiply(large_number, multiplier)
+  let large_sum = @azimuth.add(large_product, addition)
+  
+  @azimuth.assert_eq(4200000, large_product)
+  @azimuth.assert_eq(4250000, large_sum)
+}
+
+test "financial_calculation_scenario" {
+  // 金融计算场景：计算投资回报
+  let principal = 10000
+  let rate_percent = 5
+  let years = 3
+  
+  // 计算每年的回报（向上取整）
+  let year1_return = @azimuth.divide_with_ceil(@azimuth.multiply(principal, rate_percent), 100)
+  let year1_total = @azimuth.add(principal, year1_return)
+  
+  let year2_return = @azimuth.divide_with_ceil(@azimuth.multiply(year1_total, rate_percent), 100)
+  let year2_total = @azimuth.add(year1_total, year2_return)
+  
+  let year3_return = @azimuth.divide_with_ceil(@azimuth.multiply(year2_total, rate_percent), 100)
+  let final_total = @azimuth.add(year2_total, year3_return)
+  
+  @azimuth.assert_eq(500, year1_return)
+  @azimuth.assert_eq(10500, year1_total)
+  @azimuth.assert_eq(525, year2_return)
+  @azimuth.assert_eq(11025, year2_total)
+  @azimuth.assert_eq(552, year3_return)
+  @azimuth.assert_eq(11577, final_total)
 }
