@@ -285,7 +285,8 @@
     "standard_moonbit_test_suite_new.mbt",
     "standard_azimuth_tests_new.mbt",
     "azimuth_comprehensive_test_suite_new.mbt",
-    "enhanced_azimuth_tests.mbt"
+    "enhanced_azimuth_tests.mbt",
+    "standard_moonbit_test_suite.mbt"
   ],
   "import": [
     "moonbitlang/core/builtin",
