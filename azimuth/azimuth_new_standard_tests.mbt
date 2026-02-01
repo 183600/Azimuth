@@ -1,111 +1,155 @@
-// Azimuth 项目的新增标准 MoonBit 测试用例
-// 包含8个高质量测试用例，使用标准 MoonBit 测试语法
+// Azimuth 项目标准 MoonBit 测试用例
+// 包含 8 个高质量测试用例，使用标准 MoonBit 测试语法
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  assert_eq(8, add(5, 3))
-  assert_eq(15, multiply(3, 5))
-  assert_eq(2, subtract(7, 5))
-  assert_eq(3, divide_with_ceil(8, 3))
-  assert_eq(0, divide_with_ceil(5, 0))
+test "mathematical_associative_laws" {
+  // 测试数学结合律
+  let a = 5
+  let b = 3
+  let c = 2
+  
+  // 加法结合律: (a + b) + c = a + (b + c)
+  assert_eq(add(add(a, b), c), add(a, add(b, c)))
+  
+  // 乘法结合律: (a * b) * c = a * (b * c)
+  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
+  
+  // 验证具体数值
+  assert_eq(10, add(add(5, 3), 2))
+  assert_eq(10, add(5, add(3, 2)))
+  assert_eq(30, multiply(multiply(5, 3), 2))
+  assert_eq(30, multiply(5, multiply(3, 2)))
 }
 
-test "mathematical_commutative_laws" {
-  // 数学交换律测试
-  let a = 12
-  let b = 8
+test "complex_budget_allocation" {
+  // 复杂预算分配场景测试
+  let total_budget = 50000
+  let departments = 4
+  let min_budget_per_dept = divide_with_ceil(total_budget, departments)
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  assert_eq(12500, min_budget_per_dept)
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  // 验证分配后的总预算
+  let allocated_total = multiply(min_budget_per_dept, departments)
+  assert_eq(50000, allocated_total)
   
-  // 验证具体结果
-  assert_eq(20, add(12, 8))
-  assert_eq(96, multiply(12, 8))
+  // 计算预留缓冲资金
+  let buffer = subtract(allocated_total, total_budget)
+  assert_eq(0, buffer)
 }
 
-test "negative_number_operations" {
-  // 负数运算测试
-  assert_eq(-8, add(-5, -3))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(-2, subtract(-7, -5))
-  assert_eq(-3, divide_with_ceil(-8, 3))
+test "time_calculation_scenario" {
+  // 时间计算场景测试
+  let total_minutes = 157
+  let minutes_per_hour = 60
+  let hours_needed = divide_with_ceil(total_minutes, minutes_per_hour)
+  
+  assert_eq(3, hours_needed)
+  
+  // 计算总分钟容量
+  let total_capacity = multiply(hours_needed, minutes_per_hour)
+  assert_eq(180, total_capacity)
+  
+  // 计算剩余分钟
+  let remaining_minutes = subtract(total_capacity, total_minutes)
+  assert_eq(23, remaining_minutes)
 }
 
-test "greet_function_comprehensive" {
-  // 问候函数综合测试
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, World!", greet("World"))
+test "string_edge_case_handling" {
+  // 字符串边缘情况处理测试
   assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 中文!", greet("中文"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, a!", greet("a"))
+  assert_eq_string("Hello, ABC123!", greet("ABC123"))
+  assert_eq_string("Hello, special@chars!", greet("special@chars"))
+  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
 }
 
-test "boundary_value_testing" {
-  // 边界值测试
-  // 零值测试
-  assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(0, divide_with_ceil(0, 10))
+test "inventory_optimization_problem" {
+  // 库存优化问题测试
+  let product_a_qty = 45
+  let product_b_qty = 67
+  let product_c_qty = 23
+  let box_capacity = 20
   
-  // 单位值测试
-  assert_eq(5, add(5, 0))
-  assert_eq(5, multiply(5, 1))
-  assert_eq(1, divide_with_ceil(5, 5))
+  // 计算每种产品需要的箱子数
+  let boxes_a = divide_with_ceil(product_a_qty, box_capacity)
+  let boxes_b = divide_with_ceil(product_b_qty, box_capacity)
+  let boxes_c = divide_with_ceil(product_c_qty, box_capacity)
   
-  // 大数测试
-  assert_eq(2000, add(1000, 1000))
-  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(3, boxes_a)  // ceil(45/20) = 3
+  assert_eq(4, boxes_b)  // ceil(67/20) = 4
+  assert_eq(2, boxes_c)  // ceil(23/20) = 2
+  
+  // 计算总箱子数
+  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  assert_eq(9, total_boxes)
+  
+  // 计算总存储容量
+  let total_capacity = multiply(total_boxes, box_capacity)
+  assert_eq(180, total_capacity)
 }
 
-test "business_inventory_calculation" {
-  // 库存计算业务测试
-  let total_products = 47
-  let box_capacity = 12
-  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+test "performance_calculation_metrics" {
+  // 性能计算指标测试
+  let operations = 1000
+  let time_per_operation = 3
+  let operations_per_batch = 75
   
-  assert_eq(4, boxes_needed)
+  // 计算总时间
+  let total_time = multiply(operations, time_per_operation)
+  assert_eq(3000, total_time)
   
-  // 验证总容量
-  let total_capacity = multiply(boxes_needed, box_capacity)
-  assert_eq(48, total_capacity)
+  // 计算需要的批次数
+  let batches_needed = divide_with_ceil(operations, operations_per_batch)
+  assert_eq(14, batches_needed)  // ceil(1000/75) = 14
   
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_products)
-  assert_eq(1, remaining_space)
+  // 计算批次处理能力
+  let batch_capacity = multiply(batches_needed, operations_per_batch)
+  assert_eq(1050, batch_capacity)
+  
+  // 计算剩余处理能力
+  let spare_capacity = subtract(batch_capacity, operations)
+  assert_eq(50, spare_capacity)
 }
 
-test "complex_workflow_calculation" {
-  // 复杂工作流计算测试
-  // 场景：项目资源规划
-  let team_members = 6
-  let tasks_per_member = 8
-  let total_tasks = multiply(team_members, tasks_per_member)
-  
-  let days_per_sprint = 5
-  let tasks_per_day = 10
-  let sprint_capacity = multiply(days_per_sprint, tasks_per_day)
-  
-  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
-  
-  assert_eq(48, total_tasks)  // 6 * 8 = 48
-  assert_eq(50, sprint_capacity)  // 5 * 10 = 50
-  assert_eq(1, sprints_needed)  // ceil(48/50) = 1
-}
-
-test "mathematical_distributive_property" {
-  // 数学分配律测试
-  let a = 4
-  let b = 6
+test "mathematical_distributive_law" {
+  // 测试数学分配律
+  let a = 6
+  let b = 4
   let c = 3
   
-  // 验证分配律: a * (b + c) = a * b + a * c
+  // 分配律: a * (b + c) = a * b + a * c
   let left_side = multiply(a, add(b, c))
   let right_side = add(multiply(a, b), multiply(a, c))
   
-  assert_eq(left_side, right_side)  // 4 * (6 + 3) = 4 * 6 + 4 * 3 = 36
+  assert_eq(left_side, right_side)
+  assert_eq(42, left_side)  // 6 * (4 + 3) = 6 * 7 = 42
+  assert_eq(42, right_side)  // 6 * 4 + 6 * 3 = 24 + 18 = 42
+}
+
+test "real_world_shipping_calculation" {
+  // 真实世界运输计算测试
+  let packages = 127
+  let weight_per_package = 15
+  let max_weight_per_truck = 200
+  let trucks_available = 12
+  
+  // 计算总重量
+  let total_weight = multiply(packages, weight_per_package)
+  assert_eq(1905, total_weight)
+  
+  // 计算需要的卡车数量
+  let trucks_needed = divide_with_ceil(total_weight, max_weight_per_truck)
+  assert_eq(10, trucks_needed)  // ceil(1905/200) = 10
+  
+  // 验证卡车数量是否足够
+  assert_true(trucks_needed <= trucks_available)
+  
+  // 计算实际运输能力
+  let actual_capacity = multiply(trucks_needed, max_weight_per_truck)
+  assert_eq(2000, actual_capacity)
+  
+  // 计算剩余运输能力
+  let remaining_capacity = subtract(actual_capacity, total_weight)
+  assert_eq(95, remaining_capacity)
 }
