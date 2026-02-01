@@ -1,124 +1,91 @@
-// Copyright 2026 International Digital Economy Academy
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// 标准 MoonBit 测试用例 - Azimuth 核心功能测试
+// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
 
-///|
-test "int basic arithmetic operations" {
-  inspect(1 + 2, content="3")
-  inspect(5 - 3, content="2")
-  inspect(4 * 3, content="12")
-  inspect(10 / 2, content="5")
-  inspect(7 % 3, content="1")
+test "basic_addition_functionality" {
+  // 基本加法功能测试
+  @azimuth.assert_eq(5, @azimuth.add(2, 3))
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(-1, @azimuth.add(-3, 2))
+  @azimuth.assert_eq(100, @azimuth.add(50, 50))
 }
 
-///|
-test "int comparison operations" {
-  inspect(5 > 3, content="true")
-  inspect(3 >= 3, content="true")
-  inspect(2 < 4, content="true")
-  inspect(1 <= 1, content="true")
-  inspect(5 == 5, content="true")
-  inspect(3 != 4, content="true")
+test "basic_multiplication_functionality" {
+  // 基本乘法功能测试
+  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
+  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
+  @azimuth.assert_eq(25, @azimuth.multiply(-5, -5))
 }
 
-///|
-test "string basic operations" {
-  let s1 = "Hello"
-  let s2 = "World"
-  inspect(s1.length(), content="5")
-  inspect(s2.length(), content="5")
-  inspect(s1 + " " + s2, content="Hello World")
-  inspect("".length(), content="0")
+test "divide_with_ceil_positive_numbers" {
+  // 向上取整除法正数测试
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 5))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 10))
 }
 
-///|
-test "list basic operations" {
-  let empty_list : @list.List[Int] = @list.empty()
-  let single_element = @list.cons(42, empty_list)
-  let multiple_elements = @list.from_array([1, 2, 3, 4, 5])
+test "divide_with_ceil_edge_cases" {
+  // 向上取整除法边界情况测试
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(5, 0))  // 除零处理
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(5, 5))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(3, 2))
+  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-10, 3))
+}
+
+test "greet_function_basic_tests" {
+  // 基本问候功能测试
+  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
+}
+
+test "subtract_function_tests" {
+  // 减法函数测试
+  @azimuth.assert_eq(2, @azimuth.subtract(5, 3))
+  @azimuth.assert_eq(-2, @azimuth.subtract(3, 5))
+  @azimuth.assert_eq(0, @azimuth.subtract(5, 5))
+  @azimuth.assert_eq(10, @azimuth.subtract(0, -10))
+}
+
+test "mathematical_commutative_properties" {
+  // 数学交换律性质测试
+  let a = 7
+  let b = 13
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
+}
+
+test "business_packaging_scenario" {
+  // 业务包装场景测试
+  let items = 25
+  let capacity = 6
+  let packages = @azimuth.divide_with_ceil(items, capacity)
+  @azimuth.assert_eq(5, packages)
   
-  inspect(empty_list.length(), content="0")
-  inspect(single_element.length(), content="1")
-  inspect(multiple_elements.length(), content="5")
-  inspect(@list.singleton(99), content="@list.from_array([99])")
+  let total_capacity = @azimuth.multiply(packages, capacity)
+  let remaining = @azimuth.subtract(total_capacity, items)
+  @azimuth.assert_eq(5, remaining)
 }
 
-///|
-test "list map and filter operations" {
-  let numbers = @list.from_array([1, 2, 3, 4, 5])
-  let doubled = numbers.map(x => x * 2)
-  let evens = numbers.filter(x => x % 2 == 0)
+test "complex_calculation_workflow" {
+  // 复杂计算工作流测试
+  let team = 4
+  let tasks_per_person = 8
+  let total_tasks = @azimuth.multiply(team, tasks_per_person)
   
-  inspect(doubled, content="@list.from_array([2, 4, 6, 8, 10])")
-  inspect(evens, content="@list.from_array([2, 4])")
-}
-
-///|
-test "array basic operations" {
-  let empty_array : Array[Int] = []
-  let single_array = [42]
-  let multi_array = [1, 2, 3, 4, 5]
+  let sprint_capacity = 15
+  let sprints = @azimuth.divide_with_ceil(total_tasks, sprint_capacity)
   
-  inspect(empty_array.length(), content="0")
-  inspect(single_array.length(), content="1")
-  inspect(multi_array.length(), content="5")
-  inspect(multi_array[0], content="1")
-  inspect(multi_array[4], content="5")
+  @azimuth.assert_eq(32, total_tasks)  // 4 * 8 = 32
+  @azimuth.assert_eq(3, sprints)       // ceil(32/15) = 3
 }
 
-///|
-test "array zip_with operation" {
-  let arr1 = [1, 2, 3]
-  let arr2 = [4, 5, 6]
-  let sum_array = @array.zip_with(arr1, arr2, (a, b) => a + b)
-  let product_array = @array.zip_with(arr1, arr2, (a, b) => a * b)
-  
-  inspect(sum_array, content="[5, 7, 9]")
-  inspect(product_array, content="[4, 10, 18]")
-}
-
-///|
-test "boolean logic operations" {
-  inspect(true && true, content="true")
-  inspect(true && false, content="false")
-  inspect(false || true, content="true")
-  inspect(false || false, content="false")
-  inspect(!true, content="false")
-  inspect(!false, content="true")
-}
-
-///|
-test "option type operations" {
-  let some_value : Option[Int] = Some(42)
-  let no_value : Option[Int] = None
-  let doubled_some = some_value.map(x => x * 2)
-  let doubled_none = no_value.map(x => x * 2)
-  
-  inspect(some_value.is_some(), content="true")
-  inspect(no_value.is_none(), content="true")
-  inspect(doubled_some, content="Some(84)")
-  inspect(doubled_none, content="None")
-}
-
-///|
-test "result type operations" {
-  let success_result : Result[Int, String] = Ok(42)
-  let error_result : Result[Int, String] = Err("Error message")
-  let mapped_success = success_result.map(x => x * 2)
-  let mapped_error = error_result.map(x => x * 2)
-  
-  inspect(success_result.is_ok(), content="true")
-  inspect(error_result.is_err(), content="true")
-  inspect(mapped_success, content="Ok(84)")
-  inspect(mapped_error, content="Err(\"Error message\")")
+test "unicode_and_special_characters" {
+  // Unicode和特殊字符测试
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
+  @azimuth.assert_eq_string("Hello, café!", @azimuth.greet("café"))
+  @azimuth.assert_eq_string("Hello, Москва!", @azimuth.greet("Москва"))
 }
