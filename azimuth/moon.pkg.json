@@ -303,8 +303,8 @@
         "test/simple_standard_test.mbt",
         "test/azimuth_enhanced_test_suite.mbt",
         "simple_standard_test.mbt",
-        "standard_moonbit_tests_new.mbt"
-    ],
+            "standard_moonbit_tests_new.mbt",
+            "quality_standard_tests_new.mbt"    ],
     "import": [
         "moonbitlang/core/builtin",
         "moonbitlang/core"
