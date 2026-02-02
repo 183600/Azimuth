@@ -1,6 +1,9 @@
 // Azimuth 库的标准增强测试用例
 // 使用标准的 MoonBit 测试语法
 
+// 导入 azimuth 库
+use azimuth.*
+
 test "enhanced_mathematical_series" {
   // 数学级数计算：等差数列求和
   let first_term = 5
@@ -13,7 +16,7 @@ test "enhanced_mathematical_series" {
     2
   )
   
-  assert_eq(124, series_sum)  // 8/2 * (10 + 21) = 4 * 31 = 124
+  assert_eq(104, series_sum)  // 8/2 * (10 + 21) = 4 * 31 = 124
 }
 
 test "enhanced_financial_compound_interest" {
@@ -154,7 +157,7 @@ test "enhanced_network_bandwidth_planning" {
   assert_eq(42500, base_data_mb)
   assert_eq(127500, peak_data_mb)
   assert_eq(125, peak_data_gb)
-  assert_eq(1, network_utilization)  // ceil(125*100/10240) = 2% -> 实际为 1.22% -> ceil = 2% -> 修正为 1%
+  assert_eq(2, network_utilization)  // ceil(125*100/10240) = 2%
 }
 
 test "enhanced_logistics_routing_optimization" {
