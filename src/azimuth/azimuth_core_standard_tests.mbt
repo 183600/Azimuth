@@ -1,4 +1,4 @@
-// 标准 MoonBit 测试用例 - Azimuth 项目
+// Azimuth 核心标准测试用例
 // 包含8个高质量测试用例，使用标准 MoonBit 测试语法
 
 test "add_function_standard_tests" {
