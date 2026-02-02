@@ -279,7 +279,6 @@
     "standard_moonbit_tests_v22.mbt",
     "azimuth_high_quality_test_suite.mbt",
     "concise_standard_tests.mbt",
-    "standard_moonbit_tests.mbt",
     "enhanced_lib_test.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
     "basic_tests.mbt",
@@ -351,6 +350,7 @@
     "azimuth_standard_tests.mbt",
     "lib.mbt",
     "standard_tests.mbt",
+    "standard_moonbit_tests.mbt",
     "standard_moonbit_tests.mbt",
     "simple_new_tests.mbt",
     "azimuth_enhanced_test_suite.mbt",
