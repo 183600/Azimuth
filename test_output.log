@@ -1,114 +1,130 @@
 Running moon test with real execution...
 Compiling azimuth...
-azimuth/lib.mbt:2174:7-2174:17 [E0002] Warning (unused_value): Unused variable 'item_sizes'
-azimuth/lib.mbt:2427:6-2427:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "recursive_calculation_simulation" should be unique, but it is already used at azimuth/lib.mbt:1666:6.
-azimuth/lib.mbt:2439:7-2439:19 [E0002] Warning (unused_value): Unused variable 'final_result'
-azimuth/lib.mbt:2538:6-2538:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "memory_allocation_simulation" should be unique, but it is already used at azimuth/lib.mbt:1708:6.
-azimuth/lib.mbt:2798:6-2798:39 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "algorithm_complexity_simulation" should be unique, but it is already used at azimuth/lib.mbt:1474:6.
-azimuth/lib.mbt:3120:6-3120:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_mathematical_properties" should be unique, but it is already used at azimuth/lib.mbt:458:6.
-azimuth/lib.mbt:3145:6-3145:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_combined_operations" should be unique, but it is already used at azimuth/lib.mbt:474:6.
-azimuth/lib.mbt:4381:7-4381:12 [E0002] Warning (unused_value): Unused variable 'years'
-azimuth/lib.mbt:4456:7-4456:19 [E0002] Warning (unused_value): Unused variable 'repeat_count'
-azimuth/lib.mbt:4457:7-4457:16 [E0002] Warning (unused_value): Unused variable 'separator'
-azimuth/lib.mbt:4784:6-4784:26 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "add_function_basic" should be unique, but it is already used at azimuth/lib.mbt:595:6.
-azimuth/lib.mbt:4791:6-4791:31 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "multiply_function_basic" should be unique, but it is already used at azimuth/lib.mbt:602:6.
-azimuth/lib.mbt:4798:6-4798:28 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "greet_function_basic" should be unique, but it is already used at azimuth/lib.mbt:609:6.
-azimuth/lib.mbt:4804:6-4804:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "divide_with_ceil_positive" should be unique, but it is already used at azimuth/lib.mbt:615:6.
-azimuth/lib.mbt:4811:6-4811:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "divide_with_ceil_negative" should be unique, but it is already used at azimuth/lib.mbt:622:6.
-azimuth/lib.mbt:4818:6-4818:23 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "zero_operations" should be unique, but it is already used at azimuth/lib.mbt:178:6.
-azimuth/lib.mbt:4826:6-4826:31 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "large_number_operations" should be unique, but it is already used at azimuth/lib.mbt:170:6.
-azimuth/lib.mbt:4832:6-4832:27 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "combined_operations" should be unique, but it is already used at azimuth/lib.mbt:643:6.
-azimuth/lib.mbt:4838:6-4838:27 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "practical_packaging" should be unique, but it is already used at azimuth/lib.mbt:649:6.
-azimuth/lib.mbt:4846:6-4846:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "greeting_with_special_characters" should be unique, but it is already used at azimuth/lib.mbt:657:6.
-azimuth/lib.mbt:4855:6-4855:43 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "mathematical_properties_commutative" should be unique, but it is already used at azimuth/lib.mbt:2728:6.
-azimuth/lib.mbt:4880:6-4880:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "packaging_calculation_scenario" should be unique, but it is already used at azimuth/lib.mbt:2761:6.
-azimuth/lib.mbt:4914:6-4914:35 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "divide_with_ceil_edge_cases" should be unique, but it is already used at azimuth/lib.mbt:105:6.
-azimuth/lib.mbt:4923:6-4923:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "complex_business_workflow" should be unique, but it is already used at azimuth/lib.mbt:703:6.
-azimuth/lib.mbt:4958:6-4958:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "financial_calculation_scenario" should be unique, but it is already used at azimuth/lib.mbt:336:6.
-azimuth/lib.mbt:4973:6-4973:32 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "data_analysis_statistics" should be unique, but it is already used at azimuth/lib.mbt:664:6.
-azimuth/lib.mbt:4990:6-4990:37 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "inventory_management_scenario" should be unique, but it is already used at azimuth/lib.mbt:286:6.
-azimuth/lib.mbt:5011:6-5011:42 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "algorithm_binary_search_simulation" should be unique, but it is already used at azimuth/lib.mbt:1636:6.
-azimuth/lib.mbt:5025:6-5025:39 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "data_structure_stack_operations" should be unique, but it is already used at azimuth/lib.mbt:1646:6.
-azimuth/lib.mbt:5088:6-5088:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "memory_allocation_simulation" should be unique, but it is already used at azimuth/lib.mbt:1708:6.
-azimuth/lib.mbt:5220:6-5220:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_mathematical_laws" should be unique, but it is already used at azimuth/lib.mbt:3033:6.
-azimuth/lib.mbt:5358:7-5358:12 [E0002] Warning (unused_value): Unused variable 'years'
-azimuth/lib.mbt:5991:6-5991:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "divide_with_ceil_comprehensive" should be unique, but it is already used at azimuth/lib.mbt:241:6.
-azimuth/lib.mbt:6625:6-6625:32 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_batch_processing" should be unique, but it is already used at azimuth/lib.mbt:5366:6.
-azimuth/lib.mbt:6644:7-6644:12 [E0002] Warning (unused_value): Unused variable 'years'
-azimuth/lib.mbt:6713:6-6713:34 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_project_management" should be unique, but it is already used at azimuth/lib.mbt:4539:6.
-azimuth/lib.mbt:6790:6-6790:31 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "add_function_edge_cases" should be unique, but it is already used at azimuth/lib.mbt:82:6.
-azimuth/lib.mbt:6806:6-6806:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "divide_with_ceil_comprehensive" should be unique, but it is already used at azimuth/lib.mbt:241:6.
-azimuth/lib.mbt:6825:6-6825:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "complex_business_workflow" should be unique, but it is already used at azimuth/lib.mbt:703:6.
-azimuth/lib.mbt:6877:6-6877:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "financial_calculation_scenario" should be unique, but it is already used at azimuth/lib.mbt:336:6.
-azimuth/lib.mbt:6943:6-6943:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "performance_benchmark_simulation" should be unique, but it is already used at azimuth/lib.mbt:2212:6.
-azimuth/lib.mbt:6975:6-6975:34 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "add_function_comprehensive" should be unique, but it is already used at azimuth/lib.mbt:1966:6.
-azimuth/lib.mbt:6984:6-6984:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "multiply_function_edge_cases" should be unique, but it is already used at azimuth/lib.mbt:90:6.
-azimuth/lib.mbt:6993:6-6993:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "greet_function_international" should be unique, but it is already used at azimuth/lib.mbt:2055:6.
-azimuth/lib.mbt:7024:6-7024:44 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "mathematical_properties_verification" should be unique, but it is already used at azimuth/lib.mbt:2982:6.
-azimuth/lib.mbt:7362:6-7362:28 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "inventory_management" should be unique, but it is already used at azimuth/lib.mbt:836:6.
-azimuth/lib.mbt:7406:6-7406:30 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "temperature_conversion" should be unique, but it is already used at azimuth/lib.mbt:4330:6.
-azimuth/lib.mbt:7531:6-7531:29 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_large_numbers" should be unique, but it is already used at azimuth/lib.mbt:5202:6.
-azimuth/lib.mbt:7537:6-7537:35 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_combined_operations" should be unique, but it is already used at azimuth/lib.mbt:1805:6.
-azimuth/lib.mbt:7543:6-7543:37 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_packaging_calculation" should be unique, but it is already used at azimuth/lib.mbt:1827:6.
-azimuth/lib.mbt:8261:7-8261:8 [E0002] Warning (unused_value): Unused variable 'n'
-azimuth/lib.mbt:8277:7-8277:11 [E0002] Warning (unused_value): Unused variable 'rows'
-azimuth/lib.mbt:8357:7-8357:11 [E0002] Warning (unused_value): Unused variable 'base'
-azimuth/lib.mbt:8400:6-8400:43 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_financial_compound_interest" should be unique, but it is already used at azimuth/lib.mbt:6640:6.
-azimuth/lib.mbt:8509:7-8509:8 [E0002] Warning (unused_value): Unused variable 'n'
-azimuth/lib.mbt:8541:7-8541:17 [E0002] Warning (unused_value): Unused variable 'full_title'
-azimuth/lib.mbt:8565:7-8565:22 [E0002] Warning (unused_value): Unused variable 'geometric_terms'
-azimuth/lib.mbt:8566:7-8566:20 [E0002] Warning (unused_value): Unused variable 'geometric_sum'
-azimuth/lib.mbt:8674:7-8674:19 [E0002] Warning (unused_value): Unused variable 'target_value'
-azimuth/lib.mbt:8702:6-8702:41 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_data_structure_operations" should be unique, but it is already used at azimuth/lib.mbt:8120:6.
-azimuth/lib.mbt:8712:7-8712:27 [E0002] Warning (unused_value): Unused variable 'linked_list_deletion'
-azimuth/lib.mbt:8717:7-8717:29 [E0002] Warning (unused_value): Unused variable 'tree_traversal_inorder'
-azimuth/lib.mbt:8718:7-8718:31 [E0002] Warning (unused_value): Unused variable 'tree_traversal_postorder'
-azimuth/lib.mbt:8754:7-8754:22 [E0002] Warning (unused_value): Unused variable 'space_quadratic'
-azimuth/lib.mbt:8786:6-8786:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "mathematical_identity_properties" should be unique, but it is already used at azimuth/lib.mbt:4889:6.
-azimuth/lib.mbt:8859:6-8859:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "resource_allocation_optimization" should be unique, but it is already used at azimuth/lib.mbt:2809:6.
-azimuth/lib.mbt:8885:6-8885:42 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "mathematical_distributive_property" should be unique, but it is already used at azimuth/lib.mbt:6042:6.
-azimuth/lib.mbt:8983:6-8983:39 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_divide_with_ceil_basic" should be unique, but it is already used at azimuth/lib.mbt:3211:6.
-azimuth/lib.mbt:8991:6-8991:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_mathematical_properties" should be unique, but it is already used at azimuth/lib.mbt:458:6.
-azimuth/lib.mbt:9016:6-9016:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_combined_operations" should be unique, but it is already used at azimuth/lib.mbt:474:6.
-azimuth/lib.mbt:9025:6-9025:44 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_practical_business_scenario" should be unique, but it is already used at azimuth/lib.mbt:483:6.
-azimuth/lib.mbt:9038:6-9038:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_packaging_calculation" should be unique, but it is already used at azimuth/lib.mbt:496:6.
-azimuth/lib.mbt:9047:6-9047:47 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_unicode_and_special_characters" should be unique, but it is already used at azimuth/lib.mbt:505:6.
-azimuth/lib.mbt:9088:6-9088:35 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "concise_combined_operations" should be unique, but it is already used at azimuth/lib.mbt:1951:6.
-azimuth/lib.mbt:9105:6-9105:42 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "concise_negative_number_operations" should be unique, but it is already used at azimuth/lib.mbt:6128:6.
-azimuth/lib.mbt:9149:6-9149:41 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "add_function_commutative_property" should be unique, but it is already used at azimuth/lib.mbt:5975:6.
-azimuth/lib.mbt:9177:6-9177:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "greet_function_unicode_support" should be unique, but it is already used at azimuth/lib.mbt:6000:6.
-azimuth/lib.mbt:9217:6-9217:37 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "error_handling_and_edge_cases" should be unique, but it is already used at azimuth/lib.mbt:3365:6.
-azimuth/lib.mbt:9501:6-9501:49 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "enhanced_resource_allocation_optimization" should be unique, but it is already used at azimuth/lib.mbt:6319:6.
-azimuth/lib.mbt:9563:6-9563:44 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "enhanced_financial_compound_interest" should be unique, but it is already used at azimuth/lib.mbt:6267:6.
-azimuth/lib.mbt:9638:6-9638:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_packaging_calculation" should be unique, but it is already used at azimuth/lib.mbt:496:6.
-azimuth/lib.mbt:9674:6-9674:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_mathematical_properties" should be unique, but it is already used at azimuth/lib.mbt:458:6.
-azimuth/lib.mbt:9692:6-9692:31 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_error_handling" should be unique, but it is already used at azimuth/lib.mbt:1555:6.
-azimuth/lib.mbt:10057:6-10057:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "error_boundary_validation" should be unique, but it is already used at azimuth/lib.mbt:2778:6.
-azimuth/lib.mbt:10355:6-10355:45 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "enhanced_complex_business_calculation" should be unique, but it is already used at azimuth/lib.mbt:373:6.
-azimuth/lib.mbt:10450:6-10450:42 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "enhanced_error_handling_robustness" should be unique, but it is already used at azimuth/lib.mbt:6217:6.
-azimuth/lib.mbt:10542:6-10542:35 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "financial_compound_interest" should be unique, but it is already used at azimuth/lib.mbt:4377:6.
-azimuth/lib.mbt:10546:7-10546:12 [E0002] Warning (unused_value): Unused variable 'years'
-azimuth/lib.mbt:10616:7-10616:8 [E0002] Warning (unused_value): Unused variable 'n'
-azimuth/lib.mbt:10661:6-10661:35 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "load_balancing_distribution" should be unique, but it is already used at azimuth/lib.mbt:1734:6.
-azimuth/lib.mbt:10719:6-10719:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_negative_operations" should be unique, but it is already used at azimuth/lib.mbt:3136:6.
-azimuth/lib.mbt:10738:6-10738:37 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_business_calculation" should be unique, but it is already used at azimuth/lib.mbt:1538:6.
-azimuth/lib.mbt:10764:6-10764:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_packaging_calculation" should be unique, but it is already used at azimuth/lib.mbt:496:6.
-azimuth/lib.mbt:10781:6-10781:31 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_error_handling" should be unique, but it is already used at azimuth/lib.mbt:1555:6.
-azimuth/lib.mbt:10872:6-10872:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "complex_business_workflow" should be unique, but it is already used at azimuth/lib.mbt:703:6.
-azimuth/lib.mbt:10898:6-10898:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "error_handling_robustness" should be unique, but it is already used at azimuth/lib.mbt:581:6.
-azimuth/lib.mbt:10982:6-10982:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "resource_allocation_optimization" should be unique, but it is already used at azimuth/lib.mbt:2809:6.
-azimuth/lib.mbt:11211:7-11211:18 [E0002] Warning (unused_value): Unused variable 'asian_names'
-azimuth/lib.mbt:11212:7-11212:21 [E0002] Warning (unused_value): Unused variable 'european_names'
-azimuth/lib.mbt:11213:7-11213:20 [E0002] Warning (unused_value): Unused variable 'emoji_strings'
-azimuth/lib.mbt:11214:7-11214:20 [E0002] Warning (unused_value): Unused variable 'mixed_strings'
-azimuth/lib.mbt:11288:7-11288:27 [E0002] Warning (unused_value): Unused variable 'project_bonus_factor'
-azimuth/lib.mbt:11609:6-11609:34 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_mathematical_laws" should be unique, but it is already used at azimuth/lib.mbt:10700:6.
-azimuth/lib.mbt:11642:6-11642:37 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_business_calculation" should be unique, but it is already used at azimuth/lib.mbt:1538:6.
-azimuth/lib.mbt:11680:6-11680:31 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_error_handling" should be unique, but it is already used at azimuth/lib.mbt:1555:6.
-azimuth/lib.mbt:11715:6-11715:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_greet_functionality" should be unique, but it is already used at azimuth/lib.mbt:3105:6.
-azimuth/lib.mbt:11749:6-11749:45 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_complex_calculation_workflow" should be unique, but it is already used at azimuth/lib.mbt:9893:6.
-azimuth/lib.mbt:11763:6-11763:43 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_negative_number_operations" should be unique, but it is already used at azimuth/lib.mbt:9007:6.
-azimuth/lib.mbt:11772:6-11772:47 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_unicode_and_special_characters" should be unique, but it is already used at azimuth/lib.mbt:505:6.
+azimuth/lib.mbt:973:6-973:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "divide_with_ceil_comprehensive" should be unique, but it is already used at azimuth/lib.mbt:241:6.
+azimuth/lib.mbt:1010:6-1010:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "complex_business_scenario" should be unique, but it is already used at azimuth/lib.mbt:266:6.
+azimuth/lib.mbt:1042:6-1042:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "financial_calculation_scenario" should be unique, but it is already used at azimuth/lib.mbt:336:6.
+azimuth/lib.mbt:1055:6-1055:37 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "inventory_management_scenario" should be unique, but it is already used at azimuth/lib.mbt:286:6.
+azimuth/lib.mbt:2095:6-2095:34 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "add_function_comprehensive" should be unique, but it is already used at azimuth/lib.mbt:943:6.
+azimuth/lib.mbt:2104:6-2104:39 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "multiply_function_comprehensive" should be unique, but it is already used at azimuth/lib.mbt:953:6.
+azimuth/lib.mbt:2147:6-2147:31 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "mathematical_properties" should be unique, but it is already used at azimuth/lib.mbt:994:6.
+azimuth/lib.mbt:2303:7-2303:17 [E0002] Warning (unused_value): Unused variable 'item_sizes'
+azimuth/lib.mbt:2556:6-2556:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "recursive_calculation_simulation" should be unique, but it is already used at azimuth/lib.mbt:1795:6.
+azimuth/lib.mbt:2568:7-2568:19 [E0002] Warning (unused_value): Unused variable 'final_result'
+azimuth/lib.mbt:2667:6-2667:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "memory_allocation_simulation" should be unique, but it is already used at azimuth/lib.mbt:1837:6.
+azimuth/lib.mbt:2890:6-2890:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "packaging_calculation_scenario" should be unique, but it is already used at azimuth/lib.mbt:1026:6.
+azimuth/lib.mbt:2927:6-2927:39 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "algorithm_complexity_simulation" should be unique, but it is already used at azimuth/lib.mbt:1603:6.
+azimuth/lib.mbt:3249:6-3249:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_mathematical_properties" should be unique, but it is already used at azimuth/lib.mbt:458:6.
+azimuth/lib.mbt:3274:6-3274:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_combined_operations" should be unique, but it is already used at azimuth/lib.mbt:474:6.
+azimuth/lib.mbt:4510:7-4510:12 [E0002] Warning (unused_value): Unused variable 'years'
+azimuth/lib.mbt:4585:7-4585:19 [E0002] Warning (unused_value): Unused variable 'repeat_count'
+azimuth/lib.mbt:4586:7-4586:16 [E0002] Warning (unused_value): Unused variable 'separator'
+azimuth/lib.mbt:4913:6-4913:26 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "add_function_basic" should be unique, but it is already used at azimuth/lib.mbt:595:6.
+azimuth/lib.mbt:4920:6-4920:31 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "multiply_function_basic" should be unique, but it is already used at azimuth/lib.mbt:602:6.
+azimuth/lib.mbt:4927:6-4927:28 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "greet_function_basic" should be unique, but it is already used at azimuth/lib.mbt:609:6.
+azimuth/lib.mbt:4933:6-4933:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "divide_with_ceil_positive" should be unique, but it is already used at azimuth/lib.mbt:615:6.
+azimuth/lib.mbt:4940:6-4940:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "divide_with_ceil_negative" should be unique, but it is already used at azimuth/lib.mbt:622:6.
+azimuth/lib.mbt:4947:6-4947:23 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "zero_operations" should be unique, but it is already used at azimuth/lib.mbt:178:6.
+azimuth/lib.mbt:4955:6-4955:31 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "large_number_operations" should be unique, but it is already used at azimuth/lib.mbt:170:6.
+azimuth/lib.mbt:4961:6-4961:27 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "combined_operations" should be unique, but it is already used at azimuth/lib.mbt:643:6.
+azimuth/lib.mbt:4967:6-4967:27 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "practical_packaging" should be unique, but it is already used at azimuth/lib.mbt:649:6.
+azimuth/lib.mbt:4975:6-4975:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "greeting_with_special_characters" should be unique, but it is already used at azimuth/lib.mbt:657:6.
+azimuth/lib.mbt:4984:6-4984:43 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "mathematical_properties_commutative" should be unique, but it is already used at azimuth/lib.mbt:2857:6.
+azimuth/lib.mbt:5009:6-5009:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "packaging_calculation_scenario" should be unique, but it is already used at azimuth/lib.mbt:1026:6.
+azimuth/lib.mbt:5043:6-5043:35 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "divide_with_ceil_edge_cases" should be unique, but it is already used at azimuth/lib.mbt:105:6.
+azimuth/lib.mbt:5052:6-5052:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "complex_business_workflow" should be unique, but it is already used at azimuth/lib.mbt:703:6.
+azimuth/lib.mbt:5087:6-5087:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "financial_calculation_scenario" should be unique, but it is already used at azimuth/lib.mbt:336:6.
+azimuth/lib.mbt:5102:6-5102:32 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "data_analysis_statistics" should be unique, but it is already used at azimuth/lib.mbt:664:6.
+azimuth/lib.mbt:5119:6-5119:37 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "inventory_management_scenario" should be unique, but it is already used at azimuth/lib.mbt:286:6.
+azimuth/lib.mbt:5140:6-5140:42 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "algorithm_binary_search_simulation" should be unique, but it is already used at azimuth/lib.mbt:1765:6.
+azimuth/lib.mbt:5154:6-5154:39 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "data_structure_stack_operations" should be unique, but it is already used at azimuth/lib.mbt:1775:6.
+azimuth/lib.mbt:5217:6-5217:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "memory_allocation_simulation" should be unique, but it is already used at azimuth/lib.mbt:1837:6.
+azimuth/lib.mbt:5349:6-5349:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_mathematical_laws" should be unique, but it is already used at azimuth/lib.mbt:3162:6.
+azimuth/lib.mbt:5487:7-5487:12 [E0002] Warning (unused_value): Unused variable 'years'
+azimuth/lib.mbt:6120:6-6120:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "divide_with_ceil_comprehensive" should be unique, but it is already used at azimuth/lib.mbt:241:6.
+azimuth/lib.mbt:6754:6-6754:32 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_batch_processing" should be unique, but it is already used at azimuth/lib.mbt:5495:6.
+azimuth/lib.mbt:6773:7-6773:12 [E0002] Warning (unused_value): Unused variable 'years'
+azimuth/lib.mbt:6842:6-6842:34 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_project_management" should be unique, but it is already used at azimuth/lib.mbt:4668:6.
+azimuth/lib.mbt:6919:6-6919:31 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "add_function_edge_cases" should be unique, but it is already used at azimuth/lib.mbt:82:6.
+azimuth/lib.mbt:6935:6-6935:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "divide_with_ceil_comprehensive" should be unique, but it is already used at azimuth/lib.mbt:241:6.
+azimuth/lib.mbt:6954:6-6954:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "complex_business_workflow" should be unique, but it is already used at azimuth/lib.mbt:703:6.
+azimuth/lib.mbt:7006:6-7006:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "financial_calculation_scenario" should be unique, but it is already used at azimuth/lib.mbt:336:6.
+azimuth/lib.mbt:7072:6-7072:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "performance_benchmark_simulation" should be unique, but it is already used at azimuth/lib.mbt:2341:6.
+azimuth/lib.mbt:7104:6-7104:34 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "add_function_comprehensive" should be unique, but it is already used at azimuth/lib.mbt:943:6.
+azimuth/lib.mbt:7113:6-7113:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "multiply_function_edge_cases" should be unique, but it is already used at azimuth/lib.mbt:90:6.
+azimuth/lib.mbt:7122:6-7122:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "greet_function_international" should be unique, but it is already used at azimuth/lib.mbt:2184:6.
+azimuth/lib.mbt:7144:6-7144:39 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "subtract_function_comprehensive" should be unique, but it is already used at azimuth/lib.mbt:963:6.
+azimuth/lib.mbt:7153:6-7153:44 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "mathematical_properties_verification" should be unique, but it is already used at azimuth/lib.mbt:3111:6.
+azimuth/lib.mbt:7491:6-7491:28 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "inventory_management" should be unique, but it is already used at azimuth/lib.mbt:836:6.
+azimuth/lib.mbt:7535:6-7535:30 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "temperature_conversion" should be unique, but it is already used at azimuth/lib.mbt:4459:6.
+azimuth/lib.mbt:7660:6-7660:29 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_large_numbers" should be unique, but it is already used at azimuth/lib.mbt:5331:6.
+azimuth/lib.mbt:7666:6-7666:35 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_combined_operations" should be unique, but it is already used at azimuth/lib.mbt:1934:6.
+azimuth/lib.mbt:7672:6-7672:37 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_packaging_calculation" should be unique, but it is already used at azimuth/lib.mbt:1956:6.
+azimuth/lib.mbt:8390:7-8390:8 [E0002] Warning (unused_value): Unused variable 'n'
+azimuth/lib.mbt:8406:7-8406:11 [E0002] Warning (unused_value): Unused variable 'rows'
+azimuth/lib.mbt:8486:7-8486:11 [E0002] Warning (unused_value): Unused variable 'base'
+azimuth/lib.mbt:8529:6-8529:43 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_financial_compound_interest" should be unique, but it is already used at azimuth/lib.mbt:6769:6.
+azimuth/lib.mbt:8638:7-8638:8 [E0002] Warning (unused_value): Unused variable 'n'
+azimuth/lib.mbt:8670:7-8670:17 [E0002] Warning (unused_value): Unused variable 'full_title'
+azimuth/lib.mbt:8694:7-8694:22 [E0002] Warning (unused_value): Unused variable 'geometric_terms'
+azimuth/lib.mbt:8695:7-8695:20 [E0002] Warning (unused_value): Unused variable 'geometric_sum'
+azimuth/lib.mbt:8803:7-8803:19 [E0002] Warning (unused_value): Unused variable 'target_value'
+azimuth/lib.mbt:8831:6-8831:41 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "azimuth_data_structure_operations" should be unique, but it is already used at azimuth/lib.mbt:8249:6.
+azimuth/lib.mbt:8841:7-8841:27 [E0002] Warning (unused_value): Unused variable 'linked_list_deletion'
+azimuth/lib.mbt:8846:7-8846:29 [E0002] Warning (unused_value): Unused variable 'tree_traversal_inorder'
+azimuth/lib.mbt:8847:7-8847:31 [E0002] Warning (unused_value): Unused variable 'tree_traversal_postorder'
+azimuth/lib.mbt:8883:7-8883:22 [E0002] Warning (unused_value): Unused variable 'space_quadratic'
+azimuth/lib.mbt:8915:6-8915:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "mathematical_identity_properties" should be unique, but it is already used at azimuth/lib.mbt:5018:6.
+azimuth/lib.mbt:8988:6-8988:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "resource_allocation_optimization" should be unique, but it is already used at azimuth/lib.mbt:2938:6.
+azimuth/lib.mbt:9014:6-9014:42 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "mathematical_distributive_property" should be unique, but it is already used at azimuth/lib.mbt:6171:6.
+azimuth/lib.mbt:9112:6-9112:39 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_divide_with_ceil_basic" should be unique, but it is already used at azimuth/lib.mbt:3340:6.
+azimuth/lib.mbt:9120:6-9120:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_mathematical_properties" should be unique, but it is already used at azimuth/lib.mbt:458:6.
+azimuth/lib.mbt:9145:6-9145:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_combined_operations" should be unique, but it is already used at azimuth/lib.mbt:474:6.
+azimuth/lib.mbt:9154:6-9154:44 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_practical_business_scenario" should be unique, but it is already used at azimuth/lib.mbt:483:6.
+azimuth/lib.mbt:9167:6-9167:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_packaging_calculation" should be unique, but it is already used at azimuth/lib.mbt:496:6.
+azimuth/lib.mbt:9176:6-9176:47 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_unicode_and_special_characters" should be unique, but it is already used at azimuth/lib.mbt:505:6.
+azimuth/lib.mbt:9217:6-9217:35 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "concise_combined_operations" should be unique, but it is already used at azimuth/lib.mbt:2080:6.
+azimuth/lib.mbt:9234:6-9234:42 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "concise_negative_number_operations" should be unique, but it is already used at azimuth/lib.mbt:6257:6.
+azimuth/lib.mbt:9278:6-9278:41 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "add_function_commutative_property" should be unique, but it is already used at azimuth/lib.mbt:6104:6.
+azimuth/lib.mbt:9306:6-9306:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "greet_function_unicode_support" should be unique, but it is already used at azimuth/lib.mbt:6129:6.
+azimuth/lib.mbt:9346:6-9346:37 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "error_handling_and_edge_cases" should be unique, but it is already used at azimuth/lib.mbt:3494:6.
+azimuth/lib.mbt:9630:6-9630:49 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "enhanced_resource_allocation_optimization" should be unique, but it is already used at azimuth/lib.mbt:6448:6.
+azimuth/lib.mbt:9692:6-9692:44 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "enhanced_financial_compound_interest" should be unique, but it is already used at azimuth/lib.mbt:6396:6.
+azimuth/lib.mbt:9767:6-9767:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_packaging_calculation" should be unique, but it is already used at azimuth/lib.mbt:496:6.
+azimuth/lib.mbt:9803:6-9803:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_mathematical_properties" should be unique, but it is already used at azimuth/lib.mbt:458:6.
+azimuth/lib.mbt:9821:6-9821:31 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_error_handling" should be unique, but it is already used at azimuth/lib.mbt:1684:6.
+azimuth/lib.mbt:10186:6-10186:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "error_boundary_validation" should be unique, but it is already used at azimuth/lib.mbt:2907:6.
+azimuth/lib.mbt:10484:6-10484:45 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "enhanced_complex_business_calculation" should be unique, but it is already used at azimuth/lib.mbt:373:6.
+azimuth/lib.mbt:10579:6-10579:42 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "enhanced_error_handling_robustness" should be unique, but it is already used at azimuth/lib.mbt:6346:6.
+azimuth/lib.mbt:10671:6-10671:35 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "financial_compound_interest" should be unique, but it is already used at azimuth/lib.mbt:4506:6.
+azimuth/lib.mbt:10675:7-10675:12 [E0002] Warning (unused_value): Unused variable 'years'
+azimuth/lib.mbt:10745:7-10745:8 [E0002] Warning (unused_value): Unused variable 'n'
+azimuth/lib.mbt:10790:6-10790:35 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "load_balancing_distribution" should be unique, but it is already used at azimuth/lib.mbt:1863:6.
+azimuth/lib.mbt:10848:6-10848:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_negative_operations" should be unique, but it is already used at azimuth/lib.mbt:3265:6.
+azimuth/lib.mbt:10867:6-10867:37 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_business_calculation" should be unique, but it is already used at azimuth/lib.mbt:1667:6.
+azimuth/lib.mbt:10893:6-10893:38 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_packaging_calculation" should be unique, but it is already used at azimuth/lib.mbt:496:6.
+azimuth/lib.mbt:10910:6-10910:31 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_error_handling" should be unique, but it is already used at azimuth/lib.mbt:1684:6.
+azimuth/lib.mbt:11001:6-11001:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "complex_business_workflow" should be unique, but it is already used at azimuth/lib.mbt:703:6.
+azimuth/lib.mbt:11027:6-11027:33 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "error_handling_robustness" should be unique, but it is already used at azimuth/lib.mbt:581:6.
+azimuth/lib.mbt:11111:6-11111:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "resource_allocation_optimization" should be unique, but it is already used at azimuth/lib.mbt:2938:6.
+azimuth/lib.mbt:11340:7-11340:18 [E0002] Warning (unused_value): Unused variable 'asian_names'
+azimuth/lib.mbt:11341:7-11341:21 [E0002] Warning (unused_value): Unused variable 'european_names'
+azimuth/lib.mbt:11342:7-11342:20 [E0002] Warning (unused_value): Unused variable 'emoji_strings'
+azimuth/lib.mbt:11343:7-11343:20 [E0002] Warning (unused_value): Unused variable 'mixed_strings'
+azimuth/lib.mbt:11417:7-11417:27 [E0002] Warning (unused_value): Unused variable 'project_bonus_factor'
+azimuth/lib.mbt:11738:6-11738:34 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_mathematical_laws" should be unique, but it is already used at azimuth/lib.mbt:10829:6.
+azimuth/lib.mbt:11771:6-11771:37 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_business_calculation" should be unique, but it is already used at azimuth/lib.mbt:1667:6.
+azimuth/lib.mbt:11809:6-11809:31 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_error_handling" should be unique, but it is already used at azimuth/lib.mbt:1684:6.
+azimuth/lib.mbt:11844:6-11844:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_greet_functionality" should be unique, but it is already used at azimuth/lib.mbt:3234:6.
+azimuth/lib.mbt:11878:6-11878:45 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_complex_calculation_workflow" should be unique, but it is already used at azimuth/lib.mbt:10022:6.
+azimuth/lib.mbt:11892:6-11892:43 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_negative_number_operations" should be unique, but it is already used at azimuth/lib.mbt:9136:6.
+azimuth/lib.mbt:11901:6-11901:47 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_unicode_and_special_characters" should be unique, but it is already used at azimuth/lib.mbt:505:6.
+azimuth/lib.mbt:11910:6-11910:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_add_basic_functionality" should be unique, but it is already used at azimuth/lib.mbt:9088:6.
+azimuth/lib.mbt:11917:6-11917:45 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_multiply_basic_functionality" should be unique, but it is already used at azimuth/lib.mbt:9096:6.
+azimuth/lib.mbt:11931:6-11931:39 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_divide_with_ceil_basic" should be unique, but it is already used at azimuth/lib.mbt:3340:6.
+azimuth/lib.mbt:11938:6-11938:42 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_greet_basic_functionality" should be unique, but it is already used at azimuth/lib.mbt:435:6.
+azimuth/lib.mbt:11945:6-11945:40 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_mathematical_properties" should be unique, but it is already used at azimuth/lib.mbt:458:6.
+azimuth/lib.mbt:11961:6-11961:43 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_negative_number_operations" should be unique, but it is already used at azimuth/lib.mbt:9136:6.
+azimuth/lib.mbt:11968:6-11968:36 [E0061] Warning (duplicate_test): Allowing repeated test names is deprecated. Test name "standard_combined_operations" should be unique, but it is already used at azimuth/lib.mbt:474:6.
 Generating azimuth.wasm...
 Testing azimuth...
 Checking standard_moonbit_tests_enhanced.mbt...
@@ -602,104 +618,17 @@ test ... ok
 test ... ok
 test ... ok
 Checking quality_test_suite.mbt...
-azimuth_test/quality_test_suite.mbt:6:17-6:20 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:11:17-11:20 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:16:17-16:20 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:21:17-21:33 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:34:15-34:18 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:34:30-34:46 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:34:47-34:55 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:35:15-35:18 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:35:26-35:42 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:35:43-35:51 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:36:15-36:18 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:36:26-36:42 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:36:43-36:51 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:56:24-56:40 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:57:24-57:32 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:58:25-58:28 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:60:3-60:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:61:3-61:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:62:3-62:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:67:3-67:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/quality_test_suite.mbt:67:34-67:39 [E4021] The value identifier greet is unbound.
-azimuth_test/quality_test_suite.mbt:68:3-68:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/quality_test_suite.mbt:68:35-68:40 [E4021] The value identifier greet is unbound.
-azimuth_test/quality_test_suite.mbt:69:3-69:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/quality_test_suite.mbt:69:38-69:43 [E4021] The value identifier greet is unbound.
-azimuth_test/quality_test_suite.mbt:70:3-70:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/quality_test_suite.mbt:70:41-70:46 [E4021] The value identifier greet is unbound.
-azimuth_test/quality_test_suite.mbt:71:3-71:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/quality_test_suite.mbt:71:36-71:41 [E4021] The value identifier greet is unbound.
-azimuth_test/quality_test_suite.mbt:72:3-72:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/quality_test_suite.mbt:72:37-72:42 [E4021] The value identifier greet is unbound.
-azimuth_test/quality_test_suite.mbt:81:20-81:28 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:84:23-84:31 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:87:27-87:43 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:89:3-89:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:90:3-90:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:91:3-91:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:97:3-97:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:97:16-97:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:98:3-98:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:98:16-98:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:99:3-99:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:99:16-99:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:103:3-103:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:103:16-103:24 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:104:3-104:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:104:24-104:27 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:105:3-105:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:105:16-105:19 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:110:7-110:18 [E0002] Warning (unused_value): Unused variable 'data_points'
-azimuth_test/quality_test_suite.mbt:111:7-111:10 [E0002] Warning (unused_value): Unused variable 'sum'
-azimuth_test/quality_test_suite.mbt:115:20-115:23 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:24-115:27 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:28-115:31 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:32-115:35 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:36-115:39 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:40-115:43 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:44-115:47 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:48-115:51 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:52-115:55 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:118:17-118:33 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:121:23-121:39 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:121:40-121:43 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:123:3-123:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:124:3-124:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:125:3-125:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:135:20-135:28 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:138:21-138:29 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:141:24-141:40 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:143:3-143:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:144:3-144:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:145:3-145:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:150:7-150:19 [E0002] Warning (unused_value): Unused variable 'daily_values'
-azimuth_test/quality_test_suite.mbt:154:22-154:25 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:154:26-154:29 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:154:30-154:33 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:154:34-154:37 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:154:38-154:41 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:154:42-154:45 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:157:23-157:39 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:160:15-160:18 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:163:21-163:37 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:163:38-163:46 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:165:3-165:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:166:3-166:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:167:3-167:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:168:3-168:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:178:19-178:27 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:179:26-179:34 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:182:20-182:28 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:185:19-185:22 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:185:23-185:31 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:185:48-185:56 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:187:3-187:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:188:3-188:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:189:3-189:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:190:3-190:12 [E4021] The value identifier assert_eq is unbound.
-Error: quality_test_suite.mbt compilation failed
+Found 10 tests in quality_test_suite.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Checking essential_core_tests.mbt...
 Found 10 tests in essential_core_tests.mbt
 test ... ok
@@ -1749,9 +1678,7 @@ azimuth_test/enhanced_test_coverage.mbt:171:3-171:41 [E4014] Type Mismatch
         wanted   : function type
 Error: enhanced_test_coverage.mbt compilation failed
 Checking standard_azimuth_tests.mbt...
-azimuth_test/standard_azimuth_tests.mbt:50:7-50:12 [E0002] Warning (unused_value): Unused variable 'years'
-Found 10 tests in standard_azimuth_tests.mbt
-test ... ok
+Found 9 tests in standard_azimuth_tests.mbt
 test ... ok
 test ... ok
 test ... ok
@@ -7068,104 +6995,17 @@ test ... ok
 test ... ok
 test ... ok
 Checking quality_test_suite.mbt...
-azimuth_test/quality_test_suite.mbt:6:17-6:20 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:11:17-11:20 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:16:17-16:20 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:21:17-21:33 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:34:15-34:18 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:34:30-34:46 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:34:47-34:55 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:35:15-35:18 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:35:26-35:42 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:35:43-35:51 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:36:15-36:18 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:36:26-36:42 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:36:43-36:51 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:56:24-56:40 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:57:24-57:32 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:58:25-58:28 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:60:3-60:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:61:3-61:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:62:3-62:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:67:3-67:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/quality_test_suite.mbt:67:34-67:39 [E4021] The value identifier greet is unbound.
-azimuth_test/quality_test_suite.mbt:68:3-68:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/quality_test_suite.mbt:68:35-68:40 [E4021] The value identifier greet is unbound.
-azimuth_test/quality_test_suite.mbt:69:3-69:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/quality_test_suite.mbt:69:38-69:43 [E4021] The value identifier greet is unbound.
-azimuth_test/quality_test_suite.mbt:70:3-70:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/quality_test_suite.mbt:70:41-70:46 [E4021] The value identifier greet is unbound.
-azimuth_test/quality_test_suite.mbt:71:3-71:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/quality_test_suite.mbt:71:36-71:41 [E4021] The value identifier greet is unbound.
-azimuth_test/quality_test_suite.mbt:72:3-72:19 [E4021] The value identifier assert_eq_string is unbound.
-azimuth_test/quality_test_suite.mbt:72:37-72:42 [E4021] The value identifier greet is unbound.
-azimuth_test/quality_test_suite.mbt:81:20-81:28 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:84:23-84:31 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:87:27-87:43 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:89:3-89:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:90:3-90:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:91:3-91:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:97:3-97:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:97:16-97:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:98:3-98:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:98:16-98:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:99:3-99:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:99:16-99:32 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:103:3-103:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:103:16-103:24 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:104:3-104:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:104:24-104:27 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:105:3-105:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:105:16-105:19 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:110:7-110:18 [E0002] Warning (unused_value): Unused variable 'data_points'
-azimuth_test/quality_test_suite.mbt:111:7-111:10 [E0002] Warning (unused_value): Unused variable 'sum'
-azimuth_test/quality_test_suite.mbt:115:20-115:23 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:24-115:27 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:28-115:31 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:32-115:35 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:36-115:39 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:40-115:43 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:44-115:47 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:48-115:51 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:115:52-115:55 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:118:17-118:33 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:121:23-121:39 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:121:40-121:43 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:123:3-123:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:124:3-124:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:125:3-125:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:135:20-135:28 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:138:21-138:29 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:141:24-141:40 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:143:3-143:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:144:3-144:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:145:3-145:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:150:7-150:19 [E0002] Warning (unused_value): Unused variable 'daily_values'
-azimuth_test/quality_test_suite.mbt:154:22-154:25 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:154:26-154:29 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:154:30-154:33 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:154:34-154:37 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:154:38-154:41 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:154:42-154:45 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:157:23-157:39 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:160:15-160:18 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:163:21-163:37 [E4021] The value identifier divide_with_ceil is unbound.
-azimuth_test/quality_test_suite.mbt:163:38-163:46 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:165:3-165:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:166:3-166:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:167:3-167:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:168:3-168:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:178:19-178:27 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:179:26-179:34 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:182:20-182:28 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:185:19-185:22 [E4021] The value identifier add is unbound.
-azimuth_test/quality_test_suite.mbt:185:23-185:31 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:185:48-185:56 [E4021] The value identifier multiply is unbound.
-azimuth_test/quality_test_suite.mbt:187:3-187:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:188:3-188:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:189:3-189:12 [E4021] The value identifier assert_eq is unbound.
-azimuth_test/quality_test_suite.mbt:190:3-190:12 [E4021] The value identifier assert_eq is unbound.
-Error: quality_test_suite.mbt compilation failed
+Found 10 tests in quality_test_suite.mbt
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
+test ... ok
 Checking quality_test_suite_final.mbt...
 Found 11 tests in quality_test_suite_final.mbt
 test ... ok
@@ -7374,6 +7214,6 @@ test ... ok
 test ... ok
 test ... ok
 
-1640 tests passed, 0 failed
+1659 tests passed, 0 failed
 
 All packages compiled and tests passed successfully!
