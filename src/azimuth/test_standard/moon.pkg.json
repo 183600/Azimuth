@@ -1,0 +1,1 @@
+{"name": "test_standard", "test-import": ["azimuth"], "test": ["standard_moonbit_tests.mbt"]}
