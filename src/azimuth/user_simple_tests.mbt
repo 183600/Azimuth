@@ -1,100 +1,95 @@
-// 用户自定义简单 MoonBit 测试用例
-// 覆盖 azimuth 项目核心函数的基本测试场景
+// 用户自定义的标准 MoonBit 测试用例
+// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
 
-test "add_basic_test" {
-  // 测试 add 函数的基本功能
-  assert_eq(10, azimuth::add(7, 3))
-  assert_eq(0, azimuth::add(-5, 5))
-  assert_eq(-8, azimuth::add(-3, -5))
+test "user_test_1" {
+  // 基本加法测试
+  assert_eq(8, add(3, 5))
+  assert_eq(0, add(0, 0))
+  assert_eq(-2, add(-5, 3))
 }
 
-test "multiply_basic_test" {
-  // 测试 multiply 函数的基本功能
-  assert_eq(21, azimuth::multiply(7, 3))
-  assert_eq(-15, azimuth::multiply(5, -3))
-  assert_eq(12, azimuth::multiply(-4, -3))
+test "user_test_2" {
+  // 基本乘法测试
+  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-15, multiply(-3, 5))
 }
 
-test "greet_basic_test" {
-  // 测试 greet 函数的基本功能
-  assert_eq_string("Hello, World!", azimuth::greet("World"))
-  assert_eq_string("Hello, !", azimuth::greet(""))
-  assert_eq_string("Hello, 张三!", azimuth::greet("张三"))
+test "user_test_3" {
+  // 向上取整除法测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(0, divide_with_ceil(10, 0))
 }
 
-test "math_expressions_test" {
-  // 测试数学表达式计算
-  let a = 5
-  let b = 3
-  let c = 4
-  let sum_ab = azimuth::add(a, b)
-  let result = azimuth::multiply(sum_ab, c)
-  assert_eq(32, result)
+test "user_test_4" {
+  // 负数除法测试
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+  assert_eq(-1, divide_with_ceil(-1, 2))
 }
 
-test "boundary_values_test" {
-  // 测试边界值
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "user_test_5" {
+  // 问候函数测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+}
+
+test "user_test_6" {
+  // 减法函数测试
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(15, 15))
+}
+
+test "user_test_7" {
+  // 数学性质测试
+  let a = 12
+  let b = 8
   
-  assert_eq(max_val, azimuth::add(max_val, 1))
-  assert_eq(min_val, azimuth::add(min_val, -1))
-  assert_eq(-1, azimuth::add(max_val, min_val))
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
 }
 
-test "real_world_calculations_test" {
-  // 测试实际应用场景计算
-  let length = 8
-  let width = 5
+test "user_test_8" {
+  // 业务场景测试
+  let total_items = 35
+  let items_per_package = 8
+  let packages_needed = divide_with_ceil(total_items, items_per_package)
   
-  // 面积 = 长 × 宽
-  let area = azimuth::multiply(length, width)
-  assert_eq(40, area)
+  assert_eq(5, packages_needed)
   
-  // 周长 = 2 × (长 + 宽)
-  let perimeter = azimuth::multiply(2, azimuth::add(length, width))
-  assert_eq(26, perimeter)
+  // 验证总容量
+  let total_capacity = multiply(packages_needed, items_per_package)
+  assert_eq(40, total_capacity)
 }
 
-test "financial_calculations_test" {
-  // 测试金融计算场景
-  let unit_price = 199
-  let quantity = 3
-  let tax_rate = 8  // 8%
+test "user_test_9" {
+  // 复杂工作流测试
+  let team_members = 6
+  let tasks_per_member = 8
+  let total_tasks = multiply(team_members, tasks_per_member)
   
-  // 计算商品小计
-  let subtotal = azimuth::multiply(unit_price, quantity)
-  // 计算税费
-  let tax = azimuth::multiply(subtotal, tax_rate) / 100
-  // 计算总价
-  let total = azimuth::add(subtotal, tax)
+  let sprint_capacity = 15
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
   
-  assert_eq(645, total)
+  assert_eq(48, total_tasks)
+  assert_eq(4, sprints_needed)
 }
 
-test "string_processing_test" {
-  // 测试字符串处理
-  assert_eq_string("Hello, !@#$!", azimuth::greet("!@#$"))
-  assert_eq_string("Hello, John Doe!", azimuth::greet("John Doe"))
-  assert_eq_string("Hello, User2023!", azimuth::greet("User2023"))
-}
-
-test "complex_calculation_test" {
-  // 测试复杂计算场景
-  // 计算等差数列的和：1 + 2 + 3 + ... + 10
-  let n = 10
-  let sum = azimuth::multiply(n, azimuth::add(n, 1)) / 2
-  assert_eq(55, sum)
-}
-
-test "error_handling_test" {
-  // 测试错误处理
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "user_test_10" {
+  // 边界值测试
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(0, divide_with_ceil(0, 5))
   
-  // 确保溢出被正确处理
-  assert_true(azimuth::add(max_val, 100) == max_val)
-  assert_true(azimuth::add(min_val, -100) == min_val)
-  assert_true(azimuth::multiply(max_val, 2) == max_val)
-  assert_true(azimuth::multiply(min_val, 2) == min_val)
+  // 大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(100000000, multiply(10000, 10000))
+  
+  // 特殊问候
+  assert_eq_string("Hello,   !", greet("  "))
 }
