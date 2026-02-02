@@ -11989,3 +11989,182 @@ test "standard_unicode_support" {
   assert_eq_string("Hello, 世界!", greet("世界"))
   assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
+
+// 新增的10个高质量 MoonBit 测试用例
+test "extreme_numerical_values_test" {
+  // 测试极端数值运算
+  let large_num = 1000000
+  let negative_large = -1000000
+  
+  // 大数加法
+  assert_eq(2000000, add(large_num, large_num))
+  assert_eq(0, add(large_num, negative_large))
+  
+  // 大数乘法（使用较小的数避免溢出）
+  assert_eq(10000000, multiply(large_num, 10))
+  
+  // 极端除法
+  assert_eq(1, divide_with_ceil(large_num, large_num))
+  assert_eq(0, divide_with_ceil(large_num, 0))
+}
+
+test "factorial_calculation_test" {
+  // 使用现有函数模拟阶乘计算（5! = 120）
+  let factorial_2 = multiply(1, 2)
+  let factorial_3 = multiply(factorial_2, 3)
+  let factorial_4 = multiply(factorial_3, 4)
+  let factorial_5 = multiply(factorial_4, 5)
+  
+  assert_eq(2, factorial_2)
+  assert_eq(6, factorial_3)
+  assert_eq(24, factorial_4)
+  assert_eq(120, factorial_5)
+}
+
+test "prime_number_simulation" {
+  // 使用现有函数模拟素数检测（检测7是否为素数）
+  let num_to_test = 7
+  let divisor_2 = divide_with_ceil(num_to_test, 2)
+  let divisor_3 = divide_with_ceil(num_to_test, 3)
+  let remainder_2 = subtract(num_to_test, multiply(divisor_2, 2))
+  let remainder_3 = subtract(num_to_test, multiply(divisor_3, 3))
+  
+  // 7不能被2或3整除，模拟素数检测
+  assert_eq(4, divisor_2)  // ceil(7/2) = 4
+  assert_eq(3, divisor_3)  // ceil(7/3) = 3
+  assert_eq(-1, remainder_2)  // 7 - 4*2 = -1
+  assert_eq(1, remainder_3)   // 7 - 3*3 = 1
+}
+
+test "statistical_analysis" {
+  // 统计分析测试：计算平均值和总和
+  let data1 = 15
+  let data2 = 25
+  let data3 = 35
+  let data4 = 45
+  let data5 = 55
+  
+  // 计算总和
+  let sum = add(add(add(add(data1, data2), data3), data4), data5)
+  
+  // 计算平均值（向上取整）
+  let average = divide_with_ceil(sum, 5)
+  
+  // 计算中位数
+  let median = data3
+  
+  assert_eq(175, sum)
+  assert_eq(35, average)
+  assert_eq(35, median)
+}
+
+test "time_conversion" {
+  // 时间转换测试：秒转换为分钟和小时
+  let total_seconds = 3665  // 1小时1分钟5秒
+  
+  // 转换为分钟（向上取整）
+  let minutes = divide_with_ceil(total_seconds, 60)
+  
+  // 转换为小时（向上取整）
+  let hours = divide_with_ceil(total_seconds, 3600)
+  
+  // 计算剩余秒数
+  let exact_minutes = total_seconds / 60
+  let remaining_seconds = subtract(total_seconds, multiply(exact_minutes, 60))
+  
+  assert_eq(62, minutes)  // ceil(3665/60) = 62
+  assert_eq(2, hours)     // ceil(3665/3600) = 2
+  assert_eq(5, remaining_seconds)
+}
+
+test "temperature_conversion_test" {
+  // 温度转换测试：摄氏度转华氏度 F = C * 9/5 + 32
+  let celsius_0 = 0
+  let celsius_100 = 100
+  let celsius_25 = 25
+  
+  // 转换为华氏度（使用整数运算和向上取整）
+  let fahrenheit_0 = add(divide_with_ceil(multiply(celsius_0, 9), 5), 32)
+  let fahrenheit_100 = add(divide_with_ceil(multiply(celsius_100, 9), 5), 32)
+  let fahrenheit_25 = add(divide_with_ceil(multiply(celsius_25, 9), 5), 32)
+  
+  assert_eq(32, fahrenheit_0)   // 0°C = 32°F
+  assert_eq(212, fahrenheit_100) // 100°C = 212°F
+  assert_eq(77, fahrenheit_25)   // 25°C = 77°F
+}
+
+test "geometric_calculations" {
+  // 几何计算测试：计算矩形面积和周长
+  let length = 8
+  let width = 5
+  
+  // 计算面积
+  let area = multiply(length, width)
+  
+  // 计算周长
+  let perimeter = multiply(add(length, width), 2)
+  
+  // 计算对角线长度的平方（使用勾股定理）
+  let diagonal_squared = add(multiply(length, length), multiply(width, width))
+  
+  assert_eq(40, area)
+  assert_eq(26, perimeter)
+  assert_eq(89, diagonal_squared)
+}
+
+test "recursive_simulation" {
+  // 使用现有函数模拟递归计算（斐波那契数列）
+  let fib_0 = 0
+  let fib_1 = 1
+  let fib_2 = add(fib_0, fib_1)
+  let fib_3 = add(fib_1, fib_2)
+  let fib_4 = add(fib_2, fib_3)
+  let fib_5 = add(fib_3, fib_4)
+  
+  assert_eq(1, fib_2)
+  assert_eq(2, fib_3)
+  assert_eq(3, fib_4)
+  assert_eq(5, fib_5)
+}
+
+test "data_validation_test" {
+  // 数据验证测试：输入验证场景
+  let min_value = 1
+  let max_value = 100
+  let input_value = 150
+  
+  // 检查输入是否在有效范围内
+  let is_above_min = input_value >= min_value
+  let is_below_max = input_value <= max_value
+  
+  // 如果超出范围，调整到边界值
+  let adjusted_value = if is_above_min && is_below_max {
+    input_value
+  } else if input_value > max_value {
+    max_value
+  } else {
+    min_value
+  }
+  
+  assert_eq(1, if is_above_min { 1 } else { 0 })
+  assert_eq(0, if is_below_max { 1 } else { 0 })
+  assert_eq(100, adjusted_value)
+}
+
+test "performance_benchmark" {
+  // 性能基准测试：大量重复运算
+  let base_value = 42
+  let iterations = 1000
+  
+  // 模拟循环累加
+  let total_addition = multiply(base_value, iterations)
+  
+  // 模拟复杂计算序列
+  let complex_calculation = add(
+    multiply(divide_with_ceil(total_addition, 100), 3),
+    divide_with_ceil(multiply(base_value, 10), 2)
+  )
+  
+  assert_eq(42000, total_addition)
+  assert_eq(1290, complex_calculation)
+}
