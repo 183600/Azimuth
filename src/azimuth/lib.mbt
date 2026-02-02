@@ -12671,3 +12671,31 @@ test "time_series_analysis" {
   assert_eq(15, daily_average)
   assert_eq(10, range)
 }
+
+// 新增的标准 MoonBit 测试用例
+test "core_add_functionality" {
+  // 测试核心加法功能
+  assert_eq(8, add(3, 5))
+  assert_eq(0, add(0, 0))
+  assert_eq(-8, add(-3, -5))
+}
+
+test "core_multiply_functionality" {
+  // 测试核心乘法功能
+  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(-15, multiply(-3, 5))
+}
+
+test "core_greet_functionality" {
+  // 测试核心问候功能
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+}
+
+test "core_divide_with_ceil_functionality" {
+  // 测试核心向上取整除法功能
+  assert_eq(3, divide_with_ceil(8, 3))
+  assert_eq(2, divide_with_ceil(4, 2))
+  assert_eq(0, divide_with_ceil(5, 0))
+}
