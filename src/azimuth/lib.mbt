@@ -12356,3 +12356,148 @@ test "data_validation_functions" {
   assert_eq(2000, add(1000, 1000))
   assert_eq(10000, multiply(100, 100))
 }
+
+// 新增的标准 MoonBit 测试用例 - 针对 azimuth 库的高质量测试
+test "azimuth_core_functionality_basic_operations" {
+  // 测试核心基本运算功能
+  assert_eq(15, add(7, 8))
+  assert_eq(42, multiply(6, 7))
+  assert_eq(10, subtract(25, 15))
+  assert_eq_string("Hello, Azimuth!", greet("Azimuth"))
+}
+
+test "azimuth_mathematical_commutative_laws" {
+  // 验证数学交换律
+  let a = 23
+  let b = 17
+  
+  // 加法交换律: a + b = b + a
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律: a * b = b * a
+  assert_eq(multiply(a, b), multiply(b, a))
+}
+
+test "azimuth_identity_elements" {
+  // 测试单位元性质
+  let test_value = 42
+  
+  // 加法单位元：a + 0 = a
+  assert_eq(test_value, add(test_value, 0))
+  assert_eq(test_value, add(0, test_value))
+  
+  // 乘法单位元：a * 1 = a
+  assert_eq(test_value, multiply(test_value, 1))
+  assert_eq(test_value, multiply(1, test_value))
+}
+
+test "azimuth_boundary_value_testing" {
+  // 边界值测试
+  // 测试零值
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 123))
+  assert_eq(0, multiply(123, 0))
+  
+  // 测试单位值
+  assert_eq(1, add(1, 0))
+  assert_eq(1, multiply(1, 1))
+  
+  // 测试负数边界
+  assert_eq(0, add(1, -1))
+  assert_eq(-1, multiply(-1, 1))
+}
+
+test "azimuth_divide_with_ceil_comprehensive" {
+  // 全面测试向上取整除法
+  // 正数情况
+  assert_eq(4, divide_with_ceil(10, 3))  // 3.33 -> 4
+  assert_eq(3, divide_with_ceil(9, 3))   // 3.0 -> 3
+  assert_eq(1, divide_with_ceil(1, 100)) // 0.01 -> 1
+  
+  // 负数情况
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -3.33 -> -3
+  assert_eq(4, divide_with_ceil(-10, -3))  // 3.33 -> 4
+  
+  // 边界情况
+  assert_eq(0, divide_with_ceil(5, 0))     // 除零返回0
+  assert_eq(0, divide_with_ceil(0, 5))     // 0/5 = 0
+}
+
+test "azimuth_real_world_inventory_calculation" {
+  // 实际库存管理场景
+  let initial_stock = 250
+  let daily_sales = 15
+  let days_period = 7
+  let new_shipment = 80
+  
+  // 计算期间销售量
+  let total_sold = multiply(daily_sales, days_period)
+  
+  // 计算发货前库存
+  let stock_before_shipment = subtract(initial_stock, total_sold)
+  
+  // 计算最终库存
+  let final_stock = add(stock_before_shipment, new_shipment)
+  
+  assert_eq(105, total_sold)
+  assert_eq(145, stock_before_shipment)
+  assert_eq(225, final_stock)
+}
+
+test "azimuth_project_planning_scenario" {
+  // 项目规划场景测试
+  let team_members = 8
+  let tasks_per_member = 12
+  let additional_tasks = 15
+  let working_days = 5
+  
+  // 计算总任务数
+  let total_tasks = add(multiply(team_members, tasks_per_member), additional_tasks)
+  
+  // 计算每天需要完成的任务数（向上取整）
+  let daily_tasks_needed = divide_with_ceil(total_tasks, working_days)
+  
+  assert_eq(111, total_tasks)  // 8*12 + 15 = 96 + 15 = 111
+  assert_eq(23, daily_tasks_needed)  // ceil(111/5) = 23
+}
+
+test "azimuth_string_processing_unicode" {
+  // 字符串处理和Unicode测试
+  let english_name = "Alice"
+  let chinese_name = "小明"
+  let mixed_name = "张三 Zhang"
+  let emoji_name = "🚀 Team"
+  
+  // 测试不同类型的名称
+  assert_eq_string("Hello, Alice!", greet(english_name))
+  assert_eq_string("Hello, 小明!", greet(chinese_name))
+  assert_eq_string("Hello, 张三 Zhang!", greet(mixed_name))
+  assert_eq_string("Hello, 🚀 Team!", greet(emoji_name))
+}
+
+test "azimuth_complex_calculation_workflow" {
+  // 复杂计算工作流测试
+  let base_cost = 1000
+  let quantity = 5
+  let tax_rate = 8  // 8%
+  let discount = 150
+  let shipping_per_item = 12
+  
+  // 计算商品成本
+  let subtotal = multiply(base_cost, quantity)
+  
+  // 计算运费
+  let total_shipping = multiply(shipping_per_item, quantity)
+  
+  // 计算税费（向上取整）
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  
+  // 计算最终总价
+  let pretotal = add(add(subtotal, total_shipping), tax_amount)
+  let final_total = subtract(pretotal, discount)
+  
+  assert_eq(5000, subtotal)
+  assert_eq(60, total_shipping)
+  assert_eq(400, tax_amount)
+  assert_eq(5310, final_total)
+}
