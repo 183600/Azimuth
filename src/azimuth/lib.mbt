@@ -12263,3 +12263,96 @@ test "standard_unicode_and_special_characters" {
   assert_eq_string("Hello, 123!", greet("123"))
   assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "new_basic_arithmetic_operations" {
+  // 基本算术运算测试
+  assert_eq(15, add(7, 8))
+  assert_eq(30, multiply(5, 6))
+  assert_eq(3, subtract(10, 7))
+  assert_eq(4, divide_with_ceil(13, 4))
+}
+
+test "new_edge_case_handling" {
+  // 边界情况处理测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-5, subtract(0, 5))
+  assert_eq(0, divide_with_ceil(0, 10))
+}
+
+test "new_negative_number_calculations" {
+  // 负数计算测试
+  assert_eq(-10, add(-3, -7))
+  assert_eq(21, multiply(-3, -7))
+  assert_eq(-4, subtract(-10, -6))
+  assert_eq(-2, divide_with_ceil(-8, 4))
+}
+
+test "mathematical_identities" {
+  // 数学恒等式测试
+  let x = 42
+  assert_eq(x, add(x, 0))
+  assert_eq(x, multiply(x, 1))
+  assert_eq(0, multiply(x, 0))
+}
+
+test "complex_expression_evaluation" {
+  // 复杂表达式求值测试
+  let result = add(multiply(3, 4), subtract(15, 5))
+  assert_eq(22, result)  // 3*4 + (15-5) = 12 + 10 = 22
+}
+
+test "string_processing_comprehensive" {
+  // 综合字符串处理测试
+  assert_eq_string("Hello, Alice!", greet("Alice"))
+  assert_eq_string("Hello, Bob123!", greet("Bob123"))
+  assert_eq_string("Hello,   !", greet("   "))
+}
+
+test "business_calculation_scenario" {
+  // 业务计算场景测试
+  let price_per_item = 15
+  let quantity = 8
+  let discount = 20
+  
+  let subtotal = multiply(price_per_item, quantity)
+  let final_total = add(subtotal, -discount)
+  
+  assert_eq(120, subtotal)
+  assert_eq(100, final_total)
+}
+
+test "resource_allocation_calculation" {
+  // 资源分配计算测试
+  let total_resources = 47
+  let team_size = 5
+  let resources_per_team = divide_with_ceil(total_resources, team_size)
+  
+  assert_eq(10, resources_per_team)  // ceil(47/5) = 10
+}
+
+test "performance_metrics_calculation" {
+  // 性能指标计算测试
+  let base_performance = 100
+  let improvement_factor = 25
+  let overhead = 8
+  
+  let improved_performance = add(base_performance, improvement_factor)
+  let net_performance = subtract(improved_performance, overhead)
+  
+  assert_eq(125, improved_performance)
+  assert_eq(117, net_performance)
+}
+
+test "data_validation_functions" {
+  // 数据验证函数测试
+  // 验证除零安全性
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-50, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 验证大数运算
+  assert_eq(2000, add(1000, 1000))
+  assert_eq(10000, multiply(100, 100))
+}
