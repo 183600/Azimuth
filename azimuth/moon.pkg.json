@@ -12,6 +12,7 @@
         "subtract"
     ],
     "files": [
+        "azimuth_additional_standard_tests.mbt",
         "standard_moonbit_test_suite.mbt",
         "standard_azimuth_comprehensive_test.mbt",
         "test/azimuth_new_comprehensive_tests.mbt",
