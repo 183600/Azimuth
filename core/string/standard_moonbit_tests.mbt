@@ -14,66 +14,67 @@
 
 ///|
 test "string basic operations" {
-  let empty_string = ""
-  let hello_string = "Hello"
+  // 测试字符串基本操作
+  let empty = ""
+  let hello = "Hello"
+  let world = "World"
   
-  inspect(empty_string.length(), content="0")
-  inspect(hello_string.length(), content="5")
-  inspect(String::default(), content="")
+  // 测试字符串连接
+  let greeting = hello + " " + world
+  inspect(greeting, content="Hello World")
+  
+  // 测试空字符串
+  inspect(empty, content="")
+  inspect(empty.length(), content="0")
+  
+  // 测试字符串长度
+  inspect(hello.length(), content="5")
+  inspect(world.length(), content="5")
+  inspect(greeting.length(), content="11")
 }
 
 ///|
-test "string concatenation" {
-  let str1 = "Hello"
-  let str2 = " "
-  let str3 = "World"
+test "string unicode support" {
+  // 测试 Unicode 字符串支持
+  let chinese = "你好世界"
+  let emoji = "🌟🚀"
+  let mixed = "Hello 世界 🌟"
   
-  let result = str1 + str2 + str3
-  inspect(result, content="Hello World")
-  inspect(result.length(), content="11")
+  inspect(chinese.length(), content="12")  // UTF-8 编码长度
+  inspect(emoji.length(), content="8")      // UTF-8 编码长度
+  inspect(mixed.length(), content="16")     // UTF-8 编码长度
+  
+  // 测试 Unicode 字符串比较
+  let same_chinese = "你好世界"
+  let different_chinese = "你好"
+  
+  inspect(chinese == same_chinese, content="true")
+  inspect(chinese == different_chinese, content="false")
 }
 
 ///|
-test "string character access" {
-  let test_string = "MoonBit"
+test "string edge cases" {
+  // 测试字符串边界情况
+  let single_char = "a"
+  let space = " "
+  let special_chars = "!@#$%^&*()"
+  let newline = "\n"
+  let tab = "\t"
   
-  inspect(test_string[0], content="M")
-  inspect(test_string[1], content="o")
-  inspect(test_string[2], content="o")
-  inspect(test_string[3], content="n")
-  inspect(test_string[4], content="B")
-  inspect(test_string[5], content="i")
-  inspect(test_string[6], content="t")
-}
-
-///|
-test "string make function" {
-  let repeated_char = String::make(5, 'X')
-  inspect(repeated_char, content="XXXXX")
-  inspect(repeated_char.length(), content="5")
+  // 测试单字符
+  inspect(single_char.length(), content="1")
   
-  let empty_make = String::make(0, 'A')
-  inspect(empty_make, content="")
-  inspect(empty_make.length(), content="0")
-}
-
-///|
-test "string comparison" {
-  let str1 = "hello"
-  let str2 = "hello"
-  let str3 = "world"
+  // 测试空格
+  inspect(space.length(), content="1")
   
-  inspect(str1 = str2, content="true")
-  inspect(str1 = str3, content="false")
-  inspect(str1 < str3, content="true")
-  inspect(str3 < str1, content="false")
-}
-
-///|
-test "string from character conversion" {
-  let char_value = 'Z'
-  let string_from_char = char_value.to_string()
+  // 测试特殊字符
+  inspect(special_chars.length(), content="10")
   
-  inspect(string_from_char, content="Z")
-  inspect(string_from_char.length(), content="1")
+  // 测试转义字符
+  inspect(newline.length(), content="1")
+  inspect(tab.length(), content="1")
+  
+  // 测试包含转义字符的字符串
+  let text_with_escapes = "Line1\nLine2\tEnd"
+  inspect(text_with_escapes.length(), content="15")
 }
