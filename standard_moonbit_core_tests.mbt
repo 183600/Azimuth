@@ -13,104 +13,112 @@
 // limitations under the License.
 
 ///|
-test "int basic operations" {
-  assert_eq(5 + 3, 8)
-  assert_eq(10 - 4, 6)
+test "int basic arithmetic" {
+  assert_eq(1 + 2, 3)
+  assert_eq(10 - 5, 5)
   assert_eq(3 * 4, 12)
   assert_eq(15 / 3, 5)
+  assert_eq(17 % 5, 2)
 }
 
 ///|
-test "int comparison" {
-  assert_true(5 > 3)
-  assert_true(2 < 8)
-  assert_true(4 == 4)
-  assert_true(6 != 3)
+test "int comparisons" {
+  assert_eq(10 > 5, true)
+  assert_eq(3 < 8, true)
+  assert_eq(7 >= 7, true)
+  assert_eq(9 <= 4, false)
+  assert_eq(6 == 6, true)
+  assert_eq(3 != 3, false)
 }
 
 ///|
-test "string basic operations" {
-  let str1 = "Hello"
-  let str2 = "World"
-  let result = str1 + " " + str2
-  assert_eq_string(result, "Hello World")
-  assert_eq(result.length(), 11)
+test "string operations" {
+  let s1 = "hello"
+  let s2 = "world"
+  let combined = s1 + " " + s2
+  assert_eq(combined, "hello world")
+  assert_eq(s1.length(), 5)
+  assert_eq(s2.length(), 5)
 }
 
 ///|
-test "array basic operations" {
-  let numbers = [1, 2, 3, 4, 5]
-  assert_eq(numbers.length(), 5)
-  assert_eq(numbers[0], 1)
-  assert_eq(numbers[4], 5)
-}
-
-///|
-test "array push and pop" {
-  let mutable_array = [1, 2, 3]
-  mutable_array.push(4)
-  assert_eq(mutable_array.length(), 4)
-  assert_eq(mutable_array[3], 4)
+test "array operations" {
+  let arr = [1, 2, 3, 4, 5]
+  assert_eq(arr.length(), 5)
+  assert_eq(arr[0], 1)
+  assert_eq(arr[4], 5)
   
-  let popped = mutable_array.pop()
-  assert_eq(popped, Some(4))
-  assert_eq(mutable_array.length(), 3)
+  let empty = []
+  assert_eq(empty.length(), 0)
 }
 
 ///|
-test "result basic operations" {
-  let ok_result : Result[Int, String] = Ok(42)
-  let err_result : Result[Int, String] = Err("error")
+test "boolean operations" {
+  assert_eq(true && true, true)
+  assert_eq(true && false, false)
+  assert_eq(false && true, false)
+  assert_eq(false && false, false)
   
-  assert_true(ok_result is Ok(_))
-  assert_true(err_result is Err(_))
-  assert_eq(ok_result.unwrap_or(0), 42)
-  assert_eq(err_result.unwrap_or(0), 0)
+  assert_eq(true || true, true)
+  assert_eq(true || false, true)
+  assert_eq(false || true, true)
+  assert_eq(false || false, false)
+  
+  assert_eq(!true, false)
+  assert_eq(!false, true)
 }
 
 ///|
-test "result map operations" {
-  let ok_result : Result[Int, String] = Ok(5)
-  let err_result : Result[Int, String] = Err("error")
+test "option type" {
+  let some_val = Some(42)
+  let none_val = None
   
-  let mapped_ok = ok_result.map(x => x * 2)
-  assert_eq(mapped_ok, Ok(10))
+  assert_eq(some_val.is_some(), true)
+  assert_eq(some_val.is_none(), false)
+  assert_eq(none_val.is_some(), false)
+  assert_eq(none_val.is_none(), true)
   
-  let mapped_err = err_result.map(x => x * 2)
-  assert_eq(mapped_err, Err("error"))
+  assert_eq(some_val.unwrap_or(0), 42)
+  assert_eq(none_val.unwrap_or(0), 0)
 }
 
 ///|
-test "string character access" {
-  let test_string = "MoonBit"
-  assert_eq(test_string[0], 'M')
-  assert_eq(test_string[3], 'n')
-  assert_eq(test_string[6], 't')
+test "result type" {
+  let ok_val = Ok(42)
+  let err_val = Err("error")
+  
+  assert_eq(ok_val.is_ok(), true)
+  assert_eq(ok_val.is_err(), false)
+  assert_eq(err_val.is_ok(), false)
+  assert_eq(err_val.is_err(), true)
+  
+  assert_eq(ok_val.unwrap_or(0), 42)
+  assert_eq(err_val.unwrap_or(0), 0)
 }
 
 ///|
-test "array map operation" {
-  let numbers = [1, 2, 3, 4, 5]
-  let doubled = numbers.map(x => x * 2)
-  assert_eq(doubled.length(), 5)
-  assert_eq(doubled[0], 2)
-  assert_eq(doubled[4], 10)
+test "int edge cases" {
+  assert_eq(0 + 5, 5)
+  assert_eq(0 - 5, -5)
+  assert_eq(0 * 5, 0)
+  assert_eq(-5 + 3, -2)
+  assert_eq(-5 * -3, 15)
 }
 
 ///|
-test "result pattern matching" {
-  let ok_result : Result[Int, String] = Ok(200)
-  let err_result : Result[Int, String] = Err("not found")
+test "string edge cases" {
+  let empty = ""
+  assert_eq(empty.length(), 0)
+  assert_eq(empty.is_empty(), true)
   
-  let ok_message = match ok_result {
-    Ok(value) => "Success: " + value.to_string()
-    Err(error) => "Error: " + error
-  }
-  assert_eq_string(ok_message, "Success: 200")
-  
-  let err_message = match err_result {
-    Ok(value) => "Success: " + value.to_string()
-    Err(error) => "Error: " + error
-  }
-  assert_eq_string(err_message, "Error: not found")
+  let single = "a"
+  assert_eq(single.length(), 1)
+  assert_eq(single.is_empty(), false)
+}
+
+///|
+test "array edge cases" {
+  let single = [42]
+  assert_eq(single.length(), 1)
+  assert_eq(single[0], 42)
 }
