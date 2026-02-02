@@ -12501,3 +12501,173 @@ test "azimuth_complex_calculation_workflow" {
   assert_eq(400, tax_amount)
   assert_eq(5310, final_total)
 }
+
+// 新增的10个标准 MoonBit 测试用例
+
+test "extreme_boundary_values" {
+  // 极值边界测试
+  let max_32bit = 2147483647
+  let min_32bit = -2147483648
+  
+  // 测试接近边界的加法
+  assert_eq(2147483646, add(max_32bit - 1, 0))
+  assert_eq(-2147483647, add(min_32bit + 1, 0))
+  
+  // 测试零值附近
+  assert_eq(1, add(0, 1))
+  assert_eq(-1, add(0, -1))
+  assert_eq(0, add(1, -1))
+}
+
+test "mathematical_identities" {
+  // 数学恒等式测试
+  let x = 42
+  let y = 17
+  
+  // 加法恒等式
+  assert_eq(add(x, y), add(y, x))  // 交换律
+  assert_eq(add(x, 0), x)          // 单位元
+  assert_eq(add(x, -x), 0)         // 逆元
+  
+  // 乘法恒等式
+  assert_eq(multiply(x, y), multiply(y, x))  // 交换律
+  assert_eq(multiply(x, 1), x)               // 单位元
+  assert_eq(multiply(x, 0), 0)               // 零元
+}
+
+test "real_world_shopping_cart" {
+  // 真实购物车场景测试
+  let apple_price = 5
+  let apple_qty = 3
+  let banana_price = 3
+  let banana_qty = 4
+  let orange_price = 7
+  let orange_qty = 2
+  
+  // 计算各项总价
+  let apple_total = multiply(apple_price, apple_qty)
+  let banana_total = multiply(banana_price, banana_qty)
+  let orange_total = multiply(orange_price, orange_qty)
+  
+  // 计算购物车总价
+  let cart_total = add(add(apple_total, banana_total), orange_total)
+  
+  assert_eq(15, apple_total)
+  assert_eq(12, banana_total)
+  assert_eq(14, orange_total)
+  assert_eq(41, cart_total)
+}
+
+test "error_handling_division" {
+  // 错误处理测试：除法边界情况
+  // 测试除数为零
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 测试极小除数
+  assert_eq(1000, divide_with_ceil(999, 1))
+  assert_eq(500, divide_with_ceil(999, 2))
+  assert_eq(334, divide_with_ceil(1000, 3))
+}
+
+test "string_boundary_processing" {
+  // 字符串边界处理测试
+  // 测试各种边界情况
+  assert_eq_string("Hello, !", greet(""))                    // 空字符串
+  assert_eq_string("Hello, a!", greet("a"))                  // 单字符
+  assert_eq_string("Hello,   !", greet("  "))                // 空格
+  assert_eq_string("Hello, abcdefghijklmnopqrstuvwxyz!", greet("abcdefghijklmnopqrstuvwxyz"))  // 长字符串
+}
+
+test "complex_financial_calculation" {
+  // 复杂金融计算测试
+  let principal = 10000
+  let rate1 = 5    // 第一年利率
+  let rate2 = 6    // 第二年利率
+  let rate3 = 7    // 第三年利率
+  
+  // 计算复利（简化版，使用向上取整）
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate1), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate2), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate3), 100))
+  
+  assert_eq(10500, year1)  // 10000 + 5%
+  assert_eq(11130, year2)  // 10500 + 6%
+  assert_eq(11909, year3)  // 11130 + 7%
+}
+
+test "algorithm_simulation" {
+  // 算法模拟测试：模拟简单的排序算法比较
+  let data_size = 100
+  let algorithm1_ops = multiply(data_size, data_size)      // O(n²)
+  let algorithm2_ops = multiply(data_size, 10)             // O(n)
+  let algorithm3_ops = multiply(data_size, 15)             // O(n log n) 简化
+  
+  // 比较算法效率
+  let diff_1_2 = subtract(algorithm1_ops, algorithm2_ops)
+  let diff_1_3 = subtract(algorithm1_ops, algorithm3_ops)
+  
+  assert_eq(10000, algorithm1_ops)
+  assert_eq(1000, algorithm2_ops)
+  assert_eq(1500, algorithm3_ops)
+  assert_eq(9000, diff_1_2)
+  assert_eq(8500, diff_1_3)
+}
+
+test "data_processing_pipeline" {
+  // 数据处理管道测试
+  let raw_data = 1000
+  let filter_rate = 20  // 20% 数据被过滤
+  let transform_multiplier = 3
+  let aggregate_divisor = 5
+  
+  // 数据处理管道
+  let filtered_count = divide_with_ceil(multiply(raw_data, filter_rate), 100)
+  let transformed_count = multiply(filtered_count, transform_multiplier)
+  let final_result = divide_with_ceil(transformed_count, aggregate_divisor)
+  
+  assert_eq(200, filtered_count)    // 1000 * 20% = 200
+  assert_eq(600, transformed_count) // 200 * 3 = 600
+  assert_eq(120, final_result)      // 600 / 5 = 120
+}
+
+test "resource_optimization" {
+  // 资源优化测试
+  let total_memory = 8192  // MB
+  let process1_memory = 2048
+  let process2_memory = 1536
+  let process3_memory = 1024
+  
+  // 计算已用内存
+  let used_memory = add(add(process1_memory, process2_memory), process3_memory)
+  
+  // 计算剩余内存
+  let free_memory = subtract(total_memory, used_memory)
+  
+  // 计算可以启动的新进程数量（每个进程需要256MB）
+  let new_processes = divide_with_ceil(free_memory, 256)
+  
+  assert_eq(4608, used_memory)
+  assert_eq(3584, free_memory)
+  assert_eq(14, new_processes)
+}
+
+test "time_series_analysis" {
+  // 时间序列分析测试
+  let daily_values = [10, 15, 12, 18, 20, 14, 16]  // 一周数据
+  let days = 7
+  
+  // 计算总和（手动累加）
+  let weekly_total = add(add(add(add(add(add(10, 15), 12), 18), 20), 14), 16)
+  
+  // 计算平均值（向上取整）
+  let daily_average = divide_with_ceil(weekly_total, days)
+  
+  // 计算最大值与最小值的差（简化：假设最大值是20，最小值是10）
+  let range = subtract(20, 10)
+  
+  assert_eq(105, weekly_total)
+  assert_eq(15, daily_average)
+  assert_eq(10, range)
+}
