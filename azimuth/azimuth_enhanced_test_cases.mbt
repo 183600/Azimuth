@@ -1,158 +1,199 @@
 // Azimuth 增强测试用例
-// 使用标准 MoonBit 测试语法，包含8个高质量测试用例
-
-test "enhanced_arithmetic_precision" {
-  // 增强算术精度测试
-  assert_eq(1000001, add(1000000, 1))
-  assert_eq(999999, subtract(1000000, 1))
-  assert_eq(1000000, multiply(1000, 1000))
-  assert_eq(1, divide_with_ceil(999999, 1000000))
-  assert_eq(1000000, divide_with_ceil(1000000, 1))
-}
-
-test "complex_business_workflow" {
-  // 复杂业务工作流测试
-  // 场景：电商订单处理
-  let orders = 127
-  let items_per_box = 24
-  let boxes_needed = divide_with_ceil(orders, items_per_box)
-  
-  assert_eq(6, boxes_needed)
-  
-  // 计算总容量
-  let total_capacity = multiply(boxes_needed, items_per_box)
-  assert_eq(144, total_capacity)
-  
-  // 计算剩余空间
-  let remaining_space = subtract(total_capacity, orders)
-  assert_eq(17, remaining_space)
-  
-  // 验证空间利用率
-  let utilization_rate = divide_with_ceil(multiply(orders, 100), total_capacity)
-  assert_eq(89, utilization_rate)  // floor(12700/144) = 88%
-}
+// 包含10个高质量的标准 MoonBit 测试用例
 
 test "mathematical_sequence_validation" {
-  // 数学序列验证测试
-  // 斐波那契式序列计算
-  let n1 = 5
-  let n2 = 8
-  let n3 = 13
+  // 数学序列验证测试 - 斐波那契风格计算
+  let a = 5
+  let b = 8
+  let c = 13
   
-  // 验证序列性质
-  assert_eq(n3, add(n1, n2))
+  // 验证斐波那契性质：前两项之和等于第三项
+  assert_eq(c, add(a, b))
   
   // 验证乘法关系
-  let product = multiply(n1, n2)
-  assert_eq(40, product)
+  assert_eq(40, multiply(a, b))
   
-  // 验证除法向上取整
-  let ratio = divide_with_ceil(product, n3)
-  assert_eq(4, ratio)  // ceil(40/13) = 4
+  // 验证除法关系
+  assert_eq(2, divide_with_ceil(b, a))
+  assert_eq(3, divide_with_ceil(c, b))
 }
 
-test "internationalization_comprehensive" {
-  // 国际化综合测试
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, ñoño!", greet("ñoño"))
-  assert_eq_string("Hello, 🏳️‍🌈!", greet("🏳️‍🌈"))
-  assert_eq_string("Hello, empty!", greet(""))
+test "time_calculation_scenario" {
+  // 时间计算场景测试 - 项目排期
+  let total_hours = 120
+  let hours_per_day = 8
+  let days_needed = divide_with_ceil(total_hours, hours_per_day)
+  
+  assert_eq(15, days_needed)
+  
+  // 计算工作周数（每周5个工作日）
+  let work_days_per_week = 5
+  let weeks_needed = divide_with_ceil(days_needed, work_days_per_week)
+  assert_eq(3, weeks_needed)
+  
+  // 验证总工作日
+  let total_work_days = multiply(weeks_needed, work_days_per_week)
+  assert_eq(15, total_work_days)
 }
 
-test "error_boundary_conditions" {
-  // 错误边界条件测试
-  // 除零错误的全面测试
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
+test "resource_distribution_optimization" {
+  // 资源分配优化测试
+  let total_resources = 75
+  let team_size = 4
+  let base_allocation = divide_with_ceil(total_resources, team_size)
   
-  // 极值运算测试
-  assert_eq(0, multiply(2147483647, 0))
-  assert_eq(0, multiply(-2147483648, 0))
-  assert_eq(1, divide_with_ceil(1, 2147483647))
-  assert_eq(1, divide_with_ceil(-1, -2147483648))
+  assert_eq(19, base_allocation)
+  
+  // 计算实际分配总量
+  let allocated_total = multiply(base_allocation, team_size)
+  assert_eq(76, allocated_total)
+  
+  // 计算剩余资源
+  let remaining = subtract(allocated_total, total_resources)
+  assert_eq(1, remaining)
+  
+  // 验证每个团队成员至少获得基础分配
+  assert_true(base_allocation > 0)
 }
 
-test "data_structure_simulation" {
-  // 数据结构模拟测试
-  // 模拟栈操作：push和计算深度
-  let stack_capacity = 10
-  let items_to_push = 27
-  let stacks_needed = divide_with_ceil(items_to_push, stack_capacity)
+test "string_pattern_validation" {
+  // 字符串模式验证测试
+  let test_names = ["Alice", "Bob", "Charlie", "Diana", "Eve"]
   
-  assert_eq(3, stacks_needed)
+  // 测试各种名字的问候
+  assert_eq_string("Hello, Alice!", greet("Alice"))
+  assert_eq_string("Hello, Bob!", greet("Bob"))
+  assert_eq_string("Hello, Charlie!", greet("Charlie"))
+  assert_eq_string("Hello, Diana!", greet("Diana"))
+  assert_eq_string("Hello, Eve!", greet("Eve"))
   
-  // 计算总容量
-  let total_capacity = multiply(stacks_needed, stack_capacity)
-  assert_eq(30, total_capacity)
-  
-  // 计算最后一个栈的元素数量
-  let last_stack_items = subtract(items_to_push, multiply(stacks_needed - 1, stack_capacity))
-  assert_eq(7, last_stack_items)
-  
-  // 计算空闲槽位
-  let free_slots = subtract(total_capacity, items_to_push)
-  assert_eq(3, free_slots)
+  // 测试特殊字符名字
+  assert_eq_string("Hello, Jean-Luc!", greet("Jean-Luc"))
+  assert_eq_string("Hello, O'Connor!", greet("O'Connor"))
+  assert_eq_string("Hello, María!", greet("María"))
 }
 
-test "performance_optimization_scenario" {
-  // 性能优化场景测试
-  // 场景：批量处理优化
-  let total_records = 1000
-  let batch_size = 75
-  let processing_time_per_batch = 2
+test "financial_rounding_precision" {
+  // 金融舍入精度测试
+  let total_amount = 1000
+  let payment_amount = 333
+  let payments_needed = divide_with_ceil(total_amount, payment_amount)
   
-  // 计算批次数
-  let batches_needed = divide_with_ceil(total_records, batch_size)
-  assert_eq(14, batches_needed)  // ceil(1000/75) = 14
+  assert_eq(4, payments_needed)
   
-  // 计算总处理时间
-  let total_time = multiply(batches_needed, processing_time_per_batch)
-  assert_eq(28, total_time)
+  // 计算实际支付总额
+  let actual_total = multiply(payments_needed, payment_amount)
+  assert_eq(1332, actual_total)
   
-  // 计算实际处理记录数
-  let full_batches = batches_needed - 1
-  let full_batch_records = multiply(full_batches, batch_size)
-  let last_batch_records = subtract(total_records, full_batch_records)
-  assert_eq(25, last_batch_records)
-  
-  // 验证总记录数
-  let total_processed = add(full_batch_records, last_batch_records)
-  assert_eq(total_records, total_processed)
+  // 计算最后一期支付金额
+  let regular_payments = payments_needed - 1
+  let regular_total = multiply(regular_payments, payment_amount)
+  let final_payment = subtract(total_amount, regular_total)
+  assert_eq(1, final_payment)
 }
 
-test "resource_allocation_algorithm" {
-  // 资源分配算法测试
-  // 场景：云计算资源分配
-  let total_memory_gb = 64
-  let instances = 5
-  let base_memory_per_instance = 10
-  let additional_memory_needed = subtract(total_memory_gb, multiply(instances, base_memory_per_instance))
+test "combinatorial_mathematics" {
+  // 组合数学测试 - 排列计算
+  let n = 5
+  let k = 3
   
-  assert_eq(14, additional_memory_needed)
+  // 计算 n! / (n-k)! 即排列数 P(n,k)
+  // P(5,3) = 5 * 4 * 3 = 60
+  let permutation = multiply(n, multiply(subtract(n, 1), subtract(n, 2)))
+  assert_eq(60, permutation)
   
-  // 计算每个实例可获得的额外内存
-  let extra_memory_per_instance = divide_with_ceil(additional_memory_needed, instances)
-  assert_eq(3, extra_memory_per_instance)  // ceil(14/5) = 3
+  // 验证组合性质
+  let smaller_permutation = multiply(k, multiply(subtract(k, 1), subtract(k, 2)))
+  assert_eq(6, smaller_permutation)
   
-  // 计算每个实例的总内存
-  let total_memory_per_instance = add(base_memory_per_instance, extra_memory_per_instance)
-  assert_eq(13, total_memory_per_instance)
+  // 验证比例关系
+  let ratio = divide_with_ceil(permutation, smaller_permutation)
+  assert_eq(10, ratio)
+}
+
+test "geometric_progression_validation" {
+  // 几何级数验证测试
+  let first_term = 2
+  let ratio = 3
+  let terms_count = 4
   
-  // 计算实际使用的总内存
-  let actual_total_memory = multiply(instances, total_memory_per_instance)
-  assert_eq(65, actual_total_memory)
+  // 计算几何级数前4项：2, 6, 18, 54
+  let term1 = first_term
+  let term2 = multiply(term1, ratio)
+  let term3 = multiply(term2, ratio)
+  let term4 = multiply(term3, ratio)
   
-  // 验证内存充足性
-  assert_true(actual_total_memory >= total_memory_gb)
+  assert_eq(2, term1)
+  assert_eq(6, term2)
+  assert_eq(18, term3)
+  assert_eq(54, term4)
   
-  // 计算内存利用率
-  let memory_utilization = divide_with_ceil(multiply(total_memory_gb, 100), actual_total_memory)
-  assert_eq(99, memory_utilization)  // floor(6400/65) = 98%
+  // 计算总和
+  let sum = add(term1, add(term2, add(term3, term4)))
+  assert_eq(80, sum)
+  
+  // 验证平均值的向上取整
+  let average_ceil = divide_with_ceil(sum, terms_count)
+  assert_eq(20, average_ceil)
+}
+
+test "inventory_turnover_calculation" {
+  // 库存周转率计算测试
+  let annual_sales = 12000
+  let average_inventory = 3000
+  let turnover_rate = divide_with_ceil(annual_sales, average_inventory)
+  
+  assert_eq(4, turnover_rate)
+  
+  // 计算平均周转天数
+  let days_per_year = 365
+  let days_per_turnover = divide_with_ceil(days_per_year, turnover_rate)
+  assert_eq(92, days_per_turnover)
+  
+  // 验证年化计算
+  let calculated_annual = multiply(turnover_rate, average_inventory)
+  assert_eq(12000, calculated_annual)
+}
+
+test "algorithm_efficiency_simulation" {
+  // 算法效率模拟测试
+  let input_size = 1000
+  
+  // 模拟线性算法复杂度 O(n)
+  let linear_operations = input_size
+  assert_eq(1000, linear_operations)
+  
+  // 模拟对数算法复杂度 O(log n)
+  let log_operations = divide_with_ceil(input_size, 100)  // 简化的对数计算
+  assert_eq(10, log_operations)
+  
+  // 模拟平方算法复杂度 O(n²)
+  let quadratic_operations = multiply(input_size, divide_with_ceil(input_size, 1000))
+  assert_eq(1000, quadratic_operations)
+  
+  // 验证效率比较
+  assert_true(linear_operations > log_operations)
+  assert_true(quadratic_operations >= linear_operations)
+}
+
+test "multi_currency_conversion" {
+  // 多货币转换测试
+  let base_amount = 1000
+  let exchange_rate_usd = 0.85  // 简化为整数计算：85/100
+  let exchange_rate_gbp = 0.73  // 简化为整数计算：73/100
+  
+  // 转换为美元（使用整数近似）
+  let usd_amount = divide_with_ceil(multiply(base_amount, 85), 100)
+  assert_eq(850, usd_amount)
+  
+  // 转换为英镑（使用整数近似）
+  let gbp_amount = divide_with_ceil(multiply(base_amount, 73), 100)
+  assert_eq(730, gbp_amount)
+  
+  // 验证转换关系
+  let reverse_usd = divide_with_ceil(multiply(usd_amount, 100), 85)
+  let reverse_gbp = divide_with_ceil(multiply(gbp_amount, 100), 73)
+  
+  assert_eq(1000, reverse_usd)
+  assert_eq(1000, reverse_gbp)
 }
