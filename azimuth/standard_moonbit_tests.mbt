@@ -1,5 +1,5 @@
-// 标准 MoonBit 测试用例
-// 为 Azimuth 项目添加 10 个高质量测试用例
+// 标准 MoonBit 测试用例 - 为 Azimuth 项目创建
+// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
 
 test "basic_addition_functionality" {
   // 基本加法功能测试
