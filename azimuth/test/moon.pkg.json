@@ -183,6 +183,7 @@
     "standard_enhanced_tests.mbt",
       "simple_enhanced_tests.mbt",
       "azimuth_premium_tests.mbt",
+    "our_new_tests.mbt",
       "user_moonbit_tests.mbt",  "enhanced_comprehensive_tests.mbt",
   "simple_verification_test.mbt",
   "azimuth_enhanced_quality_tests.mbt",
