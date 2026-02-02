@@ -13743,3 +13743,151 @@ test "advanced_algorithmic_scenarios" {
   assert_eq(15, full_chunks)      // ceil(100/7) = 15
   assert_eq(5, last_chunk_size)   // 15*7 - 100 = 5
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "advanced_function_chain_composition" {
+  // 函数链式组合测试
+  let initial = 5
+  let result = divide_with_ceil(
+    add(
+      multiply(initial, 3),
+      subtract(initial, 2)
+    ),
+    add(initial, 1)
+  )
+  // 手动计算：(5*3 + (5-2)) / (5+1) = (15 + 3) / 6 = 18/6 = 3
+  assert_eq(3, result)
+}
+
+test "fibonacci_golden_ratio_test" {
+  // 斐波那契数列计算测试（使用基本运算模拟前几项）
+  let n1 = 1
+  let n2 = 1
+  let n3 = add(n1, n2)           // 2
+  let n4 = add(n2, n3)           // 3
+  let n5 = add(n3, n4)           // 5
+  let n6 = add(n4, n5)           // 8
+  let n7 = add(n5, n6)           // 13
+  let n8 = add(n6, n7)           // 21
+  
+  // 验证斐波那契数列的黄金比例近似
+  let ratio_approx = divide_with_ceil(multiply(n8, 100), n7)
+  assert_eq(162, ratio_approx)   // ceil(21*100/13) = ceil(161.54) = 162
+}
+
+test "time_unit_conversion_test" {
+  // 时间转换计算测试
+  let hours = 53
+  let minutes_in_hour = 60
+  let total_minutes = multiply(hours, minutes_in_hour)
+  let days = divide_with_ceil(hours, 24)
+  let remaining_hours = subtract(hours, multiply(days - 1, 24))
+  
+  assert_eq(3180, total_minutes)  // 53 * 60 = 3180
+  assert_eq(3, days)              // ceil(53/24) = 3
+  assert_eq(5, remaining_hours)   // 53 - (3-1)*24 = 5
+}
+
+test "percentage_rounding_test" {
+  // 百分比计算测试
+  let total = 250
+  let percentage = 15
+  let calculated_value = divide_with_ceil(multiply(total, percentage), 100)
+  
+  assert_eq(38, calculated_value)     // ceil(250*15/100) = ceil(37.5) = 38
+}
+
+test "range_validation_test" {
+  // 数据验证场景测试
+  let min_value = 10
+  let max_value = 100
+  let input_values = multiply(3, 25)  // 75
+  
+  // 计算范围中点
+  let midpoint = divide_with_ceil(add(min_value, max_value), 2)
+  let distance_from_midpoint = subtract(input_values, midpoint)
+  
+  assert_eq(55, midpoint)              // ceil((10+100)/2) = ceil(55) = 55
+  assert_eq(20, distance_from_midpoint) // 75 - 55 = 20
+}
+
+test "inventory_turnover_efficiency_test" {
+  // 库存周转率计算测试
+  let opening_stock = 500
+  let closing_stock = 300
+  let sales = 1200
+  let average_stock = divide_with_ceil(add(opening_stock, closing_stock), 2)
+  let turnover_ratio = divide_with_ceil(multiply(sales, 100), average_stock)
+  
+  assert_eq(400, average_stock)    // ceil((500+300)/2) = ceil(400) = 400
+  assert_eq(300, turnover_ratio)   // ceil(1200*100/400) = ceil(300) = 300
+}
+
+test "fixed_point_arithmetic_test" {
+  // 精度浮点数模拟测试（使用整数运算模拟浮点精度）
+  let value = 12345
+  let precision_factor = 100
+  let scaled_value = multiply(value, precision_factor)
+  let divided_result = divide_with_ceil(scaled_value, 789)
+  let restored_value = divide_with_ceil(divided_result, precision_factor)
+  
+  assert_eq(1234500, scaled_value)   // 12345 * 100 = 1234500
+  assert_eq(1565, divided_result)    // ceil(1234500/789) = ceil(1564.76) = 1565
+  assert_eq(16, restored_value)      // ceil(1565/100) = ceil(15.65) = 16
+}
+
+test "conditional_multiplier_test" {
+  // 条件计算逻辑测试
+  let base_value = 100
+  let condition = 75  // 假设 > 50 为真
+  let multiplier = divide_with_ceil(condition, 50)  // 条件决定乘数
+  let adjusted_value = multiply(base_value, multiplier)
+  
+  // 如果条件 > 50，使用乘数2，否则使用乘数1
+  let final_multiplier = add(1, divide_with_ceil(subtract(condition, 50), 100))
+  let final_result = multiply(base_value, final_multiplier)
+  
+  assert_eq(2, multiplier)           // ceil(75/50) = ceil(1.5) = 2
+  assert_eq(200, adjusted_value)     // 100 * 2 = 200
+  assert_eq(2, final_multiplier)     // 1 + ceil((75-50)/100) = 1 + ceil(0.25) = 2
+  assert_eq(200, final_result)       // 100 * 2 = 200
+}
+
+test "matrix_index_calculation_test" {
+  // 数组索引计算测试（使用算术运算模拟二维数组索引）
+  let rows = 8
+  let cols = 6
+  let row_index = 3
+  let col_index = 4
+  let flat_index = add(multiply(row_index, cols), col_index)
+  
+  // 反向计算
+  let calculated_row = divide_with_ceil(flat_index, cols)
+  let calculated_col = subtract(flat_index, multiply(calculated_row - 1, cols))
+  
+  assert_eq(22, flat_index)          // 3*6 + 4 = 22
+  assert_eq(4, calculated_row)       // ceil(22/6) = ceil(3.67) = 4
+  assert_eq(4, calculated_col)       // 22 - (4-1)*6 = 4
+}
+
+test "combinatorial_calculation_test" {
+  // 递归计算模拟测试（模拟阶乘计算的迭代版本）
+  let n = 6
+  let factorial = 1
+  
+  // 模拟循环计算阶乘
+  let step1 = multiply(factorial, 1)  // 1
+  let step2 = multiply(step1, 2)      // 2
+  let step3 = multiply(step2, 3)      // 6
+  let step4 = multiply(step3, 4)      // 24
+  let step5 = multiply(step4, 5)      // 120
+  let step6 = multiply(step5, 6)      // 720
+  
+  // 计算组合数 C(6,3) = 6! / (3! * 3!)
+  let three_factorial = multiply(multiply(1, 2), 3)  // 6
+  let combination = divide_with_ceil(step6, multiply(three_factorial, three_factorial))
+  
+  assert_eq(720, step6)              // 6! = 720
+  assert_eq(6, three_factorial)      // 3! = 6
+  assert_eq(20, combination)         // ceil(720/(6*6)) = ceil(20) = 20
+}
