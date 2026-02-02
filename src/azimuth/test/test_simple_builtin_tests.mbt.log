@@ -1,0 +1,62 @@
+clean_test_test/simple_builtin_tests.mbt:49:7-49:15 [E0002] Warning (unused_value): Unused variable 'function'
+clean_test_test/simple_builtin_tests.mbt:49:16-50:20 [E0013] Warning (unresolved_type_variable): The type of this expression is _/0, which contains unresolved type variables. The type variable is default to Unit.
+clean_test_test/simple_builtin_tests.mbt:49:16-49:24 [E3002] Parse error, unexpected token id (lowercase start), you may expect `=`.
+clean_test_test/simple_builtin_tests.mbt:51:7-51:10 [E3002] Parse error, unexpected token `else`, you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.
+clean_test_test/simple_builtin_tests.mbt:51:11-51:19 [E0002] Warning (unused_value): Unused toplevel variable 'quotient'. Note if the body contains side effect, it will not happen. Use `fn init { .. }` to wrap the effect.
+clean_test_test/simple_builtin_tests.mbt:51:11-51:19 [E4074] Cannot infer the type of variable quotient, please add more type annotation.
+clean_test_test/simple_builtin_tests.mbt:51:22-51:23 [E4021] The value identifier a is unbound.
+clean_test_test/simple_builtin_tests.mbt:51:26-51:27 [E4021] The value identifier b is unbound.
+clean_test_test/simple_builtin_tests.mbt:52:11-52:20 [E0002] Warning (unused_value): Unused toplevel variable 'remainder'. Note if the body contains side effect, it will not happen. Use `fn init { .. }` to wrap the effect.
+clean_test_test/simple_builtin_tests.mbt:52:11-52:20 [E4074] Cannot infer the type of variable remainder, please add more type annotation.
+clean_test_test/simple_builtin_tests.mbt:52:23-52:24 [E4021] The value identifier a is unbound.
+clean_test_test/simple_builtin_tests.mbt:52:27-52:28 [E4021] The value identifier b is unbound.
+clean_test_test/simple_builtin_tests.mbt:53:7-53:9 [E3002] Parse error, unexpected token `if`, you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.
+clean_test_test/simple_builtin_tests.mbt:57:7-57:14 [E0002] Warning (unused_value): Unused toplevel variable 'result1'. Note if the body contains side effect, it will not happen. Use `fn init { .. }` to wrap the effect.
+clean_test_test/simple_builtin_tests.mbt:57:7-57:14 [E4074] Cannot infer the type of variable result1, please add more type annotation.
+clean_test_test/simple_builtin_tests.mbt:57:17-57:25 [E4021] The value identifier ceil_div is unbound.
+clean_test_test/simple_builtin_tests.mbt:58:7-58:14 [E0002] Warning (unused_value): Unused toplevel variable 'result2'. Note if the body contains side effect, it will not happen. Use `fn init { .. }` to wrap the effect.
+clean_test_test/simple_builtin_tests.mbt:58:7-58:14 [E4074] Cannot infer the type of variable result2, please add more type annotation.
+clean_test_test/simple_builtin_tests.mbt:58:17-58:25 [E4021] The value identifier ceil_div is unbound.
+clean_test_test/simple_builtin_tests.mbt:59:7-59:14 [E0002] Warning (unused_value): Unused toplevel variable 'result3'. Note if the body contains side effect, it will not happen. Use `fn init { .. }` to wrap the effect.
+clean_test_test/simple_builtin_tests.mbt:59:7-59:14 [E4074] Cannot infer the type of variable result3, please add more type annotation.
+clean_test_test/simple_builtin_tests.mbt:59:17-59:25 [E4021] The value identifier ceil_div is unbound.
+clean_test_test/simple_builtin_tests.mbt:60:7-60:14 [E0002] Warning (unused_value): Unused toplevel variable 'result4'. Note if the body contains side effect, it will not happen. Use `fn init { .. }` to wrap the effect.
+clean_test_test/simple_builtin_tests.mbt:60:7-60:14 [E4074] Cannot infer the type of variable result4, please add more type annotation.
+clean_test_test/simple_builtin_tests.mbt:60:17-60:25 [E4021] The value identifier ceil_div is unbound.
+clean_test_test/simple_builtin_tests.mbt:62:3-62:5 [E3002] Parse error, unexpected token `if`, you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.
+clean_test_test/simple_builtin_tests.mbt:78:7-78:15 [E0002] Warning (unused_value): Unused variable 'function'
+clean_test_test/simple_builtin_tests.mbt:78:16-79:27 [E0013] Warning (unresolved_type_variable): The type of this expression is _/0, which contains unresolved type variables. The type variable is default to Unit.
+clean_test_test/simple_builtin_tests.mbt:78:16-78:25 [E3002] Parse error, unexpected token id (lowercase start), you may expect `=`.
+clean_test_test/simple_builtin_tests.mbt:82:7-82:14 [E0002] Warning (unused_value): Unused toplevel variable 'result1'. Note if the body contains side effect, it will not happen. Use `fn init { .. }` to wrap the effect.
+clean_test_test/simple_builtin_tests.mbt:82:7-82:14 [E4074] Cannot infer the type of variable result1, please add more type annotation.
+clean_test_test/simple_builtin_tests.mbt:82:7-82:14 [E4051] The toplevel identifier result1 is declared twice: it was previously defined at clean_test_test/simple_builtin_tests.mbt:57:7.
+clean_test_test/simple_builtin_tests.mbt:82:17-82:26 [E4021] The value identifier greet_sim is unbound.
+clean_test_test/simple_builtin_tests.mbt:83:7-83:14 [E0002] Warning (unused_value): Unused toplevel variable 'result2'. Note if the body contains side effect, it will not happen. Use `fn init { .. }` to wrap the effect.
+clean_test_test/simple_builtin_tests.mbt:83:7-83:14 [E4074] Cannot infer the type of variable result2, please add more type annotation.
+clean_test_test/simple_builtin_tests.mbt:83:7-83:14 [E4051] The toplevel identifier result2 is declared twice: it was previously defined at clean_test_test/simple_builtin_tests.mbt:58:7.
+clean_test_test/simple_builtin_tests.mbt:83:17-83:26 [E4021] The value identifier greet_sim is unbound.
+clean_test_test/simple_builtin_tests.mbt:84:7-84:14 [E0002] Warning (unused_value): Unused toplevel variable 'result3'. Note if the body contains side effect, it will not happen. Use `fn init { .. }` to wrap the effect.
+clean_test_test/simple_builtin_tests.mbt:84:7-84:14 [E4074] Cannot infer the type of variable result3, please add more type annotation.
+clean_test_test/simple_builtin_tests.mbt:84:7-84:14 [E4051] The toplevel identifier result3 is declared twice: it was previously defined at clean_test_test/simple_builtin_tests.mbt:59:7.
+clean_test_test/simple_builtin_tests.mbt:84:17-84:26 [E4021] The value identifier greet_sim is unbound.
+clean_test_test/simple_builtin_tests.mbt:86:3-86:5 [E3002] Parse error, unexpected token `if`, you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.
+clean_test_test/simple_builtin_tests.mbt:192:7-192:15 [E0002] Warning (unused_value): Unused variable 'function'
+clean_test_test/simple_builtin_tests.mbt:192:16-193:27 [E0013] Warning (unresolved_type_variable): The type of this expression is _/0, which contains unresolved type variables. The type variable is default to Unit.
+clean_test_test/simple_builtin_tests.mbt:192:16-192:25 [E3002] Parse error, unexpected token id (lowercase start), you may expect `=`.
+clean_test_test/simple_builtin_tests.mbt:196:7-196:14 [E0002] Warning (unused_value): Unused toplevel variable 'result1'. Note if the body contains side effect, it will not happen. Use `fn init { .. }` to wrap the effect.
+clean_test_test/simple_builtin_tests.mbt:196:7-196:14 [E4074] Cannot infer the type of variable result1, please add more type annotation.
+clean_test_test/simple_builtin_tests.mbt:196:7-196:14 [E4051] The toplevel identifier result1 is declared twice: it was previously defined at clean_test_test/simple_builtin_tests.mbt:82:7.
+clean_test_test/simple_builtin_tests.mbt:196:17-196:26 [E4021] The value identifier greet_sim is unbound.
+clean_test_test/simple_builtin_tests.mbt:197:7-197:14 [E0002] Warning (unused_value): Unused toplevel variable 'result2'. Note if the body contains side effect, it will not happen. Use `fn init { .. }` to wrap the effect.
+clean_test_test/simple_builtin_tests.mbt:197:7-197:14 [E4074] Cannot infer the type of variable result2, please add more type annotation.
+clean_test_test/simple_builtin_tests.mbt:197:7-197:14 [E4051] The toplevel identifier result2 is declared twice: it was previously defined at clean_test_test/simple_builtin_tests.mbt:83:7.
+clean_test_test/simple_builtin_tests.mbt:197:17-197:26 [E4021] The value identifier greet_sim is unbound.
+clean_test_test/simple_builtin_tests.mbt:198:7-198:14 [E0002] Warning (unused_value): Unused toplevel variable 'result3'. Note if the body contains side effect, it will not happen. Use `fn init { .. }` to wrap the effect.
+clean_test_test/simple_builtin_tests.mbt:198:7-198:14 [E4074] Cannot infer the type of variable result3, please add more type annotation.
+clean_test_test/simple_builtin_tests.mbt:198:7-198:14 [E4051] The toplevel identifier result3 is declared twice: it was previously defined at clean_test_test/simple_builtin_tests.mbt:84:7.
+clean_test_test/simple_builtin_tests.mbt:198:17-198:26 [E4021] The value identifier greet_sim is unbound.
+clean_test_test/simple_builtin_tests.mbt:199:7-199:14 [E0002] Warning (unused_value): Unused toplevel variable 'result4'. Note if the body contains side effect, it will not happen. Use `fn init { .. }` to wrap the effect.
+clean_test_test/simple_builtin_tests.mbt:199:7-199:14 [E4074] Cannot infer the type of variable result4, please add more type annotation.
+clean_test_test/simple_builtin_tests.mbt:199:7-199:14 [E4051] The toplevel identifier result4 is declared twice: it was previously defined at clean_test_test/simple_builtin_tests.mbt:60:7.
+clean_test_test/simple_builtin_tests.mbt:199:17-199:26 [E4021] The value identifier greet_sim is unbound.
+clean_test_test/simple_builtin_tests.mbt:201:3-201:5 [E3002] Parse error, unexpected token `if`, you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.

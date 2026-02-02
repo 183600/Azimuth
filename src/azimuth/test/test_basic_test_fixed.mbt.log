@@ -1,0 +1,22 @@
+clean_test_test/basic_test_fixed.mbt:5:10-5:11 [E4031] The type _/0 does not have the constructor add.
+clean_test_test/basic_test_fixed.mbt:5:11-5:12 [E0002] Warning (unused_value): Unused variable 'a'
+clean_test_test/basic_test_fixed.mbt:5:13-5:14 [E3002] Parse error, unexpected token `:`, you may expect `,` or `)`.
+clean_test_test/basic_test_fixed.mbt:5:20-5:21 [E0002] Warning (unused_value): Unused variable 'b'
+clean_test_test/basic_test_fixed.mbt:5:22-5:23 [E3002] Parse error, unexpected token `:`, you may expect `,` or `)`.
+clean_test_test/basic_test_fixed.mbt:5:29-6:25 [E0013] Warning (unresolved_type_variable): The type of this expression is _/0, which contains unresolved type variables. The type variable is default to Unit.
+clean_test_test/basic_test_fixed.mbt:5:29-5:31 [E3002] Parse error, unexpected token `->`, you may expect `=`.
+clean_test_test/basic_test_fixed.mbt:7:5-7:7 [E3002] Parse error, unexpected token `if`, you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.
+clean_test_test/basic_test_fixed.mbt:18:15-18:16 [E4031] The type _/0 does not have the constructor multiply.
+clean_test_test/basic_test_fixed.mbt:18:16-18:17 [E0002] Warning (unused_value): Unused variable 'a'
+clean_test_test/basic_test_fixed.mbt:18:18-18:19 [E3002] Parse error, unexpected token `:`, you may expect `,` or `)`.
+clean_test_test/basic_test_fixed.mbt:18:25-18:26 [E0002] Warning (unused_value): Unused variable 'b'
+clean_test_test/basic_test_fixed.mbt:18:27-18:28 [E3002] Parse error, unexpected token `:`, you may expect `,` or `)`.
+clean_test_test/basic_test_fixed.mbt:18:34-19:35 [E0013] Warning (unresolved_type_variable): The type of this expression is _/0, which contains unresolved type variables. The type variable is default to Unit.
+clean_test_test/basic_test_fixed.mbt:18:34-18:36 [E3002] Parse error, unexpected token `->`, you may expect `=`.
+clean_test_test/basic_test_fixed.mbt:20:5-20:7 [E3002] Parse error, unexpected token `if`, you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.
+clean_test_test/basic_test_fixed.mbt:32:12-32:13 [E4031] The type _/0 does not have the constructor greet.
+clean_test_test/basic_test_fixed.mbt:32:13-32:17 [E0002] Warning (unused_value): Unused variable 'name'
+clean_test_test/basic_test_fixed.mbt:32:18-32:19 [E3002] Parse error, unexpected token `:`, you may expect `,` or `)`.
+clean_test_test/basic_test_fixed.mbt:32:28-33:27 [E0013] Warning (unresolved_type_variable): The type of this expression is _/0, which contains unresolved type variables. The type variable is default to Unit.
+clean_test_test/basic_test_fixed.mbt:32:28-32:30 [E3002] Parse error, unexpected token `->`, you may expect `=`.
+clean_test_test/basic_test_fixed.mbt:36:3-36:19 [E3002] Parse error, unexpected token id (lowercase start), you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.

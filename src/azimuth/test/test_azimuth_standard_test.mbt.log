@@ -1,0 +1,10 @@
+clean_test_test/azimuth_standard_test.mbt:53:18-53:20 [E0051] Warning (ambiguous_precedence): Operator `!=` and `==` are ambiguous, add parenthesis to disambiguate.
+clean_test_test/azimuth_standard_test.mbt:54:18-54:20 [E0051] Warning (ambiguous_precedence): Operator `==` and `==` are ambiguous, add parenthesis to disambiguate.
+clean_test_test/azimuth_standard_test.mbt:76:17-76:19 [E0051] Warning (ambiguous_precedence): Operator `<` and `==` are ambiguous, add parenthesis to disambiguate.
+clean_test_test/azimuth_standard_test.mbt:77:17-77:19 [E0051] Warning (ambiguous_precedence): Operator `>` and `==` are ambiguous, add parenthesis to disambiguate.
+clean_test_test/azimuth_standard_test.mbt:78:18-78:20 [E0051] Warning (ambiguous_precedence): Operator `<=` and `==` are ambiguous, add parenthesis to disambiguate.
+clean_test_test/azimuth_standard_test.mbt:79:18-79:20 [E0051] Warning (ambiguous_precedence): Operator `>=` and `==` are ambiguous, add parenthesis to disambiguate.
+clean_test_test/azimuth_standard_test.mbt:80:18-80:20 [E0051] Warning (ambiguous_precedence): Operator `==` and `==` are ambiguous, add parenthesis to disambiguate.
+clean_test_test/azimuth_standard_test.mbt:81:18-81:20 [E0051] Warning (ambiguous_precedence): Operator `!=` and `==` are ambiguous, add parenthesis to disambiguate.
+clean_test_test/azimuth_standard_test.mbt:107:19-107:29 [E4032] The type Array is undefined.
+clean_test_test/azimuth_standard_test.mbt:107:32-107:34 [E0013] Warning (unresolved_type_variable): The type of this expression is Array[_/0], which contains unresolved type variables. The type variable is default to Unit.
