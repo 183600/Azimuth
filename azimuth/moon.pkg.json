@@ -28,6 +28,8 @@
         "enhanced_comprehensive_tests.mbt",
         "simple_standard_tests_new.mbt",
             "standard_moonbit_tests_enhanced.mbt",
+        "azimuth_new_enhanced_test_cases.mbt",
+        "simple_azimuth_new_test.mbt",
             "azimuth_unique_edge_tests.mbt",        "standard_moonbit_tests_concise.mbt",
         "test/standard_moonbit_tests_concise.mbt",
         "azimuth_quality_test_suite_new.mbt",
