@@ -13994,3 +13994,183 @@ test "azimuth_comprehensive_resource_allocation" {
   let utilization = divide_with_ceil(multiply(total_resources, 100), allocated_total)
   assert_eq(98, utilization)  // floor(10000/102) = 98%
 }
+
+// 新增的 10 个高质量 MoonBit 测试用例
+
+test "enhanced_numeric_precision" {
+  // 增强数值精度测试
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(100000000, multiply(10000, 10000))
+  assert_eq(2147483646, add(2147483645, 1))
+  assert_eq(-2147483647, add(-2147483646, -1))
+  assert_eq(0, multiply(2147483647, 0))
+}
+
+test "complex_function_chaining" {
+  // 复杂函数链式调用测试
+  let base = 15
+  let step1 = multiply(base, 3)
+  let step2 = add(step1, 10)
+  let step3 = divide_with_ceil(step2, 8)
+  let step4 = multiply(step3, 2)
+  let result = subtract(step4, base)
+  
+  assert_eq(-1, result)
+  assert_eq(45, step1)
+  assert_eq(55, step2)
+  assert_eq(7, step3)
+  assert_eq(14, step4)
+}
+
+test "comprehensive_error_handling" {
+  // 综合错误处理测试
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(2147483647, divide_with_ceil(2147483647, 1))
+  assert_eq(-2147483647, divide_with_ceil(-2147483647, 1))
+}
+
+test "financial_calculation_scenario" {
+  // 金融计算场景测试
+  let loan_amount = 250000
+  let monthly_payment = 8500
+  let months_needed = divide_with_ceil(loan_amount, monthly_payment)
+  
+  assert_eq(30, months_needed)
+  
+  let total_payment = multiply(months_needed, monthly_payment)
+  assert_eq(255000, total_payment)
+  
+  let interest = subtract(total_payment, loan_amount)
+  assert_eq(5000, interest)
+}
+
+test "advanced_string_processing" {
+  // 高级字符串处理测试
+  assert_eq_string("Hello, MoonBit v0.1.0!", greet("MoonBit v0.1.0"))
+  assert_eq_string("Hello, user@domain.com!", greet("user@domain.com"))
+  assert_eq_string("Hello, https://example.com!", greet("https://example.com"))
+  assert_eq_string("Hello, phone:123-456-7890!", greet("phone:123-456-7890"))
+  assert_eq_string("Hello, special#$%^&*()chars!", greet("special#$%^&*()chars"))
+}
+
+test "mathematical_properties_comprehensive" {
+  // 综合数学性质测试
+  let a = 24
+  let b = 18
+  let c = 6
+  
+  let distributive_left = multiply(a, add(b, c))
+  let distributive_right = add(multiply(a, b), multiply(a, c))
+  assert_eq(distributive_left, distributive_right)
+  
+  let associative_add_left = add(add(a, b), c)
+  let associative_add_right = add(a, add(b, c))
+  assert_eq(associative_add_left, associative_add_right)
+  
+  let associative_mul_left = multiply(multiply(a, b), c)
+  let associative_mul_right = multiply(a, multiply(b, c))
+  assert_eq(associative_mul_left, associative_mul_right)
+}
+
+test "resource_optimization_advanced" {
+  // 高级资源优化测试
+  let project_a_tasks = 45
+  let project_b_tasks = 67
+  let project_c_tasks = 23
+  let team_capacity = 15
+  
+  let teams_a = divide_with_ceil(project_a_tasks, team_capacity)
+  let teams_b = divide_with_ceil(project_b_tasks, team_capacity)
+  let teams_c = divide_with_ceil(project_c_tasks, team_capacity)
+  
+  assert_eq(3, teams_a)
+  assert_eq(5, teams_b)
+  assert_eq(2, teams_c)
+  
+  let total_teams = add(add(teams_a, teams_b), teams_c)
+  assert_eq(10, total_teams)
+  
+  let total_tasks = add(add(project_a_tasks, project_b_tasks), project_c_tasks)
+  assert_eq(135, total_tasks)
+  
+  let total_capacity = multiply(total_teams, team_capacity)
+  assert_eq(150, total_capacity)
+  
+  let remaining_capacity = subtract(total_capacity, total_tasks)
+  assert_eq(15, remaining_capacity)
+}
+
+test "performance_boundary_enhanced" {
+  // 增强性能边界测试
+  let large_num1 = 1000000
+  let large_num2 = 999999
+  
+  let large_sum = add(large_num1, large_num2)
+  assert_eq(1999999, large_sum)
+  
+  let large_product = multiply(large_num1, 1000)
+  assert_eq(1000000000, large_product)
+  
+  let large_division = divide_with_ceil(large_sum, 1000)
+  assert_eq(2000, large_division)
+}
+
+test "edge_case_comprehensive" {
+  // 综合边缘情况测试
+  let max_int = 2147483647
+  let min_int = -2147483647
+  
+  assert_eq(max_int, add(max_int - 1, 1))
+  assert_eq(min_int, add(min_int + 1, -1))
+  assert_eq(0, multiply(max_int, 0))
+  assert_eq(0, multiply(min_int, 0))
+  assert_eq(max_int, multiply(max_int, 1))
+  assert_eq(min_int, multiply(min_int, 1))
+  
+  assert_eq(1, divide_with_ceil(max_int, max_int))
+  assert_eq(1, divide_with_ceil(min_int, min_int))
+  assert_eq(0, divide_with_ceil(0, max_int))
+  assert_eq(0, divide_with_ceil(0, min_int))
+  
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("   "))
+  assert_eq_string("Hello, \t\n\r!", greet("\t\n\r"))
+}
+
+test "workflow_integration_complete" {
+  // 完整工作流集成测试
+  let order_items = 127
+  let items_per_box = 24
+  let cost_per_item = 15
+  let boxes_per_pallet = 4
+  let shipping_cost_per_pallet = 200
+  
+  let boxes_needed = divide_with_ceil(order_items, items_per_box)
+  assert_eq(6, boxes_needed)
+  
+  let item_cost_total = multiply(order_items, cost_per_item)
+  assert_eq(1905, item_cost_total)
+  
+  let pallets_needed = divide_with_ceil(boxes_needed, boxes_per_pallet)
+  assert_eq(2, pallets_needed)
+  
+  let shipping_total = multiply(pallets_needed, shipping_cost_per_pallet)
+  assert_eq(400, shipping_total)
+  
+  let total_order_cost = add(item_cost_total, shipping_total)
+  assert_eq(2305, total_order_cost)
+  
+  let total_box_capacity = multiply(boxes_needed, items_per_box)
+  assert_eq(144, total_box_capacity)
+  
+  let remaining_capacity = subtract(total_box_capacity, order_items)
+  assert_eq(17, remaining_capacity)
+  
+  let utilization_rate = divide_with_ceil(
+    multiply(order_items, 100),
+    total_box_capacity
+  )
+  assert_eq(89, utilization_rate)
+}
