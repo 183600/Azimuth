@@ -1,177 +1,248 @@
-// 新增的 MoonBit 标准测试用例
-// 针对 azimuth 库的补充测试，重点关注边界条件、错误处理和复杂场景
+// Azimuth 增强测试套件 - 10个高质量测试用例
+// 专注于边界情况、复杂业务场景和错误处理
 
-test "subtract_function_comprehensive" {
-  // 全面测试减法功能
-  assert_eq(5, subtract(8, 3))
-  assert_eq(-5, subtract(3, 8))
-  assert_eq(0, subtract(10, 10))
-  assert_eq(10, subtract(0, -10))
-  assert_eq(-10, subtract(-10, 0))
-  assert_eq(20, subtract(-5, -25))
-  assert_eq(1000, subtract(1500, 500))
-  assert_eq(-1000, subtract(-500, 500))
-}
-
-test "extreme_boundary_conditions" {
-  // 极端边界条件测试
-  let max_int = 2147483647
-  let min_int = -2147483648
+test "numerical_precision_edge_cases" {
+  // 数值精度边界情况测试
+  // 测试接近整数边界的除法运算
+  assert_eq(1, divide_with_ceil(999999, 1000000))
+  assert_eq(2, divide_with_ceil(1000001, 1000000))
+  assert_eq(1000, divide_with_ceil(999999, 1000))
+  assert_eq(1001, divide_with_ceil(1000000, 999))
   
-  // 测试接近边界的加法
-  assert_eq(max_int - 1, add(max_int - 100, 99))
-  assert_eq(min_int + 1, add(min_int + 100, -99))
+  // 测试大数相加的精度
+  assert_eq(1999999, add(999999, 1000000))
+  assert_eq(0, add(2147483647, -2147483647))
   
-  // 测试接近边界的乘法
-  assert_eq(46340, multiply(46340, 1))  // sqrt(max_int)
-  assert_eq(-46340, multiply(-46340, 1))
-  
-  // 测试边界减法
-  assert_eq(1, subtract(max_int, max_int - 1))
-  assert_eq(-1, subtract(min_int, min_int + 1))
-}
-
-test "divide_with_ceil_precision_edge_cases" {
-  // 向上取整除法的精度边界测试
-  // 测试大数除法
-  assert_eq(33334, divide_with_ceil(100000, 3))
-  assert_eq(33333, divide_with_ceil(99999, 3))
-  assert_eq(1, divide_with_ceil(100000, 99999))
-  
-  // 测试小数精度
-  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
-  assert_eq(3, divide_with_ceil(5, 2))  // 2.5 -> 3
-  assert_eq(4, divide_with_ceil(7, 2))  // 3.5 -> 4
-  
-  // 测试负数精度
-  assert_eq(-1, divide_with_ceil(-3, 2))   // -1.5 -> -1
-  assert_eq(-2, divide_with_ceil(-5, 2))   // -2.5 -> -2
-  assert_eq(3, divide_with_ceil(-5, -2))   // 2.5 -> 3
+  // 测试乘法溢出边界
+  assert_eq(46340, multiply(46340, 1))  // 接近 sqrt(Int最大值)
+  assert_eq(100000000, multiply(10000, 10000))
 }
 
 test "complex_financial_calculations" {
   // 复杂金融计算场景
   let principal = 10000
-  let rate1 = 5    // 第一年利率
-  let rate2 = 6    // 第二年利率
-  let rate3 = 7    // 第三年利率
+  let annual_rate = 8  // 8% 年利率
+  let years = 3
+  let monthly_contribution = 500
   
-  // 复利计算（简化版，使用向上取整）
-  let year1 = add(principal, divide_with_ceil(multiply(principal, rate1), 100))
-  let year2 = add(year1, divide_with_ceil(multiply(year1, rate2), 100))
-  let year3 = add(year2, divide_with_ceil(multiply(year2, rate3), 100))
+  // 计算复利（简化版本）
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, annual_rate), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, annual_rate), 100))
   
-  assert_eq(10500, year1)
-  assert_eq(11130, year2)
-  assert_eq(11909, year3)
+  // 计算定期供款总额
+  let total_contributions = multiply(monthly_contribution, multiply(years, 12))
   
-  // 计算总收益
-  let total_return = subtract(year3, principal)
-  assert_eq(1909, total_return)
+  // 计算最终金额
+  let final_amount = add(year3_amount, total_contributions)
+  
+  assert_eq(10800, year1_amount)  // 10000 + 800
+  assert_eq(11664, year2_amount)  // 10800 + 864
+  assert_eq(12597, year3_amount)  // 11664 + 933
+  assert_eq(18000, total_contributions)  // 500 * 36
+  assert_eq(30597, final_amount)  // 12597 + 18000
 }
 
-test "string_processing_edge_cases" {
-  // 字符串处理的边界情况
-  // 测试各种特殊字符
-  assert_eq_string("Hello, \n\t\r!", greet("\n\t\r"))
-  assert_eq_string("Hello, \"!'!", greet("\"!'"))
-  assert_eq_string("Hello, 🔥🚀💯!", greet("🔥🚀💯"))
+test "resource_optimization_algorithm" {
+  // 资源优化算法测试
+  let total_resources = 1000
+  let project_requirements = [350, 280, 420, 180, 310]
   
-  // 测试长字符串
-  let long_name = "A" + "B" + "C" + "D" + "E" + "F" + "G" + "H" + "I" + "J"
-  assert_eq_string("Hello, ABCDEFGHIJ!", greet(long_name))
+  // 计算总需求
+  let total_demand = add(add(add(add(project_requirements[0], project_requirements[1]), project_requirements[2]), project_requirements[3]), project_requirements[4])
+  
+  // 计算资源缺口
+  let resource_gap = if total_demand > total_resources { 
+    subtract(total_demand, total_resources) 
+  } else { 
+    0 
+  }
+  
+  // 计算需要的额外资源批次（每批次200）
+  let additional_batches = divide_with_ceil(resource_gap, 200)
+  
+  assert_eq(1540, total_demand)  // 350 + 280 + 420 + 180 + 310
+  assert_eq(540, resource_gap)   // 1540 - 1000
+  assert_eq(3, additional_batches)  // ceil(540/200) = 3
+}
+
+test "string_processing_with_special_cases" {
+  // 特殊情况的字符串处理
+  // 测试包含特殊字符的问候
+  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))
+  assert_eq_string("Hello, new\nline!", greet("new\nline"))
+  assert_eq_string("Hello, tab\there!", greet("tab\there"))
+  assert_eq_string("Hello, back\\slash!", greet("back\\slash"))
+  
+  // 测试长字符串处理
+  let long_name = "VeryLongNameThatExceedsNormalExpectationsAndContainsMultipleWords"
+  assert_eq_string("Hello, VeryLongNameThatExceedsNormalExpectationsAndContainsMultipleWords!", greet(long_name))
+  
+  // 测试数字和字母混合
+  assert_eq_string("Hello, Test123ABC456!", greet("Test123ABC456"))
 }
 
 test "mathematical_sequence_calculations" {
-  // 数学序列计算
+  // 数学序列计算测试
   // 计算等差数列前n项和：S = n/2 * (2a + (n-1)d)
-  let n = 20
-  let a = 3
-  let d = 2
+  let first_term = 5
+  let common_diff = 3
+  let num_terms = 12
   
-  let sum = divide_with_ceil(
-    multiply(n, add(multiply(2, a), multiply(subtract(n, 1), d))),
+  let sum_n = divide_with_ceil(
+    multiply(num_terms, add(multiply(2, first_term), multiply(num_terms - 1, common_diff))),
     2
   )
   
-  assert_eq(460, sum)  // 20/2 * (6 + 38) = 10 * 44 = 460
+  // 计算等比数列前n项和（简化版本）
+  let geo_first = 2
+  let geo_ratio = 3
+  let geo_terms = 5
+  let geo_sum = add(add(add(add(geo_first, multiply(geo_first, geo_ratio)), 
+    multiply(geo_first, multiply(geo_ratio, geo_ratio))), 
+    multiply(geo_first, multiply(geo_ratio, multiply(geo_ratio, geo_ratio)))),
+    multiply(geo_first, multiply(geo_ratio, multiply(geo_ratio, multiply(geo_ratio, geo_ratio)))))
   
-  // 计算等比数列前n项和（简化版）
-  let r = 2
-  let first_term = 1
-  let geo_sum = multiply(subtract(multiply(r, n), 1), first_term)  // 简化计算
-  assert_eq(39, geo_sum)  // 简化的等比数列和
+  assert_eq(258, sum_n)  // 12/2 * (10 + 33) = 6 * 43 = 258
+  assert_eq(242, geo_sum)  // 2 + 6 + 18 + 54 + 162 = 242
 }
 
-test "error_handling_robustness_comprehensive" {
-  // 全面的错误处理健壮性测试
-  // 测试除零的各种情况
+test "error_boundary_and_robustness" {
+  // 错误边界和健壮性测试
+  // 测试各种除零情况
   assert_eq(0, divide_with_ceil(0, 0))
   assert_eq(0, divide_with_ceil(100, 0))
   assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
   assert_eq(0, divide_with_ceil(2147483647, 0))
+  assert_eq(0, divide_with_ceil(-2147483648, 0))
   
-  // 测试极大数值的运算稳定性
-  let large_num = 1000000
-  assert_eq(2000000, add(large_num, large_num))
-  assert_eq(0, subtract(large_num, large_num))
-  assert_eq(1000000000000, multiply(large_num, large_num))
+  // 测试极值运算
+  let max_int = 2147483647
+  let min_int = -2147483648
+  
+  assert_eq(max_int, add(max_int, 0))
+  assert_eq(min_int, add(min_int, 0))
+  assert_eq(0, multiply(max_int, 0))
+  assert_eq(0, multiply(min_int, 0))
+  
+  // 测试减法边界
+  assert_eq(max_int, subtract(max_int, 0))
+  assert_eq(min_int, subtract(min_int, 0))
 }
 
-test "real_world_inventory_optimization" {
-  // 真实世界的库存优化场景
-  let product_a_demand = 150
-  let product_b_demand = 200
-  let product_c_demand = 175
+test "complex_workflow_simulation" {
+  // 复杂工作流模拟测试
+  // 模拟生产线效率计算
+  let stations = 5
+  let station_capacity = [120, 100, 150, 80, 110]
+  let efficiency_factors = [90, 95, 85, 92, 88]
   
-  let box_capacity = 50
-  let safety_stock = 20
+  // 计算各站实际产量
+  let station1_actual = divide_with_ceil(multiply(station_capacity[0], efficiency_factors[0]), 100)
+  let station2_actual = divide_with_ceil(multiply(station_capacity[1], efficiency_factors[1]), 100)
+  let station3_actual = divide_with_ceil(multiply(station_capacity[2], efficiency_factors[2]), 100)
+  let station4_actual = divide_with_ceil(multiply(station_capacity[3], efficiency_factors[3]), 100)
+  let station5_actual = divide_with_ceil(multiply(station_capacity[4], efficiency_factors[4]), 100)
   
-  // 计算每种产品需要的箱子数
-  let boxes_a = divide_with_ceil(add(product_a_demand, safety_stock), box_capacity)
-  let boxes_b = divide_with_ceil(add(product_b_demand, safety_stock), box_capacity)
-  let boxes_c = divide_with_ceil(add(product_c_demand, safety_stock), box_capacity)
+  // 计算生产线总产量（以最低产量的站点为准）
+  let bottleneck_station = add(add(add(add(station1_actual, station2_actual), station3_actual), station4_actual), station5_actual)
+  let daily_output = divide_with_ceil(bottleneck_station, stations)
   
-  // 计算总箱子数
-  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
-  
-  // 计算剩余容量
-  let total_capacity = multiply(total_boxes, box_capacity)
-  let total_items_needed = add(add(add(product_a_demand, product_b_demand), product_c_demand), multiply(3, safety_stock))
-  let remaining_capacity = subtract(total_capacity, total_items_needed)
-  
-  assert_eq(4, boxes_a)   // ceil(170/50) = 4
-  assert_eq(5, boxes_b)   // ceil(220/50) = 5
-  assert_eq(4, boxes_c)   // ceil(195/50) = 4
-  assert_eq(13, total_boxes)
-  assert_eq(650, total_capacity)
-  assert_eq(585, total_items_needed)
-  assert_eq(65, remaining_capacity)
+  assert_eq(108, station1_actual)  // ceil(120 * 90 / 100) = 108
+  assert_eq(95, station2_actual)   // ceil(100 * 95 / 100) = 95
+  assert_eq(128, station3_actual)  // ceil(150 * 85 / 100) = 128
+  assert_eq(74, station4_actual)   // ceil(80 * 92 / 100) = 74
+  assert_eq(97, station5_actual)   // ceil(110 * 88 / 100) = 97
+  assert_eq(100, daily_output)     // ceil(502 / 5) = 101
 }
 
-test "algorithm_complexity_simulation" {
-  // 算法复杂度模拟测试
-  let base_operations = 100
-  let input_size = 1000
-  let linear_factor = 2
-  let quadratic_factor = 1
-  let logarithmic_factor = 10
+test "data_structure_operations" {
+  // 数据结构操作测试
+  // 模拟栈操作
+  let stack_size = 10
+  let push_operations = 7
+  let pop_operations = 4
   
-  // 模拟 O(n) 复杂度
-  let linear_ops = multiply(input_size, linear_factor)
+  let final_stack_size = subtract(add(stack_size, push_operations), pop_operations)
   
-  // 模拟 O(n²) 复杂度（简化）
-  let quadratic_ops = divide_with_ceil(multiply(input_size, input_size), quadratic_factor)
+  // 模拟队列操作
+  let queue_capacity = 15
+  let enqueue_operations = 12
+  let dequeue_operations = 8
   
-  // 模拟 O(log n) 复杂度（简化）
-  let log_ops = multiply(divide_with_ceil(input_size, logarithmic_factor), 3)
+  let remaining_queue_items = subtract(add(queue_capacity, enqueue_operations), dequeue_operations)
   
-  // 总操作数
-  let total_ops = add(add(base_operations, linear_ops), add(quadratic_ops, log_ops))
+  // 计算需要的扩容次数（每次扩容增加10个位置）
+  let expansion_needed = if remaining_queue_items > queue_capacity {
+    divide_with_ceil(subtract(remaining_queue_items, queue_capacity), 10)
+  } else {
+    0
+  }
   
-  assert_eq(2000, linear_ops)
-  assert_eq(1000000, quadratic_ops)
-  assert_eq(300, log_ops)
-  assert_eq(1002300, total_ops)
+  assert_eq(13, final_stack_size)     // 10 + 7 - 4 = 13
+  assert_eq(19, remaining_queue_items) // 15 + 12 - 8 = 19
+  assert_eq(1, expansion_needed)      // ceil((19-15)/10) = 1
+}
+
+test "time_and_scheduling_calculations" {
+  // 时间和调度计算测试
+  let total_tasks = 125
+  let working_hours_per_day = 8
+  let tasks_per_hour = 4
+  let lunch_break_duration = 1
+  
+  // 计算每日有效工作时间
+  let effective_hours_per_day = subtract(working_hours_per_day, lunch_break_duration)
+  
+  // 计算每日完成任务数
+  let daily_tasks_capacity = multiply(effective_hours_per_day, tasks_per_hour)
+  
+  // 计算需要的工作日数
+  let workdays_needed = divide_with_ceil(total_tasks, daily_tasks_capacity)
+  
+  // 计算总工作小时数
+  let total_work_hours = multiply(workdays_needed, working_hours_per_day)
+  
+  // 计算总日历天数（包含周末）
+  let calendar_days = multiply(workdays_needed, 7) / 5  // 简化计算
+  
+  assert_eq(7, effective_hours_per_day)   // 8 - 1 = 7
+  assert_eq(28, daily_tasks_capacity)     // 7 * 4 = 28
+  assert_eq(5, workdays_needed)           // ceil(125/28) = 5
+  assert_eq(40, total_work_hours)         // 5 * 8 = 40
+  assert_eq(7, calendar_days)             // 5 * 7 / 5 = 7
+}
+
+test "advanced_mathematical_functions" {
+  // 高级数学函数测试
+  // 模拟阶乘计算（简化版本）
+  let n = 6
+  let factorial_6 = multiply(multiply(multiply(multiply(multiply(1, 2), 3), 4), 5), 6)
+  
+  // 模拟组合数学计算：C(n,k) = n! / (k! * (n-k)!)
+  let n_comb = 8
+  let k_comb = 3
+  
+  // 简化的组合计算（直接计算）
+  let combination_8_3 = divide_with_ceil(multiply(multiply(multiply(8, 7), 6), 5), multiply(multiply(3, 2), 1))
+  
+  // 模拟幂运算：2^10
+  let power_2_10 = multiply(multiply(multiply(multiply(multiply(1, 2), 2), 2), 2), multiply(multiply(multiply(2, 2), 2), 2))
+  
+  // 模拟斐波那契数列第10项
+  let fib_1 = 1
+  let fib_2 = 1
+  let fib_3 = add(fib_1, fib_2)
+  let fib_4 = add(fib_2, fib_3)
+  let fib_5 = add(fib_3, fib_4)
+  let fib_6 = add(fib_4, fib_5)
+  let fib_7 = add(fib_5, fib_6)
+  let fib_8 = add(fib_6, fib_7)
+  let fib_9 = add(fib_7, fib_8)
+  let fib_10 = add(fib_8, fib_9)
+  
+  assert_eq(720, factorial_6)        // 6! = 720
+  assert_eq(56, combination_8_3)     // C(8,3) = 56
+  assert_eq(1024, power_2_10)        // 2^10 = 1024
+  assert_eq(55, fib_10)              // 斐波那契数列第10项
 }
