@@ -255,6 +255,7 @@
     "azimuth_standard_test.mbt",
       "simple_standard_test.mbt",
       ""azimuth_new_tests.mbt",
-    "high_quality_standard_tests.mbt""
+    "high_quality_standard_tests.mbt",
+    "standard_moonbit_test_cases_new.mbt"
       ]
     }
