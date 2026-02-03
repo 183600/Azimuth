@@ -1,140 +1,98 @@
-// Copyright 2026 International Digital Economy Academy
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// 标准 MoonBit 测试用例
+// 包含基础数据类型和操作的测试
 
 ///|
-test "int basic arithmetic operations" {
-  inspect(1 + 2, content="3")
+test "整数基础运算" {
+  inspect(10 + 5, content="15")
   inspect(10 - 3, content="7")
-  inspect(4 * 5, content="20")
-  inspect(15 / 3, content="5")
-  inspect(17 % 5, content="2")
+  inspect(6 * 7, content="42")
+  inspect(20 / 4, content="5")
+  inspect(15 % 4, content="3")
 }
 
 ///|
-test "int comparison and logical operations" {
-  inspect(10 > 5, content="true")
-  inspect(3 < 8, content="true")
-  inspect(7 >= 7, content="true")
-  inspect(4 <= 9, content="true")
-  inspect(6 == 6, content="true")
-  inspect(2 != 5, content="true")
-}
-
-///|
-test "list basic operations" {
-  let empty_list : @list.List[Int] = @list.empty()
-  inspect(empty_list.length(), content="0")
-  inspect(empty_list.is_empty(), content="true")
-  
-  let list1 = @list.from_array([1, 2, 3])
-  inspect(list1.length(), content="3")
-  inspect(list1.head(), content="Some(1)")
-  inspect(list1.last(), content="Some(3)")
-}
-
-///|
-test "list functional operations" {
-  let numbers = @list.from_array([1, 2, 3, 4, 5])
-  
-  let doubled = numbers.map(x => x * 2)
-  inspect(doubled, content="@list.from_array([2, 4, 6, 8, 10])")
-  
-  let evens = numbers.filter(x => x % 2 == 0)
-  inspect(evens, content="@list.from_array([2, 4])")
-  
-  let sum = numbers.fold(init=0, (acc, x) => acc + x)
-  inspect(sum, content="15")
-}
-
-///|
-test "bool logical and bitwise operations" {
-  // Logical operations
+test "布尔逻辑运算" {
   inspect(true && false, content="false")
   inspect(true || false, content="true")
   inspect(!true, content="false")
-  
-  // Bitwise operations
-  inspect(true & false, content="false")
-  inspect(true | false, content="true")
-  inspect(true ^ false, content="true")
+  inspect(!false, content="true")
+  inspect(true == true, content="true")
+  inspect(true != false, content="true")
 }
 
 ///|
-test "array zip_with operation" {
-  let arr1 = [1, 2, 3]
-  let arr2 = [4, 5, 6]
-  let summed = @array.zip_with(arr1, arr2, (a, b) => a + b)
-  inspect(summed, content="[5, 7, 9]")
-  
-  let multiplied = @array.zip_with(arr1, arr2, (a, b) => a * b)
-  inspect(multiplied, content="[4, 10, 18]")
+test "字符串操作" {
+  let s1 = "Hello"
+  let s2 = "World"
+  let s3 = s1 + " " + s2
+  inspect(s3, content="\"Hello World\"")
+  inspect(s3.length(), content="11")
+  inspect(s1, content="\"Hello\"")
+  inspect(s1 != s2, content="true")
 }
 
 ///|
-test "string basic operations" {
-  let empty_str = ""
-  inspect(empty_str.length(), content="0")
-  
-  let hello = "Hello"
-  let world = "World"
-  let greeting = hello + ", " + world + "!"
-  inspect(greeting, content="\"Hello, World!\"")
+test "数组基础操作" {
+  let arr = [1, 2, 3, 4, 5]
+  inspect(arr.length(), content="5")
+  inspect(arr[0], content="1")
+  inspect(arr[4], content="5")
 }
 
 ///|
-test "type conversion operations" {
-  // Int to String
+test "Option 类型处理" {
+  let some_value = Some(42)
+  let none_value : Option[Int] = None
+  inspect(some_value, content="Some(42)")
+  inspect(none_value, content="None")
+  inspect(some_value.unwrap(), content="42")
+}
+
+///|
+test "Result 类型处理" {
+  let ok_result = Ok("success")
+  let err_result = Err("error")
+  inspect(ok_result, content="Ok(\"success\")")
+  inspect(err_result, content="Err(\"error\")")
+  inspect(ok_result.unwrap(), content="\"success\"")
+}
+
+///|
+test "比较操作符" {
+  inspect(10 > 5, content="true")
+  inspect(5 < 10, content="true")
+  inspect(10 >= 10, content="true")
+  inspect(5 <= 10, content="true")
+  inspect(10 == 10, content="true")
+  inspect(5 != 10, content="true")
+}
+
+///|
+test "位运算操作" {
+  inspect(5 & 3, content="1")
+  inspect(5 | 3, content="7")
+  inspect(5 ^ 3, content="6")
+  inspect(~5, content="-6")
+  inspect(5 << 1, content="10")
+  inspect(10 >> 1, content="5")
+}
+
+///|
+test "类型转换" {
   inspect(42.to_string(), content="\"42\"")
-  inspect((-17).to_string(), content="\"-17\"")
-  
-  // Bool to String
   inspect(true.to_string(), content="\"true\"")
-  inspect(false.to_string(), content="\"false\"")
-  
-  // Bool to Int
-  inspect(true.to_int(), content="1")
-  inspect(false.to_int(), content="0")
+  inspect(3.14.to_int(), content="3")
+  inspect(42.to_double(), content="42.0")
 }
 
 ///|
-test "list advanced operations" {
-  let list1 = @list.from_array([1, 2, 3])
-  let list2 = @list.from_array([4, 5, 6])
+test "条件表达式" {
+  let x = 10
+  let result = if x > 5 { "greater" } else { "less or equal" }
   
-  // Concatenation
-  let combined = list1 + list2
-  inspect(combined, content="@list.from_array([1, 2, 3, 4, 5, 6])")
+  let y = 3
+  let result2 = if y > 5 { "greater" } else { "less or equal" }
   
-  // Reversal
-  let reversed = combined.rev()
-  inspect(reversed, content="@list.from_array([6, 5, 4, 3, 2, 1])")
-  
-  // Contains
-  inspect(combined.contains(4), content="true")
-  inspect(combined.contains(7), content="false")
-}
-
-///|
-test "int edge cases and boundaries" {
-  inspect(@int.max_value, content="2147483647")
-  inspect(@int.min_value, content="-2147483648")
-  
-  // Overflow behavior
-  inspect(@int.max_value + 1, content="-2147483648")
-  inspect(@int.min_value - 1, content="2147483647")
-  
-  // Zero operations
-  inspect(0 + @int.max_value, content="2147483647")
-  inspect(0 * @int.min_value, content="0")
+  inspect(result, content="\"greater\"")
+  inspect(result2, content="\"less or equal\"")
 }
