@@ -91,7 +91,7 @@ if [ "$1" = "test" ]; then
       TEST_FILES=$(cat moon.pkg.json | python3 -c "import sys, json; print(' '.join(json.load(sys.stdin).get('test', [])))")
     else
       # 如果没有moon.pkg.json，使用默认测试文件
-      TEST_FILES="simple_test.mbt additional_comprehensive_tests.mbt standard_tests.mbt additional_tests.mbt standard_moonbit_tests.mbt standard_moonbit_test_suite.mbt"
+      TEST_FILES="simple_test.mbt additional_comprehensive_tests.mbt standard_tests.mbt additional_tests.mbt standard_moonbit_tests.mbt standard_moonbit_test_suite.mbt z_new_test.mbt"
     fi
     
     TOTAL_TESTS=0
@@ -144,7 +144,7 @@ if [ "$1" = "test" ]; then
     echo "Testing clean_test..."
     cd test
     
-    for test_file in simple_test.mbt additional_comprehensive_tests.mbt standard_tests.mbt; do
+    for test_file in simple_test.mbt additional_comprehensive_tests.mbt standard_tests.mbt z_new_test.mbt; do
       if [ -f "$test_file" ]; then
         echo "Checking $test_file..."
         
