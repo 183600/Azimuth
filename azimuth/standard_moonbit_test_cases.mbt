@@ -1,23 +1,23 @@
-// 标准 MoonBit 测试用例 - 为 Azimuth 项目添加
-// 使用标准 MoonBit 测试语法，包含10个高质量测试用例
+// 标准 MoonBit 测试用例 - Azimuth 项目
+// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
 
-test "basic_addition_functionality" {
-  // 基本加法功能测试
+test "add_function_basic_cases" {
+  // 加法函数基本测试
   assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
   assert_eq(-1, add(-3, 2))
   assert_eq(100, add(50, 50))
 }
 
-test "basic_multiplication_functionality" {
-  // 基本乘法功能测试
+test "multiply_function_basic_cases" {
+  // 乘法函数基本测试
   assert_eq(6, multiply(2, 3))
   assert_eq(0, multiply(5, 0))
   assert_eq(-6, multiply(-2, 3))
   assert_eq(15, multiply(-3, -5))
 }
 
-test "divide_with_ceil_positive_numbers" {
+test "divide_with_ceil_positive_cases" {
   // 向上取整除法正数测试
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
@@ -25,7 +25,7 @@ test "divide_with_ceil_positive_numbers" {
   assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "divide_with_ceil_negative_numbers" {
+test "divide_with_ceil_negative_cases" {
   // 向上取整除法负数测试
   assert_eq(-3, divide_with_ceil(-10, 3))
   assert_eq(-4, divide_with_ceil(10, -3))
@@ -33,8 +33,8 @@ test "divide_with_ceil_negative_numbers" {
   assert_eq(-1, divide_with_ceil(-1, 2))
 }
 
-test "greet_function_standard_cases" {
-  // 问候函数标准测试
+test "greet_function_various_inputs" {
+  // 问候函数各种输入测试
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
@@ -77,7 +77,6 @@ test "business_packaging_scenario" {
 
 test "complex_calculation_workflow" {
   // 复杂计算工作流测试
-  // 场景：项目资源计算
   let team_members = 6
   let tasks_per_member = 8
   let total_tasks = multiply(team_members, tasks_per_member)
@@ -91,7 +90,6 @@ test "complex_calculation_workflow" {
 
 test "edge_cases_and_boundary_values" {
   // 边界情况和极值测试
-  // 除法边界情况
   assert_eq(1, divide_with_ceil(5, 5))
   assert_eq(1, divide_with_ceil(-5, -5))
   assert_eq(0, divide_with_ceil(0, 5))
