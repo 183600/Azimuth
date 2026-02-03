@@ -369,3 +369,154 @@ test "large_number_operations" {
   assert_eq(1001, divide_with_ceil(1000000, 999))
   assert_eq(1, divide_with_ceil(1000000, 1000000))
 }
+
+test "practical_resource_allocation" {
+  // 实用资源分配测试
+  let total_tasks = 87
+  let team_members = 8
+  let tasks_per_member = divide_with_ceil(total_tasks, team_members)
+  assert_eq(11, tasks_per_member)  // ceil(87/8) = 11
+  
+  // 计算总处理能力
+  let total_capacity = multiply(tasks_per_member, team_members)
+  assert_eq(88, total_capacity)  // 11*8 = 88
+  
+  // 计算剩余处理能力
+  let remaining_capacity = subtract(total_capacity, total_tasks)
+  assert_eq(1, remaining_capacity)  // 88-87 = 1
+}
+
+test "inventory_management_scenario" {
+  // 库存管理场景测试
+  let total_products = 245
+  let box_capacity = 30
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  assert_eq(9, boxes_needed)  // ceil(245/30) = 9
+  
+  // 计算总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(270, total_capacity)  // 9*30 = 270
+  
+  // 计算剩余空间
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(25, remaining_space)  // 270-245 = 25
+}
+
+test "project_timeline_calculation" {
+  // 项目时间线计算测试
+  let project_tasks = 125
+  let daily_capacity = 15
+  let days_needed = divide_with_ceil(project_tasks, daily_capacity)
+  assert_eq(9, days_needed)  // ceil(125/15) = 9
+  
+  // 计算工作周数（每周5个工作日）
+  let work_days_per_week = 5
+  let weeks_needed = divide_with_ceil(days_needed, work_days_per_week)
+  assert_eq(2, weeks_needed)  // ceil(9/5) = 2
+  
+  // 计算总可用工作日
+  let total_work_days = multiply(weeks_needed, work_days_per_week)
+  assert_eq(10, total_work_days)  // 2*5 = 10
+  
+  // 计算剩余工作日
+  let remaining_days = subtract(total_work_days, days_needed)
+  assert_eq(1, remaining_days)  // 10-9 = 1
+}
+
+test "budget_allocation_optimization" {
+  // 预算分配优化测试
+  let total_budget = 75000
+  let departments = 6
+  let base_allocation = divide_with_ceil(total_budget, departments)
+  assert_eq(12500, base_allocation)  // ceil(75000/6) = 12500
+  
+  // 计算总分配金额
+  let total_allocated = multiply(base_allocation, departments)
+  assert_eq(75000, total_allocated)  // 12500*6 = 75000
+  
+  // 计算预算余量
+  let budget_surplus = subtract(total_allocated, total_budget)
+  assert_eq(0, budget_surplus)  // 75000-75000 = 0
+}
+
+test "network_capacity_planning" {
+  // 网络容量规划测试
+  let total_users = 1850
+  let bandwidth_per_user = 8  // Mbps
+  let total_bandwidth_needed = multiply(total_users, bandwidth_per_user)
+  assert_eq(14800, total_bandwidth_needed)  // 1850*8 = 14800
+  
+  // 计算需要的连接数
+  let connection_capacity = 1000  // Mbps per connection
+  let connections_needed = divide_with_ceil(total_bandwidth_needed, connection_capacity)
+  assert_eq(15, connections_needed)  // ceil(14800/1000) = 15
+  
+  // 计算实际可用带宽
+  let actual_bandwidth = multiply(connections_needed, connection_capacity)
+  assert_eq(15000, actual_bandwidth)  // 15*1000 = 15000
+  
+  // 计算带宽余量
+  let bandwidth_buffer = subtract(actual_bandwidth, total_bandwidth_needed)
+  assert_eq(200, bandwidth_buffer)  // 15000-14800 = 200
+}
+
+test "educational_class_scheduling" {
+  // 教育课程安排测试
+  let total_students = 312
+  let classroom_capacity = 35
+  let classrooms_needed = divide_with_ceil(total_students, classroom_capacity)
+  assert_eq(9, classrooms_needed)  // ceil(312/35) = 9
+  
+  // 计算总座位数
+  let total_seats = multiply(classrooms_needed, classroom_capacity)
+  assert_eq(315, total_seats)  // 9*35 = 315
+  
+  // 计算空余座位
+  let empty_seats = subtract(total_seats, total_students)
+  assert_eq(3, empty_seats)  // 315-312 = 3
+  
+  // 计算座位利用率
+  let utilization_rate = divide_with_ceil(multiply(total_students, 100), total_seats)
+  assert_eq(100, utilization_rate)  // floor(31200/315) = 99%
+}
+
+test "logistics_distribution_optimization" {
+  // 物流配送优化测试
+  let total_packages = 567
+  let truck_capacity = 75
+  let trucks_needed = divide_with_ceil(total_packages, truck_capacity)
+  assert_eq(8, trucks_needed)  // ceil(567/75) = 8
+  
+  // 计算总运力
+  let total_capacity = multiply(trucks_needed, truck_capacity)
+  assert_eq(600, total_capacity)  // 8*75 = 600
+  
+  // 计算剩余运力
+  let remaining_capacity = subtract(total_capacity, total_packages)
+  assert_eq(33, remaining_capacity)  // 600-567 = 33
+  
+  // 计算运力利用率
+  let utilization = divide_with_ceil(multiply(total_packages, 100), total_capacity)
+  assert_eq(95, utilization)  // floor(56700/600) = 94%
+}
+
+test "manufacturing_production_planning" {
+  // 制造业生产计划测试
+  let order_quantity = 1234
+  let production_batch_size = 150
+  let batches_needed = divide_with_ceil(order_quantity, production_batch_size)
+  assert_eq(9, batches_needed)  // ceil(1234/150) = 9
+  
+  // 计算总产量
+  let total_production = multiply(batches_needed, production_batch_size)
+  assert_eq(1350, total_production)  // 9*150 = 1350
+  
+  // 计算额外产量
+  let extra_production = subtract(total_production, order_quantity)
+  assert_eq(116, extra_production)  // 1350-1234 = 116
+  
+  // 计算生产效率
+  let efficiency = divide_with_ceil(multiply(order_quantity, 100), total_production)
+  assert_eq(92, efficiency)  // floor(123400/1350) = 91%
+}
+}
