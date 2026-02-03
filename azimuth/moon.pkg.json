@@ -12,6 +12,7 @@
         "subtract"
     ],
     "files": [
+        "azimuth_standard_test_suite.mbt",
         "simple_practical_test.mbt",
         "azimuth_practical_tests.mbt",
         "azimuth_standard_comprehensive_tests.mbt",
