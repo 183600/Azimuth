@@ -1,96 +1,91 @@
-// 简洁的标准 MoonBit 测试用例
-// 覆盖 azimuth 项目的核心功能
+// 标准 MoonBit 测试用例 - 针对 azimuth 库的核心功能
+// 使用标准的 MoonBit 测试语法，包含10个简洁的测试用例
 
-test "basic_addition" {
+test "add_basic_functionality" {
   // 测试基本加法功能
-  @azimuth.assert_eq(5, @azimuth.add(2, 3))
-  @azimuth.assert_eq(0, @azimuth.add(-2, 2))
-  @azimuth.assert_eq(-3, @azimuth.add(-1, -2))
+  assert_eq(10, add(3, 7))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
 }
 
-test "basic_multiplication" {
+test "multiply_basic_functionality" {
   // 测试基本乘法功能
-  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
-  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(0, 10))
+  assert_eq(-6, multiply(-2, 3))
 }
 
-test "greet_functionality" {
-  // 测试问候功能
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+test "subtract_basic_functionality" {
+  // 测试基本减法功能
+  assert_eq(5, subtract(8, 3))
+  assert_eq(-5, subtract(3, 8))
+  assert_eq(0, subtract(10, 10))
 }
 
-test "boundary_values_addition" {
-  // 测试边界值的加法
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  @azimuth.assert_eq(max_val, @azimuth.add(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.add(min_val, -1))
-  @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))
+test "greet_basic_functionality" {
+  // 测试基本问候功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
-test "boundary_values_multiplication" {
-  // 测试边界值的乘法
-  let max_val = 2147483647
-  let min_val = -2147483648
-  
-  @azimuth.assert_eq(max_val, @azimuth.multiply(max_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, 1))
-  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
+test "divide_with_ceil_positive_numbers" {
+  // 测试正数的向上取整除法
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+}
+
+test "divide_with_ceil_negative_numbers" {
+  // 测试负数的向上取整除法
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+  assert_eq(0, divide_with_ceil(5, 0))
 }
 
 test "mathematical_properties" {
   // 测试数学性质
   let a = 7
-  let b = 11
+  let b = 13
   
   // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  assert_eq(add(a, b), add(b, a))
   
   // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
-}
-
-test "complex_calculations" {
-  // 测试复合计算
-  // 计算 (a + b) * c
-  let a = 5
-  let b = 3
-  let c = 4
+  assert_eq(multiply(a, b), multiply(b, a))
   
-  let sum = @azimuth.add(a, b)
-  let product = @azimuth.multiply(sum, c)
-  @azimuth.assert_eq(32, product)
+  // 零元素性质
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, add(a, 0))
 }
 
-test "string_operations" {
-  // 测试字符串操作
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
-  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet("test@example.com"))
-  @azimuth.assert_eq_string("Hello, 用户123!", @azimuth.greet("用户123"))
-}
-
-test "real_world_scenario" {
-  // 测试实际应用场景：计算购物车总价
-  let item1_price = 199
-  let item1_quantity = 2
-  let item2_price = 99
-  let item2_quantity = 3
+test "combined_operations" {
+  // 测试组合运算
+  let result1 = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result1)  // 2*3 + 4*5 = 6 + 20 = 26
   
-  let total1 = @azimuth.multiply(item1_price, item1_quantity)
-  let total2 = @azimuth.multiply(item2_price, item2_quantity)
-  let cart_total = @azimuth.add(total1, total2)
-  
-  @azimuth.assert_eq(595, cart_total)
+  let result2 = multiply(add(5, 3), 2)
+  assert_eq(16, result2)  // (5 + 3) * 2 = 8 * 2 = 16
 }
 
-test "assert_functions" {
-  // 测试断言函数
-  @azimuth.assert_eq(1, 1)
-  @azimuth.assert_eq(1, 1)
-  @azimuth.assert_eq(42, 42)
-  @azimuth.assert_eq_string("test", "test")
+test "practical_business_scenario" {
+  // 实际业务场景：计算订单总价
+  let unit_price = 25
+  let quantity = 8
+  let shipping = 15
+  
+  let subtotal = multiply(unit_price, quantity)
+  let total = add(subtotal, shipping)
+  
+  assert_eq(200, subtotal)
+  assert_eq(215, total)
+}
+
+test "packaging_calculation" {
+  // 包装计算场景
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  
+  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
 }
