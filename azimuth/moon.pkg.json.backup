@@ -12,9 +12,7 @@
         "subtract"
     ],
     "files": [
-        "lib.mbt",
-        "test_simple.mbt",
-        "azimuth_simple_new_tests.mbt",
+        "azimuth_comprehensive_test_cases.mbt",
         "azimuth_enhanced_standard_tests.mbt",
         "azimuth_standard_test_suite.mbt",
         "simple_practical_test.mbt",
@@ -80,6 +78,7 @@
         "azimuth_new_standard_test_cases.mbt",
         "azimuth_standard_test_cases_new.mbt",
         "azimuth_standard_quality_tests.mbt",
+        "azimuth_simple_new_tests.mbt",
         "lib.mbt",
             "azimuth_enhanced_standard_tests.mbt",
             "comprehensive_basic_tests.mbt",        "clean_standard_test.mbt",
