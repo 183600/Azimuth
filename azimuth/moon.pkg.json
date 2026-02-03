@@ -340,8 +340,8 @@
             "new_comprehensive_test_suite.mbt",
         "simple_new_test_cases.mbt",
         "test/standard_moonbit_test_cases_new.mbt",
-        "standard_moonbit_test_cases_new.mbt"    ],
-    "import": [
+            "standard_moonbit_test_cases_new.mbt",
+            "test/azimuth_enhanced_core_tests.mbt"    ],    "import": [
         "moonbitlang/core/builtin",
         "moonbitlang/core"
     ],
