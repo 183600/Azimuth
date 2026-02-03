@@ -1,177 +1,252 @@
 // Azimuth 增强标准测试用例
 // 包含10个高质量的标准 MoonBit 测试用例
+// 测试覆盖所有主要功能和边界情况
 
-test "mathematical_sequence_calculation" {
-  // 数学序列计算：等差数列求和
-  let first_term = 3
-  let common_difference = 4
-  let terms_count = 6
+test "enhanced_arithmetic_precision" {
+  // 精密算术运算测试
+  // 测试大数运算和精度保持
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(999999, subtract(1000000, 1))
+  assert_eq(500000, divide_with_ceil(1000000, 2))
+  assert_eq(333334, divide_with_ceil(1000000, 3))
+}
+
+test "complex_business_workflow" {
+  // 复杂业务工作流测试
+  // 场景：电商订单处理
+  let order_items = 47
+  let items_per_box = 12
+  let boxes_needed = divide_with_ceil(order_items, items_per_box)
   
-  // 使用公式计算：S = n/2 * (2a + (n-1)d)
-  let sum = @azimuth.divide_with_ceil(
-    @azimuth.multiply(terms_count, @azimuth.add(@azimuth.multiply(2, first_term), @azimuth.multiply(terms_count - 1, common_difference))),
-    2
-  )
+  assert_eq(4, boxes_needed)
   
-  @azimuth.assert_eq(78, sum)  // 6/2 * (6 + 20) = 3 * 26 = 78
+  // 计算总容量和剩余空间
+  let total_capacity = multiply(boxes_needed, items_per_box)
+  let remaining_space = subtract(total_capacity, order_items)
+  
+  assert_eq(48, total_capacity)
+  assert_eq(1, remaining_space)
+  
+  // 验证装箱效率
+  let efficiency = divide_with_ceil(multiply(order_items, 100), total_capacity)
+  assert_eq(98, efficiency)  // 47/48 = 97.9% -> 98%
+}
+
+test "mathematical_properties_comprehensive" {
+  // 综合数学性质测试
+  let a = 17
+  let b = 23
+  let c = 5
+  
+  // 交换律测试
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 结合律测试
+  assert_eq(add(add(a, b), c), add(a, add(b, c)))
+  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
+  
+  // 分配律测试
+  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
+  
+  // 零元素性质
+  assert_eq(a, add(a, 0))
+  assert_eq(0, multiply(a, 0))
+  
+  // 单位元素性质
+  assert_eq(a, multiply(a, 1))
+}
+
+test "negative_number_scenarios" {
+  // 负数场景全面测试
+  // 负数基本运算
+  assert_eq(-10, add(-3, -7))
+  assert_eq(4, add(-3, 7))
+  assert_eq(-4, add(3, -7))
+  
+  assert_eq(21, multiply(-3, -7))
+  assert_eq(-21, multiply(3, -7))
+  assert_eq(-21, multiply(-3, 7))
+  
+  assert_eq(-10, subtract(-3, 7))
+  assert_eq(10, subtract(3, -7))
+  assert_eq(4, subtract(-3, -7))
+  
+  // 负数除法测试
+  assert_eq(-2, divide_with_ceil(-10, 5))
+  assert_eq(-1, divide_with_ceil(-3, 5))
+  assert_eq(2, divide_with_ceil(-10, -5))
+  assert_eq(-3, divide_with_ceil(10, -4))
+}
+
+test "string_processing_international" {
+  // 国际化字符串处理测试
+  // 基本英文字符串
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  
+  // 中文字符串
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 月球!", greet("月球"))
+  
+  // 特殊字符和Emoji
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+  
+  // 边界情况
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, 123!", greet("123"))
 }
 
 test "resource_allocation_optimization" {
   // 资源分配优化测试
-  let total_budget = 5000
-  let project_a_cost = 1200
-  let project_b_cost = 1800
-  let project_c_cost = 1500
+  // 场景：项目团队资源分配
+  let total_tasks = 125
+  let team_members = 8
+  let working_days = 15
   
-  let allocated_budget = @azimuth.add(@azimuth.add(project_a_cost, project_b_cost), project_c_cost)
-  let remaining_budget = @azimuth.subtract(total_budget, allocated_budget)
+  // 计算每人需要完成的任务数
+  let tasks_per_person = divide_with_ceil(total_tasks, team_members)
+  assert_eq(16, tasks_per_person)
   
-  // 计算可以启动的小项目数量
-  let small_project_cost = 300
-  let additional_projects = @azimuth.divide_with_ceil(remaining_budget, small_project_cost)
+  // 验证分配的总任务数
+  let allocated_tasks = multiply(tasks_per_person, team_members)
+  assert_eq(128, allocated_tasks)
   
-  @azimuth.assert_eq(4500, allocated_budget)
-  @azimuth.assert_eq(500, remaining_budget)
-  @azimuth.assert_eq(2, additional_projects)
+  // 计算每天需要完成的任务数
+  let daily_tasks = divide_with_ceil(tasks_per_person, working_days)
+  assert_eq(2, daily_tasks)
+  
+  // 验证总工作天数
+  let total_days_needed = multiply(daily_tasks, working_days)
+  assert_eq(30, total_days_needed)
+  
+  // 计算任务完成率
+  let completion_rate = divide_with_ceil(multiply(total_tasks, 100), allocated_tasks)
+  assert_eq(98, completion_rate)  // 125/128 = 97.6% -> 98%
 }
 
-test "temperature_conversion_simulation" {
-  // 温度转换模拟（简化版）
-  let celsius = 25
-  let fahrenheit = @azimuth.add(@azimuth.multiply(@azimuth.divide_with_ceil(@azimuth.multiply(celsius, 9), 5), 1), 32)
+test "boundary_conditions_extreme" {
+  // 极端边界条件测试
+  // 零值测试
+  assert_eq(0, add(0, 0))
+  assert_eq(5, add(5, 0))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
   
-  // 反向转换
-  let back_to_celsius = @azimuth.divide_with_ceil(@azimuth.multiply(@azimuth.subtract(fahrenheit, 32), 5), 9)
+  // 单位值测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(5, multiply(5, 1))
+  assert_eq(5, add(5, 0))
   
-  @azimuth.assert_eq(77, fahrenheit)  // 25°C = 77°F
-  @azimuth.assert_eq(25, back_to_celsius)  // 77°F = 25°C
+  // 大数边界测试
+  assert_eq(10000, multiply(100, 100))
+  assert_eq(10001, divide_with_ceil(10001, 1))
+  assert_eq(10001, divide_with_ceil(10002, 2))
+  
+  // 相等数测试
+  assert_eq(0, subtract(100, 100))
+  assert_eq(1, divide_with_ceil(100, 100))
+  assert_eq(0, divide_with_ceil(0, 100))
 }
 
-test "inventory_turnover_calculation" {
-  // 库存周转率计算
-  let initial_inventory = 500
-  let purchases = 1200
-  let final_inventory = 300
-  let cost_of_goods_sold = @azimuth.subtract(@azimuth.add(initial_inventory, purchases), final_inventory)
-  let average_inventory = @azimuth.divide_with_ceil(@azimuth.add(initial_inventory, final_inventory), 2)
-  let turnover_ratio = @azimuth.divide_with_ceil(@azimuth.multiply(cost_of_goods_sold, 100), average_inventory)
+test "financial_calculation_accuracy" {
+  // 金融计算精度测试
+  // 场景：贷款分期计算
+  let loan_amount = 150000
+  let monthly_payment = 4500
+  let months_needed = divide_with_ceil(loan_amount, monthly_payment)
   
-  @azimuth.assert_eq(1400, cost_of_goods_sold)
-  @azimuth.assert_eq(400, average_inventory)
-  @azimuth.assert_eq(350, turnover_ratio)
+  assert_eq(34, months_needed)  // ceil(150000/4500) = 34
+  
+  // 计算总支付金额
+  let total_payment = multiply(months_needed, monthly_payment)
+  assert_eq(153000, total_payment)
+  
+  // 计算额外利息
+  let extra_interest = subtract(total_payment, loan_amount)
+  assert_eq(3000, extra_interest)
+  
+  // 计算实际月供（最后一期）
+  let final_payment = subtract(total_payment, multiply(months_needed - 1, monthly_payment))
+  assert_eq(1500, final_payment)
+  
+  // 验证支付计划准确性
+  let regular_payments = months_needed - 1
+  let regular_total = multiply(regular_payments, monthly_payment)
+  let verification = add(regular_total, final_payment)
+  assert_eq(total_payment, verification)
 }
 
-test "compound_interest_simplified" {
-  // 简化的复利计算
-  let principal = 1000
-  let rate_percent = 8
-  let _years = 3  // 未使用的变量
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(1, 0))
+  assert_eq(0, divide_with_ceil(-1, 0))
   
-  let year1_amount = @azimuth.add(principal, @azimuth.divide_with_ceil(@azimuth.multiply(principal, rate_percent), 100))
-  let year2_amount = @azimuth.add(year1_amount, @azimuth.divide_with_ceil(@azimuth.multiply(year1_amount, rate_percent), 100))
-  let year3_amount = @azimuth.add(year2_amount, @azimuth.divide_with_ceil(@azimuth.multiply(year2_amount, rate_percent), 100))
+  // 极值运算测试
+  let large_num = 1000000
+  let small_num = 1
   
-  @azimuth.assert_eq(1080, year1_amount)  // 1000 + 80
-  @azimuth.assert_eq(1166, year2_amount)  // 1080 + 87
-  @azimuth.assert_eq(1259, year3_amount)  // 1166 + 93
+  assert_eq(large_num, add(large_num, 0))
+  assert_eq(0, multiply(large_num, 0))
+  assert_eq(large_num, multiply(large_num, 1))
+  assert_eq(large_num, divide_with_ceil(large_num, 1))
+  assert_eq(1, divide_with_ceil(large_num, large_num))
+  
+  // 负数极值测试
+  let neg_large = -1000000
+  assert_eq(neg_large, add(neg_large, 0))
+  assert_eq(0, multiply(neg_large, 0))
+  assert_eq(neg_large, multiply(neg_large, 1))
+  assert_eq(neg_large, divide_with_ceil(neg_large, 1))
 }
 
-test "batch_processing_efficiency" {
-  // 批处理效率计算
-  let total_items = 158
-  let batch_size = 25
-  let processing_time_per_batch = 4
+test "real_world_logistics_simulation" {
+  // 真实世界物流模拟测试
+  // 场景：仓库库存管理和配送
+  let total_products = 587
+  let box_capacity = 24
+  let truck_capacity = 120
+  let stores = 7
   
-  let batches_needed = @azimuth.divide_with_ceil(total_items, batch_size)
-  let total_processing_time = @azimuth.multiply(batches_needed, processing_time_per_batch)
+  // 计算需要的箱子数量
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  assert_eq(25, boxes_needed)
   
-  // 计算最后一个批次的实际处理量
-  let full_batches = @azimuth.subtract(batches_needed, 1)
-  let items_processed_before_last = @azimuth.multiply(full_batches, batch_size)
-  let last_batch_size = @azimuth.subtract(total_items, items_processed_before_last)
+  // 计算总箱子容量和剩余空间
+  let total_box_capacity = multiply(boxes_needed, box_capacity)
+  let box_remaining = subtract(total_box_capacity, total_products)
+  assert_eq(600, total_box_capacity)
+  assert_eq(13, box_remaining)
   
-  @azimuth.assert_eq(7, batches_needed)  // ceil(158/25) = 7
-  @azimuth.assert_eq(28, total_processing_time)  // 7 * 4 = 28
-  @azimuth.assert_eq(8, last_batch_size)  // 158 - 6*25 = 8
-}
-
-test "network_packet_routing" {
-  // 网络数据包路由模拟
-  let total_packets = 95
-  let route_capacity_a = 30
-  let route_capacity_b = 25
-  let route_capacity_c = 20
+  // 计算需要的卡车数量
+  let trucks_needed = divide_with_ceil(boxes_needed, divide_with_ceil(truck_capacity, box_capacity))
+  let boxes_per_truck = divide_with_ceil(truck_capacity, box_capacity)
+  assert_eq(5, boxes_per_truck)  // 每辆卡车可装5箱
+  assert_eq(5, trucks_needed)    // 需要5辆卡车
   
-  let packets_route_a = @azimuth.divide_with_ceil(@azimuth.multiply(total_packets, 40), 100)  // 40% via route A
-  let packets_route_b = @azimuth.divide_with_ceil(@azimuth.multiply(total_packets, 35), 100)  // 35% via route B
-  let packets_route_c = @azimuth.subtract(total_packets, @azimuth.add(packets_route_a, packets_route_b))  // remainder via route C
+  // 计算每家商店分配
+  let products_per_store = divide_with_ceil(total_products, stores)
+  assert_eq(84, products_per_store)
   
-  // 验证路由容量是否足够
-  let route_a_sufficient = packets_route_a <= route_capacity_a
-  let route_b_sufficient = packets_route_b <= route_capacity_b
-  let route_c_sufficient = packets_route_c <= route_capacity_c
+  // 验证分配结果
+  let total_allocated = multiply(products_per_store, stores)
+  let allocation_surplus = subtract(total_allocated, total_products)
+  assert_eq(588, total_allocated)
+  assert_eq(1, allocation_surplus)
   
-  @azimuth.assert_eq(38, packets_route_a)  // ceil(95*40/100) = 38
-  @azimuth.assert_eq(34, packets_route_b)  // ceil(95*35/100) = 34
-  @azimuth.assert_eq(23, packets_route_c)  // 95 - 38 - 34 = 23
-  @azimuth.assert_true(route_a_sufficient)
-  @azimuth.assert_true(route_b_sufficient)
-  @azimuth.assert_true(route_c_sufficient)
-}
-
-test "digital_storage_calculation" {
-  // 数字存储计算
-  let file_size_mb = 850
-  let compression_ratio = 60  // 压缩到60%
-  let backup_drives = 3
-  let drive_capacity_gb = 2
-  
-  let compressed_size_mb = @azimuth.divide_with_ceil(@azimuth.multiply(file_size_mb, compression_ratio), 100)
-  let compressed_size_gb = @azimuth.divide_with_ceil(compressed_size_mb, 1024)
-  let total_storage_needed = @azimuth.multiply(compressed_size_gb, backup_drives)
-  let storage_sufficient = total_storage_needed <= drive_capacity_gb
-  
-  @azimuth.assert_eq(510, compressed_size_mb)  // ceil(850*60/100) = 510
-  @azimuth.assert_eq(1, compressed_size_gb)   // ceil(510/1024) = 1
-  @azimuth.assert_eq(3, total_storage_needed)  // 1 * 3 = 3
-  @azimuth.assert_false(storage_sufficient)   // 3GB > 2GB，存储不足
-}
-
-test "production_line_optimization" {
-  // 生产线优化计算
-  let _stations = 5  // 未使用的变量
-  let cycle_time_seconds = 45
-  let operating_hours_per_day = 8
-  let efficiency_factor = 85  // 85%效率
-  
-  let daily_production_time = @azimuth.multiply(operating_hours_per_day, 3600)
-  let effective_production_time = @azimuth.divide_with_ceil(@azimuth.multiply(daily_production_time, efficiency_factor), 100)
-  let cycles_per_day = @azimuth.divide_with_ceil(effective_production_time, cycle_time_seconds)
-  let units_produced_per_day = cycles_per_day
-  
-  @azimuth.assert_eq(28800, daily_production_time)  // 8 * 3600
-  @azimuth.assert_eq(24480, effective_production_time)  // ceil(28800*85/100) = 24480
-  @azimuth.assert_eq(544, cycles_per_day)  // ceil(24480/45) = 544
-  @azimuth.assert_eq(544, units_produced_per_day)
-}
-
-test "multilingual_greeting_system" {
-  // 多语言问候系统测试
-  let english_name = "Alice"
-  let chinese_name = "小明"
-  let spanish_name = "Carlos"
-  let russian_name = "Анна"
-  let emoji_name = "🌟"
-  
-  let english_greeting = @azimuth.greet(english_name)
-  let chinese_greeting = @azimuth.greet(chinese_name)
-  let spanish_greeting = @azimuth.greet(spanish_name)
-  let russian_greeting = @azimuth.greet(russian_name)
-  let emoji_greeting = @azimuth.greet(emoji_name)
-  
-  @azimuth.assert_eq_string("Hello, Alice!", english_greeting)
-  @azimuth.assert_eq_string("Hello, 小明!", chinese_greeting)
-  @azimuth.assert_eq_string("Hello, Carlos!", spanish_greeting)
-  @azimuth.assert_eq_string("Hello, Анна!", russian_greeting)
-  @azimuth.assert_eq_string("Hello, 🌟!", emoji_greeting)
+  // 计算物流效率
+  let space_efficiency = divide_with_ceil(multiply(total_products, 100), total_box_capacity)
+  let distribution_efficiency = divide_with_ceil(multiply(total_products, 100), total_allocated)
+  assert_eq(98, space_efficiency)      // 587/600 = 97.8% -> 98%
+  assert_eq(100, distribution_efficiency)  // 587/588 = 99.8% -> 100%
 }
