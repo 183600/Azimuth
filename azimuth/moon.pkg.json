@@ -282,6 +282,7 @@
         "azimuth_standard_test_suite.mbt",
         "simple_test.mbt",
         "standard_quality_test.mbt",
+        "azimuth_standard_quality_tests.mbt",
         "comprehensive_edge_case_tests.mbt",
         "simple_edge_test.mbt",
         "azimuth_concise_standard_tests.mbt",
