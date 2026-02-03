@@ -1,137 +1,143 @@
-// azimuth 库的增强测试用例
-// 使用标准 MoonBit 测试语法编写
+// Azimuth 增强测试用例
+// 为 Azimuth 项目添加的高质量测试覆盖
 
-test "enhanced_arithmetic_sequence_calculation" {
-  // 测试等差数列求和：1 + 3 + 5 + 7 + 9 = 25
-  let first_term = 1
-  let common_diff = 2
-  let num_terms = 5
+test "mathematical_commutative_laws" {
+  // 测试数学交换律
+  let a = 15
+  let b = 27
   
-  // 使用公式：S = n/2 * (2a + (n-1)d)
-  let sum = divide_with_ceil(
-    multiply(num_terms, add(multiply(2, first_term), multiply(num_terms - 1, common_diff))),
-    2
-  )
+  // 加法交换律: a + b = b + a
+  assert_eq(add(a, b), add(b, a))
   
-  assert_eq(25, sum)
+  // 乘法交换律: a * b = b * a
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 验证具体计算结果
+  assert_eq(42, add(15, 27))
+  assert_eq(405, multiply(15, 27))
 }
 
-test "enhanced_business_profit_calculation" {
-  // 测试商业利润计算
-  let revenue = 15000
-  let cost_per_unit = 85
-  let units_sold = 120
-  let fixed_costs = 2000
+test "divide_with_ceil_comprehensive_scenarios" {
+  // 向上取整除法的综合场景测试
+  // 正数场景
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
   
-  let total_cost = add(multiply(cost_per_unit, units_sold), fixed_costs)
-  let profit = add(revenue, -total_cost)
+  // 负数场景
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(-4, divide_with_ceil(10, -3))
+  assert_eq(4, divide_with_ceil(-10, -3))
   
-  assert_eq(12200, total_cost)
-  assert_eq(2800, profit)
+  // 边界情况
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(1, divide_with_ceil(5, 5))
 }
 
-test "enhanced_time_zone_conversion" {
-  // 测试时区转换计算
-  let local_time = 14  // 下午2点
-  let time_difference = -8  // 时差
-  
-  let converted_time = add(local_time, time_difference)
-  let adjusted_time = if converted_time < 0 {
-    add(converted_time, 24)
-  } else if converted_time >= 24 {
-    add(converted_time, -24)
-  } else {
-    converted_time
-  }
-  
-  assert_eq(6, adjusted_time)  // 下午2点 - 8小时 = 早上6点
+test "string_processing_internationalization" {
+  // 字符串处理国际化测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
 }
 
-test "enhanced_temperature_conversion" {
-  // 测试温度转换：华氏度转摄氏度
-  let fahrenheit = 98
-  let celsius = divide_with_ceil(multiply(fahrenheit - 32, 5), 9)
+test "business_logistics_calculation" {
+  // 物流业务计算测试
+  let total_products = 158
+  let pallet_capacity = 25
+  let pallets_needed = divide_with_ceil(total_products, pallet_capacity)
   
-  assert_eq(37, celsius)  // (98-32) * 5/9 = 36.666... -> 37
+  assert_eq(7, pallets_needed)
+  
+  // 验证总容量
+  let total_capacity = multiply(pallets_needed, pallet_capacity)
+  assert_eq(175, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(17, remaining_space)
 }
 
-test "enhanced_doubling_time_calculation" {
-  // 测试倍增时间计算
-  let initial_amount = 1000
-  let growth_rate = 7  // 7%
-  let years = 10
+test "mathematical_distributive_law" {
+  // 测试数学分配律: a * (b + c) = a * b + a * c
+  let a = 8
+  let b = 6
+  let c = 4
   
-  let total_growth = divide_with_ceil(multiply(initial_amount, multiply(growth_rate, years)), 100)
-  let final_amount = add(initial_amount, total_growth)
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
   
-  assert_eq(700, total_growth)
-  assert_eq(1700, final_amount)
+  assert_eq(left_side, right_side)
+  assert_eq(80, left_side)  // 8 * (6 + 4) = 80
 }
 
-test "enhanced_page_count_calculation" {
-  // 测试页面数量计算
-  let total_words = 8500
-  let words_per_page = 300
+test "financial_budget_planning" {
+  // 财务预算规划测试
+  let project_budget = 50000
+  let team_members = 8
+  let monthly_cost_per_member = 3500
+  let months_needed = divide_with_ceil(project_budget, multiply(team_members, monthly_cost_per_member))
   
-  let pages_needed = divide_with_ceil(total_words, words_per_page)
+  assert_eq(2, months_needed)
   
-  assert_eq(29, pages_needed)  // ceil(8500/300) = 29
+  // 验证总月成本
+  let total_monthly_cost = multiply(team_members, monthly_cost_per_member)
+  assert_eq(28000, total_monthly_cost)
+  
+  // 验证项目总成本
+  let total_project_cost = multiply(total_monthly_cost, months_needed)
+  assert_eq(56000, total_project_cost)
 }
 
-test "enhanced_batch_processing" {
-  // 测试批处理计算
-  let total_items = 157
-  let batch_size = 25
+test "complex_workflow_sequential_operations" {
+  // 复杂工作流顺序操作测试
+  let initial_value = 12
   
-  let full_batches = divide_with_ceil(total_items, batch_size)
-  let remainder = total_items % batch_size
-  let last_batch_size = if remainder == 0 {
-    batch_size
-  } else {
-    remainder
-  }
+  // 操作序列: ((initial * 3) + 15) / 5
+  let step1 = multiply(initial_value, 3)
+  let step2 = add(step1, 15)
+  let final_result = divide_with_ceil(step2, 5)
   
-  assert_eq(7, full_batches)
-  assert_eq(7, last_batch_size)
+  assert_eq(11, final_result)  // ceil((12*3 + 15)/5) = ceil(51/5) = 11
 }
 
-test "enhanced_geometric_progression" {
-  // 测试等比数列：2, 6, 18, 54, 162
-  let first_term = 2
-  let ratio = 3
+test "error_handling_edge_cases" {
+  // 错误处理边界情况测试
+  // 除零情况的全面测试
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(1000000, 0))
   
-  // 手动计算等比数列前5项的和
-  let term1 = first_term
-  let term2 = multiply(term1, ratio)
-  let term3 = multiply(term2, ratio)
-  let term4 = multiply(term3, ratio)
-  let term5 = multiply(term4, ratio)
-  
-  let sum = add(add(add(add(term1, term2), term3), term4), term5)
-  
-  assert_eq(242, sum)
+  // 极值运算测试
+  assert_eq(0, multiply(0, 1000000))
+  assert_eq(0, multiply(0, -1000000))
+  assert_eq(1000000, add(1000000, 0))
+  assert_eq(-1000000, add(-1000000, 0))
 }
 
-test "enhanced_string_template_processing" {
-  // 测试字符串模板处理
-  let user_name = "Alice"
-  let action = "completed"
-  let task_name = "project"
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_tasks = 95
+  let team_size = 6
+  let working_days = 5
+  let tasks_per_day_per_person = 3
   
-  // 使用现有的 greet 函数来模拟字符串模板
-  let template_result = greet(user_name + " " + action + " " + task_name)
+  // 计算团队日处理能力
+  let daily_capacity = multiply(team_size, tasks_per_day_per_person)
   
-  assert_eq_string("Hello, Alice completed project!", template_result)
-}
-
-test "enhanced_resource_utilization" {
-  // 测试资源利用率计算
-  let total_capacity = 1000
-  let used_capacity = 753
+  // 计算团队周处理能力
+  let weekly_capacity = multiply(daily_capacity, working_days)
   
-  let utilization_percentage = divide_with_ceil(multiply(used_capacity, 100), total_capacity)
-  let remaining_capacity = add(total_capacity, -used_capacity)
+  // 计算需要的周数
+  let weeks_needed = divide_with_ceil(total_tasks, weekly_capacity)
   
-  assert_eq(75, utilization_percentage)
-  assert_eq(247, remaining_capacity)
+  assert_eq(18, daily_capacity)   // 6 * 3 = 18
+  assert_eq(90, weekly_capacity)  // 18 * 5 = 90
+  assert_eq(2, weeks_needed)      // ceil(95/90) = 2
 }
