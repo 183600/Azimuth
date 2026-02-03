@@ -182,6 +182,7 @@
         "my_test_copy.mbt",
         "azimuth_comprehensive_quality_test.mbt",
         "azimuth_comprehensive_test_suite.mbt",
+        "azimuth_comprehensive_test_cases.mbt",
         "high_quality_test_suite.mbt",
         "standard_test_cases_new.mbt",
         "quality_standard_tests.mbt",
