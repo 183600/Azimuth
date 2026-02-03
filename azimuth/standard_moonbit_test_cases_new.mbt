@@ -1,5 +1,5 @@
-// 标准 MoonBit 测试用例 - 新增10个高质量测试用例
-// 使用标准 MoonBit 测试语法
+// 标准 MoonBit 测试用例 - 为 Azimuth 项目添加
+// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
 
 test "basic_addition_functionality" {
   // 基本加法功能测试
@@ -75,8 +75,8 @@ test "business_packaging_scenario" {
   assert_eq(5, remaining_space)
 }
 
-test "complex_calculation_workflow" {
-  // 复杂计算工作流测试
+test "complex_workflow_calculation" {
+  // 复杂工作流计算测试
   // 场景：项目资源计算
   let team_members = 6
   let tasks_per_member = 8
