@@ -1,92 +1,109 @@
-// 新增的标准 MoonBit 测试用例
-// 针对 azimuth 库的核心功能进行补充测试
+// 新的标准 MoonBit 测试用例
+// 针对 azimuth 库的核心功能进行测试
 
-test "emoji_greeting_test" {
-  // 测试包含 Emoji 的问候
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
+test "add_function_basic_test" {
+  // 测试基本加法功能
+  assert_eq(10, add(3, 7))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(100, add(40, 60))
+}
+
+test "multiply_function_comprehensive_test" {
+  // 测试乘法功能的多种情况
+  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(0, 10))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(6, multiply(-2, -3))
+  assert_eq(100, multiply(10, 10))
+}
+
+test "subtract_function_edge_cases_test" {
+  // 测试减法功能的边界情况
+  assert_eq(5, subtract(8, 3))
+  assert_eq(-5, subtract(3, 8))
+  assert_eq(0, subtract(10, 10))
+  assert_eq(10, subtract(0, -10))
+  assert_eq(-10, subtract(-10, 0))
+}
+
+test "divide_with_ceil_precision_test" {
+  // 测试向上取整除法的精度
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(0, divide_with_ceil(5, 0))
+}
+
+test "greet_function_international_test" {
+  // 测试问候函数的国际化支持
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
   assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
 
-test "extreme_values_test" {
-  // 测试极端值的向上取整除法
-  assert_eq(2147483647, divide_with_ceil(2147483647, 1))
-  assert_eq(0, divide_with_ceil(100, 0))
+test "mathematical_properties_test" {
+  // 测试数学性质
+  let a = 7
+  let b = 13
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 零元素性质
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, add(a, 0))
 }
 
-test "math_series_test" {
-  // 测试数学级数求和
-  let n = 10
-  let sum_formula = divide_with_ceil(multiply(n, add(n, 1)), 2)
-  assert_eq(55, sum_formula)
+test "business_calculation_scenario_test" {
+  // 测试实际业务计算场景
+  let unit_price = 25
+  let quantity = 8
+  let shipping = 15
+  let discount = 20
+  
+  let subtotal = multiply(unit_price, quantity)
+  let total_before_discount = add(subtotal, shipping)
+  let final_total = add(total_before_discount, -discount)
+  
+  assert_eq(200, subtotal)
+  assert_eq(215, total_before_discount)
+  assert_eq(195, final_total)
 }
 
-test "business_calculation_test" {
-  // 测试商业利润计算
-  let revenue = 50000
-  let costs = 32000
-  let profit_before_tax = add(revenue, -costs)
-  assert_eq(18000, profit_before_tax)
+test "packaging_calculation_test" {
+  // 测试包装计算场景
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  
+  assert_eq(5, boxes_needed)
+  
+  // 计算剩余空间
+  let total_capacity = multiply(boxes_needed, items_per_box)
+  let remaining_space = subtract(total_capacity, total_items)
+  
+  assert_eq(30, total_capacity)
+  assert_eq(5, remaining_space)
 }
 
-test "coordinate_distance_test" {
-  // 测试曼哈顿距离计算
-  let x1 = 3
-  let y1 = 7
-  let x2 = 10
-  let y2 = 2
-  let x_distance = if x2 > x1 { add(x2, -x1) } else { add(x1, -x2) }
-  let y_distance = if y2 > y1 { add(y2, -y1) } else { add(y1, -y2) }
-  let manhattan_distance = add(x_distance, y_distance)
-  assert_eq(12, manhattan_distance)
-}
-
-test "time_conversion_test" {
-  // 测试时区转换计算
-  let local_time = 14
-  let time_difference = -8
-  let target_time = add(local_time, time_difference)
-  let adjusted_time = if target_time < 0 {
-    add(target_time, 24)
-  } else {
-    target_time
-  }
-  assert_eq(6, adjusted_time)
-}
-
-test "array_index_test" {
-  // 测试数组索引计算
-  let buffer_size = 8
-  let current_index = 6
-  let offset = 5
-  let raw_index = add(current_index, offset)
-  let new_index = raw_index - multiply(buffer_size, divide_with_ceil(raw_index, buffer_size))
-  assert_eq(3, new_index)
-}
-
-test "digital_root_test" {
-  // 测试数字根计算
-  let number = 9876
-  let thousands = divide_with_ceil(number, 1000)
-  let remainder_after_thousands = add(number, -multiply(thousands, 1000))
-  let hundreds = divide_with_ceil(remainder_after_thousands, 100)
-  let digit_sum = add(add(add(thousands, hundreds), 7), 6)
-  assert_eq(30, digit_sum)
-}
-
-test "compound_interest_test" {
-  // 测试简单复利计算
-  let principal = 1000
-  let rate_percent = 5
-  let year1_interest = divide_with_ceil(multiply(principal, rate_percent), 100)
-  let year1_total = add(principal, year1_interest)
-  assert_eq(1050, year1_total)
-}
-
-test "temperature_conversion_test" {
-  // 测试温度转换
-  let celsius = 25
-  let multiplied = multiply(celsius, 9)
-  let divided = divide_with_ceil(multiplied, 5)
-  let fahrenheit = add(divided, 32)
-  assert_eq(77, fahrenheit)
+test "complex_arithmetic_expression_test" {
+  // 测试复杂算术表达式
+  let x = 10
+  let y = 15
+  let z = 20
+  
+  // 测试 (x + y) * z
+  let result1 = multiply(add(x, y), z)
+  assert_eq(500, result1)  // (10 + 15) * 20 = 25 * 20 = 500
+  
+  // 测试 x * y + z
+  let result2 = add(multiply(x, y), z)
+  assert_eq(170, result2)  // 10 * 15 + 20 = 150 + 20 = 170
 }
