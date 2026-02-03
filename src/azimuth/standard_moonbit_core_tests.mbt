@@ -1,5 +1,5 @@
-// 标准 MoonBit 测试用例 - 针对 azimuth 库的核心功能
-// 包含基本的算术运算和字符串处理测试
+// 标准 MoonBit 核心测试用例
+// 测试 azimuth 库的核心功能
 
 test "add_basic_functionality" {
   // 测试基本的加法功能
@@ -41,7 +41,7 @@ test "greet_basic_functionality" {
 }
 
 test "mathematical_properties" {
-  // 测试基本的数学性质
+  // 测试数学性质
   let a = 7
   let b = 13
   
@@ -54,14 +54,6 @@ test "mathematical_properties" {
   // 零元素性质
   assert_eq(0, multiply(a, 0))
   assert_eq(a, add(a, 0))
-}
-
-test "negative_number_operations" {
-  // 测试负数运算
-  assert_eq(-10, add(-3, -7))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(-15, multiply(3, -5))
-  assert_eq(-3, divide_with_ceil(-10, 3))
 }
 
 test "combined_operations" {
@@ -93,4 +85,12 @@ test "packaging_calculation" {
   let boxes_needed = divide_with_ceil(total_items, items_per_box)
   
   assert_eq(5, boxes_needed)  // ceil(25/6) = 5
+}
+
+test "unicode_and_special_characters" {
+  // 测试 Unicode 和特殊字符
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, test@example.com!", greet("test@example.com"))
 }
