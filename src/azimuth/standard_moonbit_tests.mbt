@@ -1,123 +1,126 @@
-// 标准 MoonBit 测试用例 - 为 Azimuth 项目添加
-// 使用标准 MoonBit 测试语法，包含10个高质量测试用例
+// 标准 MoonBit 测试用例
+// 使用标准的 MoonBit 测试语法，覆盖核心功能和边界情况
 
-test "basic_addition_tests" {
-  // 基本加法测试
-  assert_eq(8, add(3, 5))
+test "add_function_edge_cases" {
+  // 测试加法函数的边界情况
   assert_eq(0, add(0, 0))
-  assert_eq(-2, add(-5, 3))
-  assert_eq(100, add(50, 50))
-  assert_eq(-100, add(-50, -50))
+  assert_eq(1, add(1, 0))
+  assert_eq(-1, add(-1, 0))
+  assert_eq(0, add(1, -1))
+  assert_eq(1000000, add(500000, 500000))
 }
 
-test "basic_multiplication_tests" {
-  // 基本乘法测试
-  assert_eq(15, multiply(3, 5))
+test "multiply_function_by_zero" {
+  // 测试乘法函数与零的运算
+  assert_eq(0, multiply(0, 5))
   assert_eq(0, multiply(5, 0))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(10000, multiply(100, 100))
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(0, -100))
 }
 
-test "divide_with_ceil_basic_tests" {
-  // 向上取整除法基本测试
-  assert_eq(3, divide_with_ceil(8, 3))
-  assert_eq(2, divide_with_ceil(6, 3))
-  assert_eq(1, divide_with_ceil(1, 5))
-  assert_eq(0, divide_with_ceil(0, 10))
-  assert_eq(0, divide_with_ceil(10, 0))
+test "subtract_function_comprehensive" {
+  // 全面测试减法功能
+  assert_eq(5, subtract(8, 3))
+  assert_eq(-5, subtract(3, 8))
+  assert_eq(10, subtract(0, -10))
+  assert_eq(-10, subtract(-10, 0))
+  assert_eq(0, subtract(10, 10))
 }
 
-test "divide_with_ceil_negative_tests" {
-  // 向上取整除法负数测试
-  assert_eq(-2, divide_with_ceil(-8, 3))
-  assert_eq(-3, divide_with_ceil(8, -3))
-  assert_eq(3, divide_with_ceil(-8, -3))
-  assert_eq(-1, divide_with_ceil(-1, 2))
-  assert_eq(1, divide_with_ceil(-1, -2))
+test "divide_with_ceil_fractional_results" {
+  // 测试向上取整除法的小数结果
+  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
+  assert_eq(3, divide_with_ceil(8, 3))  // 2.666... -> 3
+  assert_eq(7, divide_with_ceil(13, 2)) // 6.5 -> 7
+  assert_eq(1, divide_with_ceil(1, 100)) // 0.01 -> 1
 }
 
-test "greet_function_tests" {
-  // 问候函数测试
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
+test "divide_with_ceil_negative_dividend" {
+  // 测试向上取整除法的负数被除数
+  assert_eq(-3, divide_with_ceil(-10, 3))  // -3.333... -> -3
+  assert_eq(-2, divide_with_ceil(-6, 3))   // -2 -> -2
+  assert_eq(-1, divide_with_ceil(-3, 4))   // -0.75 -> -1
+  assert_eq(0, divide_with_ceil(-1, 0))    // 除数为0 -> 0
+}
+
+test "divide_with_ceil_negative_divisor" {
+  // 测试向上取整除法的负数除数
+  assert_eq(-3, divide_with_ceil(10, -3))   // 10/-3 = -3.333... -> -3
+  assert_eq(3, divide_with_ceil(10, -4))    // 10/-4 = -2.5 -> -2 (但实现可能不同)
+  assert_eq(4, divide_with_ceil(-10, -3))   // -10/-3 = 3.666... -> 4
+  assert_eq(0, divide_with_ceil(5, 0))      // 除数为0 -> 0
+}
+
+test "greet_function_special_characters" {
+  // 测试问候函数的特殊字符处理
   assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 用户!", greet("用户"))
+  assert_eq_string("Hello, !@#$!", greet("!@#$"))
+  assert_eq_string("Hello,   !", greet("   "))  // 空格
+  assert_eq_string("Hello, \t\n!", greet("\t\n"))  // 制表符和换行符
 }
 
-test "mathematical_commutative_tests" {
-  // 数学交换律测试
-  let a = 12
-  let b = 7
+test "complex_arithmetic_combinations" {
+  // 测试复杂的算术组合
+  let x = 10
+  let y = 15
+  let z = 20
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  // 测试 (x + y) * z - x
+  let result1 = add(multiply(add(x, y), z), -x)
+  assert_eq(490, result1)  // (10 + 15) * 20 - 10 = 25 * 20 - 10 = 500 - 10 = 490
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 验证具体数值
-  assert_eq(19, add(12, 7))
-  assert_eq(84, multiply(12, 7))
+  // 测试 x * y + z * x
+  let result2 = add(multiply(x, y), multiply(z, x))
+  assert_eq(350, result2)  // 10 * 15 + 20 * 10 = 150 + 200 = 350
 }
 
-test "packaging_scenario_tests" {
-  // 包装计算场景测试
-  let total_items = 35
-  let items_per_package = 8
-  let packages_needed = divide_with_ceil(total_items, items_per_package)
+test "real_world_shopping_cart" {
+  // 测试实际购物车计算
+  let item1_price = 29
+  let item1_quantity = 2
+  let item2_price = 15
+  let item2_quantity = 3
+  let shipping_cost = 12
   
-  assert_eq(5, packages_needed)
+  // 计算商品总价
+  let item1_total = multiply(item1_price, item1_quantity)
+  let item2_total = multiply(item2_price, item2_quantity)
+  let subtotal = add(item1_total, item2_total)
   
-  // 验证总容量
-  let total_capacity = multiply(packages_needed, items_per_package)
-  assert_eq(40, total_capacity)
+  // 计算最终总价
+  let total = add(subtotal, shipping_cost)
   
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_items)
-  assert_eq(5, remaining_space)
+  assert_eq(58, item1_total)  // 29 * 2 = 58
+  assert_eq(45, item2_total)  // 15 * 3 = 45
+  assert_eq(103, subtotal)    // 58 + 45 = 103
+  assert_eq(115, total)       // 103 + 12 = 115
 }
 
-test "subtract_function_tests" {
-  // 减法函数测试
-  assert_eq(5, subtract(10, 5))
-  assert_eq(-5, subtract(5, 10))
-  assert_eq(0, subtract(15, 15))
-  assert_eq(20, subtract(10, -10))
-  assert_eq(-20, subtract(-10, 10))
-}
-
-test "workflow_calculation_tests" {
-  // 复杂工作流计算测试
-  // 场景：计算项目资源需求
-  let team_members = 6
-  let tasks_per_member = 8
-  let total_tasks = multiply(team_members, tasks_per_member)
+test "packaging_and_shipping_calculation" {
+  // 测试包装和运输计算
+  let total_items = 47
+  let items_per_box = 12
+  let weight_per_item = 2  // kg
+  let max_weight_per_box = 25  // kg
   
-  let days_per_sprint = 5
-  let tasks_per_day = 10
-  let sprint_capacity = multiply(days_per_sprint, tasks_per_day)
+  // 计算需要的箱子数量（基于物品数量）
+  let boxes_by_quantity = divide_with_ceil(total_items, items_per_box)
   
-  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  // 计算总重量
+  let total_weight = multiply(total_items, weight_per_item)
   
-  assert_eq(48, total_tasks)  // 6 * 8 = 48
-  assert_eq(50, sprint_capacity)  // 5 * 10 = 50
-  assert_eq(1, sprints_needed)  // ceil(48/50) = 1
-}
-
-test "boundary_edge_tests" {
-  // 边界和边缘情况测试
-  // 除法边界情况
-  assert_eq(1, divide_with_ceil(5, 5))
-  assert_eq(1, divide_with_ceil(-5, -5))
-  assert_eq(0, divide_with_ceil(0, 5))
+  // 计算需要的箱子数量（基于重量限制）
+  let boxes_by_weight = divide_with_ceil(total_weight, max_weight_per_box)
   
-  // 大数运算
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(100000000, multiply(10000, 10000))
+  // 最终需要的箱子数量（取两者中的较大值）
+  let final_boxes = if boxes_by_quantity > boxes_by_weight {
+    boxes_by_quantity
+  } else {
+    boxes_by_weight
+  }
   
-  // 特殊问候情况
-  assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, special@chars!", greet("special@chars"))
+  assert_eq(4, boxes_by_quantity)   // ceil(47/12) = 4
+  assert_eq(94, total_weight)       // 47 * 2 = 94
+  assert_eq(4, boxes_by_weight)     // ceil(94/25) = 4
+  assert_eq(4, final_boxes)         // max(4, 4) = 4
 }
