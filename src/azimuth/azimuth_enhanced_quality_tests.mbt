@@ -1,166 +1,235 @@
-// 高质量 MoonBit 测试用例
-// 针对 azimuth 库的高级功能和边界情况测试
+// Azimuth 项目高质量增强测试用例
+// 使用标准的 MoonBit 测试语法，专注于边界值和实际应用场景
 
-test "extreme_numerical_boundary_tests" {
-  // 极端数值边界测试
-  let max_int = 2147483647
-  let min_int = -2147483648
-  
-  // 测试接近最大值的运算
-  assert_eq(2147483646, add(max_int - 1, 1))
-  assert_eq(-2147483647, add(min_int + 1, -1))
-  
-  // 极端除法情况
-  assert_eq(1, divide_with_ceil(max_int, max_int))
-  assert_eq(0, divide_with_ceil(min_int, max_int))
-  assert_eq(-1, divide_with_ceil(min_int, max_int - 1))
+test "extreme_boundary_values_test" {
+  // 测试极端边界值
+  assert_eq(2147483647, add(2147483646, 1))  // 接近Int最大值
+  assert_eq(-2147483647, add(-2147483646, -1))  // 接近Int最小值
+  assert_eq(0, add(2147483647, -2147483647))  // 最大值与相反数相加
+  assert_eq(1, divide_with_ceil(2147483647, 2147483647))  // 大数相除
 }
 
-test "complex_mathematical_expressions" {
-  // 复杂数学表达式测试
-  let x = 12
-  let y = 8
-  let z = 5
-  
-  // 测试嵌套表达式：(x + y) * z - (x / y)
-  let complex_result = add(multiply(add(x, y), z), -divide_with_ceil(x, y))
-  assert_eq(99, complex_result)  // (12 + 8) * 5 - ceil(12/8) = 20 * 5 - 2 = 100 - 2 = 98
-  
-  // 测试分配律验证：x * (y + z) = x * y + x * z
-  let distributive_left = multiply(x, add(y, z))
-  let distributive_right = add(multiply(x, y), multiply(x, z))
-  assert_eq(distributive_left, distributive_right)  // 12 * (8 + 5) = 12 * 8 + 12 * 5 = 156
-}
-
-test "string_processing_edge_cases" {
-  // 字符串处理边界情况测试
-  // 测试各种特殊字符和边界情况
-  assert_eq_string("Hello, \n\t\r!", greet("\n\t\r"))
-  assert_eq_string("Hello, 🌟🌙🌍!", greet("🌟🌙🌍"))
-  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
-  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))
-  assert_eq_string("Hello, 'single'!", greet("'single'"))
-  
-  // 测试长字符串
-  let long_name = "ThisIsAVeryLongNameThatMightBeUsedInSomeRealWorldApplicationScenario"
-  assert_eq_string("Hello, " + long_name + "!", greet(long_name))
-}
-
-test "performance_simulation_large_numbers" {
-  // 性能模拟测试：大量数据处理
-  let base_value = 1000
-  let iteration_count = 100
-  let multiplier = 7
-  
-  // 模拟循环累加计算
-  let total_sum = multiply(base_value, iteration_count)
-  let adjusted_total = add(total_sum, multiply(multiplier, divide_with_ceil(iteration_count, 10)))
-  
-  assert_eq(100000, total_sum)
-  assert_eq(100070, adjusted_total)
-}
-
-test "financial_calculation_scenario" {
-  // 金融计算场景：复利和投资回报
-  let principal = 10000
-  let rate_percent = 8
+test "complex_financial_calculation_test" {
+  // 复杂金融计算场景：投资回报计算
+  let initial_investment = 10000
+  let annual_return_rate = 8
   let years = 3
+  let monthly_contribution = 500
   
-  // 简化的复利计算（每年计算一次）
-  let year1_amount = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, rate_percent), 100))
-  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, rate_percent), 100))
+  // 计算总投资
+  let total_contributions = multiply(monthly_contribution, 12)
+  let total_invested = add(initial_investment, multiply(total_contributions, years))
   
-  // 验证投资增长
-  assert_eq(10800, year1_amount)  // 10000 + 800
-  assert_eq(11664, year2_amount)  // 10800 + 864
-  assert_eq(12597, year3_amount)  // 11664 + 933
+  // 计算年回报（简化）
+  let year1_return = add(initial_investment, divide_with_ceil(multiply(initial_investment, annual_return_rate), 100))
+  let year2_return = add(year1_return, divide_with_ceil(multiply(year1_return, annual_return_rate), 100))
+  let year3_return = add(year2_return, divide_with_ceil(multiply(year2_return, annual_return_rate), 100))
+  
+  assert_eq(28000, total_invested)
+  assert_eq(10800, year1_return)
+  assert_eq(11664, year2_return)
+  assert_eq(12597, year3_return)
 }
 
-test "scientific_calculation_simulation" {
-  // 科学计算模拟：物理公式计算
-  let mass = 100
-  let acceleration = 9
-  let time = 5
+test "advanced_mathematical_series_test" {
+  // 高等数学级数计算：斐波那契数列性质
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = add(fib1, fib2)
+  let fib4 = add(fib2, fib3)
+  let fib5 = add(fib3, fib4)
+  let fib6 = add(fib4, fib5)
   
-  // 计算力：F = m * a
-  let force = multiply(mass, acceleration)
+  // 验证斐波那契性质
+  assert_eq(2, fib3)
+  assert_eq(3, fib4)
+  assert_eq(5, fib5)
+  assert_eq(8, fib6)
   
-  // 计算距离：s = 0.5 * a * t² (简化为整数计算)
-  let distance = divide_with_ceil(multiply(acceleration, multiply(time, time)), 2)
-  
-  // 计算功：W = F * s
-  let work = multiply(force, distance)
-  
-  assert_eq(900, force)
-  assert_eq(113, distance)  // ceil(9 * 25 / 2) = ceil(225 / 2) = 113
-  assert_eq(101700, work)
+  // 验证黄金比例近似（简化）
+  let ratio_approx = divide_with_ceil(multiply(fib6, 100), fib5)
+  assert_eq(160, ratio_approx)  // 8/5 ≈ 1.6，即160%
 }
 
-test "algorithm_complexity_simulation" {
-  // 算法复杂度模拟：O(n²) 操作
-  let n = 20
-  let constant_factor = 3
+test "real_world_logistics_calculation_test" {
+  // 物流计算：仓库存储优化
+  let warehouse_capacity = 1000
+  let item_volume = 27
+  let items_per_pallet = 4
+  let safety_stock_percentage = 15
   
-  // 模拟 O(n²) 算法的操作次数
-  let operations = multiply(n, n)
-  let adjusted_operations = add(multiply(operations, constant_factor), divide_with_ceil(n, 2))
+  // 计算可存储的托盘数量
+  let pallets_capacity = divide_with_ceil(warehouse_capacity, multiply(item_volume, items_per_pallet))
   
-  assert_eq(400, operations)
-  assert_eq(1210, adjusted_operations)
+  // 计算安全库存
+  let safety_stock = divide_with_ceil(multiply(warehouse_capacity, safety_stock_percentage), 100)
+  
+  // 计算可用存储空间
+  let usable_capacity = subtract(warehouse_capacity, safety_stock)
+  let usable_pallets = divide_with_ceil(usable_capacity, multiply(item_volume, items_per_pallet))
+  
+  assert_eq(10, pallets_capacity)
+  assert_eq(150, safety_stock)
+  assert_eq(850, usable_capacity)
+  assert_eq(8, usable_pallets)
 }
 
-test "resource_allocation_optimization" {
-  // 资源分配优化问题
-  let total_resources = 1000
-  let project_requirements = [150, 200, 175, 125, 180]
-  
-  // 计算总需求
-  let total_requirement = add(add(add(add(project_requirements[0], project_requirements[1]), project_requirements[2]), project_requirements[3]), project_requirements[4])
-  
-  // 计算剩余资源
-  let remaining_resources = add(total_resources, -total_requirement)
-  
-  // 计算可以支持的小项目数量（每个小项目需要80单位资源）
-  let small_projects_supported = divide_with_ceil(remaining_resources, 80)
-  
-  assert_eq(830, total_requirement)
-  assert_eq(170, remaining_resources)
-  assert_eq(3, small_projects_supported)
-}
-
-test "data_structure_simulation" {
-  // 数据结构模拟：栈操作
-  let initial_stack_size = 0
-  let push_operations = 15
-  let pop_operations = 8
-  
-  // 模拟栈操作
-  let after_push = add(initial_stack_size, push_operations)
-  let final_stack_size = add(after_push, -pop_operations)
-  
-  // 计算栈扩容次数（每10个元素需要扩容一次）
-  let resize_count = divide_with_ceil(after_push, 10)
-  
-  assert_eq(15, after_push)
-  assert_eq(7, final_stack_size)
-  assert_eq(2, resize_count)
-}
-
-test "error_handling_robustness" {
+test "error_handling_robustness_test" {
   // 错误处理健壮性测试
-  // 测试各种异常输入情况
-  
-  // 除数为零的多种情况
-  assert_eq(0, divide_with_ceil(0, 0))
+  // 测试除数为零的各种情况
   assert_eq(0, divide_with_ceil(100, 0))
   assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  assert_eq(0, divide_with_ceil(-2147483647, 0))
   
-  // 极端数值组合
-  let extreme_sum = add(2147483647, -2147483647)
-  let extreme_product = multiply(2147483647, 0)
+  // 测试零值运算
+  assert_eq(0, multiply(0, 2147483647))
+  assert_eq(0, multiply(2147483647, 0))
+  assert_eq(0, multiply(0, -2147483647))
+  assert_eq(0, multiply(-2147483647, 0))
+}
+
+test "unicode_and_internationalization_test" {
+  // Unicode 和国际化测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌍!", greet("🌍"))
+  assert_eq_string("Hello, Café!", greet("Café"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, 🚀🌟!", greet("🚀🌟"))
+  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+  assert_eq_string("Hello, 🏢🏭!", greet("🏢🏭"))
+}
+
+test "performance_benchmark_simulation_test" {
+  // 性能基准测试模拟
+  let base_operations = 10000
+  let optimization_factor = 3
+  let overhead_percentage = 12
+  let parallel_tasks = 4
   
-  assert_eq(0, extreme_sum)
-  assert_eq(0, extreme_product)
+  // 计算优化后的操作数
+  let optimized_operations = multiply(base_operations, optimization_factor)
+  
+  // 计算并行处理后的总操作
+  let parallel_operations = multiply(optimized_operations, parallel_tasks)
+  
+  // 计算开销
+  let overhead = divide_with_ceil(multiply(parallel_operations, overhead_percentage), 100)
+  
+  // 计算实际性能
+  let actual_performance = subtract(parallel_operations, overhead)
+  
+  // 计算性能提升倍数
+  let performance_improvement = divide_with_ceil(actual_performance, base_operations)
+  
+  assert_eq(30000, optimized_operations)
+  assert_eq(120000, parallel_operations)
+  assert_eq(14400, overhead)
+  assert_eq(105600, actual_performance)
+  assert_eq(11, performance_improvement)
+}
+
+test "scientific_computation_test" {
+  // 科学计算测试：物理公式模拟
+  let initial_velocity = 10  // m/s
+  let acceleration = 3      // m/s²
+  let time_seconds = 5      // s
+  
+  // 计算最终速度：v = u + at
+  let final_velocity = add(initial_velocity, multiply(acceleration, time_seconds))
+  
+  // 计算位移：s = ut + 0.5at²（简化为整数计算）
+  let displacement = add(multiply(initial_velocity, time_seconds), 
+                         divide_with_ceil(multiply(acceleration, multiply(time_seconds, time_seconds)), 2))
+  
+  // 计算动能：KE = 0.5mv²（假设质量为2kg）
+  let mass = 2
+  let kinetic_energy = divide_with_ceil(multiply(mass, multiply(final_velocity, final_velocity)), 2)
+  
+  assert_eq(25, final_velocity)
+  assert_eq(62, displacement)
+  assert_eq(625, kinetic_energy)
+}
+
+test "data_analysis_statistics_test" {
+  // 数据分析统计测试
+  let data_points = [15, 22, 18, 25, 20, 17, 23, 19, 21, 16]
+  let data_count = 10
+  
+  // 计算总和（手动累加）
+  let sum = add(add(add(add(add(add(add(add(add(15, 22), 18), 25), 20), 17), 23), 19), 21), 16)
+  
+  // 计算平均值（向上取整）
+  let average = divide_with_ceil(sum, data_count)
+  
+  // 计算中位数（排序后的中间值）
+  let median = 19  // 已排序：15, 16, 17, 18, 19, 20, 21, 22, 23, 25
+  
+  // 计算范围
+  let min_val = 15
+  let max_val = 25
+  let range = subtract(max_val, min_val)
+  
+  // 计算方差（简化计算）
+  let variance_approx = divide_with_ceil(multiply(range, range), 4)
+  
+  assert_eq(196, sum)
+  assert_eq(20, average)
+  assert_eq(19, median)
+  assert_eq(10, range)
+  assert_eq(25, variance_approx)
+}
+
+test "comprehensive_business_workflow_test" {
+  // 综合业务工作流测试：电商订单处理
+  let product_a_price = 89
+  let product_a_qty = 2
+  let product_b_price = 45
+  let product_b_qty = 3
+  let product_c_price = 120
+  let product_c_qty = 1
+  
+  let tax_rate = 8
+  let shipping_base = 15
+  let weight_per_item = 2
+  let weight_threshold = 10
+  let extra_shipping = 5
+  
+  // 计算商品小计
+  let subtotal_a = multiply(product_a_price, product_a_qty)
+  let subtotal_b = multiply(product_b_price, product_b_qty)
+  let subtotal_c = multiply(product_c_price, product_c_qty)
+  let subtotal = add(add(subtotal_a, subtotal_b), subtotal_c)
+  
+  // 计算总重量
+  let total_weight = add(add(multiply(product_a_qty, weight_per_item), 
+                            multiply(product_b_qty, weight_per_item)), 
+                        multiply(product_c_qty, weight_per_item))
+  
+  // 计算运费
+  let base_shipping_cost = shipping_base
+  let additional_shipping = if total_weight > weight_threshold { 
+    extra_shipping 
+  } else { 
+    0 
+  }
+  let total_shipping = add(base_shipping_cost, additional_shipping)
+  
+  // 计算税费
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  
+  // 计算订单总价
+  let total_order_value = add(add(subtotal, total_shipping), tax_amount)
+  
+  // 验证计算结果
+  assert_eq(178, subtotal_a)    // 89 * 2
+  assert_eq(135, subtotal_b)    // 45 * 3
+  assert_eq(120, subtotal_c)    // 120 * 1
+  assert_eq(433, subtotal)      // 178 + 135 + 120
+  assert_eq(12, total_weight)   // 2*2 + 3*2 + 1*2
+  assert_eq(20, total_shipping) // 15 + 5 (超重)
+  assert_eq(35, tax_amount)     // ceil(433 * 8 / 100)
+  assert_eq(488, total_order_value) // 433 + 20 + 35
 }

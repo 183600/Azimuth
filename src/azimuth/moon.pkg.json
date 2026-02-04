@@ -577,4 +577,6 @@
     "enhanced_azimuth_core_tests.mbt",
             "standard_moonbit_core_tests.mbt",
             "user_added_comprehensive_tests.mbt",
-            "enhanced_lib_test.mbt"                                                                                                                                           ]}
+            "enhanced_lib_test.mbt",
+    "azimuth_enhanced_quality_tests.mbt",
+    "azimuth_simple_quality_tests.mbt"                                                                                                                                           ]}
