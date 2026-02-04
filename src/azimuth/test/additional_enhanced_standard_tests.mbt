@@ -1,4 +1,4 @@
-// 额外的标准 MoonBit 测试用例
+// 额外的增强标准 MoonBit 测试用例
 // 针对 azimuth 库的核心功能添加的高质量测试
 
 test "subtract_function_comprehensive" {
@@ -34,7 +34,7 @@ test "complex_nested_calculations" {
     @azimuth.multiply(@azimuth.add(x, y), z), 
     -@azimuth.divide_with_ceil(x, y)
   )
-  @azimuth.assert_eq(99, result)  // (12 + 8) * 5 - ceil(12/8) = 20*5 - 2 = 100 - 2 = 98
+  @azimuth.assert_eq(98, result)  // (12 + 8) * 5 - ceil(12/8) = 20*5 - 2 = 100 - 2 = 98
 }
 
 test "resource_allocation_optimization" {
@@ -78,13 +78,9 @@ test "time_management_workflow" {
 
 test "data_analysis_statistics" {
   // 数据分析统计测试
-  let data_points = [15, 22, 18, 25, 20, 16, 24]
   let sum_manual = @azimuth.add(@azimuth.add(@azimuth.add(15, 22), @azimuth.add(18, 25)), @azimuth.add(@azimuth.add(20, 16), 24))
   let count = 7
   let average = @azimuth.divide_with_ceil(sum_manual, count)
-  
-  // 计算方差（简化版）
-  let variance_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.multiply(15 - average, 15 - average), @azimuth.multiply(22 - average, 22 - average)), @azimuth.add(@azimuth.multiply(18 - average, 18 - average), @azimuth.multiply(25 - average, 25 - average))), @azimuth.add(@azimuth.multiply(20 - average, 20 - average), @azimuth.add(@azimuth.multiply(16 - average, 16 - average), @azimuth.multiply(24 - average, 24 - average))))
   
   @azimuth.assert_eq(140, sum_manual)
   @azimuth.assert_eq(20, average)
@@ -137,7 +133,6 @@ test "financial_compound_interest" {
   // 金融复利计算测试
   let principal = 10000
   let annual_rate = 8  // 8%
-  let years = 3
   
   // 第一年
   let year1_interest = @azimuth.divide_with_ceil(@azimuth.multiply(principal, annual_rate), 100)
