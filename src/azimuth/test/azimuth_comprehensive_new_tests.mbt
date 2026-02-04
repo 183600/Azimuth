@@ -1,145 +1,162 @@
-// 新增的 MoonBit 测试用例 - 针对 azimuth 库的全面测试
-// 包含实际应用场景和边界情况测试
+// 综合测试用例 - Azimuth 库的新增测试
+// 使用标准 MoonBit 测试语法
 
-test "monthly_budget_calculator" {
-  // 月度预算计算测试
-  let income = 5000
-  let rent = 1500
-  let utilities = 200
-  let food = 600
-  let transportation = 300
-  let entertainment = 200
-  
-  // 计算总支出
-  let total_expenses = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(rent, utilities), food), transportation), entertainment)
-  
-  // 计算剩余预算
-  let remaining_budget = @azimuth.add(income, -total_expenses)
-  
-  @azimuth.assert_eq(2800, total_expenses)
-  @azimuth.assert_eq(2200, remaining_budget)
+test "add_function_comprehensive" {
+  // 全面测试加法功能
+  @azimuth.assert_eq(10, @azimuth.add(3, 7))
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(-5, @azimuth.add(-2, -3))
+  @azimuth.assert_eq(1000, @azimuth.add(500, 500))
+  @azimuth.assert_eq(0, @azimuth.add(100, -100))
+  @azimuth.assert_eq(2147483647, @azimuth.add(2147483646, 1))
 }
 
-test "inventory_reorder_calculation" {
-  // 库存重新订购计算测试
-  let current_stock = 150
-  let daily_sales = 12
-  let days_to_simulate = 7
-  
-  let total_sold = @azimuth.multiply(daily_sales, days_to_simulate)
-  let final_stock = @azimuth.add(current_stock, -total_sold)
-  
-  @azimuth.assert_eq(84, total_sold)
-  @azimuth.assert_eq(66, final_stock)
+test "multiply_function_edge_cases" {
+  // 测试乘法函数的边界情况
+  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 10))
+  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
+  @azimuth.assert_eq(6, @azimuth.multiply(-2, -3))
+  @azimuth.assert_eq(1, @azimuth.multiply(1, 2147483647))
+  @azimuth.assert_eq(-2147483647, @azimuth.multiply(-1, 2147483647))
 }
 
-test "project_resource_allocation" {
-  // 项目资源分配测试
-  let total_budget = 10000
-  let team_size = 8
-  let equipment_cost_per_person = 500
-  
-  let personnel_cost = @azimuth.multiply(team_size, equipment_cost_per_person)
-  let weekly_budget = @azimuth.divide_with_ceil(total_budget, 12)
-  let remaining_budget = @azimuth.add(total_budget, -personnel_cost)
-  
-  @azimuth.assert_eq(4000, personnel_cost)
-  @azimuth.assert_eq(833, weekly_budget)
-  @azimuth.assert_eq(6000, remaining_budget)
+test "subtract_function_validation" {
+  // 测试减法函数
+  @azimuth.assert_eq(5, @azimuth.subtract(8, 3))
+  @azimuth.assert_eq(-5, @azimuth.subtract(3, 8))
+  @azimuth.assert_eq(0, @azimuth.subtract(10, 10))
+  @azimuth.assert_eq(10, @azimuth.subtract(0, -10))
+  @azimuth.assert_eq(-10, @azimuth.subtract(-10, 0))
+  @azimuth.assert_eq(20, @azimuth.subtract(-5, -25))
 }
 
-test "data_processing_batch_calculation" {
-  // 数据处理批计算测试
-  let records_per_batch = 1000
-  let total_records = 7532
-  let processing_time_per_record = 2
-  let parallel_processes = 4
-  
-  let total_batches = @azimuth.divide_with_ceil(total_records, records_per_batch)
-  let total_processing_time = @azimuth.multiply(total_records, processing_time_per_record)
-  let parallel_processing_time = @azimuth.divide_with_ceil(total_processing_time, parallel_processes)
-  
-  @azimuth.assert_eq(8, total_batches)
-  @azimuth.assert_eq(15064, total_processing_time)
-  @azimuth.assert_eq(3766, parallel_processing_time)
+test "divide_with_ceil_comprehensive" {
+  // 全面测试向上取整除法
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(3, 2))
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(-10, -3))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(5, 0))
+  @azimuth.assert_eq(333334, @azimuth.divide_with_ceil(1000000, 3))
 }
 
-test "ecommerce_shipping_calculation" {
-  // 电子商务运输计算测试
-  let base_shipping_cost = 5
-  let weight_rate_per_kg = 2
-  let distance_rate_per_km = 1
-  let package_weight = 15
-  let shipping_distance = 120
-  
-  let weight_cost = @azimuth.multiply(package_weight, weight_rate_per_kg)
-  let distance_cost = @azimuth.multiply(shipping_distance, distance_rate_per_km)
-  let total_shipping_cost = @azimuth.add(@azimuth.add(base_shipping_cost, weight_cost), distance_cost)
-  
-  @azimuth.assert_eq(30, weight_cost)
-  @azimuth.assert_eq(120, distance_cost)
-  @azimuth.assert_eq(155, total_shipping_cost)
+test "greet_function_unicode_support" {
+  // 测试问候函数的 Unicode 支持
+  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
+  @azimuth.assert_eq_string("Hello, María!", @azimuth.greet("María"))
+  @azimuth.assert_eq_string("Hello, αβγ!", @azimuth.greet("αβγ"))
 }
 
-test "educational_grading_system" {
-  // 教育评分系统测试
-  let exam_score = 85
-  let assignment_score = 75
-  let project_score = 90
-  let participation_score = 80
+test "complex_business_calculations" {
+  // 复杂业务计算测试
+  let base_price = 120
+  let quantity = 15
+  let tax_rate = 8
+  let shipping_cost = 25
+  let discount = 50
   
-  let weighted_exam = @azimuth.multiply(exam_score, 40)
-  let weighted_assignment = @azimuth.multiply(assignment_score, 25)
-  let weighted_project = @azimuth.multiply(project_score, 25)
-  let weighted_participation = @azimuth.multiply(participation_score, 10)
+  // 计算小计
+  let subtotal = @azimuth.multiply(base_price, quantity)
+  @azimuth.assert_eq(1800, subtotal)
   
-  let total_weighted = @azimuth.add(@azimuth.add(@azimuth.add(weighted_exam, weighted_assignment), weighted_project), weighted_participation)
-  let final_grade = @azimuth.divide_with_ceil(total_weighted, 100)
+  // 计算税费
+  let tax = @azimuth.divide_with_ceil(@azimuth.multiply(subtotal, tax_rate), 100)
+  @azimuth.assert_eq(144, tax)
   
-  @azimuth.assert_eq(3400, weighted_exam)
-  @azimuth.assert_eq(1875, weighted_assignment)
-  @azimuth.assert_eq(2250, weighted_project)
-  @azimuth.assert_eq(800, weighted_participation)
-  @azimuth.assert_eq(8325, total_weighted)
-  @azimuth.assert_eq(83, final_grade)
+  // 计算总价
+  let total_before_discount = @azimuth.add(@azimuth.add(subtotal, tax), shipping_cost)
+  let final_total = @azimuth.add(total_before_discount, -discount)
+  
+  @azimuth.assert_eq(1969, final_total)
 }
 
-test "construction_material_estimation" {
-  // 建筑材料估算测试
-  let room_length = 12
-  let room_width = 8
-  let room_height = 3
-  let tile_area = 2
-  let paint_coverage_per_liter = 10
+test "mathematical_properties_validation" {
+  // 验证数学性质
+  let a = 12
+  let b = 8
   
-  let floor_area = @azimuth.multiply(room_length, room_width)
-  let wall_area = @azimuth.multiply(2, @azimuth.multiply(@azimuth.add(room_length, room_width), room_height))
-  let total_surface_area = @azimuth.add(floor_area, wall_area)
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
   
-  let tiles_needed = @azimuth.divide_with_ceil(total_surface_area, tile_area)
-  let paint_needed = @azimuth.divide_with_ceil(wall_area, paint_coverage_per_liter)
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
   
-  @azimuth.assert_eq(96, floor_area)
-  @azimuth.assert_eq(120, wall_area)
-  @azimuth.assert_eq(216, total_surface_area)
-  @azimuth.assert_eq(108, tiles_needed)
-  @azimuth.assert_eq(12, paint_needed)
+  // 分配律: a * (b + c) = a * b + a * c
+  let c = 5
+  let distributive_left = @azimuth.multiply(a, @azimuth.add(b, c))
+  let distributive_right = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
+  @azimuth.assert_eq(distributive_left, distributive_right)
+  
+  // 零元素性质
+  @azimuth.assert_eq(0, @azimuth.multiply(a, 0))
+  @azimuth.assert_eq(a, @azimuth.add(a, 0))
 }
 
-test "greeting_multilingual_support" {
-  // 多语言问候支持测试
-  let english_name = "John"
-  let chinese_name = "张三"
-  let spanish_name = "José"
-  let emoji_name = "🌟"
+test "real_world_inventory_management" {
+  // 真实世界库存管理测试
+  let initial_stock = 500
+  let daily_sales = 25
+  let restock_day = 5
+  let restock_amount = 200
+  let days_to_simulate = 10
   
-  let english_greeting = @azimuth.greet(english_name)
-  let chinese_greeting = @azimuth.greet(chinese_name)
-  let spanish_greeting = @azimuth.greet(spanish_name)
-  let emoji_greeting = @azimuth.greet(emoji_name)
+  // 前5天的销售
+  let sold_first_period = @azimuth.multiply(daily_sales, restock_day)
+  let stock_after_first_period = @azimuth.subtract(initial_stock, sold_first_period)
   
-  @azimuth.assert_eq_string("Hello, John!", english_greeting)
-  @azimuth.assert_eq_string("Hello, 张三!", chinese_greeting)
-  @azimuth.assert_eq_string("Hello, José!", spanish_greeting)
-  @azimuth.assert_eq_string("Hello, 🌟!", emoji_greeting)
+  // 补货
+  let stock_after_restock = @azimuth.add(stock_after_first_period, restock_amount)
+  
+  // 后5天的销售
+  let remaining_days = @azimuth.subtract(days_to_simulate, restock_day)
+  let sold_second_period = @azimuth.multiply(daily_sales, remaining_days)
+  let final_stock = @azimuth.subtract(stock_after_restock, sold_second_period)
+  
+  @azimuth.assert_eq(125, sold_first_period)
+  @azimuth.assert_eq(375, stock_after_first_period)
+  @azimuth.assert_eq(575, stock_after_restock)
+  @azimuth.assert_eq(125, sold_second_period)
+  @azimuth.assert_eq(450, final_stock)
+}
+
+test "packaging_optimization_scenario" {
+  // 包装优化场景测试
+  let products = [
+    ("小件", 120, 8),   // 产品名, 数量, 每箱容量
+    ("中件", 85, 6),
+    ("大件", 45, 3)
+  ]
+  
+  let total_boxes = 0
+  let total_wasted_space = 0
+  
+  // 计算每种产品需要的箱数
+  let small_boxes = @azimuth.divide_with_ceil(120, 8)
+  let medium_boxes = @azimuth.divide_with_ceil(85, 6)
+  let large_boxes = @azimuth.divide_with_ceil(45, 3)
+  
+  let total_boxes_needed = @azimuth.add(@azimuth.add(small_boxes, medium_boxes), large_boxes)
+  
+  // 计算浪费的空间
+  let small_waste = @azimuth.subtract(@azimuth.multiply(small_boxes, 8), 120)
+  let medium_waste = @azimuth.subtract(@azimuth.multiply(medium_boxes, 6), 85)
+  let large_waste = @azimuth.subtract(@azimuth.multiply(large_boxes, 3), 45)
+  
+  let total_wasted = @azimuth.add(@azimuth.add(small_waste, medium_waste), large_waste)
+  
+  @azimuth.assert_eq(15, small_boxes)
+  @azimuth.assert_eq(15, medium_boxes)
+  @azimuth.assert_eq(15, large_boxes)
+  @azimuth.assert_eq(45, total_boxes_needed)
+  @azimuth.assert_eq(0, small_waste)
+  @azimuth.assert_eq(5, medium_waste)
+  @azimuth.assert_eq(0, large_waste)
+  @azimuth.assert_eq(5, total_wasted)
 }
