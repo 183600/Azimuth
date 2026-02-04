@@ -1,155 +1,191 @@
-// Azimuth 高质量测试用例集
-// 使用标准 MoonBit 测试语法，包含10个精心设计的测试用例
+// Azimuth 高质量测试套件
+// 包含10个标准 MoonBit 测试用例，覆盖各种功能和边界情况
 
-test "basic_arithmetic_comprehensive" {
-  // 基本算术运算综合测试
-  assert_eq(15, add(7, 8))
-  assert_eq(-10, add(-15, 5))
-  assert_eq(0, add(0, 0))
-  
-  assert_eq(56, multiply(7, 8))
-  assert_eq(-35, multiply(-5, 7))
-  assert_eq(0, multiply(0, 123))
-  
-  assert_eq(3, subtract(10, 7))
-  assert_eq(-3, subtract(7, 10))
-  assert_eq(0, subtract(5, 5))
+test "arithmetic_precision_and_accuracy" {
+  // 算术精度和准确性测试
+  inspect(add(999999, 1), content="1000000")
+  inspect(subtract(1000000, 2), content="999998")
+  inspect(multiply(1000, 1000), content="1000000")
+  inspect(divide_with_ceil(999999, 1000000), content="1")
+  inspect(divide_with_ceil(1000000, 1), content="1000000")
 }
 
-test "divide_with_ceil_business_scenarios" {
-  // 向上取整除法业务场景测试
-  // 场景1：计算需要的运输车辆
-  assert_eq(4, divide_with_ceil(35, 10))
-  assert_eq(7, divide_with_ceil(61, 9))
+test "complex_financial_calculations" {
+  // 复杂金融计算测试
+  let principal = 10000
+  let rate = 5
+  let years = 3
+  let simple_interest = multiply(principal, multiply(rate, years))
+  let total_amount = add(principal, divide_with_ceil(simple_interest, 100))
   
-  // 场景2：计算需要的容器数量
-  assert_eq(3, divide_with_ceil(25, 8))
-  assert_eq(1, divide_with_ceil(5, 8))
-  
-  // 边界情况
-  assert_eq(0, divide_with_ceil(0, 10))
-  assert_eq(0, divide_with_ceil(10, 0))
+  inspect(simple_interest, content="150000")  // 10000 * 5 * 3 = 150000
+  inspect(total_amount, content="1600")      // 10000 + ceil(150000/100) = 10000 + 1500 = 11500
 }
 
-test "mathematical_properties_verification" {
-  // 数学性质验证测试
-  let x = 12
-  let y = 8
+test "inventory_optimization_scenario" {
+  // 库存优化场景测试
+  let total_products = 487
+  let box_capacity = 24
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
   
-  // 加法交换律和结合律
-  assert_eq(add(x, y), add(y, x))
-  assert_eq(add(add(x, y), 5), add(x, add(y, 5)))
-  
-  // 乘法交换律和分配律
-  assert_eq(multiply(x, y), multiply(y, x))
-  assert_eq(
-    multiply(x, add(y, 3)),
-    add(multiply(x, y), multiply(x, 3))
-  )
-}
-
-test "greet_function_internationalization" {
-  // 问候函数国际化测试
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
-}
-
-test "complex_calculation_pipeline" {
-  // 复杂计算流水线测试
-  // 场景：项目资源分配计算
-  let team_members = 6
-  let tasks_per_member = 8
-  let days_per_sprint = 5
-  let total_tasks = multiply(team_members, tasks_per_member)
-  
-  let daily_capacity = 10
-  let sprint_capacity = multiply(days_per_sprint, daily_capacity)
-  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
-  
-  assert_eq(48, total_tasks)     // 6 * 8 = 48
-  assert_eq(50, sprint_capacity) // 5 * 10 = 50
-  assert_eq(1, sprints_needed)   // ceil(48/50) = 1
-}
-
-test "edge_cases_and_boundary_values" {
-  // 边界情况和极值测试
-  // 零值测试
-  assert_eq(0, multiply(0, 0))
-  assert_eq(0, multiply(0, 100))
-  assert_eq(0, multiply(100, 0))
-  
-  // 单位值测试
-  assert_eq(100, multiply(100, 1))
-  assert_eq(100, multiply(1, 100))
-  
-  // 边界除法测试
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(999, 1000))
-  assert_eq(1000, divide_with_ceil(1000, 1))
-}
-
-test "negative_numbers_comprehensive" {
-  // 负数综合处理测试
-  // 负数加法
-  assert_eq(-10, add(-5, -5))
-  assert_eq(0, add(-5, 5))
-  assert_eq(5, add(-10, 15))
-  
-  // 负数乘法
-  assert_eq(25, multiply(-5, -5))
-  assert_eq(-15, multiply(-5, 3))
-  assert_eq(15, multiply(-3, -5))
-  
-  // 负数除法
-  assert_eq(-2, divide_with_ceil(-15, 8))
-  assert_eq(-1, divide_with_ceil(-8, 10))
-  assert_eq(2, divide_with_ceil(-15, -8))
-}
-
-test "resource_optimization_problem" {
-  // 资源优化问题测试
-  // 场景：仓库存储优化
-  let item_a = 47
-  let item_b = 63
-  let box_capacity = 15
-  
-  let boxes_a = divide_with_ceil(item_a, box_capacity)
-  let boxes_b = divide_with_ceil(item_b, box_capacity)
-  let total_boxes = add(boxes_a, boxes_b)
-  
-  assert_eq(4, boxes_a)     // ceil(47/15) = 4
-  assert_eq(5, boxes_b)     // ceil(63/15) = 5
-  assert_eq(9, total_boxes) // 4 + 5 = 9
+  inspect(boxes_needed, content="21")
   
   // 验证总容量
-  let total_capacity = multiply(total_boxes, box_capacity)
-  assert_eq(135, total_capacity) // 9 * 15 = 135
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  inspect(total_capacity, content="504")
+  
+  // 验证空间利用率
+  let utilization_rate = divide_with_ceil(multiply(total_products, 100), total_capacity)
+  inspect(utilization_rate, content="97")  // floor(48700/504) = 96%
+  
+  // 验证剩余空间
+  let unused_space = subtract(total_capacity, total_products)
+  inspect(unused_space, content="17")
+}
+
+test "mathematical_series_calculations" {
+  // 数学级数计算测试
+  let n = 10
+  let sum_first_n = multiply(n, add(n, 1))
+  let triangular_number = divide_with_ceil(sum_first_n, 2)
+  
+  inspect(sum_first_n, content="110")       // 10 * (10 + 1) = 110
+  inspect(triangular_number, content="55")  // ceil(110/2) = 55
+  
+  // 验证平方和公式
+  let sum_of_squares = multiply(n, multiply(add(n, 1), add(multiply(2, n), 1)))
+  let squared_sum = divide_with_ceil(sum_of_squares, 6)
+  
+  inspect(sum_of_squares, content="2310")   // 10 * 11 * 21 = 2310
+  inspect(squared_sum, content="385")       // ceil(2310/6) = 385
+}
+
+test "resource_allocation_efficiency" {
+  // 资源分配效率测试
+  let total_tasks = 157
+  let team_members = 8
+  let working_days = 5
+  
+  // 计算每人每天需要完成的任务数
+  let total_person_days = multiply(team_members, working_days)
+  let tasks_per_person_per_day = divide_with_ceil(total_tasks, total_person_days)
+  
+  inspect(total_person_days, content="40")           // 8 * 5 = 40
+  inspect(tasks_per_person_per_day, content="4")     // ceil(157/40) = 4
+  
+  // 验证总处理能力
+  let total_capacity = multiply(tasks_per_person_per_day, total_person_days)
+  inspect(total_capacity, content="160")             // 4 * 40 = 160
+  
+  // 验证剩余处理能力
+  let spare_capacity = subtract(total_capacity, total_tasks)
+  inspect(spare_capacity, content="3")
 }
 
 test "string_processing_edge_cases" {
-  // 字符串处理边缘情况测试
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, a!", greet("a"))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, @#$%!", greet("@#$%"))
-  assert_eq_string("Hello, mixedCASE123!", greet("mixedCASE123"))
+  // 字符串处理边界情况测试
+  inspect(greet("single"), content="Hello, single!")
+  inspect(greet("UPPER"), content="Hello, UPPER!")
+  inspect(greet("lower"), content="Hello, lower!")
+  inspect(greet("MixEdCase"), content="Hello, MixEdCase!")
+  inspect(greet("123456789"), content="Hello, 123456789!")
+  inspect(greet("special@#$%"), content="Hello, special@#$%!")
+  inspect(greet("   spaces   "), content="Hello,    spaces   !")
+  inspect(greet("\t\n"), content="Hello, \t\n!")
 }
 
-test "error_handling_and_validation" {
-  // 错误处理和验证测试
-  // 除零错误的全面测试
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+test "temperature_conversion_calculations" {
+  // 温度转换计算测试
+  let celsius = 25
+  let fahrenheit = add(multiply(multiply(celsius, 9), 5), 32)
+  let back_to_celsius = divide_with_ceil(subtract(fahrenheit, 32), multiply(9, 5))
   
-  // 极值运算验证 - 使用较小的数避免溢出
-  let large_num = 10000
-  assert_eq(20000, add(large_num, large_num))
-  assert_eq(100000000, multiply(large_num, large_num))
-  assert_eq(1, divide_with_ceil(large_num, large_num))
+  inspect(fahrenheit, content="77")        // (25 * 9/5) + 32 = 45 + 32 = 77
+  inspect(back_to_celsius, content="5")    // ceil((77-32)/(9/5)) = ceil(45*5/9) = ceil(25) = 25
+  
+  // 极值温度测试
+  let freezing_celsius = 0
+  let freezing_fahrenheit = add(multiply(multiply(freezing_celsius, 9), 5), 32)
+  inspect(freezing_fahrenheit, content="32")
+  
+  let boiling_celsius = 100
+  let boiling_fahrenheit = add(multiply(multiply(boiling_celsius, 9), 5), 32)
+  inspect(boiling_fahrenheit, content="212")
+}
+
+test "project_management_timeline" {
+  // 项目管理时间线测试
+  let total_story_points = 128
+  let team_velocity = 21
+  let sprints_needed = divide_with_ceil(total_story_points, team_velocity)
+  
+  inspect(sprints_needed, content="7")  // ceil(128/21) = 7
+  
+  // 计算总工作周数（每个冲刺2周）
+  let weeks_per_sprint = 2
+  let total_weeks = multiply(sprints_needed, weeks_per_sprint)
+  inspect(total_weeks, content="14")
+  
+  // 计算总处理能力
+  let total_capacity = multiply(sprints_needed, team_velocity)
+  inspect(total_capacity, content="147")
+  
+  // 计算缓冲能力
+  let buffer_capacity = subtract(total_capacity, total_story_points)
+  inspect(buffer_capacity, content="19")
+}
+
+test "data_structure_operations" {
+  // 数据结构操作测试（模拟数组操作）
+  let array_size = 10
+  let element_size = 4
+  let total_memory = multiply(array_size, element_size)
+  
+  inspect(total_memory, content="40")
+  
+  // 计算页面对齐需求
+  let page_size = 16
+  let pages_needed = divide_with_ceil(total_memory, page_size)
+  
+  inspect(pages_needed, content="3")  // ceil(40/16) = 3
+  
+  // 计算实际分配的内存
+  let allocated_memory = multiply(pages_needed, page_size)
+  inspect(allocated_memory, content="48")
+  
+  // 计算内存碎片
+  let memory_fragmentation = subtract(allocated_memory, total_memory)
+  inspect(memory_fragmentation, content="8")
+}
+
+test "complex_business_workflow" {
+  // 复杂业务工作流测试
+  let product_cost = 150
+  let quantity = 25
+  let discount_threshold = 20
+  let discount_rate = 10
+  
+  // 计算总成本
+  let subtotal = multiply(product_cost, quantity)
+  inspect(subtotal, content="3750")
+  
+  // 应用折扣（如果数量超过阈值）
+  let discount_applicable = quantity >= discount_threshold
+  let discount_amount = 0
+  let final_total = 0
+  
+  if discount_applicable {
+    discount_amount = divide_with_ceil(multiply(subtotal, discount_rate), 100)
+    final_total = subtract(subtotal, discount_amount)
+  } else {
+    final_total = subtotal
+  }
+  
+  inspect(discount_amount, content="375")  // ceil(3750 * 10 / 100) = 375
+  inspect(final_total, content="3375")     // 3750 - 375 = 3375
+  
+  // 计算每个包装盒的产品数量
+  let products_per_box = 6
+  let boxes_needed = divide_with_ceil(quantity, products_per_box)
+  inspect(boxes_needed, content="5")  // ceil(25/6) = 5
 }

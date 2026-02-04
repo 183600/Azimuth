@@ -1,5 +1,79 @@
-// 简单的 MoonBit 测试用例
-
+// 简单的新测试文件
 test "simple_addition_test" {
-  @azimuth.assert_eq(5, @azimuth.add(2, 3))
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-1, add(-3, 2))
+}
+
+test "simple_multiplication_test" {
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-6, multiply(-2, 3))
+}
+
+test "simple_greet_test" {
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+}
+
+test "simple_divide_with_ceil_test" {
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 5))
+  assert_eq(0, divide_with_ceil(5, 0))
+}
+
+test "simple_subtract_test" {
+  assert_eq(2, subtract(5, 3))
+  assert_eq(-2, subtract(3, 5))
+  assert_eq(0, subtract(5, 5))
+}
+
+test "simple_mathematical_properties_test" {
+  let a = 7
+  let b = 13
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+}
+
+test "simple_business_scenario_test" {
+  let items = 25
+  let capacity = 6
+  let packages = divide_with_ceil(items, capacity)
+  assert_eq(5, packages)
+  
+  let total_capacity = multiply(packages, capacity)
+  let remaining = subtract(total_capacity, items)
+  assert_eq(5, remaining)
+}
+
+test "simple_complex_calculation_test" {
+  let base = 10
+  let multiplier = 3
+  let divisor = 4
+  let addition = 5
+  
+  let step1 = multiply(base, multiplier)
+  let step2 = divide_with_ceil(step1, divisor)
+  let result = add(step2, addition)
+  
+  assert_eq(12, result)  // ceil(10*3/4) + 5 = 8 + 5 = 13
+}
+
+test "simple_large_number_test" {
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(1001, divide_with_ceil(1000000, 999))
+}
+
+test "simple_edge_case_test" {
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(1, divide_with_ceil(1, 1))
 }
