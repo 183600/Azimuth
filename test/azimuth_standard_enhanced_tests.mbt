@@ -1,134 +1,103 @@
-// Azimuth 项目标准增强测试用例
-// 使用标准 MoonBit 测试语法，包含8个高质量测试用例
+// Azimuth 项目标准 MoonBit 测试用例
+// 使用标准 MoonBit 测试语法编写的高质量测试用例
 
-test "statistical_calculations" {
-  // 统计计算测试
-  let numbers_sum = @azimuth.add(15, @azimuth.add(25, @azimuth.add(35, 45)))
-  let count = 4
-  let average = @azimuth.divide_with_ceil(numbers_sum, count)
-  
-  @azimuth.assert_eq(120, numbers_sum)  // 15 + 25 + 35 + 45 = 120
-  @azimuth.assert_eq(30, average)       // ceil(120/4) = 30
+// 导入 azimuth 库
+use azimuth.{add, multiply, subtract, divide_with_ceil, greet, assert_eq, assert_eq_string}
+
+test "add_function_standard_cases" {
+  // 标准加法测试用例
+  assert_eq(10, add(3, 7))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(1000, add(500, 500))
+  assert_eq(0, add(100, -100))
 }
 
-test "time_calculations_scenario" {
-  // 时间计算场景测试
-  let hours_per_day = 24
-  let days_per_week = 7
-  let hours_per_week = @azimuth.multiply(hours_per_day, days_per_week)
-  
-  let work_hours_per_day = 8
-  let work_days_per_week = 5
-  let work_hours_per_week = @azimuth.multiply(work_hours_per_day, work_days_per_week)
-  
-  let overtime_hours = @azimuth.subtract(hours_per_week, work_hours_per_week)
-  
-  @azimuth.assert_eq(168, hours_per_week)      // 24 * 7 = 168
-  @azimuth.assert_eq(40, work_hours_per_week)  // 8 * 5 = 40
-  @azimuth.assert_eq(128, overtime_hours)      // 168 - 40 = 128
+test "multiply_function_standard_cases" {
+  // 标准乘法测试用例
+  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(0, 10))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(6, multiply(-2, -3))
+  assert_eq(100, multiply(10, 10))
 }
 
-test "geometry_area_calculations" {
-  // 几何面积计算测试
-  let length = 12
-  let width = 8
-  
-  // 矩形面积
-  let rectangle_area = @azimuth.multiply(length, width)
-  
-  // 正方形面积（边长为矩形周长的一半）
-  let perimeter = @azimuth.add(@azimuth.multiply(2, length), @azimuth.multiply(2, width))
-  let square_side = @azimuth.divide_with_ceil(perimeter, 4)
-  let square_area = @azimuth.multiply(square_side, square_side)
-  
-  @azimuth.assert_eq(96, rectangle_area)    // 12 * 8 = 96
-  @azimuth.assert_eq(40, perimeter)        // 2*12 + 2*8 = 40
-  @azimuth.assert_eq(10, square_side)      // ceil(40/4) = 10
-  @azimuth.assert_eq(100, square_area)     // 10 * 10 = 100
+test "subtract_function_standard_cases" {
+  // 标准减法测试用例
+  assert_eq(5, subtract(8, 3))
+  assert_eq(-5, subtract(3, 8))
+  assert_eq(0, subtract(10, 10))
+  assert_eq(10, subtract(0, -10))
+  assert_eq(-10, subtract(-10, 0))
 }
 
-test "inventory_batch_processing" {
-  // 库存批次处理测试
-  let total_items = 234
-  let batch_size = 25
-  let batches_needed = @azimuth.divide_with_ceil(total_items, batch_size)
-  
-  @azimuth.assert_eq(10, batches_needed)  // ceil(234/25) = 10
-  
-  // 验证总处理能力
-  let total_capacity = @azimuth.multiply(batches_needed, batch_size)
-  @azimuth.assert_eq(250, total_capacity)
-  
-  // 验证剩余容量
-  let remaining_capacity = @azimuth.subtract(total_capacity, total_items)
-  @azimuth.assert_eq(16, remaining_capacity)
+test "divide_with_ceil_standard_cases" {
+  // 标准向上取整除法测试用例
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "temperature_conversion_scenario" {
-  // 温度转换场景测试（简化的摄氏度到华氏度）
-  let celsius = 25
-  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 9), @azimuth.divide_with_ceil(@azimuth.multiply(5, 32), 5))
-  
-  // 简化公式：F = (C * 9/5) + 32 = (25 * 9/5) + 32 = 45 + 32 = 77
-  let step1 = @azimuth.multiply(celsius, 9)
-  let step2 = @azimuth.divide_with_ceil(step1, 5)
-  let result = @azimuth.add(step2, 32)
-  
-  @azimuth.assert_eq(225, step1)  // 25 * 9 = 225
-  @azimuth.assert_eq(45, step2)   // ceil(225/5) = 45
-  @azimuth.assert_eq(77, result)  // 45 + 32 = 77
+test "greet_function_standard_cases" {
+  // 标准问候函数测试用例
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 123!", greet("123"))
 }
 
-test "project_resource_allocation" {
-  // 项目资源分配测试
-  let project_duration_days = 45
-  let team_members = 6
-  let total_person_days = @azimuth.multiply(project_duration_days, team_members)
+test "mathematical_properties_verification" {
+  // 数学性质验证测试
+  let a = 7
+  let b = 13
   
-  let critical_tasks = 120
-  let people_per_critical_task = @azimuth.divide_with_ceil(total_person_days, critical_tasks)
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
   
-  @azimuth.assert_eq(270, total_person_days)      // 45 * 6 = 270
-  @azimuth.assert_eq(3, people_per_critical_task) // ceil(270/120) = 3
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
   
-  // 验证资源分配合理性
-  let allocated_resources = @azimuth.multiply(people_per_critical_task, critical_tasks)
-  @azimuth.assert_eq(360, allocated_resources)    // 3 * 120 = 360
+  // 零元素性质
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, add(a, 0))
 }
 
-test "financial_compound_interest" {
-  // 金融复利计算测试（简化版本）
-  let principal = 1000
-  let rate_percent = 5
-  let years = 3
+test "business_calculation_scenario" {
+  // 业务计算场景测试
+  let unit_price = 25
+  let quantity = 8
+  let shipping = 15
   
-  // 简化计算：每年增加本金的 5%
-  let year1_end = @azimuth.add(principal, @azimuth.divide_with_ceil(@azimuth.multiply(principal, rate_percent), 100))
-  let year2_end = @azimuth.add(year1_end, @azimuth.divide_with_ceil(@azimuth.multiply(year1_end, rate_percent), 100))
-  let year3_end = @azimuth.add(year2_end, @azimuth.divide_with_ceil(@azimuth.multiply(year2_end, rate_percent), 100))
+  let subtotal = multiply(unit_price, quantity)
+  let total = add(subtotal, shipping)
   
-  @azimuth.assert_eq(1050, year1_end)  // 1000 + ceil(1000*5/100) = 1000 + 50 = 1050
-  @azimuth.assert_eq(1103, year2_end)  // 1050 + ceil(1050*5/100) = 1050 + 53 = 1103
-  @azimuth.assert_eq(1158, year3_end)  // 1103 + ceil(1103*5/100) = 1103 + 55 = 1158
+  assert_eq(200, subtotal)
+  assert_eq(215, total)
 }
 
-test "network_bandwidth_planning" {
-  // 网络带宽规划测试
-  let users = 150
-  let bandwidth_per_user_mbps = 10
-  let total_bandwidth_needed = @azimuth.multiply(users, bandwidth_per_user_mbps)
+test "packaging_calculation_scenario" {
+  // 包装计算场景测试
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
   
-  let available_bandwidth_per_link_mbps = 1000
-  let links_needed = @azimuth.divide_with_ceil(total_bandwidth_needed, available_bandwidth_per_link_mbps)
+  assert_eq(5, boxes_needed)
+}
+
+test "complex_arithmetic_expressions" {
+  // 复杂算术表达式测试
+  let x = 10
+  let y = 15
+  let z = 20
   
-  @azimuth.assert_eq(1500, total_bandwidth_needed)  // 150 * 10 = 1500 Mbps
-  @azimuth.assert_eq(2, links_needed)              // ceil(1500/1000) = 2
+  // 测试 (x + y) * z
+  let result1 = multiply(add(x, y), z)
+  assert_eq(500, result1)  // (10 + 15) * 20 = 25 * 20 = 500
   
-  // 验证总带宽容量
-  let total_capacity = @azimuth.multiply(links_needed, available_bandwidth_per_link_mbps)
-  @azimuth.assert_eq(2000, total_capacity)
-  
-  // 验证冗余带宽
-  let redundant_bandwidth = @azimuth.subtract(total_capacity, total_bandwidth_needed)
-  @azimuth.assert_eq(500, redundant_bandwidth)
+  // 测试 x * y + z
+  let result2 = add(multiply(x, y), z)
+  assert_eq(170, result2)  // 10 * 15 + 20 = 150 + 20 = 170
 }
