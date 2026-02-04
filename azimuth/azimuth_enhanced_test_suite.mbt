@@ -1,197 +1,181 @@
-// Azimuth 增强测试套件
-// 使用标准 MoonBit 测试语法，包含10个高质量测试用例
+// Azimuth 增强测试套件 - 标准 MoonBit 测试用例
+// 包含 8 个高质量测试用例，仅使用已定义的断言函数
 
-test "advanced_arithmetic_combinations" {
-  // 高级算术组合测试
-  let a = 12
-  let b = 7
-  let c = 3
+test "enhanced_basic_arithmetic" {
+  // 增强基本算术运算测试
+  assert_eq(15, add(7, 8))
+  assert_eq(-5, add(-10, 5))
+  assert_eq(0, add(10, -10))
   
-  // 复杂算术表达式
-  assert_eq(50, add(multiply(a, b), multiply(c, 2)))  // 12*7 + 3*2 = 84 + 6 = 90
-  assert_eq(25, subtract(multiply(a, c), divide_with_ceil(b, 2)))  // 12*3 - ceil(7/2) = 36 - 4 = 32
-  assert_eq(8, divide_with_ceil(add(a, b), c))  // ceil(19/3) = 7
+  assert_eq(56, multiply(7, 8))
+  assert_eq(-80, multiply(-10, 8))
+  assert_eq(80, multiply(-10, -8))
+  
+  assert_eq(3, subtract(15, 12))
+  assert_eq(-3, subtract(12, 15))
+  assert_eq(0, subtract(20, 20))
 }
 
-test "resource_management_simulation" {
-  // 资源管理模拟测试
-  let total_resources = 150
-  let team_size = 8
-  let tasks_per_team = 5
+test "enhanced_divide_with_ceil_operations" {
+  // 增强向上取整除法运算测试
+  assert_eq(5, divide_with_ceil(14, 3))
+  assert_eq(4, divide_with_ceil(12, 3))
+  assert_eq(1, divide_with_ceil(2, 3))
+  assert_eq(0, divide_with_ceil(0, 10))
+  assert_eq(0, divide_with_ceil(15, 0))
   
-  // 计算每个团队的任务分配
-  let tasks_per_team分配 = divide_with_ceil(total_resources, team_size)
-  assert_eq(19, tasks_per_team分配)  // ceil(150/8) = 19
-  
-  // 计算总任务容量
-  let total_capacity = multiply(tasks_per_team分配, team_size)
-  assert_eq(152, total_capacity)  // 19 * 8 = 152
-  
-  // 计算剩余资源
-  let remaining_resources = subtract(total_capacity, total_resources)
-  assert_eq(2, remaining_resources)
+  // 负数测试
+  assert_eq(-4, divide_with_ceil(-14, 3))
+  assert_eq(-5, divide_with_ceil(14, -3))
+  assert_eq(5, divide_with_ceil(-14, -3))
+  assert_eq(-1, divide_with_ceil(-2, 3))
 }
 
-test "string_processing_edge_cases" {
-  // 字符串处理边界情况测试
-  assert_eq_string("Hello, single!", greet("single"))
-  assert_eq_string("Hello, multiple words!", greet("multiple words"))
-  assert_eq_string("Hello, 12345!", greet("12345"))
-  assert_eq_string("Hello, special@#$%!", greet("special@#$%"))
-  assert_eq_string("Hello, 中文字符!", greet("中文字符"))
-  assert_eq_string("Hello, emoji 🚀!", greet("emoji 🚀"))
-  assert_eq_string("Hello,   spaces   !", greet("   spaces   "))
+test "enhanced_greet_function_tests" {
+  // 增强问候函数测试
+  assert_eq_string("Hello, Azimuth!", greet("Azimuth"))
+  assert_eq_string("Hello, Testing!", greet("Testing"))
+  assert_eq_string("Hello, 2024!", greet("2024"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, special@chars!", greet("special@chars"))
 }
 
-test "mathematical_sequence_calculations" {
-  // 数学序列计算测试
-  // 斐波那契风格序列计算
-  let n1 = 5
-  let n2 = 8
-  let n3 = 13
+test "enhanced_mathematical_properties" {
+  // 增强数学性质测试
+  let x = 18
+  let y = 12
   
-  // 序列运算
-  let sum_sequence = add(add(n1, n2), n3)
-  assert_eq(26, sum_sequence)  // 5 + 8 + 13 = 26
+  // 加法交换律验证
+  assert_eq(add(x, y), add(y, x))
+  assert_eq(30, add(18, 12))
+  assert_eq(30, add(12, 18))
   
-  let product_sequence = multiply(n1, multiply(n2, n3))
-  assert_eq(520, product_sequence)  // 5 * 8 * 13 = 520
+  // 乘法交换律验证
+  assert_eq(multiply(x, y), multiply(y, x))
+  assert_eq(216, multiply(18, 12))
+  assert_eq(216, multiply(12, 18))
   
-  let average_approx = divide_with_ceil(sum_sequence, 3)
-  assert_eq(9, average_approx)  // ceil(26/3) = 9
+  // 加法恒等式验证
+  assert_eq(x, add(x, 0))
+  assert_eq(x, add(0, x))
+  
+  // 乘法恒等式验证
+  assert_eq(x, multiply(x, 1))
+  assert_eq(x, multiply(1, x))
+  assert_eq(0, multiply(x, 0))
 }
 
-test "business_inventory_optimization" {
-  // 业务库存优化测试
-  let product_demand = 247
-  let warehouse_capacity = 50
-  let shipping_batches = 6
+test "enhanced_warehouse_management" {
+  // 增强仓库管理场景测试
+  let total_products = 280
+  let pallet_capacity = 35
+  let pallets_needed = divide_with_ceil(total_products, pallet_capacity)
   
-  // 计算需要的仓库数量
-  let warehouses_needed = divide_with_ceil(product_demand, warehouse_capacity)
-  assert_eq(5, warehouses_needed)  // ceil(247/50) = 5
+  assert_eq(8, pallets_needed)
   
-  // 计算运输批次需求
-  let batches_needed = divide_with_ceil(product_demand, shipping_batches)
-  assert_eq(42, batches_needed)  // ceil(247/6) = 42
+  // 验证总容量
+  let total_capacity = multiply(pallets_needed, pallet_capacity)
+  assert_eq(280, total_capacity)
   
-  // 计算总仓储容量
-  let total_storage = multiply(warehouses_needed, warehouse_capacity)
-  assert_eq(250, total_storage)  // 5 * 50 = 250
+  // 验证空间利用率
+  let utilization = divide_with_ceil(multiply(total_products, 100), total_capacity)
+  assert_eq(100, utilization)
   
-  // 计算剩余仓储空间
-  let unused_space = subtract(total_storage, product_demand)
-  assert_eq(3, unused_space)
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(0, remaining_space)
 }
 
-test "error_boundary_and_validation" {
-  // 错误边界和验证测试
-  // 除零错误的各种情况
-  assert_eq(0, divide_with_ceil(1, 0))
-  assert_eq(0, divide_with_ceil(-1, 0))
-  assert_eq(0, divide_with_ceil(1000, 0))
-  assert_eq(0, divide_with_ceil(-1000, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+test "enhanced_project_planning" {
+  // 增强项目规划测试
+  let developers = 12
+  let stories_per_developer = 5
+  let total_stories = multiply(developers, stories_per_developer)
   
-  // 极值运算验证
-  let large_num = 100000
-  assert_eq(200000, add(large_num, large_num))
-  assert_eq(10000000000, multiply(large_num, large_num))
-  assert_eq(1, divide_with_ceil(large_num, large_num))
+  let sprint_capacity = 25
+  let sprints_needed = divide_with_ceil(total_stories, sprint_capacity)
+  
+  assert_eq(60, total_stories)
+  assert_eq(3, sprints_needed)
+  
+  // 验证总处理能力
+  let total_capacity = multiply(sprints_needed, sprint_capacity)
+  assert_eq(75, total_capacity)
+  
+  // 验证额外处理能力
+  let extra_capacity = subtract(total_capacity, total_stories)
+  assert_eq(15, extra_capacity)
+  
+  // 验证缓冲比例
+  let buffer_ratio = divide_with_ceil(multiply(extra_capacity, 100), total_stories)
+  assert_eq(25, buffer_ratio)
 }
 
-test "time_and_scheduling_logic" {
-  // 时间和调度逻辑测试
-  let total_hours = 168  // 一周的总小时数
-  let meeting_duration = 2
-  let meetings_per_day = 3
-  let working_days = 5
+test "enhanced_boundary_conditions" {
+  // 增强边界条件测试
+  // 大数运算测试
+  assert_eq(3000000, add(1500000, 1500000))
+  assert_eq(225000000, multiply(15000, 15000))
+  assert_eq(1500001, divide_with_ceil(1500000, 1))
   
-  // 计算每日会议时间
-  let daily_meeting_time = multiply(meeting_duration, meetings_per_day)
-  assert_eq(6, daily_meeting_time)  // 2 * 3 = 6
+  // 边界除法测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, -1))
+  assert_eq(1, divide_with_ceil(999, 1000))
+  assert_eq(1000, divide_with_ceil(1000, 1))
   
-  // 计算每周会议时间
-  let weekly_meeting_time = multiply(daily_meeting_time, working_days)
-  assert_eq(30, weekly_meeting_time)  // 6 * 5 = 30
-  
-  // 计算剩余可用时间
-  let remaining_time = subtract(total_hours, weekly_meeting_time)
-  assert_eq(138, remaining_time)  // 168 - 30 = 138
-  
-  // 计算可以安排的额外会议数
-  let additional_meetings = divide_with_ceil(remaining_time, meeting_duration)
-  assert_eq(69, additional_meetings)  // ceil(138/2) = 69
+  // 特殊字符串处理测试
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, newline\n!", greet("newline\n"))
+  assert_eq_string("Hello, tab\t!", greet("tab\t"))
 }
 
-test "data_structure_operations" {
-  // 数据结构操作测试（模拟）
-  let array_size = 10
-  let page_size = 3
+test "enhanced_event_management" {
+  // 增强活动管理测试
+  let attendees = 350
+  let round_tables_available = 25
+  let seats_per_round_table = 10
+  let rectangular_tables_available = 15
+  let seats_per_rectangular_table = 8
+  let cost_per_seat = 30
+  let total_budget = 9000
   
-  // 计算需要的页数
-  let pages_needed = divide_with_ceil(array_size, page_size)
-  assert_eq(4, pages_needed)  // ceil(10/3) = 4
+  // 计算需要的圆桌数量
+  let round_tables_needed = divide_with_ceil(attendees, seats_per_round_table)
+  assert_eq(35, round_tables_needed)
   
-  // 计算总容量
-  let total_capacity = multiply(pages_needed, page_size)
-  assert_eq(12, total_capacity)  // 4 * 3 = 12
+  // 检查圆桌是否足够
+  let round_tables_shortage = subtract(round_tables_needed, round_tables_available)
+  assert_eq(10, round_tables_shortage)
   
-  // 计算浪费的空间
-  let wasted_space = subtract(total_capacity, array_size)
-  assert_eq(2, wasted_space)
+  // 计算需要额外的方桌数量
+  let remaining_attendees = subtract(attendees, multiply(round_tables_available, seats_per_round_table))
+  let rectangular_tables_needed = divide_with_ceil(remaining_attendees, seats_per_rectangular_table)
+  assert_eq(13, rectangular_tables_needed)
   
-  // 计算空间利用率
-  let utilization_percent = divide_with_ceil(multiply(array_size, 100), total_capacity)
-  assert_eq(84, utilization_percent)  // ceil(1000/12) = 84%
-}
-
-test "complex_financial_calculations" {
-  // 复杂金融计算测试
-  let principal = 10000
-  let interest_rate = 5  // 5%
-  let years = 3
+  // 检查方桌是否足够
+  assert_eq(1, divide_with_ceil(rectangular_tables_available, rectangular_tables_needed))
   
-  // 计算简单利息
-  let total_interest = multiply(principal, multiply(interest_rate, years))
-  assert_eq(150000, total_interest)  // 10000 * 5 * 3 = 150000
+  // 计算总座位数
+  let total_seats = add(multiply(round_tables_available, seats_per_round_table), multiply(rectangular_tables_needed, seats_per_rectangular_table))
+  assert_eq(354, total_seats)
   
-  // 计算本息合计（简化模型）
-  let total_amount = add(principal, divide_with_ceil(total_interest, 100))
-  assert_eq(11500, total_amount)  // 10000 + ceil(150000/100) = 11500
+  // 计算剩余座位
+  let remaining_seats = subtract(total_seats, attendees)
+  assert_eq(4, remaining_seats)
   
-  // 计算月供（简化模型）
-  let months = multiply(years, 12)
-  let monthly_payment = divide_with_ceil(total_amount, months)
-  assert_eq(320, monthly_payment)  // ceil(11500/36) = 320
+  // 计算总成本
+  let total_cost = multiply(total_seats, cost_per_seat)
+  assert_eq(10620, total_cost)
   
-  // 验证总支付金额
-  let total_paid = multiply(monthly_payment, months)
-  assert_eq(11520, total_paid)  // 320 * 36 = 11520
-}
-
-test "performance_and_optimization_metrics" {
-  // 性能和优化指标测试
-  let baseline_performance = 100
-  let improvement_factor = 15
-  let target_performance = 250
+  // 计算预算超支
+  let budget_overrun = subtract(total_cost, total_budget)
+  assert_eq(1620, budget_overrun)
   
-  // 计算改进后的性能
-  let improved_performance = add(baseline_performance, improvement_factor)
-  assert_eq(115, improved_performance)  // 100 + 15 = 115
-  
-  // 计算达到目标需要的改进周期
-  let improvement_needed = subtract(target_performance, improved_performance)
-  assert_eq(135, improvement_needed)  // 250 - 115 = 135
-  
-  let cycles_needed = divide_with_ceil(improvement_needed, improvement_factor)
-  assert_eq(9, cycles_needed)  // ceil(135/15) = 9
-  
-  // 计算总时间周期
-  let total_cycles = add(1, cycles_needed)  // 包括当前周期
-  assert_eq(10, total_cycles)
-  
-  // 计算最终性能
-  let final_performance = add(improved_performance, multiply(cycles_needed, improvement_factor))
-  assert_eq(250, final_performance)  // 115 + 9 * 15 = 250
+  // 计算超支比例
+  let overrun_percentage = divide_with_ceil(multiply(budget_overrun, 100), total_budget)
+  assert_eq(18, overrun_percentage)
 }
