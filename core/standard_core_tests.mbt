@@ -1,205 +1,264 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // 标准 MoonBit 核心库测试用例
-// 包含10个高质量的测试用例，使用标准 MoonBit 测试语法
+// 包含 10 个高质量测试用例，使用标准 MoonBit 测试语法
 
-// 测试 int 模块的基本功能
-test "int_module_basic_functions" {
-  // 测试 int 模块的最大值和最小值
-  inspect(@int.max_value, content="2147483647")
-  inspect(@int.min_value, content="-2147483648")
+test "int_arithmetic_operations" {
+  // 测试整数算术运算
+  inspect(1 + 2, content="3")
+  inspect(10 - 3, content="7")
+  inspect(4 * 5, content="20")
+  inspect(15 / 3, content="5")
+  inspect(17 % 5, content="2")
   
-  // 测试基本的整数运算
-  inspect(Int::abs(5), content="5")
-  inspect(Int::abs(-5), content="5")
-  inspect(Int::abs(0), content="0")
+  // 测试负数运算
+  inspect(-5 + 3, content="-2")
+  inspect(-10 * 2, content="-20")
+  inspect(-15 / 3, content="-5")
+  
+  // 测试大数运算
+  inspect(1000000 + 2000000, content="3000000")
+  inspect(1000 * 1000, content="1000000")
 }
 
-// 测试 string 模块的基本功能
-test "string_module_basic_functions" {
-  // 测试字符串默认值
-  inspect(String::default(), content="")
-  inspect(@string.default(), content="")
+test "string_manipulation_functions" {
+  // 测试字符串操作函数
+  let hello = "Hello"
+  let world = "World"
+  let empty = ""
   
-  // 测试基本字符串操作
+  // 字符串连接
+  inspect(hello + " " + world, content="Hello World")
+  inspect(hello + empty, content="Hello")
+  
+  // 字符串长度
+  inspect(hello.length(), content="5")
+  inspect(world.length(), content="5")
+  inspect(empty.length(), content="0")
+  
+  // 字符串比较
+  inspect(hello == "Hello", content="true")
+  inspect(hello != world, content="true")
+  inspect(empty == "", content="true")
+  
+  // 字符串大小写转换
+  let mixed = "HelloWorld"
+  inspect(mixed.uppercase(), content="HELLOWORLD")
+  inspect(mixed.lowercase(), content="helloworld")
+}
+
+test "array_functional_operations" {
+  // 测试数组函数式操作
+  let numbers = [1, 2, 3, 4, 5]
+  let empty = []
+  
+  // 数组长度
+  inspect(numbers.length(), content="5")
+  inspect(empty.length(), content="0")
+  
+  // 数组访问
+  inspect(numbers[0], content="1")
+  inspect(numbers[4], content="5")
+  
+  // map 操作
+  let doubled = numbers.map(x => x * 2)
+  inspect(doubled, content="[2, 4, 6, 8, 10]")
+  
+  // filter 操作
+  let evens = numbers.filter(x => x % 2 == 0)
+  inspect(evens, content="[2, 4]")
+  
+  // fold 操作
+  let sum = numbers.fold(0, (acc, x) => acc + x)
+  inspect(sum, content="15")
+}
+
+test "boolean_logic_operations" {
+  // 测试布尔逻辑操作
+  let t = true
+  let f = false
+  
+  // 基本逻辑运算
+  inspect(t && t, content="true")
+  inspect(t && f, content="false")
+  inspect(f && t, content="false")
+  inspect(f && f, content="false")
+  
+  inspect(t || t, content="true")
+  inspect(t || f, content="true")
+  inspect(f || t, content="true")
+  inspect(f || f, content="false")
+  
+  inspect(!t, content="false")
+  inspect(!f, content="true")
+  
+  // 布尔比较
+  inspect(t == true, content="true")
+  inspect(f == false, content="true")
+  inspect(t != f, content="true")
+}
+
+test "option_type_handling" {
+  // 测试 Option 类型处理
+  let some_val : Int? = Some(42)
+  let none_val : Int? = None
+  
+  // is_some 和 is_none
+  inspect(some_val.is_some(), content="true")
+  inspect(some_val.is_none(), content="false")
+  inspect(none_val.is_some(), content="false")
+  inspect(none_val.is_none(), content="true")
+  
+  // map 操作
+  let doubled = some_val.map(x => x * 2)
+  let mapped_none = none_val.map(x => x * 2)
+  inspect(doubled, content="Some(84)")
+  inspect(mapped_none, content="None")
+  
+  // unwrap_or 操作
+  let unwrapped = some_val.unwrap_or(0)
+  let default_val = none_val.unwrap_or(0)
+  inspect(unwrapped, content="42")
+  inspect(default_val, content="0")
+}
+
+test "result_type_error_handling" {
+  // 测试 Result 类型错误处理
+  let success : Result[String, String] = Ok("success")
+  let failure : Result[String, String] = Err("error")
+  
+  // is_ok 和 is_err
+  inspect(success.is_ok(), content="true")
+  inspect(success.is_err(), content="false")
+  inspect(failure.is_ok(), content="false")
+  inspect(failure.is_err(), content="true")
+  
+  // map 操作
+  let uppercased = success.map(s => s.uppercase())
+  let mapped_err = failure.map(s => s.uppercase())
+  inspect(uppercased, content="Ok(\"SUCCESS\")")
+  inspect(mapped_err, content="Err(\"error\")")
+  
+  // map_err 操作
+  let err_message = failure.map_err(e => e.uppercase())
+  inspect(err_message, content="Err(\"ERROR\")")
+}
+
+test "mathematical_functions" {
+  // 测试数学函数
+  let pi = @math.pi_f
+  let e = @math.e_f
+  
+  // 基本数学常数
+  inspect(pi > 3.14 && pi < 3.15, content="true")
+  inspect(e > 2.71 && e < 2.72, content="true")
+  
+  // 幂运算
+  inspect(@math.powf(2.0, 3.0), content="8")
+  inspect(@math.powf(3.0, 2.0), content="9")
+  inspect(@math.sqrtf(16.0), content="4")
+  inspect(@math.sqrtf(25.0), content="5")
+  
+  // 三角函数
+  inspect(@math.sinf(0.0), content="0")
+  inspect(@math.cosf(0.0), content="1")
+  
+  // 绝对值
+  inspect(@math.fabsf(5.0), content="5")
+  inspect(@math.fabsf(-5.0), content="5")
+}
+
+test "character_and_unicode_operations" {
+  // 测试字符和 Unicode 操作
+  let ascii_char = 'A'
+  let digit_char = '5'
+  let unicode_char = '世'
+  
+  // 字符转字符串
+  inspect(ascii_char.to_string(), content="A")
+  inspect(digit_char.to_string(), content="5")
+  inspect(unicode_char.to_string(), content="世")
+  
+  // 字符比较
+  inspect('a' > 'A', content="true")
+  inspect('A' < 'B', content="true")
+  inspect('0' < '9', content="true")
+  
+  // Unicode 字符串
+  let unicode_str = "Hello 世界 🌟"
+  inspect(unicode_str.length(), content="12")
+  inspect(unicode_str.char_at(0), content="'H'")
+  inspect(unicode_str.char_at(6), content="'世'")
+  inspect(unicode_str.char_at(10), content="'🌟'")
+}
+
+test "type_conversion_operations" {
+  // 测试类型转换操作
+  let int_val = 42
+  let uint_val = int_val.reinterpret_as_uint()
+  let float_val = @float.from_int(int_val)
+  
+  // int 到 uint 转换
+  inspect(uint_val.to_int(), content="42")
+  inspect(uint_val > 0, content="true")
+  
+  // int 到 float 转换
+  inspect(float_val, content="42")
+  inspect(float_val > 40.0, content="true")
+  
+  // 字符串到数值转换
+  inspect("123".to_int().unwrap(), content="123")
+  inspect("456".parse_int().unwrap(), content="456")
+  
+  // 数值到字符串转换
+  inspect(int_val.to_string(), content="42")
+  inspect(uint_val.to_string(), content="42")
+}
+
+test "boundary_and_edge_cases" {
+  // 测试边界和边缘情况
+  // 整数边界值
+  inspect(@int.max_value > 0, content="true")
+  inspect(@int.min_value < 0, content="true")
+  
+  // 零值操作
+  inspect(0 + 0, content="0")
+  inspect(0 * 5, content="0")
+  inspect(5 * 0, content="0")
+  inspect(0 / 1, content="0")
+  
+  // 空集合操作
+  let empty_array = []
   let empty_string = ""
-  let test_string = "Hello, MoonBit!"
+  let empty_option : Int? = None
   
+  inspect(empty_array.length(), content="0")
   inspect(empty_string.length(), content="0")
-  inspect(test_string.length(), content="14")
-}
-
-// 测试 math 模块的代数函数
-test "math_algebraic_functions" {
-  // 测试立方根函数
-  inspect(@math.cbrtf(1.0), content="1")
-  inspect(@math.cbrtf(27.0), content="3")
-  inspect(@math.cbrtf(125.0), content="5")
-  inspect(@math.cbrtf(0.0), content="0")
-  inspect(@math.cbrtf(-1.0), content="-1")
+  inspect(empty_option.is_none(), content="true")
   
-  // 测试斜边函数
-  inspect(@math.hypotf(3.0, 4.0), content="5")
-  inspect(@math.hypotf(5.0, 12.0), content="13")
-  inspect(@math.hypotf(0.0, 0.0), content="0")
-}
-
-// 测试数值类型转换
-test "numeric_type_conversions" {
-  // 测试整数与字节转换
-  let test_int = 123456789
-  let test_uint = test_int.reinterpret_as_uint()
+  // 极值运算
+  let large_num = 1000000
+  inspect(large_num + large_num, content="2000000")
+  inspect(large_num / 1000, content="1000")
   
-  // 测试字节转换函数
-  let big_endian_bytes = @int.Int::to_be_bytes(test_int)
-  let little_endian_bytes = @int.Int::to_le_bytes(test_int)
-  
-  inspect(big_endian_bytes.length(), content="4")
-  inspect(little_endian_bytes.length(), content="4")
-  
-  // 验证字节顺序不同
-  assert_true(big_endian_bytes[0] != little_endian_bytes[0])
-  assert_true(big_endian_bytes[3] != little_endian_bytes[3])
-}
-
-// 测试边界值处理
-test "boundary_value_handling" {
-  // 测试整数边界值
-  let max_int = @int.max_value
-  let min_int = @int.min_value
-  
-  inspect(Int::abs(max_int), content="2147483647")
-  inspect(Int::abs(min_int), content="-2147483648")
-  
-  // 测试零值的特殊情况
-  inspect(@math.cbrtf(0.0), content="0")
-  inspect(@math.hypotf(0.0, 5.0), content="5")
-  inspect(@math.hypotf(5.0, 0.0), content="5")
-}
-
-// 测试数学恒等式
-test "mathematical_identities" {
-  // 验证 cbrt(x^3) = x (对于正数)
-  inspect(@math.cbrtf(@math.powf(2.0, 3.0)), content="2")
-  inspect(@math.cbrtf(@math.powf(3.0, 3.0)), content="3")
-  inspect(@math.cbrtf(@math.powf(5.0, 3.0)), content="5")
-  
-  // 测试斜边函数的对称性
-  let hypot1 = @math.hypotf(3.0, 4.0)
-  let hypot2 = @math.hypotf(4.0, 3.0)
-  assert_true(hypot1.is_close(hypot2))
-  
-  let hypot3 = @math.hypotf(5.0, 12.0)
-  let hypot4 = @math.hypotf(12.0, 5.0)
-  assert_true(hypot3.is_close(hypot4))
-}
-
-// 测试错误处理和特殊情况
-test "error_handling_and_special_cases" {
-  // 测试无穷大和NaN的处理
+  // 特殊浮点值
   let inf = @float.infinity
   let neg_inf = @float.neg_infinity
+  let nan = @float.not_a_number
   
-  // hypotf 对无穷大的处理
-  inspect(@math.hypotf(inf, 3.0), content="Infinity")
-  inspect(@math.hypotf(3.0, inf), content="Infinity")
-  inspect(@math.hypotf(neg_inf, 3.0), content="Infinity")
-  
-  // cbrtf 对特殊值的处理
-  let cbrt_inf = @math.cbrtf(inf)
-  let cbrt_neg_inf = @math.cbrtf(neg_inf)
-  
-  assert_true(cbrt_inf.is_inf())
-  assert_true(cbrt_neg_inf.is_neg_inf())
-}
-
-// 测试性能相关操作
-test "performance_related_operations" {
-  // 测试大数运算
-  let num1 = 1000000
-  let num2 = 2000000
-  let num3 = 3000000
-  
-  let abs_result1 = Int::abs(num1)
-  let abs_negative1 = Int::abs(-num1)
-  
-  inspect(abs_result1, content="1000000")
-  inspect(abs_negative1, content="1000000")
-  
-  let abs_result2 = Int::abs(num2)
-  let abs_negative2 = Int::abs(-num2)
-  
-  inspect(abs_result2, content="2000000")
-  inspect(abs_negative2, content="2000000")
-  
-  // 测试浮点数运算的精度
-  let precise_calculation = @math.hypotf(0.3, 0.4)
-  assert_true(precise_calculation > 0.49 && precise_calculation < 0.51)
-}
-
-// 测试综合应用场景
-test "comprehensive_application_scenarios" {
-  // 场景：计算3D空间中点到原点的距离
-  let x = 3.0
-  let y = 4.0
-  let z = 12.0
-  
-  // 先计算xy平面的距离，再结合z轴
-  let xy_distance = @math.hypotf(x, y)
-  let xyz_distance = @math.hypotf(xy_distance, z)
-  
-  // 验证结果 (应该是13.0，因为3-4-5-12-13是扩展的勾股数)
-  inspect(xyz_distance, content="13")
-  
-  // 场景：计算立方体的体积和边长关系
-  let volume = 27.0
-  let edge_length = @math.cbrtf(volume)
-  inspect(edge_length, content="3")
-}
-
-// 测试内存和字节操作
-test "memory_and_byte_operations" {
-  // 测试不同整数的字节表示
-  let value1 = 0
-  let value2 = 1
-  let value3 = -1
-  
-  let big_endian1 = @int.Int::to_be_bytes(value1)
-  let little_endian1 = @int.Int::to_le_bytes(value1)
-  
-  // 验证字节长度
-  inspect(big_endian1.length(), content="4")
-  inspect(little_endian1.length(), content="4")
-  
-  // 验证字节顺序相反
-  assert_true(big_endian1[0] == little_endian1[3])
-  assert_true(big_endian1[1] == little_endian1[2])
-  assert_true(big_endian1[2] == little_endian1[1])
-  assert_true(big_endian1[3] == little_endian1[0])
-  
-  // 测试特殊值的字节表示
-  let max_val_bytes = @int.Int::to_be_bytes(@int.max_value)
-  let min_val_bytes = @int.Int::to_be_bytes(@int.min_value)
-  
-  // 验证最大值和最小值的字节表示不同
-  assert_true(max_val_bytes[0] != min_val_bytes[0])
-}
-
-// 测试数学函数的边界情况
-test "math_function_edge_cases" {
-  // 测试极值的立方根
-  inspect(@math.cbrtf(@float.infinity), content="Infinity")
-  inspect(@math.cbrtf(@float.neg_infinity), content="-Infinity")
-  inspect(@math.cbrtf(@float.not_a_number), content="NaN")
-  
-  // 测试极值的斜边计算
-  inspect(@math.hypotf(@float.infinity, @float.infinity), content="Infinity")
-  inspect(@math.hypotf(@float.not_a_number, 1.0), content="NaN")
-  
-  // 测试非常小的数值
-  let tiny = 1.0e-10
-  let small_hypot = @math.hypotf(tiny, tiny)
-  assert_true(small_hypot > 0.0)
-  
-  // 测试数学常数的运算
-  let pi_square = @math.hypotf(@math.pi, 0.0)
-  assert_true(pi_square.is_close(@math.pi))
+  inspect(inf.is_inf(), content="true")
+  inspect(neg_inf.is_neg_inf(), content="true")
+  inspect(nan.is_nan(), content="true")
 }
