@@ -12,145 +12,148 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Import necessary functions
-using @builtin { inspect }
-
 ///|
-test "basic arithmetic" {
-  let a = 10
-  let b = 3
-  inspect(a + b, content="13")
-  inspect(a - b, content="7")
-  inspect(a * b, content="30")
-  inspect(a / b, content="3")
-  inspect(a % b, content="1")
+test "int_basic_operations" {
+  let x = 42
+  let y = -42
+  let z = 0
+  
+  inspect(x, content="42")
+  inspect(y, content="-42")
+  inspect(z, content="0")
+  
+  let sum = x + y
+  inspect(sum, content="0")
+  
+  let product = x * 2
+  inspect(product, content="84")
 }
 
 ///|
-test "string operations" {
-  let s = "Hello"
-  inspect(s.length(), content="5")
-  inspect(s[0], content="'H'")
+test "list_basic_operations" {
+  let empty_list : @list.List[Int] = @list.empty()
+  let list1 = @list.cons(1, empty_list)
+  let list2 = @list.cons(2, list1)
+  let list3 = @list.cons(3, list2)
   
-  let s2 = " World"
-  let combined = s + s2
-  inspect(combined, content="\"Hello World\"")
+  inspect(list3.length(), content="3")
+  
+  let array_list = @list.from_array([1, 2, 3, 4, 5])
+  inspect(array_list.length(), content="5")
 }
 
 ///|
-test "boolean logic" {
-  let t = true
-  let f = false
-  inspect(t && t, content="true")
-  inspect(t || f, content="true")
-  inspect(!f, content="true")
-  inspect(t != f, content="true")
-  inspect(t == f, content="false")
+test "list_map_and_filter" {
+  let numbers = @list.from_array([1, 2, 3, 4, 5])
+  let doubled = @list.map(numbers, fn(x) { x * 2 })
+  let evens = @list.filter(numbers, fn(x) { x % 2 == 0 })
+  
+  inspect(doubled.length(), content="5")
+  inspect(evens.length(), content="2")
+  
+  let sum = @list.fold_left(numbers, 0, fn(acc, x) { acc + x })
+  inspect(sum, content="15")
 }
 
 ///|
-test "array operations" {
-  let arr = [1, 2, 3]
-  inspect(arr.length(), content="3")
-  inspect(arr[0], content="1")
-  inspect(arr[2], content="3")
+test "string_basic_operations" {
+  let empty_str = ""
+  let hello = "Hello"
+  let world = "World"
+  let combined = hello + " " + world
   
-  let doubled = arr.map(x => x * 2)
-  inspect(doubled.length(), content="3")
-  inspect(doubled[0], content="2")
+  inspect(combined, content="Hello World")
+  inspect(hello.length(), content="5")
+  inspect(empty_str.length(), content="0")
+  
+  let chars = combined.to_array()
+  inspect(chars.length(), content="11")
 }
 
 ///|
-test "option type" {
-  let some_val : Option[Int] = Some(42)
-  let none_val : Option[Int] = None
+test "string_operations" {
+  let text = "moonbit"
+  let text_length = text.length()
   
-  let is_some = some_val is Some(_)
-  let is_none = none_val is None
+  inspect(text, content="moonbit")
+  inspect(text_length, content="7")
   
-  inspect(is_some, content="true")
-  inspect(is_none, content="true")
-  
-  let unwrapped = match some_val {
-    Some(v) => v
-    None => 0
-  }
-  inspect(unwrapped, content="42")
+  let substr = text.substring(0, 4)
+  inspect(substr, content="moon")
 }
 
 ///|
-test "result type" {
-  let ok_val : Result[Int, String] = Ok(200)
-  let err_val : Result[Int, String] = Err("error")
+test "option_basic_operations" {
+  let some_value = Some(42)
+  let none_value : Option[Int] = None
   
-  let is_ok = ok_val is Ok(_)
-  let is_err = err_val is Err(_)
+  let is_some_some = some_value.is_some()
+  let is_none_some = some_value.is_none()
+  let is_some_none = none_value.is_some()
+  let is_none_none = none_value.is_none()
   
-  inspect(is_ok, content="true")
-  inspect(is_err, content="true")
-  
-  let unwrapped = match ok_val {
-    Ok(v) => v
-    Err(_) => 0
-  }
-  inspect(unwrapped, content="200")
+  inspect(is_some_some, content="true")
+  inspect(is_none_some, content="false")
+  inspect(is_some_none, content="false")
+  inspect(is_none_none, content="true")
 }
 
 ///|
-test "comparisons" {
-  inspect(10 < 20, content="true")
-  inspect(30 > 15, content="true")
-  inspect(25 <= 25, content="true")
-  inspect(40 >= 40, content="true")
-  inspect(5 == 5, content="true")
-  inspect(5 != 6, content="true")
+test "option_map_operation" {
+  let some_value = Some(42)
+  let mapped = some_value.map(fn(x) { x * 2 })
   
-  inspect("apple" < "banana", content="true")
-  inspect("test" == "test", content="true")
-  inspect("test" != "Test", content="true")
+  let default_value = mapped.unwrap_or(0)
+  inspect(default_value, content="84")
 }
 
 ///|
-test "character operations" {
-  let char_code = 'A'.to_int()
-  inspect(char_code, content="65")
+test "option_chain_operations" {
+  let opt1 = Some(5)
+  let opt2 : Option[Int] = None
+  
+  let result1 = opt1.and_then(fn(x) { if x > 3 { Some(x * 2) } else { None } })
+  let result2 = opt2.and_then(fn(x) { Some(x * 2) })
+  
+  let final_value = result1.unwrap_or(0)
+  let fallback_value = result2.unwrap_or(0)
+  
+  inspect(final_value, content="10")
+  inspect(fallback_value, content="0")
 }
 
 ///|
-test "array filtering" {
-  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+test "math_basic_operations" {
+  let abs_negative = @math.abs(-3.14)
+  let abs_positive = @math.abs(3.14)
   
-  let evens = numbers.filter(x => x % 2 == 0)
-  let odds = numbers.filter(x => x % 2 == 1)
-  let greater_than_5 = numbers.filter(x => x > 5)
+  inspect(abs_negative, content="3.14")
+  inspect(abs_positive, content="3.14")
   
-  inspect(evens.length(), content="5")
-  inspect(odds.length(), content="5")
-  inspect(greater_than_5.length(), content="5")
+  let power = @math.pow(2.0, 3.0)
+  let floor_power = @math.floor(power)
   
-  let first_even = evens[0]
-  inspect(first_even, content="2")
+  inspect(floor_power, content="8")
+  
+  let sqrt_val = @math.sqrt(16.0)
+  inspect(sqrt_val, content="4")
 }
 
 ///|
-test "error handling" {
-  fn safe_divide(a : Int, b : Int) -> Result[Int, String] {
-    if b == 0 {
-      Err("Division by zero")
-    } else {
-      Ok(a / b)
-    }
-  }
+test "math_trigonometric_functions" {
+  let angle = @math.pi() / 4.0
   
-  let good = safe_divide(10, 2)
-  let bad = safe_divide(10, 0)
+  let sin_val = @math.sin(angle)
+  let cos_val = @math.cos(angle)
   
-  let good_result = match good {
-    Ok(v) => v
-    Err(_) => 0
-  }
-  let bad_is_err = bad is Err(_)
+  let rounded_sin = @math.round(sin_val * 1000.0) / 1000.0
+  let rounded_cos = @math.round(cos_val * 1000.0) / 1000.0
   
-  inspect(good_result, content="5")
-  inspect(bad_is_err, content="true")
+  inspect(rounded_sin, content="0.707")
+  inspect(rounded_cos, content="0.707")
+  
+  let tan_val = @math.tan(angle)
+  let rounded_tan = @math.round(tan_val * 1000.0) / 1000.0
+  
+  inspect(rounded_tan, content="1")
 }
