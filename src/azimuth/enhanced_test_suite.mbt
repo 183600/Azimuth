@@ -1,219 +1,184 @@
-// 增强的 MoonBit 测试套件 - 高质量测试用例
-// 针对 azimuth 库的核心功能进行全面测试
+// 新增的高质量 MoonBit 测试用例
+// 测试 azimuth 模块的核心功能
 
-test "advanced_mathematical_operations" {
-  // 高级数学运算测试
-  let x = 12
-  let y = 8
-  let z = 5
-  
-  // 测试复合运算：(x + y) * z - x / y
-  let complex_result = add(multiply(add(x, y), z), -divide_with_ceil(x, y))
-  assert_eq(99, complex_result)  // (12 + 8) * 5 - ceil(12/8) = 20*5 - 2 = 100 - 2 = 98
-  
-  // 测试嵌套运算：x * (y + z) + y * z
-  let nested_result = add(multiply(x, add(y, z)), multiply(y, z))
-  assert_eq(196, nested_result)  // 12 * (8 + 5) + 8 * 5 = 12*13 + 40 = 156 + 40 = 196
+test "addition_comprehensive_test" {
+  // 全面的加法测试
+  assert_eq(42, add(15, 27))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(100, add(50, 50))
+  assert_eq(0, add(100, -100))
 }
 
-test "financial_compound_interest" {
-  // 金融复利计算测试
-  let principal = 1000
-  let rate_percent = 5
-  let years = 3
-  
-  // 年度复利计算
-  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
-  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
-  
-  assert_eq(1050, year1)  // 1000 + 5% = 1050
-  assert_eq(1103, year2)  // 1050 + ceil(1050*5/100) = 1050 + 53 = 1103
-  assert_eq(1158, year3)  // 1103 + ceil(1103*5/100) = 1103 + 55 = 1158
+test "multiplication_comprehensive_test" {
+  // 全面的乘法测试
+  assert_eq(96, multiply(12, 8))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(6, multiply(-2, -3))
+  assert_eq(100, multiply(10, 10))
 }
 
-test "logistics_packaging_optimization" {
-  // 物流包装优化测试
-  let product_a_qty = 45
-  let product_b_qty = 32
-  let product_c_qty = 67
-  let box_capacity = 24
-  
-  // 计算每种产品需要的箱子数量
-  let boxes_a = divide_with_ceil(product_a_qty, box_capacity)
-  let boxes_b = divide_with_ceil(product_b_qty, box_capacity)
-  let boxes_c = divide_with_ceil(product_c_qty, box_capacity)
-  
-  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
-  
-  assert_eq(2, boxes_a)   // ceil(45/24) = 2
-  assert_eq(2, boxes_b)   // ceil(32/24) = 2
-  assert_eq(3, boxes_c)   // ceil(67/24) = 3
-  assert_eq(7, total_boxes)  // 2 + 2 + 3 = 7
-  
-  // 计算总容量和利用率
-  let total_capacity = multiply(total_boxes, box_capacity)
-  let total_items = add(add(product_a_qty, product_b_qty), product_c_qty)
-  let utilization = divide_with_ceil(multiply(total_items, 100), total_capacity)
-  
-  assert_eq(168, total_capacity)  // 7 * 24 = 168
-  assert_eq(144, total_items)     // 45 + 32 + 67 = 144
-  assert_eq(86, utilization)      // floor(144*100/168) = 85%
+test "divide_with_ceil_precision_test" {
+  // 向上取整除法的精度测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(-3, divide_with_ceil(-10, 3))
 }
 
-test "data_structure_simulation" {
-  // 数据结构模拟测试 - 栈和队列操作
-  // 模拟栈操作
-  let stack_size = 0
-  let stack_push1 = add(stack_size, 1)
-  let stack_push2 = add(stack_push1, 1)
-  let stack_push3 = add(stack_push2, 1)
-  let stack_pop1 = subtract(stack_push3, 1)
-  let stack_pop2 = subtract(stack_pop1, 1)
-  
-  assert_eq(1, stack_push1)
-  assert_eq(2, stack_push2)
-  assert_eq(3, stack_push3)
-  assert_eq(2, stack_pop1)
-  assert_eq(1, stack_pop2)
-  
-  // 模拟队列操作
-  let queue_capacity = 10
-  let queue_items = 7
-  let enqueue_count = 3
-  let dequeue_count = 2
-  
-  let final_queue_size = add(subtract(queue_items, dequeue_count), enqueue_count)
-  let remaining_capacity = subtract(queue_capacity, final_queue_size)
-  
-  assert_eq(8, final_queue_size)     // (7 - 2) + 3 = 8
-  assert_eq(2, remaining_capacity)  // 10 - 8 = 2
+test "greeting_unicode_test" {
+  // 问候功能的 Unicode 测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, αβγ!", greet("αβγ"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
-test "algorithm_complexity_analysis" {
-  // 算法复杂度分析测试
-  let input_size = 1000
+test "complex_business_calculation" {
+  // 复杂业务计算：订单总价计算
+  let unit_price = 89
+  let quantity = 7
+  let tax_rate = 8
+  let shipping = 15
+  let discount = 25
   
-  // 模拟 O(n) 算法
-  let linear_complexity = multiply(input_size, 3)
+  // 计算小计
+  let subtotal = multiply(unit_price, quantity)
+  // 计算税费
+  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  // 计算折扣前总价
+  let total_before_discount = add(add(subtotal, tax_amount), shipping)
+  // 计算最终总价
+  let final_total = add(total_before_discount, -discount)
   
-  // 模拟 O(log n) 算法（简化为除法）
-  let logarithmic_complexity = divide_with_ceil(input_size, 100)
-  
-  // 模拟 O(n^2) 算法（简化为乘法）
-  let quadratic_complexity = divide_with_ceil(multiply(input_size, input_size), 10000)
-  
-  assert_eq(3000, linear_complexity)      // 1000 * 3
-  assert_eq(10, logarithmic_complexity)   // ceil(1000/100)
-  assert_eq(100, quadratic_complexity)    // ceil(1000*1000/10000)
-  
-  // 计算效率比较
-  let linear_vs_log = divide_with_ceil(linear_complexity, logarithmic_complexity)
-  let quadratic_vs_linear = divide_with_ceil(quadratic_complexity, linear_complexity)
-  
-  assert_eq(300, linear_vs_log)      // 3000 / 10
-  assert_eq(1, quadratic_vs_linear)  // ceil(100/3000) = 1
+  assert_eq(623, subtotal)
+  assert_eq(50, tax_amount)
+  assert_eq(688, total_before_discount)
+  assert_eq(663, final_total)
 }
 
-test "string_processing_advanced" {
-  // 高级字符串处理测试
-  let first_name = "张"
-  let last_name = "三"
-  let company = "科技"
-  let department = "研发部"
+test "mathematical_properties_test" {
+  // 数学性质验证
+  let x = 17
+  let y = 23
+  let z = 31
   
-  // 构建完整的身份信息
-  let full_name = first_name + last_name
-  let work_info = company + " " + department
-  let identity = full_name + " @ " + work_info
+  // 验证加法交换律
+  let add_comm1 = add(x, y)
+  let add_comm2 = add(y, x)
+  assert_eq(add_comm1, add_comm2)
   
-  let formal_greeting = greet(identity)
+  // 验证乘法交换律
+  let mult_comm1 = multiply(x, y)
+  let mult_comm2 = multiply(y, x)
+  assert_eq(mult_comm1, mult_comm2)
   
-  assert_eq_string("Hello, 张三 @ 科技 研发部!", formal_greeting)
-  
-  // 测试特殊字符组合
-  let special_chars = "αβγ123!@#"
-  let special_greeting = greet(special_chars)
-  assert_eq_string("Hello, αβγ123!@#!", special_greeting)
+  // 验证分配律：x * (y + z) = x * y + x * z
+  let distrib_left = multiply(x, add(y, z))
+  let distrib_right = add(multiply(x, y), multiply(x, z))
+  assert_eq(distrib_left, distrib_right)
 }
 
-test "engineering_calculation" {
-  // 工程计算测试 - 结构分析
-  let beam_length = 12  // 米
-  let beam_width = 0.5  // 米（简化为整数计算）
-  let beam_height = 8   // 厘米（简化为整数计算）
-  let material_density = 7850  // kg/m³（简化计算）
+test "resource_allocation_test" {
+  // 资源分配优化问题
+  let total_budget = 10000
+  let project_cost1 = 1200
+  let project_cost2 = 2300
+  let project_cost3 = 1800
+  let project_cost4 = 2700
+  let project_cost5 = 1500
   
-  // 计算梁的体积（简化计算）
-  let volume = multiply(beam_length, multiply(beam_width, divide_with_ceil(beam_height, 100)))
-  
-  // 计算重量（简化计算）
-  let weight = divide_with_ceil(multiply(volume, material_density), 1000)
-  
-  // 计算支撑点数量（每3米一个支撑点）
-  let support_points = divide_with_ceil(beam_length, 3)
-  
-  assert_eq(0, volume)  // 12 * 0 * 0 = 0（由于整数简化）
-  assert_eq(0, weight)  // 基于体积计算
-  assert_eq(4, support_points)  // ceil(12/3) = 4
-  
-  // 修正计算以避免零值
-  let corrected_volume = multiply(beam_length, multiply(5, divide_with_ceil(beam_height, 100)))
-  let corrected_weight = divide_with_ceil(multiply(corrected_volume, material_density), 10000)
-  
-  assert_eq(4, corrected_volume)   // 12 * 5 * 0.08 = 4.8 -> 4
-  assert_eq(3, corrected_weight)  // ceil(4 * 7850 / 10000) = 3
-}
-
-test "game_mechanics_simulation" {
-  // 游戏机制模拟测试
-  let player_level = 15
-  let base_damage = 100
-  let damage_per_level = 12
-  let critical_chance = 25  // 百分比
-  
-  // 计算基础伤害
-  let total_base_damage = add(base_damage, multiply(player_level, damage_per_level))
-  
-  // 计算暴击伤害（2倍伤害）
-  let critical_damage = multiply(total_base_damage, 2)
-  
-  // 计算平均伤害（考虑暴击概率）
-  let average_damage = add(
-    multiply(total_base_damage, subtract(100, critical_chance)),
-    multiply(critical_damage, critical_chance)
-  ) / 100
-  
-  // 计算对护甲的伤害（护甲减免30%）
-  let damage_after_armor = divide_with_ceil(multiply(average_damage, 70), 100)
-  
-  assert_eq(280, total_base_damage)   // 100 + 15 * 12 = 280
-  assert_eq(560, critical_damage)     // 280 * 2 = 560
-  assert_eq(350, average_damage)      // (280 * 75 + 560 * 25) / 100 = 350
-  assert_eq(245, damage_after_armor)  // ceil(350 * 70 / 100) = 245
-}
-
-test "resource_management_optimization" {
-  // 资源管理优化测试
-  let total_budget = 50000
-  let project_costs = multiply(8000, 4)  // 4个项目，每个8000
-  let operational_costs = 12000
-  
-  // 计算剩余预算
-  let remaining_budget = subtract(total_budget, add(project_costs, operational_costs))
-  
-  // 计算可以启动的小项目数量（每个3000）
-  let small_projects_possible = divide_with_ceil(remaining_budget, 3000)
-  
-  // 计算资源利用率
-  let utilization_rate = divide_with_ceil(
-    multiply(add(project_costs, operational_costs), 100),
-    total_budget
+  // 计算项目总成本
+  let total_cost = add(
+    add(
+      add(project_cost1, project_cost2),
+      add(project_cost3, project_cost4)
+    ),
+    project_cost5
   )
   
-  assert_eq(32000, project_costs)          // 8000 * 4 = 32000
-  assert_eq(44000, add(project_costs, operational_costs))  // 32000 + 12000 = 44000
-  assert_eq(6000, remaining_budget)        // 50000 - 44000 = 6000
-  assert_eq(2, small_projects_possible)    // ceil(6000/3000) = 2
-  assert_eq(88, utilization_rate)          // ceil(44000*100/50000) = 88
+  // 计算剩余预算
+  let remaining_budget = add(total_budget, -total_cost)
+  
+  // 计算可以支持的小项目数量（每个500）
+  let small_projects = divide_with_ceil(remaining_budget, 500)
+  
+  assert_eq(9500, total_cost)
+  assert_eq(500, remaining_budget)
+  assert_eq(1, small_projects)
+}
+
+test "time_calculation_test" {
+  // 基于时间的计算：项目完成时间估算
+  let total_tasks = 157
+  let tasks_per_day = 8
+  let work_days_per_week = 5
+  
+  // 计算需要的工作日
+  let work_days_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  
+  // 计算需要的周数
+  let weeks_needed = divide_with_ceil(work_days_needed, work_days_per_week)
+  
+  // 计算总工作小时数（每天8小时）
+  let total_hours = multiply(work_days_needed, 8)
+  
+  assert_eq(20, work_days_needed)
+  assert_eq(4, weeks_needed)
+  assert_eq(160, total_hours)
+}
+
+test "error_handling_test" {
+  // 错误处理健壮性测试
+  // 测试除零安全性
+  let divide_by_zero_1 = divide_with_ceil(100, 0)
+  let divide_by_zero_2 = divide_with_ceil(-100, 0)
+  let divide_by_zero_3 = divide_with_ceil(0, 0)
+  
+  assert_eq(0, divide_by_zero_1)
+  assert_eq(0, divide_by_zero_2)
+  assert_eq(0, divide_by_zero_3)
+  
+  // 测试极端数值
+  let extreme_positive = 2147483647
+  let extreme_negative = -2147483647
+  
+  // 测试极端值的加法
+  let extreme_add = add(extreme_positive, extreme_negative)
+  assert_eq(0, extreme_add)
+  
+  // 测试极端值的乘法
+  let extreme_mult = multiply(extreme_positive, 0)
+  assert_eq(0, extreme_mult)
+}
+
+test "packaging_optimization_test" {
+  // 包装优化问题
+  let items_per_box = 12
+  let total_items_small = 35
+  let total_items_medium = 78
+  let total_items_large = 156
+  
+  // 计算每种类型需要的箱子数
+  let boxes_small = divide_with_ceil(total_items_small, items_per_box)
+  let boxes_medium = divide_with_ceil(total_items_medium, items_per_box)
+  let boxes_large = divide_with_ceil(total_items_large, items_per_box)
+  
+  // 计算总箱子数
+  let total_boxes = add(add(boxes_small, boxes_medium), boxes_large)
+  
+  // 计算总容量
+  let total_capacity = multiply(total_boxes, items_per_box)
+  
+  // 计算剩余空间
+  let remaining_space = subtract(total_capacity, add(add(total_items_small, total_items_medium), total_items_large))
+  
+  assert_eq(3, boxes_small)
+  assert_eq(7, boxes_medium)
+  assert_eq(13, boxes_large)
+  assert_eq(23, total_boxes)
+  assert_eq(276, total_capacity)
+  assert_eq(7, remaining_space)
 }
