@@ -1,4 +1,4 @@
-// Azimuth 综合测试套件
+// Azimuth 简单综合测试套件
 // 包含8个标准 MoonBit 测试用例，覆盖核心功能
 
 test "basic_arithmetic_operations" {
