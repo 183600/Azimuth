@@ -1613,27 +1613,40 @@ test "performance_and_efficiency_testing" {
   assert_eq(1, quadratic_vs_linear)
 }
 
-test "data_validation_and_input_checks" {
+test "data_validation_and_input_checks_enhanced" {
   // 数据验证和输入检查测试
   // 验证输入数据的有效性
-  let valid_inputs = [1, 10, 100, 1000]
+  let valid_input_1 = 1
+  let valid_input_2 = 10
+  let valid_input_3 = 100
+  let valid_input_4 = 1000
   let invalid_divisor = 0
   
   // 测试有效输入的处理
-  let sum_of_valid = add(add(valid_inputs[0], valid_inputs[1]), add(valid_inputs[2], valid_inputs[3]))
+  let sum_of_valid = add(add(valid_input_1, valid_input_2), add(valid_input_3, valid_input_4))
   assert_eq(1111, sum_of_valid)
   
   // 测试无效输入的错误处理
-  let error_handling_result = divide_with_ceil(valid_inputs[0], invalid_divisor)
+  let error_handling_result = divide_with_ceil(valid_input_1, invalid_divisor)
   assert_eq(0, error_handling_result)  // 除零错误应返回0
   
   // 测试边界值验证
   let boundary_value = 1
   let boundary_result = divide_with_ceil(boundary_value, boundary_value)
   assert_eq(1, boundary_result)
+  
+  // 测试负数除数
+  let negative_divisor = -1
+  let negative_result = divide_with_ceil(valid_input_1, negative_divisor)
+  assert_eq(-1, negative_result)
+  
+  // 测试大数处理
+  let large_number = 10000
+  let large_result = divide_with_ceil(large_number, valid_input_1)
+  assert_eq(10000, large_result)
 }
 
-test "state_management_and_accumulation" {
+test "state_management_and_accumulation_enhanced" {
   // 状态管理和累积计算测试
   // 模拟状态的累积变化
   let initial_state = 0
@@ -1651,6 +1664,20 @@ test "state_management_and_accumulation" {
   // 验证状态增长的合理性
   let growth_factor = divide_with_ceil(multiply(state_step5, 100), initial_state + 1)
   assert_eq(1600, growth_factor)
+  
+  // 验证每次操作的增长
+  let growth_step1 = subtract(state_step2, state_step1)
+  let growth_step2 = subtract(state_step3, state_step2)
+  let growth_step3 = subtract(state_step4, state_step3)
+  let growth_step4 = subtract(state_step5, state_step4)
+  
+  assert_eq(2, growth_step1)
+  assert_eq(3, growth_step2)
+  assert_eq(4, growth_step3)
+  assert_eq(6, growth_step4)
+  
+  // 验证操作次数
+  assert_eq(5, operations_count)
 }
 
 test "error_recovery_and_fault_tolerance" {
@@ -15268,4 +15295,344 @@ test "scientific_computation_workflow" {
     total_buffer_size
   )
   assert_eq(98, memory_utilization)
+}
+
+// 新增的10个标准MoonBit测试用例 - 补充测试覆盖
+test "recursive_calculation_simulation_enhanced" {
+  // 递归计算模拟测试：斐波那契数列计算
+  // 模拟递归深度为5的斐波那契计算
+  let fib_0 = 0
+  let fib_1 = 1
+  let fib_2 = add(fib_0, fib_1)  // 1
+  let fib_3 = add(fib_1, fib_2)  // 2
+  let fib_4 = add(fib_2, fib_3)  // 3
+  let fib_5 = add(fib_3, fib_4)  // 5
+  
+  assert_eq(1, fib_2)
+  assert_eq(2, fib_3)
+  assert_eq(3, fib_4)
+  assert_eq(5, fib_5)
+  
+  // 验证斐波那契性质
+  let fib_sum = add(fib_4, fib_5)  // 8
+  assert_eq(8, fib_sum)
+  
+  // 验证递归关系
+  let fib_6 = add(fib_4, fib_5)  // 8
+  let fib_7 = add(fib_5, fib_6)  // 13
+  assert_eq(8, fib_6)
+  assert_eq(13, fib_7)
+  
+  // 验证基础情况
+  assert_eq(0, fib_0)
+  assert_eq(1, fib_1)
+  
+  // 验证增长模式
+  let growth_ratio = divide_with_ceil(multiply(fib_5, 100), fib_4)
+  assert_eq(167, growth_ratio)  // ceil(5*100/3) = 167
+}
+
+test "bitwise_related_calculations" {
+  // 位运算相关的数学计算测试
+  // 模拟2的幂次计算
+  let power_of_2_0 = 1
+  let power_of_2_1 = multiply(power_of_2_0, 2)  // 2
+  let power_of_2_2 = multiply(power_of_2_1, 2)  // 4
+  let power_of_2_3 = multiply(power_of_2_2, 2)  // 8
+  let power_of_2_4 = multiply(power_of_2_3, 2)  // 16
+  
+  assert_eq(2, power_of_2_1)
+  assert_eq(4, power_of_2_2)
+  assert_eq(8, power_of_2_3)
+  assert_eq(16, power_of_2_4)
+  
+  // 模拟位掩码操作
+  let mask_1 = 1    // 0001
+  let mask_2 = 2    // 0010
+  let mask_4 = 4    // 0100
+  let mask_8 = 8    // 1000
+  let combined_mask = add(add(mask_1, mask_2), add(mask_4, mask_8))
+  
+  assert_eq(15, combined_mask)
+}
+
+test "ecommerce_inventory_management" {
+  // 电商库存管理测试
+  let product_a_stock = 150
+  let product_b_stock = 89
+  let product_c_stock = 234
+  
+  let package_size_a = 12
+  let package_size_b = 8
+  let package_size_c = 15
+  
+  // 计算每个产品需要的包装数
+  let packages_a = divide_with_ceil(product_a_stock, package_size_a)
+  let packages_b = divide_with_ceil(product_b_stock, package_size_b)
+  let packages_c = divide_with_ceil(product_c_stock, package_size_c)
+  
+  assert_eq(13, packages_a)  // ceil(150/12) = 13
+  assert_eq(12, packages_b)  // ceil(89/8) = 12
+  assert_eq(16, packages_c)  // ceil(234/15) = 16
+  
+  // 计算总包装数
+  let total_packages = add(add(packages_a, packages_b), packages_c)
+  assert_eq(41, total_packages)
+  
+  // 计算总库存价值（假设单价分别为10, 20, 30）
+  let total_value = add(
+    multiply(product_a_stock, 10),
+    add(multiply(product_b_stock, 20), multiply(product_c_stock, 30))
+  )
+  assert_eq(11560, total_value)
+}
+
+test "data_format_conversion" {
+  // 数据格式转换测试
+  // 模拟不同单位之间的转换
+  let meters = 1000
+  let centimeters_per_meter = 100
+  let millimeters_per_centimeter = 10
+  
+  // 米到厘米的转换
+  let centimeters = multiply(meters, centimeters_per_meter)
+  assert_eq(100000, centimeters)
+  
+  // 厘米到毫米的转换
+  let millimeters = multiply(centimeters, millimeters_per_centimeter)
+  assert_eq(1000000, millimeters)
+  
+  // 模拟时间单位转换
+  let hours = 2
+  let minutes_per_hour = 60
+  let seconds_per_minute = 60
+  
+  let total_minutes = multiply(hours, minutes_per_hour)
+  let total_seconds = multiply(total_minutes, seconds_per_minute)
+  
+  assert_eq(120, total_minutes)
+  assert_eq(7200, total_seconds)
+  
+  // 验证转换精度
+  let converted_back = divide_with_ceil(total_seconds, multiply(minutes_per_hour, seconds_per_minute))
+  assert_eq(2, converted_back)
+}
+
+test "concurrent_processing_simulation_enhanced" {
+  // 并发处理模拟测试
+  let total_tasks = 100
+  let worker_threads = 4
+  let tasks_per_thread = divide_with_ceil(total_tasks, worker_threads)
+  
+  assert_eq(25, tasks_per_thread)
+  
+  // 计算每个线程的实际任务分配
+  let thread_1_tasks = tasks_per_thread
+  let thread_2_tasks = tasks_per_thread
+  let thread_3_tasks = tasks_per_thread
+  let thread_4_tasks = subtract(total_tasks, multiply(3, tasks_per_thread))
+  
+  assert_eq(25, thread_1_tasks)
+  assert_eq(25, thread_2_tasks)
+  assert_eq(25, thread_3_tasks)
+  assert_eq(25, thread_4_tasks)
+  
+  // 验证任务分配总和
+  let allocated_tasks = add(add(thread_1_tasks, thread_2_tasks), add(thread_3_tasks, thread_4_tasks))
+  assert_eq(100, allocated_tasks)
+  
+  // 模拟处理时间（假设每个任务需要2个时间单位）
+  let processing_time_per_task = 2
+  let total_processing_time = multiply(tasks_per_thread, processing_time_per_task)
+  assert_eq(50, total_processing_time)
+  
+  // 计算线程利用率
+  let thread_utilization = divide_with_ceil(multiply(allocated_tasks, 100), multiply(worker_threads, tasks_per_thread))
+  assert_eq(100, thread_utilization)
+  
+  // 验证负载均衡
+  let max_tasks_per_thread = tasks_per_thread
+  let min_tasks_per_thread = thread_4_tasks
+  let load_balance_factor = subtract(max_tasks_per_thread, min_tasks_per_thread)
+  assert_eq(0, load_balance_factor)
+}
+
+test "memory_usage_optimization" {
+  // 内存使用优化模拟测试
+  let data_items = 1000
+  let item_size_bytes = 64
+  let page_size_bytes = 4096
+  
+  // 计算原始内存使用
+  let raw_memory_usage = multiply(data_items, item_size_bytes)
+  assert_eq(64000, raw_memory_usage)
+  
+  // 计算需要的页数
+  let pages_needed = divide_with_ceil(raw_memory_usage, page_size_bytes)
+  assert_eq(16, pages_needed)
+  
+  // 计算实际分配的内存
+  let allocated_memory = multiply(pages_needed, page_size_bytes)
+  assert_eq(65536, allocated_memory)
+  
+  // 计算内存碎片
+  let memory_fragmentation = subtract(allocated_memory, raw_memory_usage)
+  assert_eq(1536, memory_fragmentation)
+  
+  // 计算内存利用率
+  let memory_efficiency = divide_with_ceil(multiply(raw_memory_usage, 100), allocated_memory)
+  assert_eq(97, memory_efficiency)
+}
+
+test "caching_strategy_simulation" {
+  // 缓存策略模拟测试
+  let total_requests = 1000
+  let cache_size = 100
+  let hit_rate_percentage = 80
+  
+  // 计算缓存命中数
+  let cache_hits = divide_with_ceil(multiply(total_requests, hit_rate_percentage), 100)
+  assert_eq(800, cache_hits)
+  
+  // 计算缓存未命中数
+  let cache_misses = subtract(total_requests, cache_hits)
+  assert_eq(200, cache_misses)
+  
+  // 计算缓存命中率
+  let actual_hit_rate = divide_with_ceil(multiply(cache_hits, 100), total_requests)
+  assert_eq(80, actual_hit_rate)
+  
+  // 模拟缓存替换策略
+  let replacement_operations = divide_with_ceil(cache_misses, cache_size)
+  assert_eq(2, replacement_operations)
+  
+  // 计算缓存效率提升（假设缓存访问比直接访问快10倍）
+  let cache_speedup = 10
+  let effective_speedup = add(
+    multiply(cache_hits, cache_speedup),
+    multiply(cache_misses, 1)
+  )
+  let baseline_operations = multiply(total_requests, 1)
+  let performance_improvement = divide_with_ceil(effective_speedup, baseline_operations)
+  assert_eq(8, performance_improvement)
+}
+
+test "load_balancing_simulation" {
+  // 负载均衡模拟测试
+  let total_connections = 150
+  let server_count = 4
+  
+  // 计算每台服务器的基本连接数
+  let base_connections_per_server = divide_with_ceil(total_connections, server_count)
+  assert_eq(38, base_connections_per_server)
+  
+  // 计算实际连接分配
+  let server_1_connections = base_connections_per_server
+  let server_2_connections = base_connections_per_server
+  let server_3_connections = base_connections_per_server
+  let server_4_connections = subtract(total_connections, multiply(3, base_connections_per_server))
+  
+  assert_eq(38, server_1_connections)
+  assert_eq(38, server_2_connections)
+  assert_eq(38, server_3_connections)
+  assert_eq(36, server_4_connections)
+  
+  // 验证连接分配总和
+  let total_allocated = add(add(server_1_connections, server_2_connections), 
+                            add(server_3_connections, server_4_connections))
+  assert_eq(150, total_allocated)
+  
+  // 计算负载均衡度（最大连接数与最小连接数的差异）
+  let max_connections = base_connections_per_server
+  let min_connections = server_4_connections
+  let load_imbalance = subtract(max_connections, min_connections)
+  assert_eq(2, load_imbalance)
+  
+  // 计算负载均衡效率
+  let balance_efficiency = divide_with_ceil(
+    multiply(min_connections, 100), 
+    max_connections
+  )
+  assert_eq(95, balance_efficiency)
+}
+
+test "time_complexity_analysis_enhanced" {
+  // 时间复杂度分析测试
+  let input_size_10 = 10
+  let input_size_100 = 100
+  let input_size_1000 = 1000
+  
+  // O(1) 常数时间复杂度
+  let constant_time_10 = 1
+  let constant_time_100 = 1
+  let constant_time_1000 = 1
+  
+  assert_eq(constant_time_10, constant_time_100)
+  assert_eq(constant_time_100, constant_time_1000)
+  
+  // O(n) 线性时间复杂度
+  let linear_time_10 = multiply(input_size_10, 2)
+  let linear_time_100 = multiply(input_size_100, 2)
+  let linear_time_1000 = multiply(input_size_1000, 2)
+  
+  assert_eq(20, linear_time_10)
+  assert_eq(200, linear_time_100)
+  assert_eq(2000, linear_time_1000)
+  
+  // 验证线性关系
+  let ratio_100_to_10 = divide_with_ceil(linear_time_100, linear_time_10)
+  let ratio_1000_to_100 = divide_with_ceil(linear_time_1000, linear_time_100)
+  
+  assert_eq(10, ratio_100_to_10)
+  assert_eq(10, ratio_1000_to_100)
+  
+  // O(log n) 对数时间复杂度（简化模拟）
+  let log_time_10 = divide_with_ceil(input_size_10, 3)
+  let log_time_100 = divide_with_ceil(input_size_100, 3)
+  let log_time_1000 = divide_with_ceil(input_size_1000, 3)
+  
+  assert_eq(4, log_time_10)
+  assert_eq(34, log_time_100)
+  assert_eq(334, log_time_1000)
+}
+
+test "data_integrity_verification_enhanced" {
+  // 数据完整性验证测试
+  let original_data = 12345
+  let checksum_factor = 7
+  
+  // 计算校验和
+  let checksum = divide_with_ceil(multiply(original_data, checksum_factor), 1000)
+  assert_eq(87, checksum)
+  
+  // 模拟数据传输
+  let transmitted_data = original_data
+  let transmitted_checksum = checksum
+  
+  // 验证数据完整性
+  let verification_checksum = divide_with_ceil(multiply(transmitted_data, checksum_factor), 1000)
+  let integrity_check = verification_checksum == transmitted_checksum
+  
+  assert_true(integrity_check)
+  
+  // 模拟数据损坏
+  let corrupted_data = add(original_data, 1)
+  let corrupted_checksum = divide_with_ceil(multiply(corrupted_data, checksum_factor), 1000)
+  let corruption_detected = corrupted_checksum != transmitted_checksum
+  
+  assert_true(corruption_detected)
+  
+  // 计算错误检测率
+  let total_tests = 10
+  let detected_errors = 8
+  let detection_rate = divide_with_ceil(multiply(detected_errors, 100), total_tests)
+  assert_eq(80, detection_rate)
+  
+  // 验证校验和计算的准确性
+  let expected_checksum = divide_with_ceil(multiply(12345, 7), 1000)
+  assert_eq(checksum, expected_checksum)
+  
+  // 验证损坏检测的有效性
+  let corruption_difference = subtract(corrupted_checksum, transmitted_checksum)
+  assert_true(corruption_difference > 0)
 }
