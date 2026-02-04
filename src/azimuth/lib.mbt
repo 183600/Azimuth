@@ -13387,3 +13387,172 @@ test "enhanced_robust_error_handling_tolerance_2024" {
   assert_eq_string("Hello,   !", greet("   "))
   assert_eq_string("Hello, normal!", greet("normal"))
 }
+
+// 新增的10个标准 MoonBit 测试用例
+
+test "azimuth_boundary_analysis_comprehensive" {
+  // 边界值分析测试
+  assert_eq(2147483647, add(2147483646, 1))  // 接近Int最大值
+  assert_eq(-2147483647, add(-2147483646, -1))  // 接近Int最小值
+  assert_eq(1, divide_with_ceil(2147483647, 2147483647))  // 最大值相除
+  assert_eq(0, multiply(0, 2147483647))  // 零乘以最大值
+}
+
+test "azimuth_mathematical_invariants_verification" {
+  // 数学不变量测试
+  let x = 42
+  let y = 17
+  
+  // 加法恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(x, add(0, x))
+  
+  // 乘法恒等式
+  assert_eq(x, multiply(x, 1))
+  assert_eq(x, multiply(1, x))
+  
+  // 分配律验证
+  assert_eq(multiply(x, add(y, 1)), add(multiply(x, y), x))
+}
+
+test "azimuth_algorithm_complexity_analysis" {
+  // 算法复杂度模拟测试
+  let n = 100
+  let constant_factor = 3
+  
+  // O(n) 线性复杂度模拟
+  let linear_result = multiply(n, constant_factor)
+  assert_eq(300, linear_result)
+  
+  // O(n²) 二次复杂度模拟
+  let quadratic_result = multiply(n, n)
+  assert_eq(10000, quadratic_result)
+  
+  // O(log n) 对数复杂度模拟（简化）
+  let log_result = divide_with_ceil(n, 10)
+  assert_eq(10, log_result)
+}
+
+test "azimuth_data_structure_simulation" {
+  // 数据结构操作模拟测试
+  let array_size = 10
+  let element_size = 4
+  
+  // 计算数组总大小
+  let total_size = multiply(array_size, element_size)
+  assert_eq(40, total_size)
+  
+  // 模拟索引访问（简化计算）
+  let index = 7
+  let element_offset = multiply(index, element_size)
+  assert_eq(28, element_offset)
+  
+  // 计算剩余元素
+  let remaining_elements = subtract(array_size, index)
+  assert_eq(3, remaining_elements)
+}
+
+test "azimuth_error_boundary_validation" {
+  // 错误边界条件测试
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 溢出边界测试
+  let large_num = 1000000
+  assert_eq(2000000, add(large_num, large_num))
+  
+  // 负数边界测试
+  assert_eq(-1000000, add(-large_num, 0))
+}
+
+test "azimuth_statistical_computation" {
+  // 现实世界统计计算测试
+  let data_points = 15
+  let sum_values = 450
+  let min_value = 10
+  let max_value = 50
+  
+  // 计算平均值
+  let average = divide_with_ceil(sum_values, data_points)
+  assert_eq(30, average)
+  
+  // 计算范围
+  let range = subtract(max_value, min_value)
+  assert_eq(40, range)
+  
+  // 计算中位数近似值
+  let median_approx = divide_with_ceil(add(min_value, max_value), 2)
+  assert_eq(30, median_approx)
+}
+
+test "azimuth_physics_calculations" {
+  // 物理模拟计算测试
+  let initial_velocity = 10  // m/s
+  let acceleration = 2       // m/s²
+  let time = 5               // s
+  
+  // 计算最终速度: v = u + at
+  let final_velocity = add(initial_velocity, multiply(acceleration, time))
+  assert_eq(20, final_velocity)
+  
+  // 计算位移: s = ut + 0.5at²（简化计算）
+  let displacement = add(multiply(initial_velocity, time), multiply(acceleration, multiply(time, time)))
+  assert_eq(100, displacement)
+}
+
+test "azimuth_financial_compound_analysis" {
+  // 金融复利计算测试
+  let principal = 1000
+  let rate_percent = 5
+  let _years = 3  // 使用下划线标记未使用的变量
+  
+  // 简化的复利计算
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, rate_percent), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, rate_percent), 100))
+  
+  assert_eq(1050, year1_amount)
+  assert_eq(1103, year2_amount)
+  assert_eq(1158, year3_amount)
+}
+
+test "azimuth_string_processing_enhanced" {
+  // 高级字符串处理测试
+  let prefix = "Hello"
+  let suffix = "World"
+  let _separator = ", "  // 未使用变量
+  let _exclamation = "!"  // 未使用变量
+  
+  // 模拟字符串连接
+  let full_greeting = greet(suffix)
+  assert_eq_string("Hello, World!", full_greeting)
+  
+  // 测试特殊字符组合
+  let special_chars = greet("@#$%")
+  assert_eq_string("Hello, @#$%!", special_chars)
+  
+  // 测试数字字符串
+  let numeric_string = greet("123")
+  assert_eq_string("Hello, 123!", numeric_string)
+}
+
+test "azimuth_optimization_algorithm_simulation" {
+  // 优化算法模拟测试
+  let population_size = 100
+  let generations = 50
+  let mutation_rate = 5  // 5%
+  
+  // 计算总评估次数
+  let total_evaluations = multiply(population_size, generations)
+  assert_eq(5000, total_evaluations)
+  
+  // 计算预期突变次数
+  let mutation_count = divide_with_ceil(multiply(total_evaluations, mutation_rate), 100)
+  assert_eq(250, mutation_count)
+  
+  // 计算收敛代数（简化）
+  let convergence_generation = divide_with_ceil(generations, 2)
+  assert_eq(25, convergence_generation)
+}
