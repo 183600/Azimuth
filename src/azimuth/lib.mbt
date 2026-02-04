@@ -13556,3 +13556,123 @@ test "azimuth_optimization_algorithm_simulation" {
   let convergence_generation = divide_with_ceil(generations, 2)
   assert_eq(25, convergence_generation)
 }
+
+// 标准 MoonBit 测试用例 - 针对 azimuth 库的高质量测试
+// 使用标准的 MoonBit 测试语法，覆盖核心功能
+
+test "standard_quality_basic_arithmetic" {
+  // 测试基本算术运算
+  assert_eq(10, add(3, 7))
+  assert_eq(15, multiply(3, 5))
+  assert_eq(2, subtract(8, 6))
+  assert_eq(4, divide_with_ceil(10, 3))
+}
+
+test "standard_quality_mathematical_properties" {
+  // 测试数学性质
+  let a = 12
+  let b = 8
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 零元素性质
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, add(a, 0))
+}
+
+test "standard_quality_edge_cases" {
+  // 测试边界情况和极值
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(-5, subtract(0, 5))
+}
+
+test "standard_quality_negative_numbers" {
+  // 测试负数运算
+  assert_eq(-10, add(-3, -7))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-8, subtract(2, 10))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+}
+
+test "standard_quality_string_greeting" {
+  // 测试字符串问候功能
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 123!", greet("123"))
+}
+
+test "standard_quality_business_calculations" {
+  // 测试复杂业务计算场景
+  let unit_price = 25
+  let quantity = 8
+  let shipping = 15
+  let discount = 20
+  
+  let subtotal = multiply(unit_price, quantity)
+  let total_before_discount = add(subtotal, shipping)
+  let final_total = add(total_before_discount, -discount)
+  
+  assert_eq(200, subtotal)
+  assert_eq(215, total_before_discount)
+  assert_eq(195, final_total)
+}
+
+test "standard_quality_packaging_allocation" {
+  // 测试包装和资源分配计算
+  let total_items = 47
+  let items_per_box = 12
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  
+  assert_eq(4, boxes_needed)
+  
+  // 计算剩余空间
+  let total_capacity = multiply(boxes_needed, items_per_box)
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(1, remaining_space)
+}
+
+test "standard_quality_large_numbers" {
+  // 测试大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(333334, divide_with_ceil(1000000, 3))
+}
+
+test "standard_quality_complex_expressions" {
+  // 测试复杂的组合表达式
+  let x = 10
+  let y = 15
+  let z = 20
+  
+  // 测试 (x + y) * z - x / y
+  let result = add(multiply(add(x, y), z), -divide_with_ceil(x, y))
+  assert_eq(499, result)  // (10 + 15) * 20 - ceil(10/15) = 25 * 20 - 1 = 500 - 1 = 499
+  
+  // 测试嵌套表达式
+  let nested = divide_with_ceil(multiply(add(x, multiply(y, z)), 2), 3)
+  assert_eq(207, nested)  // ceil((10 + 15*20) * 2 / 3) = ceil((10 + 300) * 2 / 3) = ceil(310 * 2 / 3) = ceil(620/3) = 207
+}
+
+test "standard_quality_inventory_management" {
+  // 测试实际库存管理场景
+  let initial_stock = 500
+  let daily_sales = 25
+  let days_to_simulate = 7
+  let new_shipment = 100
+  
+  let total_sold = multiply(daily_sales, days_to_simulate)
+  let stock_before_shipment = subtract(initial_stock, total_sold)
+  let final_stock = add(stock_before_shipment, new_shipment)
+  
+  assert_eq(175, total_sold)
+  assert_eq(325, stock_before_shipment)
+  assert_eq(425, final_stock)
+}
