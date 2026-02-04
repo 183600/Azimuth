@@ -1,174 +1,210 @@
 // Azimuth 增强测试套件
-// 包含 8 个高质量的 MoonBit 标准测试用例
+// 使用标准 MoonBit 测试语法，包含8个高质量测试用例
 
-test "calendar_calculation_scenario" {
-  // 日历计算场景：计算工作日和周末分布
-  let total_days = 365
-  let weeks = divide_with_ceil(total_days, 7)
-  let remaining_days = subtract(total_days, multiply(weeks, 7))
+test "number_system_conversions" {
+  // 数字系统转换测试
+  // 测试不同进制和表示法的运算
   
-  assert_eq(53, weeks)  // ceil(365/7) = 53
-  assert_eq(1, remaining_days)  // 365 - 53*7 = 1
+  // 二进制运算模拟
+  let binary_5 = @azimuth.add(2, 3)  // 10 + 11 = 101 (5)
+  let binary_10 = @azimuth.multiply(binary_5, 2)  // 101 * 10 = 1010 (10)
+  @azimuth.assert_eq(10, binary_10)
   
-  // 计算工作日数量（假设每周5个工作日）
-  // 简化：由于remaining_days=1且小于5，所以直接加1
-  let workdays = add(multiply(weeks, 5), 1)
-  assert_eq(266, workdays)  // 53*5 + 1 = 265 + 1 = 266
+  // 十六进制运算模拟
+  let hex_ff = @azimuth.add(255, 0)  // FF + 00 = FF
+  let hex_1fe = @azimuth.multiply(hex_ff, 2)  // FF * 2 = 1FE
+  @azimuth.assert_eq(510, hex_1fe)
 }
 
-test "temperature_conversion_workflow" {
-  // 温度转换工作流测试
-  // 验证温度转换公式：F = C * 9/5 + 32
-  let celsius = 25  // 测试 25°C
-  let celsius_times_nine = multiply(celsius, 9)
-  let celsius_times_nine_divided_by_five = divide_with_ceil(celsius_times_nine, 5)
-  let fahrenheit = add(celsius_times_nine_divided_by_five, 32)
+test "time_calculation_scenarios" {
+  // 时间计算场景测试
+  // 场景：项目时间管理
   
-  assert_eq(77, fahrenheit)  // 25 * 9/5 + 32 = 45 + 32 = 77
-}
-
-test "inventory_reorder_point_calculation" {
-  // 库存重新订购点计算
-  let daily_demand = 15
-  let lead_time_days = 7
-  let safety_stock = 20
-  
-  // 计算重新订购点
-  let lead_time_demand = multiply(daily_demand, lead_time_days)
-  let reorder_point = add(lead_time_demand, safety_stock)
-  
-  assert_eq(125, reorder_point)  // 15*7 + 20 = 105 + 20 = 125
-  
-  // 计算订购批量（基于经济订购量简化版）
-  let annual_demand = multiply(daily_demand, 365)
-  let orders_per_year = 12
-  let order_quantity = divide_with_ceil(annual_demand, orders_per_year)
-  
-  assert_eq(457, order_quantity)  // ceil(15*365/12) = ceil(5475/12) = 457
-}
-
-test "project_milestone_tracking" {
-  // 项目里程碑跟踪测试
+  let work_hours_per_day = 8
+  let work_days_per_week = 5
   let total_tasks = 120
-  let team_size = 8
-  let tasks_per_member_per_day = 2
-  let working_days = 15
+  let tasks_per_hour = 2
   
-  // 计算团队日产能
-  let daily_capacity = multiply(team_size, tasks_per_member_per_day)
-  let total_capacity = multiply(daily_capacity, working_days)
+  // 计算每周工作小时数
+  let weekly_hours = @azimuth.multiply(work_hours_per_day, work_days_per_week)
+  @azimuth.assert_eq(40, weekly_hours)
   
-  assert_eq(16, daily_capacity)  // 8 * 2 = 16
-  assert_eq(240, total_capacity)  // 16 * 15 = 240
+  // 计算每周处理任务数
+  let weekly_tasks = @azimuth.multiply(weekly_hours, tasks_per_hour)
+  @azimuth.assert_eq(80, weekly_tasks)
   
-  // 计算完成项目所需天数
-  let days_needed = divide_with_ceil(total_tasks, daily_capacity)
-  assert_eq(8, days_needed)  // ceil(120/16) = 8
+  // 计算需要的周数
+  let weeks_needed = @azimuth.divide_with_ceil(total_tasks, weekly_tasks)
+  @azimuth.assert_eq(2, weeks_needed)
   
-  // 验证项目可以在规定时间内完成
-  assert_true(days_needed <= working_days)
+  // 计算总工作小时数
+  let total_hours = @azimuth.multiply(total_tasks, @azimuth.divide_with_ceil(1, tasks_per_hour))
+  @azimuth.assert_eq(60, total_hours)
 }
 
-test "budget_allocation_optimization" {
-  // 预算分配优化测试
+test "memory_allocation_simulation" {
+  // 内存分配模拟测试
+  // 场景：计算机内存块分配
+  
+  let total_memory = 1024  // KB
+  let block_size = 64      // KB
+  let allocated_blocks = 7
+  let requested_memory = 512
+  
+  // 计算已分配内存
+  let allocated_memory = @azimuth.multiply(allocated_blocks, block_size)
+  @azimuth.assert_eq(448, allocated_memory)
+  
+  // 计算剩余内存
+  let remaining_memory = @azimuth.subtract(total_memory, allocated_memory)
+  @azimuth.assert_eq(576, remaining_memory)
+  
+  // 计算请求内存需要的块数
+  let blocks_needed = @azimuth.divide_with_ceil(requested_memory, block_size)
+  @azimuth.assert_eq(8, blocks_needed)
+}
+
+test "coordinate_geometry_calculations" {
+  // 坐标几何计算测试
+  // 场景：二维坐标系中的距离和面积计算
+  
+  let x1 = 3
+  let y1 = 4
+  let x2 = 7
+  let y2 = 1
+  
+  // 计算x轴距离
+  let x_distance = @azimuth.subtract(x2, x1)
+  @azimuth.assert_eq(4, x_distance)
+  
+  // 计算y轴距离
+  let y_distance = @azimuth.subtract(y2, y1)
+  @azimuth.assert_eq(-3, y_distance)
+  
+  // 计算曼哈顿距离（简化版，不使用abs）
+  let manhattan_distance = @azimuth.add(x_distance, y_distance)
+  @azimuth.assert_eq(1, manhattan_distance)  // 4 + (-3) = 1
+  
+  // 计算矩形面积（简化版，假设正值）
+  let rectangle_area = @azimuth.multiply(x_distance, 3)  // 使用3而不是abs(y_distance)
+  @azimuth.assert_eq(12, rectangle_area)
+}
+
+test "statistical_analysis_basic" {
+  // 基础统计分析测试
+  // 场景：数据集的基本统计计算
+  
+  let data_points = 15
+  let sum_values = 240
+  let min_value = 8
+  let max_value = 32
+  
+  // 计算平均值
+  let mean_value = @azimuth.divide_with_ceil(sum_values, data_points)
+  @azimuth.assert_eq(16, mean_value)
+  
+  // 计算范围
+  let range = @azimuth.subtract(max_value, min_value)
+  @azimuth.assert_eq(24, range)
+  
+  // 计算中位数近似值（使用范围的中点）
+  let median_approx = @azimuth.add(min_value, @azimuth.divide_with_ceil(range, 2))
+  @azimuth.assert_eq(20, median_approx)
+}
+
+test "resource_optimization_problem" {
+  // 资源优化问题测试
+  // 场景：生产资源分配优化
+  
   let total_budget = 50000
-  let departments = 4
-  let min_budget_per_dept = 10000
+  let product_a_cost = 120
+  let product_b_cost = 180
+  let min_products_a = 150
+  let min_products_b = 100
   
-  // 计算基础分配
-  let base_allocation = divide_with_ceil(total_budget, departments)
-  assert_eq(12500, base_allocation)  // ceil(50000/4) = 12500
+  // 计算产品A的最低成本
+  let cost_a_min = @azimuth.multiply(min_products_a, product_a_cost)
+  @azimuth.assert_eq(18000, cost_a_min)
   
-  // 验证每个部门都能获得最低预算
-  assert_true(base_allocation >= min_budget_per_dept)
+  // 计算产品B的最低成本
+  let cost_b_min = @azimuth.multiply(min_products_b, product_b_cost)
+  @azimuth.assert_eq(18000, cost_b_min)
+  
+  // 计算总最低成本
+  let total_min_cost = @azimuth.add(cost_a_min, cost_b_min)
+  @azimuth.assert_eq(36000, total_min_cost)
   
   // 计算剩余预算
-  let allocated_total = multiply(base_allocation, departments)
-  let remaining_budget = subtract(total_budget, multiply(base_allocation, subtract(departments, 1)))
+  let remaining_budget = @azimuth.subtract(total_budget, total_min_cost)
+  @azimuth.assert_eq(14000, remaining_budget)
   
-  assert_eq(50000, allocated_total)  // 12500 * 4 = 50000
-  assert_eq(12500, remaining_budget)  // 最后一个部门的预算
+  // 计算可以额外生产的产品A数量
+  let extra_products_a = @azimuth.divide_with_ceil(remaining_budget, product_a_cost)
+  @azimuth.assert_eq(117, extra_products_a)
 }
 
-test "shipping_container_optimization" {
-  // 货运集装箱优化测试
-  let total_packages = 234
-  let container_capacity = 50
-  let weight_per_package = 25
-  let max_weight_per_container = 1200
+test "temperature_conversion_logic" {
+  // 温度转换逻辑测试
+  // 场景：不同温度单位转换计算
   
-  // 基于数量计算需要的集装箱
-  let containers_by_count = divide_with_ceil(total_packages, container_capacity)
-  assert_eq(5, containers_by_count)  // ceil(234/50) = 5
+  let celsius_freezing = 0
+  let celsius_boiling = 100
+  let fahrenheit_freezing = 32
+  let fahrenheit_boiling = 212
   
-  // 基于重量计算需要的集装箱
-  let total_weight = multiply(total_packages, weight_per_package)
-  let containers_by_weight = divide_with_ceil(total_weight, max_weight_per_container)
-  assert_eq(5, containers_by_weight)  // ceil(234*25/1200) = ceil(5850/1200) = 5
+  // 摄氏度到华氏度转换：F = C * 9/5 + 32
+  let c_to_f_multiplier_numerator = 9
+  let c_to_f_multiplier_denominator = 5
+  let c_to_f_offset = 32
   
-  // 由于两者计算结果相同，直接使用该值
-  let containers_needed = containers_by_count
-  assert_eq(5, containers_needed)
+  // 转换冰点
+  let freezing_f_calc = @azimuth.add(@azimuth.multiply(celsius_freezing, c_to_f_multiplier_numerator), @azimuth.multiply(c_to_f_offset, c_to_f_multiplier_denominator))
+  let freezing_f_actual = @azimuth.divide_with_ceil(freezing_f_calc, c_to_f_multiplier_denominator)
+  @azimuth.assert_eq(32, freezing_f_actual)
   
-  // 计算空间利用率
-  let total_capacity = multiply(containers_needed, container_capacity)
-  let utilization = divide_with_ceil(multiply(total_packages, 100), total_capacity)
-  assert_eq(94, utilization)  // floor(23400/250) = 93%
+  // 转换沸点
+  let boiling_f_calc = @azimuth.add(@azimuth.multiply(celsius_boiling, c_to_f_multiplier_numerator), @azimuth.multiply(c_to_f_offset, c_to_f_multiplier_denominator))
+  let boiling_f_actual = @azimuth.divide_with_ceil(boiling_f_calc, c_to_f_multiplier_denominator)
+  @azimuth.assert_eq(212, boiling_f_actual)
+  
+  // 验证转换范围
+  let f_range = @azimuth.subtract(fahrenheit_boiling, fahrenheit_freezing)
+  let c_range = @azimuth.subtract(celsius_boiling, celsius_freezing)
+  let range_ratio = @azimuth.divide_with_ceil(f_range, c_range)
+  @azimuth.assert_eq(2, range_ratio)  // 180/100 = 1.8 ≈ 2
 }
 
-test "restaurant_seating_arrangement" {
-  // 餐厅座位安排测试
-  let total_guests = 87
-  let tables_4person = 8
-  let tables_6person = 5
-  let tables_8person = 3
+test "network_data_transmission" {
+  // 网络数据传输测试
+  // 场景：数据包传输计算
   
-  // 计算各类型桌子的总容量
-  let capacity_4person = multiply(tables_4person, 4)
-  let capacity_6person = multiply(tables_6person, 6)
-  let capacity_8person = multiply(tables_8person, 8)
+  let file_size_mb = 15
+  let packet_size_kb = 4
+  let mb_to_kb = 1024
+  let transmission_rate_kbps = 128
+  let overhead_percent = 10
   
-  assert_eq(32, capacity_4person)   // 8 * 4 = 32
-  assert_eq(30, capacity_6person)   // 5 * 6 = 30
-  assert_eq(24, capacity_8person)   // 3 * 8 = 24
+  // 转换文件大小为KB
+  let file_size_kb = @azimuth.multiply(file_size_mb, mb_to_kb)
+  @azimuth.assert_eq(15360, file_size_kb)
   
-  // 计算总容量
-  let total_capacity = add(add(capacity_4person, capacity_6person), capacity_8person)
-  assert_eq(86, total_capacity)  // 32 + 30 + 24 = 86
+  // 计算需要的包数
+  let packets_needed = @azimuth.divide_with_ceil(file_size_kb, packet_size_kb)
+  @azimuth.assert_eq(3840, packets_needed)
   
-  // 检查是否需要额外座位
-  let additional_seats_needed = subtract(total_guests, total_capacity)
-  assert_eq(1, additional_seats_needed)  // 需要额外1个座位
+  // 计算原始传输时间（秒）
+  let base_time_seconds = @azimuth.divide_with_ceil(file_size_kb, transmission_rate_kbps)
+  @azimuth.assert_eq(120, base_time_seconds)
   
-  // 计算需要添加的桌子数量
-  let extra_tables = divide_with_ceil(additional_seats_needed, 4)
-  assert_eq(1, extra_tables)  // ceil(1/4) = 1
-}
-
-test "digital_storage_planning" {
-  // 数字存储规划测试
-  let file_count = 1250
-  let avg_file_size_mb = 15
-  let drive_capacity_gb = 20
-  let drive_capacity_mb = multiply(drive_capacity_gb, 1024)
+  // 计算开销时间
+  let overhead_time = @azimuth.divide_with_ceil(@azimuth.multiply(base_time_seconds, overhead_percent), 100)
+  @azimuth.assert_eq(12, overhead_time)
   
-  // 计算总存储需求
-  let total_storage_mb = multiply(file_count, avg_file_size_mb)
-  assert_eq(18750, total_storage_mb)  // 1250 * 15 = 18750
+  // 计算总传输时间
+  let total_time = @azimuth.add(base_time_seconds, overhead_time)
+  @azimuth.assert_eq(132, total_time)
   
-  // 计算需要的驱动器数量
-  let drives_needed = divide_with_ceil(total_storage_mb, drive_capacity_mb)
-  assert_eq(10, drives_needed)  // ceil(18750/20480) = 10
-  
-  // 计算总可用容量
-  let total_available_mb = multiply(drives_needed, drive_capacity_mb)
-  assert_eq(204800, total_available_mb)  // 10 * 20480 = 204800
-  
-  // 计算剩余空间
-  let remaining_space_mb = subtract(total_available_mb, total_storage_mb)
-  assert_eq(186050, remaining_space_mb)  // 204800 - 18750 = 186050
-  
-  // 计算空间利用率
-  let utilization_percent = divide_with_ceil(multiply(total_storage_mb, 100), total_available_mb)
-  assert_eq(10, utilization_percent)  // floor(1875000/204800) = 9%
+  // 验证传输效率
+  let efficiency = @azimuth.divide_with_ceil(@azimuth.multiply(base_time_seconds, 100), total_time)
+  @azimuth.assert_eq(91, efficiency)  // 120/132 ≈ 91%
 }
