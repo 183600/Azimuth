@@ -280,5 +280,6 @@
                 "azimuth_enhanced_core_tests.mbt",
                 "standard_comprehensive_tests.mbt",
                 "standard_moonbit_tests_v22.mbt",
-                "new_quality_tests.mbt"
+                "new_quality_tests.mbt",
+    "concise_quality_tests.mbt"
                 ]}
