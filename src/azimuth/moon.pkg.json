@@ -9,6 +9,7 @@
     "moonbitlang/core/test"
   ],
   "test": [
+    "new_advanced_tests.mbt",
     "quality_enhanced_test_suite.mbt",
     "standard_core_test_cases.mbt",
     "azimuth_new_standard_test_cases.mbt",
@@ -295,6 +296,7 @@
     "azimuth_high_quality_test_cases.mbt",
     "test/new_concise_tests.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
+    "new_advanced_tests.mbt",
     "standard_core_test_cases.mbt",
     "azimuth_new_standard_test_cases.mbt",
     "standard_moonbit_quality_tests.mbt",
