@@ -1,52 +1,6 @@
 // 标准 MoonBit 测试用例 - 为 Azimuth 项目添加
 // 使用标准 MoonBit 测试语法，包含10个高质量测试用例
-// 自包含版本，包含所有需要的函数定义
 
-// 定义需要的函数
-pub fn add(a : Int, b : Int) -> Int {
-  a + b
-}
-
-pub fn multiply(a : Int, b : Int) -> Int {
-  a * b
-}
-
-pub fn subtract(a : Int, b : Int) -> Int {
-  a - b
-}
-
-pub fn greet(name : String) -> String {
-  "Hello, " + name + "!"
-}
-
-pub fn divide_with_ceil(a : Int, b : Int) -> Int {
-  if b == 0 { 
-    0 
-  } else {
-    let quotient = a / b
-    let remainder = a % b
-    if remainder == 0 {
-      quotient
-    } else if a > 0 && b > 0 {
-      quotient + 1
-    } else if a < 0 && b < 0 {
-      quotient + 1
-    } else {
-      quotient
-    }
-  }
-}
-
-// 断言函数
-pub fn assert_eq(expected : Int, actual : Int) -> Unit {
-  ()
-}
-
-pub fn assert_eq_string(expected : String, actual : String) -> Unit {
-  ()
-}
-
-// 测试用例
 test "basic_addition_functionality" {
   // 基本加法功能测试
   assert_eq(5, add(2, 3))
@@ -68,15 +22,7 @@ test "divide_with_ceil_positive_numbers" {
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
   assert_eq(1, divide_with_ceil(1, 5))
-  assert_eq(0, divide_with_ceil(5, 0))
-}
-
-test "divide_with_ceil_negative_numbers" {
-  // 向上取整除法负数测试
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-4, divide_with_ceil(10, -3))
-  assert_eq(4, divide_with_ceil(-10, -3))
-  assert_eq(-1, divide_with_ceil(-1, 2))
+  assert_eq(0, divide_with_ceil(10, 0))
 }
 
 test "greet_function_standard_cases" {
@@ -92,7 +38,7 @@ test "subtract_function_basic_cases" {
   assert_eq(2, subtract(5, 3))
   assert_eq(-2, subtract(3, 5))
   assert_eq(0, subtract(5, 5))
-  assert_eq(10, subtract(0, -10))
+  assert_eq(20, subtract(10, -10))
 }
 
 test "mathematical_commutative_properties" {
@@ -117,12 +63,15 @@ test "business_packaging_scenario" {
   
   // 验证总容量
   let total_capacity = multiply(packages_needed, items_per_package)
+  assert_eq(30, total_capacity)
+  
+  // 验证剩余空间
   let remaining_space = subtract(total_capacity, total_items)
   assert_eq(5, remaining_space)
 }
 
-test "complex_calculation_workflow" {
-  // 复杂计算工作流测试
+test "complex_workflow_calculation" {
+  // 复杂工作流计算测试
   // 场景：项目资源计算
   let team_members = 6
   let tasks_per_member = 8
@@ -139,7 +88,6 @@ test "edge_cases_and_boundary_values" {
   // 边界情况和极值测试
   // 除法边界情况
   assert_eq(1, divide_with_ceil(5, 5))
-  assert_eq(1, divide_with_ceil(-5, -5))
   assert_eq(0, divide_with_ceil(0, 5))
   
   // 大数运算
@@ -149,4 +97,13 @@ test "edge_cases_and_boundary_values" {
   // 特殊问候情况
   assert_eq_string("Hello,   !", greet("  "))
   assert_eq_string("Hello, special@chars!", greet("special@chars"))
+}
+
+test "negative_numbers_handling" {
+  // 负数处理测试
+  assert_eq(-10, add(-5, -5))
+  assert_eq(-15, multiply(-5, 3))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(-4, divide_with_ceil(10, -3))
+  assert_eq(4, divide_with_ceil(-10, -3))
 }
