@@ -1,5 +1,5 @@
-// 新增的 MoonBit 标准测试用例
-// 为 azimuth 项目添加额外的测试覆盖，包含 8 个高质量测试用例
+// 新增的 MoonBit 标准测试用例 - 8个高质量测试用例
+// 为 azimuth 项目添加额外的测试覆盖
 
 test "performance_large_number_operations" {
   // 大数运算性能测试
