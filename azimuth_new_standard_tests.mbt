@@ -1,128 +1,94 @@
-// Copyright 2026 International Digital Economy Academy
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Azimuth 项目新增标准 MoonBit 测试用例
+// 包含 8 个高质量测试用例，使用标准的 MoonBit 测试语法
 
-// 新的 MoonBit 标准测试用例
-// 包含 8 个核心功能测试，使用标准 MoonBit 测试语法
-
-test "int_basic_operations" {
-  // 测试整数基本操作
-  let a = 10
-  let b = 20
-  
-  azimuth::assert_eq(30, a + b)
-  azimuth::assert_eq(200, a * b)
-  azimuth::assert_eq(10, b - a)
-  azimuth::assert_eq(2, b / a)
+test "add_function_edge_cases" {
+  // 加法函数边界情况测试
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(1, @azimuth.add(1, 0))
+  @azimuth.assert_eq(-1, @azimuth.add(-1, 0))
+  @azimuth.assert_eq(1000000, @azimuth.add(500000, 500000))
+  @azimuth.assert_eq(-100, @azimuth.add(-50, -50))
 }
 
-test "string_basic_operations" {
-  // 测试字符串基本操作
-  let hello = "Hello"
-  let world = "World"
-  
-  azimuth::assert_eq(5, hello.length())
-  azimuth::assert_eq_string("Hello World", hello + " " + world)
-  azimuth::assert_eq(true, hello == "Hello")
-  azimuth::assert_eq(false, hello == "hello")
+test "multiply_function_comprehensive" {
+  // 乘法函数综合测试
+  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
+  @azimuth.assert_eq(0, @azimuth.multiply(100, 0))
+  @azimuth.assert_eq(-100, @azimuth.multiply(-10, 10))
+  @azimuth.assert_eq(100, @azimuth.multiply(-10, -10))
+  @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))
 }
 
-test "boolean_operations" {
-  // 测试布尔操作
-  let t = true
-  let f = false
-  
-  azimuth::assert_eq(true, t && t)
-  azimuth::assert_eq(false, t && f)
-  azimuth::assert_eq(true, t || f)
-  azimuth::assert_eq(false, f || f)
-  azimuth::assert_eq(false, !t)
-  azimuth::assert_eq(true, !f)
+test "divide_with_ceil_comprehensive" {
+  // 向上取整除法综合测试
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(3, 2))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
+  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-3, 2))
 }
 
-test "array_basic_operations" {
-  // 测试数组基本操作
-  let numbers = [1, 2, 3, 4, 5]
-  
-  azimuth::assert_eq(5, numbers.length())
-  azimuth::assert_eq(1, numbers[0])
-  azimuth::assert_eq(5, numbers[4])
-  
-  let doubled = numbers.map(x => x * 2)
-  azimuth::assert_eq(5, doubled.length())
-  azimuth::assert_eq(2, doubled[0])
-  azimuth::assert_eq(10, doubled[4])
+test "greet_function_special_inputs" {
+  // 问候函数特殊输入测试
+  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("  "))
+  @azimuth.assert_eq_string("Hello, 中文!", @azimuth.greet("中文"))
+  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
+  @azimuth.assert_eq_string("Hello, @#$%!", @azimuth.greet("@#$%"))
+  @azimuth.assert_eq_string("Hello, mixED123!", @azimuth.greet("mixED123"))
 }
 
-test "option_basic_operations" {
-  // 测试 Option 基本操作
-  let some_val : Int? = Some(42)
-  let none_val : Int? = None
-  
-  azimuth::assert_eq(true, some_val.is_some())
-  azimuth::assert_eq(false, some_val.is_none())
-  azimuth::assert_eq(false, none_val.is_some())
-  azimuth::assert_eq(true, none_val.is_none())
-  
-  let doubled = some_val.map(x => x * 2)
-  azimuth::assert_eq_string("Some(84)", doubled.to_string())
-  
-  let unwrapped = some_val.unwrap_or(0)
-  let default_val = none_val.unwrap_or(0)
-  
-  azimuth::assert_eq(42, unwrapped)
-  azimuth::assert_eq(0, default_val)
+test "subtract_function_edge_cases" {
+  // 减法函数边界情况测试
+  @azimuth.assert_eq(0, @azimuth.subtract(5, 5))
+  @azimuth.assert_eq(10, @azimuth.subtract(0, -10))
+  @azimuth.assert_eq(-10, @azimuth.subtract(-10, 0))
+  @azimuth.assert_eq(100, @azimuth.subtract(50, -50))
+  @azimuth.assert_eq(-100, @azimuth.subtract(-50, 50))
 }
 
-test "div_with_ceil_operations" {
-  // 测试向上取整除法
-  let result1 = azimuth::divide_with_ceil(10, 3)
-  azimuth::assert_eq(4, result1)
+test "mathematical_properties_validation" {
+  // 数学性质验证测试
+  let a = 12
+  let b = 8
   
-  let result2 = azimuth::divide_with_ceil(9, 3)
-  azimuth::assert_eq(3, result2)
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
   
-  let result3 = azimuth::divide_with_ceil(-10, 3)
-  azimuth::assert_eq(-3, result3)
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
   
-  let result4 = azimuth::divide_with_ceil(0, 5)
-  azimuth::assert_eq(0, result4)
+  // 验证具体数值
+  @azimuth.assert_eq(20, @azimuth.add(12, 8))
+  @azimuth.assert_eq(96, @azimuth.multiply(12, 8))
 }
 
-test "greet_function_tests" {
-  // 测试 greet 函数
-  let result1 = azimuth::greet("MoonBit")
-  azimuth::assert_eq_string("Hello, MoonBit!", result1)
+test "business_packaging_scenario" {
+  // 业务包装场景测试
+  let total_items = 47
+  let items_per_package = 12
+  let packages_needed = @azimuth.divide_with_ceil(total_items, items_per_package)
   
-  let result2 = azimuth::greet("")
-  azimuth::assert_eq_string("Hello, !", result2)
+  @azimuth.assert_eq(4, packages_needed)
   
-  let result3 = azimuth::greet("世界")
-  azimuth::assert_eq_string("Hello, 世界!", result3)
+  // 验证总容量
+  let total_capacity = @azimuth.multiply(packages_needed, items_per_package)
+  @azimuth.assert_eq(48, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = @azimuth.subtract(total_capacity, total_items)
+  @azimuth.assert_eq(1, remaining_space)
 }
 
-test "combined_operations" {
-  // 测试组合操作
-  let a = 5
-  let b = 3
+test "complex_workflow_calculation" {
+  // 复杂工作流计算测试
+  // 场景：项目资源计算
+  let team_members = 8
+  let tasks_per_member = 7
+  let total_tasks = @azimuth.multiply(team_members, tasks_per_member)
   
-  // 先加后乘
-  let sum = azimuth::add(a, b)
-  let product = azimuth::multiply(sum, 2)
-  azimuth::assert_eq(16, product)
+  let sprint_capacity = 15
+  let sprints_needed = @azimuth.divide_with_ceil(total_tasks, sprint_capacity)
   
-  // 字符串拼接和长度
-  let greeting = azimuth::greet("Test")
-  let length = greeting.length()
-  azimuth::assert_eq(11, length)  // "Hello, Test!" 长度为 12
+  @azimuth.assert_eq(56, total_tasks)  // 8 * 7 = 56
+  @azimuth.assert_eq(4, sprints_needed)  // ceil(56/15) = 4
 }
