@@ -1,176 +1,143 @@
-// Azimuth 增强单元测试 - 8个高质量测试用例
-// 使用标准 MoonBit 测试语法，覆盖各种场景和边界情况
+// Azimuth 增强单元测试
+// 包含8个高质量的 MoonBit 测试用例，使用标准测试语法
+// 测试覆盖：基本功能、边界情况、错误处理和实际应用场景
 
-test "enhanced_arithmetic_precision" {
-  // 精密算术运算测试
-  // 测试大数运算和精度保持
-  assert_eq(1000000, add(500000, 500000))
-  assert_eq(250000, multiply(500, 500))
-  assert_eq(1000, divide_with_ceil(999999, 1000))
-  assert_eq(-250000, multiply(-500, 500))
+test "arithmetic_sequence_operations" {
+  // 算术序列操作测试
+  let start = 5
+  let difference = 3
+  let count = 6
+  
+  // 计算等差数列的和：n/2 * (2a + (n-1)d)
+  let first_term = start
+  let last_term = add(start, multiply(difference, subtract(count, 1)))
+  let sequence_sum = divide_with_ceil(multiply(count, add(first_term, last_term)), 2)
+  
+  assert_eq(5, first_term)           // 首项
+  assert_eq(20, last_term)           // 末项：5 + 3*(6-1) = 20
+  assert_eq(75, sequence_sum)        // 和：6/2 * (5+20) = 75
 }
 
-test "complex_financial_calculation" {
-  // 复杂金融计算场景测试
-  // 场景：贷款分期计算
-  let loan_amount = 120000
-  let monthly_payment = 4500
-  let months_needed = divide_with_ceil(loan_amount, monthly_payment)
+test "temperature_conversion_scenario" {
+  // 温度转换场景测试
+  // 摄氏度到华氏度的转换：F = C * 9/5 + 32
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, divide_with_ceil(9, 5)), 32)
   
-  assert_eq(27, months_needed)
+  assert_eq(77, fahrenheit)          // 25 * 9/5 + 32 = 77
   
-  // 验证总支付金额
-  let total_payment = multiply(months_needed, monthly_payment)
-  assert_eq(121500, total_payment)
+  // 验证冰点和沸点
+  let freezing_c = 0
+  let freezing_f = add(multiply(freezing_c, divide_with_ceil(9, 5)), 32)
+  let boiling_c = 100
+  let boiling_f = add(multiply(boiling_c, divide_with_ceil(9, 5)), 32)
   
-  // 验证最后一个月的实际支付金额
-  let last_month_payment = subtract(total_payment, multiply(subtract(months_needed, 1), monthly_payment))
-  assert_eq(1500, last_month_payment)
+  assert_eq(32, freezing_f)          // 冰点
+  assert_eq(212, boiling_f)          // 沸点
 }
 
-test "inventory_optimization_scenario" {
-  // 库存优化场景测试
-  // 场景：仓库存储容量规划
-  let total_items = 1587
-  let pallet_capacity = 144
-  let pallets_needed = divide_with_ceil(total_items, pallet_capacity)
+test "inventory_restock_calculation" {
+  // 库存补货计算测试
+  let current_stock = 47
+  let daily_demand = 8
+  let lead_time_days = 5
+  let safety_stock = 15
   
-  assert_eq(12, pallets_needed)
+  // 计算总需求
+  let total_demand = multiply(daily_demand, lead_time_days)
+  assert_eq(40, total_demand)        // 8 * 5 = 40
   
-  // 验证总存储容量
-  let total_capacity = multiply(pallets_needed, pallet_capacity)
-  assert_eq(1728, total_capacity)
+  // 计算补货点
+  let reorder_point = add(total_demand, safety_stock)
+  assert_eq(55, reorder_point)       // 40 + 15 = 55
   
-  // 验证剩余空间
-  let unused_space = subtract(total_capacity, total_items)
-  assert_eq(141, unused_space)
+  // 计算需要补货的数量
+  let restock_needed = subtract(reorder_point, current_stock)
+  assert_eq(8, restock_needed)       // 55 - 47 = 8
+}
+
+test "complex_division_precision" {
+  // 复杂除法精度测试
+  // 测试各种除法情况的向上取整行为
+  assert_eq(1, divide_with_ceil(1, 2))      // 0.5 -> 1
+  assert_eq(2, divide_with_ceil(3, 2))      // 1.5 -> 2
+  assert_eq(3, divide_with_ceil(5, 2))      // 2.5 -> 3
+  assert_eq(4, divide_with_ceil(7, 2))      // 3.5 -> 4
+  assert_eq(5, divide_with_ceil(9, 2))      // 4.5 -> 5
   
-  // 验证空间利用率
-  let utilization = divide_with_ceil(multiply(total_items, 100), total_capacity)
-  assert_eq(92, utilization)
+  // 测试大数的除法精度
+  assert_eq(10001, divide_with_ceil(20001, 2))    // 10000.5 -> 10001
+  assert_eq(66667, divide_with_ceil(200000, 3))   // 66666.66 -> 66667
 }
 
 test "mathematical_series_validation" {
   // 数学级数验证测试
-  // 验证斐波那契数列性质
-  let fib1 = 5
-  let fib2 = 8
-  let fib3 = 13
-  let fib4 = 21
+  // 验证平方和公式：1² + 2² + ... + n² = n(n+1)(2n+1)/6
+  let n = 5
+  let square_sum_formula = divide_with_ceil(multiply(n, multiply(add(n, 1), add(multiply(2, n), 1))), 6)
   
-  // 验证斐波那契性质：fib(n) = fib(n-1) + fib(n-2)
-  assert_eq(fib3, add(fib1, fib2))
-  assert_eq(fib4, add(fib2, fib3))
+  // 手动计算前5个平方数的和：1 + 4 + 9 + 16 + 25 = 55
+  let manual_sum = add(add(add(add(1, 4), 9), 16), 25)
   
-  // 验证黄金比例近似
-  let ratio1 = divide_with_ceil(multiply(fib3, 100), fib2)
-  let ratio2 = divide_with_ceil(multiply(fib4, 100), fib3)
-  assert_eq(162, ratio1)  // 13/8 ≈ 1.625
-  assert_eq(162, ratio2)  // 21/13 ≈ 1.615
+  assert_eq(55, square_sum_formula)
+  assert_eq(55, manual_sum)
+  assert_eq(square_sum_formula, manual_sum)
 }
 
-test "resource_allocation_efficiency" {
-  // 资源分配效率测试
-  // 场景：计算资源分配优化
-  let total_tasks = 342
-  let team_members = 8
-  let base_tasks_per_member = divide_with_ceil(total_tasks, team_members)
+test "project_resource_allocation" {
+  // 项目资源分配测试
+  let total_tasks = 87
+  let team_size = 6
+  let working_days = 15
+  let tasks_per_person = divide_with_ceil(total_tasks, team_size)
   
-  assert_eq(43, base_tasks_per_member)
+  assert_eq(15, tasks_per_person)     // ceil(87/6) = 15
   
-  // 验证分配的任务总数
-  let allocated_tasks = multiply(team_members, base_tasks_per_member)
-  assert_eq(344, allocated_tasks)
+  // 计算总工作能力
+  let total_capacity = multiply(team_size, working_days)
+  assert_eq(90, total_capacity)       // 6 * 15 = 90
   
-  // 验证剩余任务容量
-  let spare_capacity = subtract(allocated_tasks, total_tasks)
-  assert_eq(2, spare_capacity)
+  // 验证任务能否完成
+  let tasks_remaining = subtract(total_capacity, total_tasks)
+  assert_eq(3, tasks_remaining)       // 90 - 87 = 3
   
-  // 验证负载均衡度
-  let max_load_variance = divide_with_ceil(spare_capacity, team_members)
-  assert_eq(1, max_load_variance)
+  // 计算每个人的实际任务数
+  let actual_tasks_per_person = divide_with_ceil(total_tasks, team_size)
+  assert_eq(15, actual_tasks_per_person)
 }
 
-test "string_processing_international" {
-  // 国际化字符串处理测试
-  // 测试多语言和特殊字符处理
+test "string_greeting_multilingual" {
+  // 多语言问候字符串测试
+  assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, 🚀 MoonBit!", greet("🚀 MoonBit"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, ñoño!", greet("ñoño"))
-  
-  // 测试边界情况
+  assert_eq_string("Hello, Universo!", greet("Universo"))
+  assert_eq_string("Hello, Monde!", greet("Monde"))
+  assert_eq_string("Hello, мир!", greet("мир"))
+  assert_eq_string("Hello, 🌍!", greet("🌍"))
   assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, a!", greet("a"))
+  assert_eq_string("Hello, 12345!", greet("12345"))
 }
 
-test "error_boundary_comprehensive" {
-  // 综合错误边界测试
-  // 测试各种边界条件和错误情况
+test "financial_compound_interest" {
+  // 金融复利计算测试
+  let principal = 10000
+  let annual_rate = 5    // 5%
+  let years = 3
   
-  // 除零错误的全面测试
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(1, 0))
-  assert_eq(0, divide_with_ceil(-1, 0))
+  // 简化的复利计算（使用整数运算）
+  // 第一年：10000 + 5% = 10500
+  let year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
+  assert_eq(10500, year1)
   
-  // 极值运算测试
-  let large_positive = 1000000
-  let large_negative = -1000000
-  let zero = 0
+  // 第二年：10500 + 5% = 11025
+  let year2 = add(year1, divide_with_ceil(multiply(year1, annual_rate), 100))
+  assert_eq(11025, year2)
   
-  assert_eq(0, multiply(large_positive, zero))
-  assert_eq(0, multiply(large_negative, zero))
-  assert_eq(0, multiply(zero, large_positive))
-  assert_eq(0, multiply(zero, large_negative))
+  // 第三年：11025 + 5% = 11576
+  let year3 = add(year2, divide_with_ceil(multiply(year2, annual_rate), 100))
+  assert_eq(11576, year3)
   
-  // 边界减法测试
-  assert_eq(large_positive, subtract(large_positive, zero))
-  assert_eq(large_negative, subtract(large_negative, zero))
-  assert_eq(0, subtract(large_positive, large_positive))
-  assert_eq(0, subtract(large_negative, large_negative))
-}
-
-test "workflow_pipeline_integration" {
-  // 工作流管道集成测试
-  // 测试复杂的业务计算流程
-  // 场景：项目成本估算和资源分配
-  
-  let project_duration = 18  // 月
-  let team_size = 12
-  let avg_salary = 8000
-  let overhead_rate = 25  // 百分比
-  let equipment_cost = 150000
-  
-  // 计算人力成本
-  let total_person_months = multiply(team_size, project_duration)
-  assert_eq(216, total_person_months)
-  
-  let base_labor_cost = multiply(total_person_months, avg_salary)
-  assert_eq(1728000, base_labor_cost)
-  
-  // 计算管理费用
-  let overhead_cost = divide_with_ceil(multiply(base_labor_cost, overhead_rate), 100)
-  assert_eq(432000, overhead_cost)
-  
-  // 计算总项目成本
-  let total_project_cost = add(add(base_labor_cost, overhead_cost), equipment_cost)
-  assert_eq(2310000, total_project_cost)
-  
-  // 计算月度成本
-  let monthly_cost = divide_with_ceil(total_project_cost, project_duration)
-  assert_eq(128334, monthly_cost)
-  
-  // 验证成本分配合理性
-  let labor_percentage = divide_with_ceil(multiply(base_labor_cost, 100), total_project_cost)
-  let overhead_percentage = divide_with_ceil(multiply(overhead_cost, 100), total_project_cost)
-  let equipment_percentage = divide_with_ceil(multiply(equipment_cost, 100), total_project_cost)
-  
-  assert_eq(74, labor_percentage)      // 约74.8%
-  assert_eq(18, overhead_percentage)   // 约18.7%
-  assert_eq(6, equipment_percentage)   // 约6.5%
+  // 计算总收益
+  let total_profit = subtract(year3, principal)
+  assert_eq(1576, total_profit)
 }

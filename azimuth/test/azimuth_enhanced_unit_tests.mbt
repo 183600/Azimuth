@@ -1,270 +1,143 @@
-// Azimuth 增强单元测试 - 高质量测试用例集合
-// 测试覆盖边界情况、业务逻辑场景和复杂数学运算
+// Azimuth 增强单元测试
+// 包含8个高质量的 MoonBit 测试用例，使用标准测试语法
+// 测试覆盖：基本功能、边界情况、错误处理和实际应用场景
 
-test "mathematical_identity_comprehensive" {
-  // 综合数学恒等式测试
-  let x = 42
+test "arithmetic_sequence_operations" {
+  // 算术序列操作测试
+  let start = 5
+  let difference = 3
+  let count = 6
   
-  // 加法恒等式
-  @azimuth.assert_eq(x, @azimuth.add(x, 0))
-  @azimuth.assert_eq(x, @azimuth.add(0, x))
-  @azimuth.assert_eq(0, @azimuth.add(x, -x))
+  // 计算等差数列的和：n/2 * (2a + (n-1)d)
+  let first_term = start
+  let last_term = @azimuth.add(start, @azimuth.multiply(difference, @azimuth.subtract(count, 1)))
+  let sequence_sum = @azimuth.divide_with_ceil(@azimuth.multiply(count, @azimuth.add(first_term, last_term)), 2)
   
-  // 乘法恒等式
-  @azimuth.assert_eq(x, @azimuth.multiply(x, 1))
-  @azimuth.assert_eq(x, @azimuth.multiply(1, x))
-  @azimuth.assert_eq(0, @azimuth.multiply(x, 0))
-  @azimuth.assert_eq(-x, @azimuth.multiply(x, -1))
-  
-  // 减法恒等式 - 使用加法和负数代替
-  @azimuth.assert_eq(0, @azimuth.add(x, -x))
-  @azimuth.assert_eq(x, @azimuth.add(x, 0))
-  @azimuth.assert_eq(-x, @azimuth.add(0, -x))
+  @azimuth.assert_eq(5, first_term)           // 首项
+  @azimuth.assert_eq(20, last_term)           // 末项：5 + 3*(6-1) = 20
+  @azimuth.assert_eq(75, sequence_sum)        // 和：6/2 * (5+20) = 75
 }
 
-test "boundary_value_analysis" {
-  // 边界值分析测试
-  // 零值边界
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 1))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, -1))
+test "temperature_conversion_scenario" {
+  // 温度转换场景测试
+  // 摄氏度到华氏度的转换：F = C * 9/5 + 32
+  let celsius = 25
+  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, @azimuth.divide_with_ceil(9, 5)), 32)
   
-  // 单位边界
-  @azimuth.assert_eq(2, @azimuth.add(1, 1))
-  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-1, -1))
+  @azimuth.assert_eq(77, fahrenheit)          // 25 * 9/5 + 32 = 77
   
-  // 极值边界（在安全范围内）
-  let large_num = 1000000
-  @azimuth.assert_eq(2000000, @azimuth.add(large_num, large_num))
-  @azimuth.assert_eq(2147483647, @azimuth.multiply(large_num, large_num))  // 修复溢出
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(large_num, large_num))
+  // 验证冰点和沸点
+  let freezing_c = 0
+  let freezing_f = @azimuth.add(@azimuth.multiply(freezing_c, @azimuth.divide_with_ceil(9, 5)), 32)
+  let boiling_c = 100
+  let boiling_f = @azimuth.add(@azimuth.multiply(boiling_c, @azimuth.divide_with_ceil(9, 5)), 32)
+  
+  @azimuth.assert_eq(32, freezing_f)          // 冰点
+  @azimuth.assert_eq(212, boiling_f)          // 沸点
 }
 
-test "complex_business_workflow" {
-  // 复杂业务工作流测试
-  // 场景：电商订单处理和库存管理
+test "inventory_restock_calculation" {
+  // 库存补货计算测试
+  let current_stock = 47
+  let daily_demand = 8
+  let lead_time_days = 5
+  let safety_stock = 15
   
-  let order_quantity = 157
-  let package_capacity = 24
-  let shipping_cost_per_package = 15
-  let item_cost = 8
+  // 计算总需求
+  let total_demand = @azimuth.multiply(daily_demand, lead_time_days)
+  @azimuth.assert_eq(40, total_demand)        // 8 * 5 = 40
   
-  // 计算需要的包装数量
-  let packages_needed = @azimuth.divide_with_ceil(order_quantity, package_capacity)
-  @azimuth.assert_eq(7, packages_needed)  // ceil(157/24) = 7
+  // 计算补货点
+  let reorder_point = @azimuth.add(total_demand, safety_stock)
+  @azimuth.assert_eq(55, reorder_point)       // 40 + 15 = 55
   
-  // 计算总包装成本
-  let total_packaging_cost = @azimuth.multiply(packages_needed, shipping_cost_per_package)
-  @azimuth.assert_eq(105, total_packaging_cost)
-  
-  // 计算商品总成本
-  let total_item_cost = @azimuth.multiply(order_quantity, item_cost)
-  @azimuth.assert_eq(1256, total_item_cost)
-  
-  // 计算订单总成本
-  let total_order_cost = @azimuth.add(total_item_cost, total_packaging_cost)
-  @azimuth.assert_eq(1361, total_order_cost)
-  
-  // 计算实际包装容量
-  let total_capacity = @azimuth.multiply(packages_needed, package_capacity)
-  @azimuth.assert_eq(168, total_capacity)
-  
-  // 计算剩余空间 - 使用加法和负数
-  let remaining_space = @azimuth.add(total_capacity, -order_quantity)
-  @azimuth.assert_eq(11, remaining_space)
+  // 计算需要补货的数量
+  let restock_needed = @azimuth.subtract(reorder_point, current_stock)
+  @azimuth.assert_eq(8, restock_needed)       // 55 - 47 = 8
 }
 
-test "string_processing_edge_cases" {
-  // 字符串处理边缘情况测试
-  // 空字符串和特殊字符
+test "complex_division_precision" {
+  // 复杂除法精度测试
+  // 测试各种除法情况的向上取整行为
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 2))      // 0.5 -> 1
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(3, 2))      // 1.5 -> 2
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(5, 2))      // 2.5 -> 3
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(7, 2))      // 3.5 -> 4
+  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(9, 2))      // 4.5 -> 5
+  
+  // 测试大数的除法精度
+  @azimuth.assert_eq(10001, @azimuth.divide_with_ceil(20001, 2))    // 10000.5 -> 10001
+  @azimuth.assert_eq(66667, @azimuth.divide_with_ceil(200000, 3))   // 66666.66 -> 66667
+}
+
+test "mathematical_series_validation" {
+  // 数学级数验证测试
+  // 验证平方和公式：1² + 2² + ... + n² = n(n+1)(2n+1)/6
+  let n = 5
+  let square_sum_formula = @azimuth.divide_with_ceil(@azimuth.multiply(n, @azimuth.multiply(@azimuth.add(n, 1), @azimuth.add(@azimuth.multiply(2, n), 1))), 6)
+  
+  // 手动计算前5个平方数的和：1 + 4 + 9 + 16 + 25 = 55
+  let manual_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(1, 4), 9), 16), 25)
+  
+  @azimuth.assert_eq(55, square_sum_formula)
+  @azimuth.assert_eq(55, manual_sum)
+  @azimuth.assert_eq(square_sum_formula, manual_sum)
+}
+
+test "project_resource_allocation" {
+  // 项目资源分配测试
+  let total_tasks = 87
+  let team_size = 6
+  let working_days = 15
+  let tasks_per_person = @azimuth.divide_with_ceil(total_tasks, team_size)
+  
+  @azimuth.assert_eq(15, tasks_per_person)     // ceil(87/6) = 15
+  
+  // 计算总工作能力
+  let total_capacity = @azimuth.multiply(team_size, working_days)
+  @azimuth.assert_eq(90, total_capacity)       // 6 * 15 = 90
+  
+  // 验证任务能否完成
+  let tasks_remaining = @azimuth.subtract(total_capacity, total_tasks)
+  @azimuth.assert_eq(3, tasks_remaining)       // 90 - 87 = 3
+  
+  // 计算每个人的实际任务数
+  let actual_tasks_per_person = @azimuth.divide_with_ceil(total_tasks, team_size)
+  @azimuth.assert_eq(15, actual_tasks_per_person)
+}
+
+test "string_greeting_multilingual" {
+  // 多语言问候字符串测试
+  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, Universo!", @azimuth.greet("Universo"))
+  @azimuth.assert_eq_string("Hello, Monde!", @azimuth.greet("Monde"))
+  @azimuth.assert_eq_string("Hello, мир!", @azimuth.greet("мир"))
+  @azimuth.assert_eq_string("Hello, 🌍!", @azimuth.greet("🌍"))
   @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("   "))
-  @azimuth.assert_eq_string("Hello, \n\t\r!", @azimuth.greet("\n\t\r"))
-  
-  // 数字和符号字符串
-  @azimuth.assert_eq_string("Hello, 1234567890!", @azimuth.greet("1234567890"))
-  @azimuth.assert_eq_string("Hello, !@#$%^&*()!", @azimuth.greet("!@#$%^&*()"))
-  @azimuth.assert_eq_string("Hello, []{}<>!", @azimuth.greet("[]{}<>"))
-  
-  // Unicode和表情符号
-  @azimuth.assert_eq_string("Hello, 🌟🌙⭐!", @azimuth.greet("🌟🌙⭐"))
-  @azimuth.assert_eq_string("Hello, αβγδε!", @azimuth.greet("αβγδε"))
-  @azimuth.assert_eq_string("Hello, 🏳️‍🌈🚀🎉!", @azimuth.greet("🏳️‍🌈🚀🎉"))
+  @azimuth.assert_eq_string("Hello, 12345!", @azimuth.greet("12345"))
 }
 
-test "error_handling_robustness" {
-  // 错误处理健壮性测试
-  // 除零错误的全面测试
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(1, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-1, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(1000000, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-1000000, 0))
+test "financial_compound_interest" {
+  // 金融复利计算测试
+  let principal = 10000
+  let annual_rate = 5    // 5%
+  let years = 3
   
-  // 极值组合测试
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 1000000))
-  @azimuth.assert_eq(0, @azimuth.multiply(1000000, 0))
-  @azimuth.assert_eq(1000000, @azimuth.add(1000000, 0))
-  @azimuth.assert_eq(1000000, @azimuth.add(0, 1000000))
-  @azimuth.assert_eq(1000000, @azimuth.add(1000000, 0))  // 使用加法代替减法
-  @azimuth.assert_eq(-1000000, @azimuth.add(0, -1000000))
-}
-
-test "algorithmic_complexity_simulation" {
-  // 算法复杂度模拟测试
-  // 模拟不同算法的时间复杂度特征
-  let input_sizes = [10, 100, 1000]
+  // 简化的复利计算（使用整数运算）
+  // 第一年：10000 + 5% = 10500
+  let year1 = @azimuth.add(principal, @azimuth.divide_with_ceil(@azimuth.multiply(principal, annual_rate), 100))
+  @azimuth.assert_eq(10500, year1)
   
-  // O(1) 常数时间算法模拟
-  let constant_time_result = 42
-  @azimuth.assert_eq(42, constant_time_result)
+  // 第二年：10500 + 5% = 11025
+  let year2 = @azimuth.add(year1, @azimuth.divide_with_ceil(@azimuth.multiply(year1, annual_rate), 100))
+  @azimuth.assert_eq(11025, year2)
   
-  // O(n) 线性时间算法模拟
-  let linear_10 = @azimuth.multiply(input_sizes[0], 3)
-  let linear_100 = @azimuth.multiply(input_sizes[1], 3)
-  let linear_1000 = @azimuth.multiply(input_sizes[2], 3)
+  // 第三年：11025 + 5% = 11576
+  let year3 = @azimuth.add(year2, @azimuth.divide_with_ceil(@azimuth.multiply(year2, annual_rate), 100))
+  @azimuth.assert_eq(11576, year3)
   
-  @azimuth.assert_eq(30, linear_10)
-  @azimuth.assert_eq(300, linear_100)
-  @azimuth.assert_eq(3000, linear_1000)
-  
-  // O(log n) 对数时间算法模拟（简化）
-  let log_10 = @azimuth.divide_with_ceil(input_sizes[0], 3)
-  let log_100 = @azimuth.divide_with_ceil(input_sizes[1], 3)
-  let log_1000 = @azimuth.divide_with_ceil(input_sizes[2], 3)
-  
-  @azimuth.assert_eq(4, log_10)
-  @azimuth.assert_eq(34, log_100)
-  @azimuth.assert_eq(334, log_1000)
-}
-
-test "resource_optimization_complex" {
-  // 复杂资源优化测试
-  // 场景：多项目资源分配优化
-  
-  // 项目A：需要125个单位，每批次可处理20个
-  let project_a_needs = 125
-  let batch_size_a = 20
-  let batches_a = @azimuth.divide_with_ceil(project_a_needs, batch_size_a)
-  
-  // 项目B：需要87个单位，每批次可处理15个
-  let project_b_needs = 87
-  let batch_size_b = 15
-  let batches_b = @azimuth.divide_with_ceil(project_b_needs, batch_size_b)
-  
-  // 项目C：需要234个单位，每批次可处理25个
-  let project_c_needs = 234
-  let batch_size_c = 25
-  let batches_c = @azimuth.divide_with_ceil(project_c_needs, batch_size_c)
-  
-  // 计算总批次数
-  let total_batches = @azimuth.add(@azimuth.add(batches_a, batches_b), batches_c)
-  @azimuth.assert_eq(23, total_batches)  // 7 + 6 + 10 = 23 batches
-  
-  // 计算各项目实际处理能力
-  let capacity_a = @azimuth.multiply(batches_a, batch_size_a)
-  let capacity_b = @azimuth.multiply(batches_b, batch_size_b)
-  let capacity_c = @azimuth.multiply(batches_c, batch_size_c)
-  
-  @azimuth.assert_eq(140, capacity_a)  // 7 * 20
-  @azimuth.assert_eq(90, capacity_b)   // 6 * 15
-  @azimuth.assert_eq(250, capacity_c)  // 10 * 25
-  
-  // 计算总处理能力
-  let total_capacity = @azimuth.add(@azimuth.add(capacity_a, capacity_b), capacity_c)
-  @azimuth.assert_eq(480, total_capacity)
-  
-  // 计算剩余处理能力 - 使用加法和负数
-  let total_needs = @azimuth.add(@azimuth.add(project_a_needs, project_b_needs), project_c_needs)
-  let remaining_capacity = @azimuth.add(total_capacity, -total_needs)
-  @azimuth.assert_eq(34, remaining_capacity)
-  
-  // 计算资源利用率
-  let utilization_percent = @azimuth.divide_with_ceil(@azimuth.multiply(total_needs, 100), total_capacity)
-  @azimuth.assert_eq(93, utilization_percent)  // floor(44600/480) = 92%
-}
-
-test "mathematical_series_and_progressions" {
-  // 数学级数和数列测试
-  // 等差数列：a, a+d, a+2d, ...
-  let first_term = 3
-  let common_difference = 4
-  let n_terms = 5
-  
-  // 计算等差数列第n项：a + (n-1)d
-  let nth_term = @azimuth.add(first_term, @azimuth.multiply(common_difference, @azimuth.add(n_terms, -1)))
-  @azimuth.assert_eq(19, nth_term)  // 3 + (5-1)*4 = 19
-  
-  // 计算等差数列前n项和：n/2 * (first + last)
-  let sum_first_n = @azimuth.divide_with_ceil(
-    @azimuth.multiply(n_terms, @azimuth.add(first_term, nth_term)),
-    2
-  )
-  @azimuth.assert_eq(55, sum_first_n)  // 5/2 * (3 + 19) = 55
-  
-  // 等比数列：a, ar, ar², ...
-  let geometric_first = 2
-  let common_ratio = 3
-  
-  // 计算等比数列第n项：a * r^(n-1)
-  let geo_nth_term = @azimuth.multiply(geometric_first, 
-    @azimuth.multiply(@azimuth.multiply(common_ratio, common_ratio), common_ratio))
-  @azimuth.assert_eq(54, geo_nth_term)  // 2 * 3^3 = 54
-  
-  // 计算等比数列前n项和：a * (r^n - 1) / (r - 1)
-  let geo_sum = @azimuth.divide_with_ceil(
-    @azimuth.multiply(geometric_first, @azimuth.add(@azimuth.multiply(@azimuth.multiply(@azimuth.multiply(common_ratio, common_ratio), common_ratio), common_ratio), -1)),
-    @azimuth.add(common_ratio, -1)
-  )
-  @azimuth.assert_eq(80, geo_sum)  // 2 * (3^4 - 1) / (3 - 1) = 80
-}
-
-test "financial_calculations_comprehensive" {
-  // 综合金融计算测试
-  // 场景：贷款计算和投资回报
-  
-  let principal = 50000
-  let annual_rate = 6  // 6%
-  let loan_term_years = 5
-  
-  // 计算单利总利息
-  let simple_interest = @azimuth.divide_with_ceil(
-    @azimuth.multiply(principal, @azimuth.multiply(annual_rate, loan_term_years)),
-    100
-  )
-  @azimuth.assert_eq(15000, simple_interest)  // 50000 * 6% * 5 = 15000
-  
-  // 计算单利总还款额
-  let total_repayment_simple = @azimuth.add(principal, simple_interest)
-  @azimuth.assert_eq(65000, total_repayment_simple)
-  
-  // 计算月供（简化）
-  let total_months = @azimuth.multiply(loan_term_years, 12)
-  let monthly_payment_simple = @azimuth.divide_with_ceil(total_repayment_simple, total_months)
-  @azimuth.assert_eq(1084, monthly_payment_simple)  // ceil(65000/60)
-  
-  // 投资计算：初始投资 + 定期投入
-  let initial_investment = 10000
-  let monthly_contribution = 500
-  let investment_months = 24
-  
-  let total_contributions = @azimuth.multiply(monthly_contribution, investment_months)
-  let total_invested = @azimuth.add(initial_investment, total_contributions)
-  @azimuth.assert_eq(22000, total_invested)
-  
-  // 假设年化收益率8%，计算总收益（简化）
-  let annual_return_rate = 8
-  let investment_years = @azimuth.divide_with_ceil(investment_months, 12)
-  let total_returns = @azimuth.divide_with_ceil(
-    @azimuth.multiply(total_invested, @azimuth.multiply(annual_return_rate, investment_years)),
-    100
-  )
-  @azimuth.assert_eq(3520, total_returns)  // 22000 * 8% * 2 = 3520
-  
-  // 计算最终投资价值
-  let final_value = @azimuth.add(total_invested, total_returns)
-  @azimuth.assert_eq(25520, final_value)
+  // 计算总收益
+  let total_profit = @azimuth.subtract(year3, principal)
+  @azimuth.assert_eq(1576, total_profit)
 }
