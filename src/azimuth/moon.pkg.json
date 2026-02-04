@@ -591,6 +591,7 @@
     "quality_test_cases.mbt",
     "my_simple_tests.mbt",
     "enhanced_azimuth_core_tests.mbt",
+    "high_quality_standard_tests.mbt",
             "standard_moonbit_core_tests.mbt",
             "user_added_comprehensive_tests.mbt",
             "enhanced_lib_test.mbt",
@@ -598,4 +599,5 @@
     "azimuth_simple_quality_tests.mbt",
     "high_quality_moonbit_tests.mbt",
     "test/concise_quality_tests.mbt",
-    "azimuth_enhanced_test_suite.mbt"                                                                                                                                           ]}
+    "azimuth_enhanced_test_suite.mbt",
+    "high_quality_standard_tests.mbt"                                                                                                                                           ]}
