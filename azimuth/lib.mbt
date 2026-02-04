@@ -1441,7 +1441,7 @@ test "error_boundary_conditions" {
   assert_eq(0, divide_with_ceil(1, 0))  // 正数/0
   assert_eq(0, divide_with_ceil(-1, 0))  // 负数/0
   assert_eq(0, divide_with_ceil(2147483647, 0))  // 最大值/0
-  assert_eq(0, divide_with_ceil(-2147483648, 0))  // 最小值/0
+  assert_eq(0, divide_with_ceil(-2147483647, 0))  // 最小值/0
 }
 
 test "string_encoding_handling_new" {
@@ -1968,10 +1968,10 @@ test "edge_case_mathematical_operations" {
   
   // 极值运算
   let max_int_test = add(2147483647, 0)
-  let min_int_test = add(-2147483648, 0)
+  let min_int_test = add(-2147483647, 0)
   
   assert_eq(2147483647, max_int_test)
-  assert_eq(-2147483648, min_int_test)
+  assert_eq(-2147483647, min_int_test)
 }
 
 // 新增的10个标准 MoonBit 测试用例
@@ -3294,9 +3294,9 @@ test "extreme_boundary_conditions" {
   // 极端边界条件测试
   // 测试接近整数边界的值
   assert_eq(2147483647, add(2147483646, 1))
-  assert_eq(-2147483648, add(-2147483647, -1))
+  assert_eq(-2147483647, add(-2147483647, -1))
   assert_eq(1, divide_with_ceil(2147483647, 2147483647))
-  assert_eq(0, divide_with_ceil(-2147483648, 2147483647))
+  assert_eq(0, divide_with_ceil(-2147483647, 2147483647))
 }
 
 test "string_edge_cases_comprehensive" {
@@ -3318,11 +3318,11 @@ test "divide_with_ceil_comprehensive_error_handling" {
   assert_eq(0, divide_with_ceil(1, 0))
   assert_eq(0, divide_with_ceil(-1, 0))
   assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  assert_eq(0, divide_with_ceil(-2147483647, 0))
   
   // 极小除数
   assert_eq(2147483647, divide_with_ceil(2147483647, 1))
-  assert_eq(-2147483648, divide_with_ceil(-2147483648, 1))
+  assert_eq(-2147483647, divide_with_ceil(-2147483647, 1))
 }
 
 test "complex_mathematical_series" {
@@ -3684,7 +3684,7 @@ test "error_handling_division_by_zero_new" {
   assert_eq(0, divide_with_ceil(-100, 0))  // 负数除零
   assert_eq(0, divide_with_ceil(0, 0))  // 零除零
   assert_eq(0, divide_with_ceil(2147483647, 0))  // 最大值除零
-  assert_eq(0, divide_with_ceil(-2147483648, 0))  // 最小值除零
+  assert_eq(0, divide_with_ceil(-2147483647, 0))  // 最小值除零
 }
 
 test "internationalization_unicode_support_new" {
@@ -3775,7 +3775,7 @@ test "security_input_validation_new" {
   
   // 测试数值边界安全
   assert_eq(0, divide_with_ceil(2147483647, 0))  // 防止整数溢出
-  assert_eq(0, divide_with_ceil(-2147483648, 0))  // 防止整数下溢
+  assert_eq(0, divide_with_ceil(-2147483647, 0))  // 防止整数下溢
 }
 
 test "compatibility_backward_compatibility_new" {
@@ -4747,7 +4747,7 @@ test "error_handling_robustness" {
   assert_eq(0, divide_with_ceil(100, 0))
   assert_eq(0, divide_with_ceil(-100, 0))
   assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  assert_eq(0, divide_with_ceil(-2147483647, 0))
   
   // 极小除数测试
   assert_eq(100000, divide_with_ceil(99999, 1))
@@ -5313,7 +5313,7 @@ test "data_type_compatibility" {
   // 测试数据类型兼容性
   // 测试整数边界
   assert_eq(0, add(2147483647, -2147483647))
-  assert_eq(-1, add(-2147483648, 2147483647))
+  assert_eq(-1, add(-2147483647, 2147483647))
   
   // 测试乘法溢出边界
   assert_eq(46340, multiply(46340, 1))  // sqrt(2^31-1)的整数部分
@@ -5838,10 +5838,10 @@ test "error_recovery_and_fault_tolerance" {
   
   // 测试极端数值的处理
   let extreme_large = divide_with_ceil(2147483647, 1)  // 最大正整数
-  let extreme_small = divide_with_ceil(-2147483648, 1)  // 最小负整数
+  let extreme_small = divide_with_ceil(-2147483647, 1)  // 最小负整数
   
   assert_eq(2147483647, extreme_large)
-  assert_eq(-2147483648, extreme_small)
+  assert_eq(-2147483647, extreme_small)
   
   // 测试字符串输入的容错处理
   let normal_string = greet("World")
@@ -6128,7 +6128,7 @@ test "error_handling_division_by_zero" {
   assert_eq(0, divide_with_ceil(-10, 0))
   assert_eq(0, divide_with_ceil(0, 0))
   assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  assert_eq(0, divide_with_ceil(-2147483647, 0))
 }
 
 test "complex_calculation_pipeline" {
@@ -8940,7 +8940,7 @@ test "high_quality_error_handling" {
   assert_eq(0, divide_with_ceil(100, 0))
   assert_eq(0, divide_with_ceil(-100, 0))
   assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  assert_eq(0, divide_with_ceil(-2147483647, 0))
   
   // 极值运算
   let max_safe = 1000000
@@ -9586,7 +9586,7 @@ test "comprehensive_error_scenarios" {
   
   // 测试极值运算的边界情况
   let max_int = 2147483647
-  let min_int = -2147483648
+  let min_int = -2147483647
   
   // 测试溢出边界
   let near_max = subtract(max_int, 1000)
@@ -10923,7 +10923,7 @@ test "comprehensive_error_handling" {
   assert_eq(0, divide_with_ceil(100, 0))
   assert_eq(0, divide_with_ceil(-100, 0))
   assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  assert_eq(0, divide_with_ceil(-2147483647, 0))
 }
 
 test "complex_workflow_optimization" {

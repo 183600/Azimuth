@@ -93,10 +93,10 @@ test "assert_functions_verification" {
   @azimuth.assert_eq_string("test", "test")
   
   // 测试比较操作
-  assert_true(5 > 3)
-  assert_true(10 >= 10)
-  assert_false(5 < 3)
-  assert_false(10 <= 9)
+  @azimuth.assert_true(5 > 3)
+  @azimuth.assert_true(10 >= 10)
+  @azimuth.assert_false(5 < 3)
+  @azimuth.assert_false(10 <= 9)
 }
 
 test "real_world_application_scenario" {

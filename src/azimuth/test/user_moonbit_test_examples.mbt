@@ -74,8 +74,8 @@ test "error_handling_and_edge_cases" {
   
   // 测试溢出保护
   let max_val = 2147483647
-  assert_true(@azimuth.add(max_val, 100) == max_val)
-  assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
+  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
 }
 
 test "complex_calculations" {

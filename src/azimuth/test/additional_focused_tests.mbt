@@ -103,7 +103,7 @@ test "nested_function_compositions" {
   let result = @azimuth.add(step2, -3)    // 27
   @azimuth.assert_eq(27, result)
   
-  // 计算：greet(greet("test")的前5个字符)的简化版本
+  // 计算：@azimuth.greet(greet("test")的前5个字符)的简化版本
   let inner = @azimuth.greet("test")     // "Hello, test!"
   let outer = @azimuth.greet("User")     // "Hello, User!"
   @azimuth.assert_eq_string("Hello, User!", outer)

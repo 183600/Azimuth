@@ -187,7 +187,7 @@ test "cryptography_hash_simulation" {
   let received_hash = hash_value
   
   let verification_passed = received_length == message_length && received_hash == hash_value
-  assert_true(verification_passed)
+  @azimuth.assert_true(verification_passed)
 }
 
 test "machine_learning_feature_scaling" {

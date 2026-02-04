@@ -3,13 +3,13 @@
 
 test "subtract_function_comprehensive" {
   // 全面测试 subtract 函数
-  assert_eq(5, subtract(10, 5))
-  assert_eq(-5, subtract(5, 10))
-  assert_eq(0, subtract(5, 5))
-  assert_eq(10, subtract(10, 0))
-  assert_eq(-10, subtract(0, 10))
-  assert_eq(15, subtract(-5, -20))
-  assert_eq(-25, subtract(-10, 15))
+  @azimuth.assert_eq(5, @azimuth.subtract(10, 5))
+  @azimuth.assert_eq(-5, @azimuth.subtract(5, 10))
+  @azimuth.assert_eq(0, @azimuth.subtract(5, 5))
+  @azimuth.assert_eq(10, @azimuth.subtract(10, 0))
+  @azimuth.assert_eq(-10, @azimuth.subtract(0, 10))
+  @azimuth.assert_eq(15, @azimuth.subtract(-5, -20))
+  @azimuth.assert_eq(-25, @azimuth.subtract(-10, 15))
 }
 
 test "complex_financial_calculations" {
@@ -20,17 +20,17 @@ test "complex_financial_calculations" {
   let years = 2
   
   // 计算复利：第一年
-  let interest1 = divide_with_ceil(multiply(principal, rate1), 100)
-  let amount1 = add(principal, interest1)
+  let interest1 = @azimuth.divide_with_ceil(@azimuth.multiply(principal, rate1), 100)
+  let amount1 = @azimuth.add(principal, interest1)
   
   // 计算复利：第二年（利率变化）
-  let interest2 = divide_with_ceil(multiply(amount1, rate2), 100)
-  let final_amount = add(amount1, interest2)
+  let interest2 = @azimuth.divide_with_ceil(@azimuth.multiply(amount1, rate2), 100)
+  let final_amount = @azimuth.add(amount1, interest2)
   
-  assert_eq(500, interest1)
-  assert_eq(10500, amount1)
-  assert_eq(315, interest2)
-  assert_eq(10815, final_amount)
+  @azimuth.assert_eq(500, interest1)
+  @azimuth.assert_eq(10500, amount1)
+  @azimuth.assert_eq(315, interest2)
+  @azimuth.assert_eq(10815, final_amount)
 }
 
 test "inventory_optimization" {
@@ -41,17 +41,17 @@ test "inventory_optimization" {
   let package_size = 50
   
   // 计算剩余天数
-  let days_until_empty = divide_with_ceil(current_stock, daily_sales)
+  let days_until_empty = @azimuth.divide_with_ceil(current_stock, daily_sales)
   
   // 计算是否需要补货
   let need_restock = if current_stock <= restock_threshold { 1 } else { 0 }
   
   // 计算建议订货量（按包装单位）
-  let suggested_order = multiply(need_restock, package_size)
+  let suggested_order = @azimuth.multiply(need_restock, package_size)
   
-  assert_eq(13, days_until_empty)
-  assert_eq(0, need_restock)
-  assert_eq(0, suggested_order)
+  @azimuth.assert_eq(13, days_until_empty)
+  @azimuth.assert_eq(0, need_restock)
+  @azimuth.assert_eq(0, suggested_order)
 }
 
 test "mathematical_series_and_patterns" {
@@ -61,8 +61,8 @@ test "mathematical_series_and_patterns" {
   let common_diff = 4
   let num_terms = 8
   
-  let sum_n = divide_with_ceil(
-    multiply(num_terms, add(multiply(2, first_term), multiply(num_terms - 1, common_diff))),
+  let sum_n = @azimuth.divide_with_ceil(
+    @azimuth.multiply(num_terms, @azimuth.add(@azimuth.multiply(2, first_term), @azimuth.multiply(num_terms - 1, common_diff))),
     2
   )
   
@@ -70,13 +70,13 @@ test "mathematical_series_and_patterns" {
   let geo_first = 2
   let ratio = 3
   let geo_terms = 5
-  let geo_sum = add(add(add(add(geo_first, multiply(geo_first, ratio)), 
-    multiply(geo_first, multiply(ratio, ratio))), 
-    multiply(geo_first, multiply(ratio, multiply(ratio, ratio)))), 
-    multiply(geo_first, multiply(ratio, multiply(ratio, multiply(ratio, ratio)))))
+  let geo_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(geo_first, @azimuth.multiply(geo_first, ratio)), 
+    @azimuth.multiply(geo_first, @azimuth.multiply(ratio, ratio))), 
+    @azimuth.multiply(geo_first, @azimuth.multiply(ratio, @azimuth.multiply(ratio, ratio)))), 
+    @azimuth.multiply(geo_first, @azimuth.multiply(ratio, @azimuth.multiply(ratio, @azimuth.multiply(ratio, ratio)))))
   
-  assert_eq(132, sum_n)
-  assert_eq(242, geo_sum)
+  @azimuth.assert_eq(132, sum_n)
+  @azimuth.assert_eq(242, geo_sum)
 }
 
 test "error_boundary_and_robustness" {
@@ -86,31 +86,31 @@ test "error_boundary_and_robustness" {
   let min_val = -2147483648
   
   // 测试大数减法
-  assert_eq(2147483647, subtract(max_val, 0))
-  assert_eq(-2147483648, subtract(min_val, 0))
-  assert_eq(0, subtract(max_val, max_val))
+  @azimuth.assert_eq(2147483647, @azimuth.subtract(max_val, 0))
+  @azimuth.assert_eq(-2147483648, @azimuth.subtract(min_val, 0))
+  @azimuth.assert_eq(0, @azimuth.subtract(max_val, max_val))
   
   // 测试除法的各种边界情况
-  assert_eq(0, divide_with_ceil(0, 1))
-  assert_eq(0, divide_with_ceil(0, -1))
-  assert_eq(0, divide_with_ceil(0, max_val))
-  assert_eq(0, divide_with_ceil(max_val, 0))
-  assert_eq(0, divide_with_ceil(min_val, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 1))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, -1))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, max_val))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(max_val, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(min_val, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
 }
 
 test "string_processing_internationalization" {
   // 字符串处理和国际化测试
   // 测试各种Unicode字符和特殊格式
-  assert_eq_string("Hello, 🌟✨🚀!", greet("🌟✨🚀"))
-  assert_eq_string("Hello, Café!", greet("Café"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, 北京!", greet("北京"))
-  assert_eq_string("Hello, العربية!", greet("العربية"))
-  assert_eq_string("Hello, ירושלים!", greet("ירושלים"))
-  assert_eq_string("Hello, हिंदी!", greet("हिंदी"))
-  assert_eq_string("Hello, 한국어!", greet("한국어"))
-  assert_eq_string("Hello, 日本語!", greet("日本語"))
+  @azimuth.assert_eq_string("Hello, 🌟✨🚀!", @azimuth.greet("🌟✨🚀"))
+  @azimuth.assert_eq_string("Hello, Café!", @azimuth.greet("Café"))
+  @azimuth.assert_eq_string("Hello, Москва!", @azimuth.greet("Москва"))
+  @azimuth.assert_eq_string("Hello, 北京!", @azimuth.greet("北京"))
+  @azimuth.assert_eq_string("Hello, العربية!", @azimuth.greet("العربية"))
+  @azimuth.assert_eq_string("Hello, ירושלים!", @azimuth.greet("ירושלים"))
+  @azimuth.assert_eq_string("Hello, हिंदी!", @azimuth.greet("हिंदी"))
+  @azimuth.assert_eq_string("Hello, 한국어!", @azimuth.greet("한국어"))
+  @azimuth.assert_eq_string("Hello, 日本語!", @azimuth.greet("日本語"))
 }
 
 test "engineering_calculations" {
@@ -122,17 +122,17 @@ test "engineering_calculations" {
   let safety_factor = 2
   
   // 计算截面模量
-  let section_modulus = multiply(beam_width, multiply(beam_length, beam_length))
+  let section_modulus = @azimuth.multiply(beam_width, @azimuth.multiply(beam_length, beam_length))
   
   // 计算允许应力
-  let allowable_stress = divide_with_ceil(material_strength, safety_factor)
+  let allowable_stress = @azimuth.divide_with_ceil(material_strength, safety_factor)
   
   // 计算承载能力
-  let load_capacity = multiply(section_modulus, allowable_stress)
+  let load_capacity = @azimuth.multiply(section_modulus, allowable_stress)
   
-  assert_eq(40, section_modulus)
-  assert_eq(250, allowable_stress)
-  assert_eq(10000, load_capacity)
+  @azimuth.assert_eq(40, section_modulus)
+  @azimuth.assert_eq(250, allowable_stress)
+  @azimuth.assert_eq(10000, load_capacity)
 }
 
 test "data_analysis_statistics" {
@@ -141,21 +141,21 @@ test "data_analysis_statistics" {
   let num_points = 10
   
   // 计算总和（手动累加）
-  let sum_data = add(add(add(add(add(add(add(add(add(data_points[0], data_points[1]), 
+  let sum_data = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(data_points[0], data_points[1]), 
     data_points[2]), data_points[3]), data_points[4]), data_points[5]), 
     data_points[6]), data_points[7]), data_points[8]), data_points[9])
   
   // 计算平均值
-  let average = divide_with_ceil(sum_data, num_points)
+  let average = @azimuth.divide_with_ceil(sum_data, num_points)
   
   // 计算最大值和最小值的差
   let max_val = 90
   let min_val = 12
-  let range = subtract(max_val, min_val)
+  let range = @azimuth.subtract(max_val, min_val)
   
-  assert_eq(535, sum_data)
-  assert_eq(54, average)
-  assert_eq(78, range)
+  @azimuth.assert_eq(535, sum_data)
+  @azimuth.assert_eq(54, average)
+  @azimuth.assert_eq(78, range)
 }
 
 test "algorithm_complexity_simulation" {
@@ -164,23 +164,23 @@ test "algorithm_complexity_simulation" {
   let constant_factor = 3
   
   // 模拟O(n)算法
-  let linear_complexity = multiply(input_size, constant_factor)
+  let linear_complexity = @azimuth.multiply(input_size, constant_factor)
   
   // 模拟O(n^2)算法（简化版）
-  let quadratic_complexity = multiply(input_size, input_size)
+  let quadratic_complexity = @azimuth.multiply(input_size, input_size)
   
   // 模拟O(log n)算法（简化为除法）
-  let logarithmic_complexity = divide_with_ceil(input_size, 10)
+  let logarithmic_complexity = @azimuth.divide_with_ceil(input_size, 10)
   
   // 计算性能比较
-  let linear_vs_quadratic = divide_with_ceil(quadratic_complexity, linear_complexity)
-  let linear_vs_logarithmic = divide_with_ceil(linear_complexity, logarithmic_complexity)
+  let linear_vs_quadratic = @azimuth.divide_with_ceil(quadratic_complexity, linear_complexity)
+  let linear_vs_logarithmic = @azimuth.divide_with_ceil(linear_complexity, logarithmic_complexity)
   
-  assert_eq(300, linear_complexity)
-  assert_eq(10000, quadratic_complexity)
-  assert_eq(10, logarithmic_complexity)
-  assert_eq(34, linear_vs_quadratic)
-  assert_eq(30, linear_vs_logarithmic)
+  @azimuth.assert_eq(300, linear_complexity)
+  @azimuth.assert_eq(10000, quadratic_complexity)
+  @azimuth.assert_eq(10, logarithmic_complexity)
+  @azimuth.assert_eq(34, linear_vs_quadratic)
+  @azimuth.assert_eq(30, linear_vs_logarithmic)
 }
 
 test "real_world_project_management" {
@@ -191,23 +191,23 @@ test "real_world_project_management" {
   let buffer_percentage = 20
   
   // 计算总任务数
-  let total_tasks = multiply(team_size, tasks_per_person)
+  let total_tasks = @azimuth.multiply(team_size, tasks_per_person)
   
   // 计算基础工期
-  let base_duration = multiply(tasks_per_person, days_per_task)
+  let base_duration = @azimuth.multiply(tasks_per_person, days_per_task)
   
   // 计算缓冲时间
-  let buffer_time = divide_with_ceil(multiply(base_duration, buffer_percentage), 100)
+  let buffer_time = @azimuth.divide_with_ceil(@azimuth.multiply(base_duration, buffer_percentage), 100)
   
   // 计算总工期
-  let total_duration = add(base_duration, buffer_time)
+  let total_duration = @azimuth.add(base_duration, buffer_time)
   
   // 计算总工作小时数（每天8小时）
-  let total_hours = multiply(total_duration, 8)
+  let total_hours = @azimuth.multiply(total_duration, 8)
   
-  assert_eq(40, total_tasks)
-  assert_eq(15, base_duration)
-  assert_eq(3, buffer_time)
-  assert_eq(18, total_duration)
-  assert_eq(144, total_hours)
+  @azimuth.assert_eq(40, total_tasks)
+  @azimuth.assert_eq(15, base_duration)
+  @azimuth.assert_eq(3, buffer_time)
+  @azimuth.assert_eq(18, total_duration)
+  @azimuth.assert_eq(144, total_hours)
 }

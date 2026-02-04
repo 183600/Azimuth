@@ -21,12 +21,12 @@ test "simple_string" {
 
 test "azimuth_functions" {
   // 测试 azimuth 包的函数
-  let add_result = add(2, 3)
+  let add_result = @azimuth.add(2, 3)
   if add_result != 5 { panic("add function test failed") }
   
-  let multiply_result = multiply(2, 3)
+  let multiply_result = @azimuth.multiply(2, 3)
   if multiply_result != 6 { panic("multiply function test failed") }
   
-  let greet_result = greet("World")
+  let greet_result = @azimuth.greet("World")
   if greet_result != "Hello, World!" { panic("greet function test failed") }
 }

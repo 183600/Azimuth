@@ -89,7 +89,7 @@ test "algorithm_complexity_simulation" {
   let linearithmic_ops = @azimuth.multiply(n, log_approx)
   
   // 验证复杂度差异
-  assert_true(quadratic_ops > linearithmic_ops)
+  @azimuth.assert_true(quadratic_ops > linearithmic_ops)
   @azimuth.assert_eq(10000, quadratic_ops)
   @azimuth.assert_eq(700, linearithmic_ops)
 }
@@ -127,7 +127,7 @@ test "cryptography_simulation" {
   let decrypted = "HELLO"  // 在实际实现中，这应该是解密后的文本
   
   // 验证加密过程改变了原始文本
-  assert_true(encrypted != plaintext)
+  @azimuth.assert_true(encrypted != plaintext)
   @azimuth.assert_eq_string("Hello, HELLO!", encrypted)
 }
 
@@ -164,7 +164,7 @@ test "financial_compound_analysis" {
   let compound_total = @azimuth.multiply(principal, @azimuth.multiply(compound_factor, @azimuth.multiply(compound_factor, compound_factor))) / 10000
   
   // 验证复利收益高于单利
-  assert_true(compound_total > simple_total)
+  @azimuth.assert_true(compound_total > simple_total)
   @azimuth.assert_eq(11500, simple_total)
   @azimuth.assert_eq(11576, compound_total)
 }

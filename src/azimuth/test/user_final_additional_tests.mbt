@@ -104,6 +104,6 @@ test "assert_functions" {
   // 测试复合条件
   let x = 10
   let y = 20
-  assert_true(x < y)
-  assert_false(x > y)
+  @azimuth.assert_true(x < y)
+  @azimuth.assert_false(x > y)
 }

@@ -12,7 +12,7 @@ test "enhanced_division_simulation" {
   let remainder = dividend % divisor
   
   // 验证结果：dividend = divisor * quotient + remainder
-  let verification = add(multiply(divisor, quotient), remainder)
+  let verification = @azimuth.add(@azimuth.multiply(divisor, quotient), remainder)
   @azimuth.assert_eq(dividend, verification)
   
   // 测试边界情况
@@ -31,7 +31,7 @@ test "enhanced_absolute_value_calculation" {
   @azimuth.assert_eq(positive_num, positive_num)
   
   // 负数的绝对值是其相反数
-  @azimuth.assert_eq(42, multiply(-1, negative_num))
+  @azimuth.assert_eq(42, @azimuth.multiply(-1, negative_num))
   
   // 零的绝对值是零
   @azimuth.assert_eq(zero, zero)
@@ -40,7 +40,7 @@ test "enhanced_absolute_value_calculation" {
   let max_val = 2147483647
   let min_val = -2147483648
   @azimuth.assert_eq(max_val, max_val)
-  @azimuth.assert_eq(min_val, multiply(min_val, -1))
+  @azimuth.assert_eq(min_val, @azimuth.multiply(min_val, -1))
 }
 
 test "enhanced_string_reverse_simulation" {

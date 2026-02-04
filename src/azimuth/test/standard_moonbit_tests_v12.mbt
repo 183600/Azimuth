@@ -5,17 +5,17 @@
 test "add_basic_functionality" {
   let result1 = @azimuth.add(1, 2)
   if (result1 != 3) {
-    @builtin.abort("add(1, 2) should be 3")
+    @builtin.abort("@azimuth.add(1, 2) should be 3")
   }
   
   let result2 = @azimuth.add(-1, 1)
   if (result2 != 0) {
-    @builtin.abort("add(-1, 1) should be 0")
+    @builtin.abort("@azimuth.add(-1, 1) should be 0")
   }
   
   let result3 = @azimuth.add(0, 5)
   if (result3 != 5) {
-    @builtin.abort("add(0, 5) should be 5")
+    @builtin.abort("@azimuth.add(0, 5) should be 5")
   }
 }
 
@@ -27,19 +27,19 @@ test "add_overflow_handling" {
   // 测试正数溢出
   let result1 = @azimuth.add(max_val, 1)
   if (result1 != max_val) {
-    @builtin.abort("add(max_val, 1) should return max_val")
+    @builtin.abort("@azimuth.add(max_val, 1) should return max_val")
   }
   
   // 测试负数溢出
   let result2 = @azimuth.add(min_val, -1)
   if (result2 != min_val) {
-    @builtin.abort("add(min_val, -1) should return min_val")
+    @builtin.abort("@azimuth.add(min_val, -1) should return min_val")
   }
   
   // 测试最大值与最小值相加
   let result3 = @azimuth.add(max_val, min_val)
   if (result3 != -1) {
-    @builtin.abort("add(max_val, min_val) should be -1")
+    @builtin.abort("@azimuth.add(max_val, min_val) should be -1")
   }
 }
 
@@ -47,17 +47,17 @@ test "add_overflow_handling" {
 test "multiply_basic_functionality" {
   let result1 = @azimuth.multiply(3, 4)
   if (result1 != 12) {
-    @builtin.abort("multiply(3, 4) should be 12")
+    @builtin.abort("@azimuth.multiply(3, 4) should be 12")
   }
   
   let result2 = @azimuth.multiply(-2, 3)
   if (result2 != -6) {
-    @builtin.abort("multiply(-2, 3) should be -6")
+    @builtin.abort("@azimuth.multiply(-2, 3) should be -6")
   }
   
   let result3 = @azimuth.multiply(0, 100)
   if (result3 != 0) {
-    @builtin.abort("multiply(0, 100) should be 0")
+    @builtin.abort("@azimuth.multiply(0, 100) should be 0")
   }
 }
 
@@ -69,19 +69,19 @@ test "multiply_boundary_cases" {
   // 测试与1相乘
   let result1 = @azimuth.multiply(max_val, 1)
   if (result1 != max_val) {
-    @builtin.abort("multiply(max_val, 1) should return max_val")
+    @builtin.abort("@azimuth.multiply(max_val, 1) should return max_val")
   }
   
   // 测试与-1相乘
   let result2 = @azimuth.multiply(max_val, -1)
   if (result2 != min_val) {
-    @builtin.abort("multiply(max_val, -1) should return min_val")
+    @builtin.abort("@azimuth.multiply(max_val, -1) should return min_val")
   }
   
   // 测试最小值与-1相乘的特殊情况
   let result3 = @azimuth.multiply(min_val, -1)
   if (result3 != min_val) {
-    @builtin.abort("multiply(min_val, -1) should return min_val")
+    @builtin.abort("@azimuth.multiply(min_val, -1) should return min_val")
   }
 }
 
@@ -89,17 +89,17 @@ test "multiply_boundary_cases" {
 test "greet_basic_functionality" {
   let result1 = @azimuth.greet("World")
   if (result1 != "Hello, World!") {
-    @builtin.abort("greet(\"World\") should be \"Hello, World!\"")
+    @builtin.abort("@azimuth.greet(\"World\") should be \"Hello, World!\"")
   }
   
   let result2 = @azimuth.greet("")
   if (result2 != "Hello, !") {
-    @builtin.abort("greet(\"\") should be \"Hello, !\"")
+    @builtin.abort("@azimuth.greet(\"\") should be \"Hello, !\"")
   }
   
   let result3 = @azimuth.greet("测试")
   if (result3 != "Hello, 测试!") {
-    @builtin.abort("greet(\"测试\") should be \"Hello, 测试!\"")
+    @builtin.abort("@azimuth.greet(\"测试\") should be \"Hello, 测试!\"")
   }
 }
 
@@ -130,12 +130,12 @@ test "complex_calculation_scenario" {
   
   let sum = @azimuth.add(a, b)
   if (sum != 8) {
-    @builtin.abort("add(5, 3) should be 8")
+    @builtin.abort("@azimuth.add(5, 3) should be 8")
   }
   
   let product = @azimuth.multiply(sum, c)
   if (product != 16) {
-    @builtin.abort("multiply(8, 2) should be 16")
+    @builtin.abort("@azimuth.multiply(8, 2) should be 16")
   }
 }
 
@@ -190,22 +190,22 @@ test "boundary_value_combinations" {
   // 测试最大值与0的运算
   let result1 = @azimuth.add(max_val, 0)
   if (result1 != max_val) {
-    @builtin.abort("add(max_val, 0) should return max_val")
+    @builtin.abort("@azimuth.add(max_val, 0) should return max_val")
   }
   
   let result2 = @azimuth.multiply(max_val, 0)
   if (result2 != 0) {
-    @builtin.abort("multiply(max_val, 0) should return 0")
+    @builtin.abort("@azimuth.multiply(max_val, 0) should return 0")
   }
   
   // 测试最小值与0的运算
   let result3 = @azimuth.add(min_val, 0)
   if (result3 != min_val) {
-    @builtin.abort("add(min_val, 0) should return min_val")
+    @builtin.abort("@azimuth.add(min_val, 0) should return min_val")
   }
   
   let result4 = @azimuth.multiply(min_val, 0)
   if (result4 != 0) {
-    @builtin.abort("multiply(min_val, 0) should return 0")
+    @builtin.abort("@azimuth.multiply(min_val, 0) should return 0")
   }
 }

@@ -59,8 +59,8 @@ test "real_world_scenario_test" {
 
 test "assert_function_test" {
   // 测试断言函数
-  assert_true(5 > 3)
-  assert_false(5 < 3)
+  @azimuth.assert_true(5 > 3)
+  @azimuth.assert_false(5 < 3)
   @azimuth.assert_eq(100, @azimuth.add(50, 50))
   @azimuth.assert_eq_string("Hello, Test!", @azimuth.greet("Test"))
 }
@@ -70,12 +70,12 @@ test "error_handling_test" {
   let max_val = 2147483647
   
   // 确保溢出被正确处理
-  assert_true(@azimuth.add(max_val, 100) == max_val)
-  assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
+  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
   
   // 测试负数运算
-  assert_true(@azimuth.add(-10, -20) == -30)
-  assert_true(@azimuth.multiply(-5, 5) == -25)
+  @azimuth.assert_true(@azimuth.add(-10, -20) == -30)
+  @azimuth.assert_true(@azimuth.multiply(-5, 5) == -25)
 }
 
 test "sequential_operations_test" {

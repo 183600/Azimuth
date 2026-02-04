@@ -51,36 +51,36 @@ test "divide_with_ceil_comprehensive" {
   }
   
   // 正数情况
-  if (divide_with_ceil(10, 3) != 4) {
-    @builtin.abort("Expected 4, got " + divide_with_ceil(10, 3).to_string())
+  if (@azimuth.divide_with_ceil(10, 3) != 4) {
+    @builtin.abort("Expected 4, got " + @azimuth.divide_with_ceil(10, 3).to_string())
   }
-  if (divide_with_ceil(9, 3) != 3) {
-    @builtin.abort("Expected 3, got " + divide_with_ceil(9, 3).to_string())
+  if (@azimuth.divide_with_ceil(9, 3) != 3) {
+    @builtin.abort("Expected 3, got " + @azimuth.divide_with_ceil(9, 3).to_string())
   }
-  if (divide_with_ceil(1, 100) != 1) {
-    @builtin.abort("Expected 1, got " + divide_with_ceil(1, 100).to_string())
+  if (@azimuth.divide_with_ceil(1, 100) != 1) {
+    @builtin.abort("Expected 1, got " + @azimuth.divide_with_ceil(1, 100).to_string())
   }
   
   // 负数情况
-  if (divide_with_ceil(-10, 3) != -3) {
-    @builtin.abort("Expected -3, got " + divide_with_ceil(-10, 3).to_string())
+  if (@azimuth.divide_with_ceil(-10, 3) != -3) {
+    @builtin.abort("Expected -3, got " + @azimuth.divide_with_ceil(-10, 3).to_string())
   }
-  if (divide_with_ceil(10, -3) != -4) {
-    @builtin.abort("Expected -4, got " + divide_with_ceil(10, -3).to_string())
+  if (@azimuth.divide_with_ceil(10, -3) != -4) {
+    @builtin.abort("Expected -4, got " + @azimuth.divide_with_ceil(10, -3).to_string())
   }
-  if (divide_with_ceil(-10, -3) != 4) {
-    @builtin.abort("Expected 4, got " + divide_with_ceil(-10, -3).to_string())
+  if (@azimuth.divide_with_ceil(-10, -3) != 4) {
+    @builtin.abort("Expected 4, got " + @azimuth.divide_with_ceil(-10, -3).to_string())
   }
   
   // 边界情况
-  if (divide_with_ceil(0, 5) != 0) {
-    @builtin.abort("Expected 0, got " + divide_with_ceil(0, 5).to_string())
+  if (@azimuth.divide_with_ceil(0, 5) != 0) {
+    @builtin.abort("Expected 0, got " + @azimuth.divide_with_ceil(0, 5).to_string())
   }
-  if (divide_with_ceil(5, 0) != 0) {
-    @builtin.abort("Expected 0, got " + divide_with_ceil(5, 0).to_string())
+  if (@azimuth.divide_with_ceil(5, 0) != 0) {
+    @builtin.abort("Expected 0, got " + @azimuth.divide_with_ceil(5, 0).to_string())
   }
-  if (divide_with_ceil(5, 5) != 1) {
-    @builtin.abort("Expected 1, got " + divide_with_ceil(5, 5).to_string())
+  if (@azimuth.divide_with_ceil(5, 5) != 1) {
+    @builtin.abort("Expected 1, got " + @azimuth.divide_with_ceil(5, 5).to_string())
   }
 }
 
@@ -90,32 +90,32 @@ test "greet_function_internationalization" {
     "Hello, " + name + "!"
   }
   
-  let result1 = greet("MoonBit")
+  let result1 = @azimuth.greet("MoonBit")
   if (result1 != "Hello, MoonBit!") {
     @builtin.abort("Expected 'Hello, MoonBit!', got '" + result1 + "'")
   }
   
-  let result2 = greet("世界")
+  let result2 = @azimuth.greet("世界")
   if (result2 != "Hello, 世界!") {
     @builtin.abort("Expected 'Hello, 世界!', got '" + result2 + "'")
   }
   
-  let result3 = greet("🚀")
+  let result3 = @azimuth.greet("🚀")
   if (result3 != "Hello, 🚀!") {
     @builtin.abort("Expected 'Hello, 🚀!', got '" + result3 + "'")
   }
   
-  let result4 = greet("café")
+  let result4 = @azimuth.greet("café")
   if (result4 != "Hello, café!") {
     @builtin.abort("Expected 'Hello, café!', got '" + result4 + "'")
   }
   
-  let result5 = greet("")
+  let result5 = @azimuth.greet("")
   if (result5 != "Hello, !") {
     @builtin.abort("Expected 'Hello, !', got '" + result5 + "'")
   }
   
-  let result6 = greet("123")
+  let result6 = @azimuth.greet("123")
   if (result6 != "Hello, 123!") {
     @builtin.abort("Expected 'Hello, 123!', got '" + result6 + "'")
   }
@@ -175,7 +175,7 @@ test "business_logistics_calculation" {
   
   let total_packages = 157
   let truck_capacity = 24
-  let trucks_needed = divide_with_ceil(total_packages, truck_capacity)
+  let trucks_needed = @azimuth.divide_with_ceil(total_packages, truck_capacity)
   
   // 验证需要的卡车数量
   if (trucks_needed != 7) {
@@ -235,7 +235,7 @@ test "complex_calculation_pipeline" {
   }
   
   let payment_limit = 10000
-  let payment_periods = divide_with_ceil(total_cost, payment_limit)
+  let payment_periods = @azimuth.divide_with_ceil(total_cost, payment_limit)
   if (payment_periods != 6) {
     @builtin.abort("Expected 6 payment periods, got " + payment_periods.to_string())
   }
@@ -270,10 +270,10 @@ test "edge_cases_and_boundary_values" {
     }
   }
   
-  if (divide_with_ceil(999999, 1000000) != 1) {
+  if (@azimuth.divide_with_ceil(999999, 1000000) != 1) {
     @builtin.abort("Extreme division case 1 failed")
   }
-  if (divide_with_ceil(1000000, 1) != 1000000) {
+  if (@azimuth.divide_with_ceil(1000000, 1) != 1000000) {
     @builtin.abort("Extreme division case 2 failed")
   }
   
@@ -293,12 +293,12 @@ test "edge_cases_and_boundary_values" {
     "Hello, " + name + "!"
   }
   
-  let result1 = greet("   ")
+  let result1 = @azimuth.greet("   ")
   if (result1 != "Hello,   !") {
     @builtin.abort("Space greeting failed")
   }
   
-  let result2 = greet("special@#$%")
+  let result2 = @azimuth.greet("special@#$%")
   if (result2 != "Hello, special@#$%!") {
     @builtin.abort("Special character greeting failed")
   }

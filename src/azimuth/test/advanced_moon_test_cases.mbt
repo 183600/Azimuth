@@ -8,24 +8,24 @@ test "fibonacci_sequence_calculation" {
   // F(0) = 0, F(1) = 1, F(n) = F(n-1) + F(n-2)
   
   // F(2) = F(1) + F(0) = 1 + 0 = 1
-  let f2 = azimuth::add(1, 0)
-  azimuth::assert_eq(1, f2)
+  let f2 = azimuth::@azimuth.add(1, 0)
+  azimuth::@azimuth.assert_eq(1, f2)
   
   // F(3) = F(2) + F(1) = 1 + 1 = 2
-  let f3 = azimuth::add(f2, 1)
-  azimuth::assert_eq(2, f3)
+  let f3 = azimuth::@azimuth.add(f2, 1)
+  azimuth::@azimuth.assert_eq(2, f3)
   
   // F(4) = F(3) + F(2) = 2 + 1 = 3
-  let f4 = azimuth::add(f3, f2)
-  azimuth::assert_eq(3, f4)
+  let f4 = azimuth::@azimuth.add(f3, f2)
+  azimuth::@azimuth.assert_eq(3, f4)
   
   // F(5) = F(4) + F(3) = 3 + 2 = 5
-  let f5 = azimuth::add(f4, f3)
-  azimuth::assert_eq(5, f5)
+  let f5 = azimuth::@azimuth.add(f4, f3)
+  azimuth::@azimuth.assert_eq(5, f5)
   
   // F(6) = F(5) + F(4) = 5 + 3 = 8
-  let f6 = azimuth::add(f5, f4)
-  azimuth::assert_eq(8, f6)
+  let f6 = azimuth::@azimuth.add(f5, f4)
+  azimuth::@azimuth.assert_eq(8, f6)
 }
 
 // 测试2: 条件逻辑的复杂应用 - 分段函数计算
@@ -38,29 +38,29 @@ test "piecewise_function_calculation" {
   
   // 测试 x < 0 的情况
   let x1 = -5
-  let result1 = azimuth::multiply(x1, x1)  // (-5)² = 25
-  azimuth::assert_eq(25, result1)
+  let result1 = azimuth::@azimuth.multiply(x1, x1)  // (-5)² = 25
+  azimuth::@azimuth.assert_eq(25, result1)
   
   // 测试 0 ≤ x < 10 的情况
   let x2 = 5
-  let result2 = azimuth::add(azimuth::multiply(2, x2), 1)  // 2*5 + 1 = 11
-  azimuth::assert_eq(11, result2)
+  let result2 = azimuth::@azimuth.add(azimuth::@azimuth.multiply(2, x2), 1)  // 2*5 + 1 = 11
+  azimuth::@azimuth.assert_eq(11, result2)
   
   // 测试 x ≥ 10 的情况
   let x3 = 12
-  let x3_squared = azimuth::multiply(x3, x3)  // 12² = 144
-  let result3 = azimuth::add(x3_squared, -10)  // 144 - 10 = 134
-  azimuth::assert_eq(134, result3)
+  let x3_squared = azimuth::@azimuth.multiply(x3, x3)  // 12² = 144
+  let result3 = azimuth::@azimuth.add(x3_squared, -10)  // 144 - 10 = 134
+  azimuth::@azimuth.assert_eq(134, result3)
   
   // 边界值测试
   let x4 = 0
-  let result4 = azimuth::add(azimuth::multiply(2, x4), 1)  // 2*0 + 1 = 1
-  azimuth::assert_eq(1, result4)
+  let result4 = azimuth::@azimuth.add(azimuth::@azimuth.multiply(2, x4), 1)  // 2*0 + 1 = 1
+  azimuth::@azimuth.assert_eq(1, result4)
   
   let x5 = 10
-  let x5_squared = azimuth::multiply(x5, x5)  // 10² = 100
-  let result5 = azimuth::add(x5_squared, -10)  // 100 - 10 = 90
-  azimuth::assert_eq(90, result5)
+  let x5_squared = azimuth::@azimuth.multiply(x5, x5)  // 10² = 100
+  let result5 = azimuth::@azimuth.add(x5_squared, -10)  // 100 - 10 = 90
+  azimuth::@azimuth.assert_eq(90, result5)
 }
 
 // 测试3: 数据结构索引计算 - 三维数组转一维数组

@@ -101,8 +101,8 @@ test "error_handling_boundaries" {
   let min_val = -2147483648
   
   // 确保溢出被正确处理
-  assert_true(@azimuth.add(max_val, 100) == max_val)
-  assert_true(@azimuth.add(min_val, -100) == min_val)
-  assert_true(@azimuth.multiply(max_val, 2) == max_val)
-  assert_true(@azimuth.multiply(min_val, 2) == min_val)
+  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
+  @azimuth.assert_true(@azimuth.add(min_val, -100) == min_val)
+  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  @azimuth.assert_true(@azimuth.multiply(min_val, 2) == min_val)
 }

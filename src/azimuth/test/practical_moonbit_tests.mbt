@@ -2,19 +2,19 @@
 // 测试 azimuth 包的实用功能和场景
 
 // 定义所需的函数
-pub fn add(a : Int, b : Int) -> Int {
+pub fn @azimuth.add(a : Int, b : Int) -> Int {
   a + b
 }
 
-pub fn multiply(a : Int, b : Int) -> Int {
+pub fn @azimuth.multiply(a : Int, b : Int) -> Int {
   a * b
 }
 
-pub fn greet(name : String) -> String {
+pub fn @azimuth.greet(name : String) -> String {
   "Hello, " + name + "!"
 }
 
-pub fn assert_eq(expected : Int, actual : Int) -> Unit {
+pub fn @azimuth.assert_eq(expected : Int, actual : Int) -> Unit {
   if (expected == actual) {
     ()
   } else {
@@ -23,7 +23,7 @@ pub fn assert_eq(expected : Int, actual : Int) -> Unit {
   }
 }
 
-pub fn assert_eq_string(expected : String, actual : String) -> Unit {
+pub fn @azimuth.assert_eq_string(expected : String, actual : String) -> Unit {
   if (expected == actual) {
     ()
   } else {
@@ -35,16 +35,16 @@ pub fn assert_eq_string(expected : String, actual : String) -> Unit {
 test "temperature_conversion" {
   // 温度转换测试：摄氏度转华氏度（简化版 F = C × 2 + 30）
   let celsius = 25
-  let fahrenheit = add(multiply(celsius, 2), 30)
-  assert_eq(80, fahrenheit)
+  let fahrenheit = @azimuth.add(@azimuth.multiply(celsius, 2), 30)
+  @azimuth.assert_eq(80, fahrenheit)
   
   // 测试冰点
-  let freezing = add(multiply(0, 2), 30)
-  assert_eq(30, freezing)
+  let freezing = @azimuth.add(@azimuth.multiply(0, 2), 30)
+  @azimuth.assert_eq(30, freezing)
   
   // 测试沸点
-  let boiling = add(multiply(100, 2), 30)
-  assert_eq(230, boiling)
+  let boiling = @azimuth.add(@azimuth.multiply(100, 2), 30)
+  @azimuth.assert_eq(230, boiling)
 }
 
 test "discount_calculation" {
@@ -53,12 +53,12 @@ test "discount_calculation" {
   let discount_percent = 20
   
   // 计算折扣金额
-  let discount_amount = multiply(original_price, discount_percent) / 100
+  let discount_amount = @azimuth.multiply(original_price, discount_percent) / 100
   // 计算折后价格
-  let final_price = add(original_price, -discount_amount)
+  let final_price = @azimuth.add(original_price, -discount_amount)
   
-  assert_eq(200, discount_amount)
-  assert_eq(800, final_price)
+  @azimuth.assert_eq(200, discount_amount)
+  @azimuth.assert_eq(800, final_price)
 }
 
 test "compound_interest_simple" {
@@ -68,10 +68,10 @@ test "compound_interest_simple" {
   let years = 3
   
   // 简化复利计算：本金 + 本金 × 利率 × 年数
-  let interest = multiply(principal, multiply(rate, years))
-  let total = add(principal, interest)
+  let interest = @azimuth.multiply(principal, @azimuth.multiply(rate, years))
+  let total = @azimuth.add(principal, interest)
   
-  assert_eq(160000, total)  // 10000 + 10000×5×3 = 160000
+  @azimuth.assert_eq(160000, total)  // 10000 + 10000×5×3 = 160000
 }
 
 test "geometry_area_calculations" {
@@ -79,21 +79,21 @@ test "geometry_area_calculations" {
   // 矩形面积
   let length = 10
   let width = 6
-  let rectangle_area = multiply(length, width)
-  assert_eq(60, rectangle_area)
+  let rectangle_area = @azimuth.multiply(length, width)
+  @azimuth.assert_eq(60, rectangle_area)
   
   // 三角形面积（简化：底×高÷2）
   let base = 8
   let height = 5
-  let triangle_area = multiply(base, height) / 2
-  assert_eq(20, triangle_area)
+  let triangle_area = @azimuth.multiply(base, height) / 2
+  @azimuth.assert_eq(20, triangle_area)
   
   // 梯形面积（简化：(上底+下底)×高÷2）
   let top_base = 4
   let bottom_base = 10
   let trapezoid_height = 5
-  let trapezoid_area = multiply(add(top_base, bottom_base), trapezoid_height) / 2
-  assert_eq(35, trapezoid_area)
+  let trapezoid_area = @azimuth.multiply(@azimuth.add(top_base, bottom_base), trapezoid_height) / 2
+  @azimuth.assert_eq(35, trapezoid_area)
 }
 
 test "shopping_cart_total" {
@@ -107,32 +107,32 @@ test "shopping_cart_total" {
   let shipping_fee = 15
   
   // 计算各商品总价
-  let total1 = multiply(item1_price, item1_quantity)
-  let total2 = multiply(item2_price, item2_quantity)
-  let total3 = multiply(item3_price, item3_quantity)
+  let total1 = @azimuth.multiply(item1_price, item1_quantity)
+  let total2 = @azimuth.multiply(item2_price, item2_quantity)
+  let total3 = @azimuth.multiply(item3_price, item3_quantity)
   
   // 计算购物车总价
-  let cart_total = add(add(add(total1, total2), total3), shipping_fee)
+  let cart_total = @azimuth.add(@azimuth.add(@azimuth.add(total1, total2), total3), shipping_fee)
   
   // 验证：299×2 + 199×1 + 99×3 + 15 = 598 + 199 + 297 + 15 = 1109
-  assert_eq(1109, cart_total)
+  @azimuth.assert_eq(1109, cart_total)
 }
 
 test "time_conversion" {
   // 时间转换测试
   // 小时转分钟
   let hours = 3
-  let minutes = multiply(hours, 60)
-  assert_eq(180, minutes)
+  let minutes = @azimuth.multiply(hours, 60)
+  @azimuth.assert_eq(180, minutes)
   
   // 分钟转秒
   let mins = 45
-  let seconds = multiply(mins, 60)
-  assert_eq(2700, seconds)
+  let seconds = @azimuth.multiply(mins, 60)
+  @azimuth.assert_eq(2700, seconds)
   
   // 计算总秒数（3小时45分钟）
-  let total_seconds = add(multiply(hours, 3600), multiply(mins, 60))
-  assert_eq(13500, total_seconds)
+  let total_seconds = @azimuth.add(@azimuth.multiply(hours, 3600), @azimuth.multiply(mins, 60))
+  @azimuth.assert_eq(13500, total_seconds)
 }
 
 test "average_calculation" {
@@ -145,12 +145,12 @@ test "average_calculation" {
   let num5 = 88
   
   // 计算总和
-  let sum = add(add(add(add(num1, num2), num3), num4), num5)
+  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(num1, num2), num3), num4), num5)
   // 计算平均值
   let average = sum / 5
   
-  assert_eq(433, sum)
-  assert_eq(86, average)
+  @azimuth.assert_eq(433, sum)
+  @azimuth.assert_eq(86, average)
 }
 
 test "speed_distance_time" {
@@ -159,14 +159,14 @@ test "speed_distance_time" {
   let speed = 60  // km/h
   let time = 2.5  // 小时（用整数表示：2小时30分钟 = 150分钟）
   let time_minutes = 150
-  let distance = multiply(speed, time_minutes) / 60
+  let distance = @azimuth.multiply(speed, time_minutes) / 60
   
-  assert_eq(150, distance)  // 60 × 150/60 = 150 km
+  @azimuth.assert_eq(150, distance)  // 60 × 150/60 = 150 km
   
   // 计算时间：距离 ÷ 速度
   let distance2 = 180
-  let time2 = multiply(distance2, 60) / speed
-  assert_eq(180, time2)  // 180×60/60 = 180分钟 = 3小时
+  let time2 = @azimuth.multiply(distance2, 60) / speed
+  @azimuth.assert_eq(180, time2)  // 180×60/60 = 180分钟 = 3小时
 }
 
 test "currency_conversion" {
@@ -175,16 +175,16 @@ test "currency_conversion" {
   let exchange_rate = 7  // 1 USD = 7 CNY（简化汇率）
   
   // 转换为人民币
-  let cny_amount = multiply(usd_amount, exchange_rate)
-  assert_eq(700, cny_amount)
+  let cny_amount = @azimuth.multiply(usd_amount, exchange_rate)
+  @azimuth.assert_eq(700, cny_amount)
   
   // 添加手续费（3%）
   let fee_rate = 3
-  let fee = multiply(cny_amount, fee_rate) / 100
-  let total_with_fee = add(cny_amount, fee)
+  let fee = @azimuth.multiply(cny_amount, fee_rate) / 100
+  let total_with_fee = @azimuth.add(cny_amount, fee)
   
-  assert_eq(21, fee)
-  assert_eq(721, total_with_fee)
+  @azimuth.assert_eq(21, fee)
+  @azimuth.assert_eq(721, total_with_fee)
 }
 
 test "array_index_calculation" {
@@ -194,13 +194,13 @@ test "array_index_calculation" {
   let width = 5
   
   // 计算一维数组索引：index = row × width + col
-  let index = add(multiply(row, width), col)
-  assert_eq(23, index)
+  let index = @azimuth.add(@azimuth.multiply(row, width), col)
+  @azimuth.assert_eq(23, index)
   
   // 测试边界情况
-  let first_index = add(multiply(0, 5), 0)
-  assert_eq(0, first_index)
+  let first_index = @azimuth.add(@azimuth.multiply(0, 5), 0)
+  @azimuth.assert_eq(0, first_index)
   
-  let last_index = add(multiply(9, 5), 4)
-  assert_eq(49, last_index)
+  let last_index = @azimuth.add(@azimuth.multiply(9, 5), 4)
+  @azimuth.assert_eq(49, last_index)
 }

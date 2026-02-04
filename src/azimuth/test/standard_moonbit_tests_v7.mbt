@@ -51,10 +51,10 @@ test "boolean_assertions" {
   // 测试布尔断言
   @azimuth.assert_eq(1, 1)
   @azimuth.assert_eq(1, 1)
-  assert_true(5 > 3)
-  assert_false(3 > 5)
-  assert_true(10 == 10)
-  assert_false(10 == 20)
+  @azimuth.assert_true(5 > 3)
+  @azimuth.assert_false(3 > 5)
+  @azimuth.assert_true(10 == 10)
+  @azimuth.assert_false(10 == 20)
 }
 
 test "complex_calculation_scenarios" {
@@ -93,9 +93,9 @@ test "error_handling_and_edge_cases" {
   let min_val = -2147483648
   
   // 溢出保护测试
-  assert_true(@azimuth.add(max_val, 100) == max_val)
-  assert_true(@azimuth.multiply(max_val, 2) == max_val)
-  assert_true(@azimuth.add(min_val, -100) == min_val)
+  @azimuth.assert_true(@azimuth.add(max_val, 100) == max_val)
+  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  @azimuth.assert_true(@azimuth.add(min_val, -100) == min_val)
   
   // 特殊值测试
   @azimuth.assert_eq(0, @azimuth.multiply(0, 123456))

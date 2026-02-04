@@ -30,7 +30,7 @@ pub fn @azimuth.assert_eq_string(expected : String, actual : String) -> Unit {
   }
 }
 
-pub fn assert_true(condition : Bool) -> Unit {
+pub fn @azimuth.assert_true(condition : Bool) -> Unit {
   if (condition) {
     ()
   } else {
@@ -38,7 +38,7 @@ pub fn assert_true(condition : Bool) -> Unit {
   }
 }
 
-pub fn assert_false(condition : Bool) -> Unit {
+pub fn @azimuth.assert_false(condition : Bool) -> Unit {
   if (condition) {
     @builtin.abort("Assertion failed")
   } else {

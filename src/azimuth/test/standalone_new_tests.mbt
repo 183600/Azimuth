@@ -139,7 +139,7 @@ pub fn @azimuth.assert_eq_string(expected : String, actual : String) -> Unit {
   }
 }
 
-pub fn assert_true(condition : Bool) -> Unit {
+pub fn @azimuth.assert_true(condition : Bool) -> Unit {
   // 使用条件分支来实现断言，避免依赖 @builtin.abort
   if (condition) {
     ()
@@ -151,7 +151,7 @@ pub fn assert_true(condition : Bool) -> Unit {
   }
 }
 
-pub fn assert_false(condition : Bool) -> Unit {
+pub fn @azimuth.assert_false(condition : Bool) -> Unit {
   // 使用条件分支来实现断言，避免依赖 @builtin.abort
   if (condition) {
     // 当断言失败时，抛出一个错误
@@ -276,8 +276,8 @@ test "assertion_functions" {
   // 测试复合条件
   let x = 10
   let y = 20
-  assert_true(x < y)
-  assert_false(x > y)
+  @azimuth.assert_true(x < y)
+  @azimuth.assert_false(x > y)
   @azimuth.assert_eq(@azimuth.add(x, y), 30)
 }
 
@@ -287,10 +287,10 @@ test "error_handling_and_edge_cases" {
   let min_val = -2147483648
   
   // 测试溢出保护
-  assert_true(@azimuth.add(max_val, 1000) == max_val)
-  assert_true(@azimuth.add(min_val, -1000) == min_val)
-  assert_true(@azimuth.multiply(max_val, 2) == max_val)
-  assert_true(@azimuth.multiply(min_val, -2) == min_val)
+  @azimuth.assert_true(@azimuth.add(max_val, 1000) == max_val)
+  @azimuth.assert_true(@azimuth.add(min_val, -1000) == min_val)
+  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  @azimuth.assert_true(@azimuth.multiply(min_val, -2) == min_val)
   
   // 测试特殊值组合
   @azimuth.assert_eq(-1, @azimuth.add(max_val, min_val))

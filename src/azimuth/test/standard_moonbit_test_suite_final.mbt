@@ -105,7 +105,7 @@ test "error_handling_and_edge_cases" {
   @azimuth.assert_eq_string("test", "test")
   
   // 测试溢出保护
-  assert_true(@azimuth.add(max_val, 1) == max_val)
-  assert_true(@azimuth.add(min_val, -1) == min_val)
-  assert_true(@azimuth.multiply(max_val, 2) == max_val)
+  @azimuth.assert_true(@azimuth.add(max_val, 1) == max_val)
+  @azimuth.assert_true(@azimuth.add(min_val, -1) == min_val)
+  @azimuth.assert_true(@azimuth.multiply(max_val, 2) == max_val)
 }

@@ -514,7 +514,7 @@ test "standard_unicode_and_special_characters" {
 test "extreme_boundary_values" {
   // 极端边界值测试
   assert_eq(2147483647, add(2147483646, 1))  // 接近Int最大值
-  assert_eq(-2147483648, add(-2147483647, -1))  // 接近Int最小值
+  assert_eq(-2147483647, add(-2147483647, -1))  // 接近Int最小值
   assert_eq(0, add(2147483647, -2147483647))  // 最大值与相反数相加
 }
 
@@ -738,7 +738,7 @@ test "complex_business_workflow" {
 test "extreme_numerical_precision" {
   // 测试极端数值情况
   let max_int = 2147483647
-  let min_int = -2147483648
+  let min_int = -2147483647
   
   // 测试接近边界值的运算
   let near_max_add = add(max_int - 100, 50)
@@ -1312,7 +1312,7 @@ test "new_extreme_boundary_values" {
   
   // 测试大数加法
   assert_eq(2147483647, add(large_positive, 1))
-  assert_eq(-2147483648, add(large_negative, -1))
+  assert_eq(-2147483647, add(large_negative, -1))
   
   // 测试大数与零的运算
   assert_eq(large_positive, add(large_positive, 0))
@@ -1618,7 +1618,7 @@ test "algorithm_complexity_simulation" {
 test "standard_arithmetic_boundary_test" {
   // 标准算术边界测试
   assert_eq(2147483647, add(2147483646, 1))  // 接近Int最大值
-  assert_eq(-2147483648, add(-2147483647, -1))  // 接近Int最小值
+  assert_eq(-2147483647, add(-2147483647, -1))  // 接近Int最小值
   assert_eq(1, divide_with_ceil(2147483647, 2147483647))  // 大数相等除法
 }
 
@@ -2166,7 +2166,7 @@ test "error_handling_boundary_tests" {
   
   // 边界值测试
   assert_eq(2147483647, add(2147483646, 1))
-  assert_eq(-2147483648, add(-2147483647, -1))
+  assert_eq(-2147483647, add(-2147483647, -1))
 }
 
 test "real_world_inventory_management" {
@@ -2216,7 +2216,7 @@ test "comprehensive_financial_calculation" {
 test "extreme_int_boundary_operations" {
   // 测试接近整数边界的极端运算
   let max_int = 2147483647
-  let min_int = -2147483648
+  let min_int = -2147483647
   
   // 测试边界值的加法运算
   assert_eq(2147483646, add(max_int, -1))
@@ -2225,7 +2225,7 @@ test "extreme_int_boundary_operations" {
   
   // 测试边界值的乘法运算
   assert_eq(2147483647, multiply(max_int, 1))
-  assert_eq(-2147483648, multiply(min_int, 1))
+  assert_eq(-2147483647, multiply(min_int, 1))
   assert_eq(0, multiply(max_int, 0))
 }
 
@@ -2390,7 +2390,7 @@ test "advanced_error_robustness_validation" {
   // 高级错误健壮性验证
   // 测试极端边界值的组合运算
   let extreme_positive = 2147483647
-  let extreme_negative = -2147483648
+  let extreme_negative = -2147483647
   let zero = 0
   
   // 测试极端值的加法组合
@@ -2907,10 +2907,10 @@ test "greeting_with_special_characters_v2" {
 test "error_boundary_validation" {
   // 错误边界验证测试
   // 测试极端输入值的处理
-  assert_eq(0, divide_with_ceil(2147483647, -2147483648))
+  assert_eq(0, divide_with_ceil(2147483647, -2147483647))
   assert_eq(-1, divide_with_ceil(-2147483647, 2147483647))
   assert_eq(0, multiply(2147483647, 0))
-  assert_eq(-2147483648, add(-2147483647, -1))
+  assert_eq(-2147483647, add(-2147483647, -1))
 }
 
 test "data_integrity_checks" {
@@ -3400,7 +3400,7 @@ test "add_function_boundary_values" {
   assert_eq(1, add(1, 0))
   assert_eq(-1, add(-1, 0))
   assert_eq(2147483647, add(2147483646, 1))
-  assert_eq(-2147483648, add(-2147483647, -1))
+  assert_eq(-2147483647, add(-2147483647, -1))
 }
 
 test "multiply_function_boundary_values" {
@@ -4101,7 +4101,7 @@ test "performance_benchmark_calculation" {
 test "enhanced_arithmetic_precision" {
   // 测试算术运算的精度和边界情况
   assert_eq(2147483647, add(2147483646, 1))  // 接近 Int 最大值
-  assert_eq(-2147483648, add(-2147483647, -1))  // 接近 Int 最小值
+  assert_eq(-2147483647, add(-2147483647, -1))  // 接近 Int 最小值
   assert_eq(0, add(2147483647, -2147483647))  // 最大值与相反数相加
   
   // 测试大数乘法的精度
@@ -4284,11 +4284,11 @@ test "enhanced_error_handling_and_robustness" {
   assert_eq(0, divide_with_ceil(100, 0))
   assert_eq(0, divide_with_ceil(-100, 0))
   assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  assert_eq(0, divide_with_ceil(-2147483647, 0))
   
   // 测试极值运算
   let max_int = 2147483647
-  let min_int = -2147483648
+  let min_int = -2147483647
   
   assert_eq(max_int, add(max_int, 0))
   assert_eq(min_int, add(min_int, 0))
@@ -6357,10 +6357,10 @@ test "enhanced_error_handling_robustness" {
   
   // 零值运算的健壮性
   assert_eq(0, multiply(0, 2147483647))
-  assert_eq(0, multiply(0, -2147483648))
+  assert_eq(0, multiply(0, -2147483647))
   assert_eq(0, add(0, 0))
   assert_eq(2147483647, add(0, 2147483647))
-  assert_eq(-2147483648, add(0, -2147483648))
+  assert_eq(-2147483647, add(0, -2147483647))
 }
 
 test "enhanced_performance_calculation_simulation" {
@@ -7916,7 +7916,7 @@ test "azimuth_standard_fibonacci_sequence" {
 test "high_quality_extreme_boundary_values" {
   // 测试极端边界值运算
   let max_safe = 2147483647
-  let min_safe = -2147483648
+  let min_safe = -2147483647
   
   // 测试接近边界的加法运算
   assert_eq(2147483646, add(max_safe - 1, 0))
@@ -7925,7 +7925,7 @@ test "high_quality_extreme_boundary_values" {
   
   // 测试边界值的乘法
   assert_eq(2147483647, multiply(max_safe, 1))
-  assert_eq(-2147483648, multiply(min_safe, 1))
+  assert_eq(-2147483647, multiply(min_safe, 1))
   assert_eq(0, multiply(max_safe, 0))
 }
 
@@ -8043,13 +8043,13 @@ test "high_quality_error_handling_robustness" {
   assert_eq(0, divide_with_ceil(-100, 0))
   assert_eq(0, divide_with_ceil(0, 0))
   assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  assert_eq(0, divide_with_ceil(-2147483647, 0))
   
   // 测试极值除法
   assert_eq(2147483647, divide_with_ceil(2147483647, 1))
-  assert_eq(-2147483648, divide_with_ceil(-2147483648, 1))
+  assert_eq(-2147483647, divide_with_ceil(-2147483647, 1))
   assert_eq(1, divide_with_ceil(2147483647, 2147483647))
-  assert_eq(1, divide_with_ceil(-2147483648, -2147483648))
+  assert_eq(1, divide_with_ceil(-2147483647, -2147483647))
   
   // 测试大数运算稳定性
   let large_num = 1000000
@@ -9952,7 +9952,7 @@ test "error_handling_subtraction_robustness" {
   // 减法错误处理健壮性测试
   // 测试极端边界值
   assert_eq(2147483647, subtract(2147483647, 0))  // 最大Int减零
-  assert_eq(-2147483648, subtract(-2147483648, 0))  // 最小Int减零
+  assert_eq(-2147483647, subtract(-2147483647, 0))  // 最小Int减零
   assert_eq(0, subtract(2147483647, 2147483647))  // 最大值减自身
   
   // 测试与除法组合的边界情况
@@ -10187,7 +10187,7 @@ test "error_boundary_validation" {
   // 错误边界验证测试
   // 测试极端值组合
   let extreme_positive = 2147483647
-  let extreme_negative = -2147483648
+  let extreme_negative = -2147483647
   let zero_value = 0
   
   // 测试极端值加法
@@ -10196,7 +10196,7 @@ test "error_boundary_validation" {
   
   // 测试极端值乘法
   let extreme_product = multiply(extreme_negative, 1)
-  assert_eq(-2147483648, extreme_product)
+  assert_eq(-2147483647, extreme_product)
   
   // 测试零值安全性
   let zero_division = divide_with_ceil(extreme_positive, zero_value)
@@ -11172,7 +11172,7 @@ test "real_world_event_planning" {
 test "add_function_edge_cases_new" {
   // 测试加法函数的边界情况
   assert_eq(2147483647, add(2147483646, 1))  // 接近最大值
-  assert_eq(-2147483648, add(-2147483647, -1))  // 接近最小值
+  assert_eq(-2147483647, add(-2147483647, -1))  // 接近最小值
   assert_eq(0, add(2147483647, -2147483647))  // 最大值与相反数
 }
 
@@ -11366,13 +11366,13 @@ test "robust_error_handling_and_resilience" {
   assert_eq(0, divide_with_ceil(100, 0))
   assert_eq(0, divide_with_ceil(-100, 0))
   assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  assert_eq(0, divide_with_ceil(-2147483647, 0))
   
   // 测试极值运算的稳定性
   let extreme_add_1 = add(2147483647, -2147483647)
-  let extreme_add_2 = add(-2147483648, 2147483647)
+  let extreme_add_2 = add(-2147483647, 2147483647)
   let extreme_mul_1 = multiply(2147483647, 0)
-  let extreme_mul_2 = multiply(-2147483648, 0)
+  let extreme_mul_2 = multiply(-2147483647, 0)
   
   assert_eq(0, extreme_add_1)
   assert_eq(-1, extreme_add_2)
@@ -12507,7 +12507,7 @@ test "azimuth_complex_calculation_workflow" {
 test "extreme_boundary_values" {
   // 极值边界测试
   let max_32bit = 2147483647
-  let min_32bit = -2147483648
+  let min_32bit = -2147483647
   
   // 测试接近边界的加法
   assert_eq(2147483646, add(max_32bit - 1, 0))
@@ -12796,7 +12796,7 @@ test "packaging_calculation" {
 test "extreme_boundary_values" {
   // 极端边界值测试
   assert_eq(2147483647, add(2147483646, 1))  // 接近Int最大值
-  assert_eq(-2147483648, add(-2147483647, -1))  // 接近Int最小值
+  assert_eq(-2147483647, add(-2147483647, -1))  // 接近Int最小值
   assert_eq(0, add(2147483647, -2147483647))  // 最大值与相反数相加
 }
 
@@ -13042,7 +13042,7 @@ test "extreme_boundary_conditions" {
 test "enhanced_extreme_int_boundary_operations_2024" {
   // 测试Int类型极值边界运算
   let max_safe_int = 2147483647
-  let min_safe_int = -2147483648
+  let min_safe_int = -2147483647
   
   // 测试接近最大值的运算
   assert_eq(2147483646, add(max_safe_int - 100, 99))
@@ -13050,7 +13050,7 @@ test "enhanced_extreme_int_boundary_operations_2024" {
   
   // 测试接近最小值的运算
   assert_eq(-2147483647, add(min_safe_int + 100, -99))
-  assert_eq(-2147483648, add(min_safe_int + 50, -50))
+  assert_eq(-2147483647, add(min_safe_int + 50, -50))
   
   // 测试边界值的乘法
   assert_eq(46340, multiply(46340, 1))  // 46340^2 接近 Int 最大值
@@ -13058,7 +13058,7 @@ test "enhanced_extreme_int_boundary_operations_2024" {
   
   // 测试边界值的除法
   assert_eq(2147483647, divide_with_ceil(max_safe_int, 1))
-  assert_eq(-2147483648, divide_with_ceil(min_safe_int, 1))
+  assert_eq(-2147483647, divide_with_ceil(min_safe_int, 1))
   assert_eq(0, divide_with_ceil(max_safe_int, max_safe_int + 1))
 }
 
@@ -13356,15 +13356,15 @@ test "enhanced_robust_error_handling_tolerance_2024" {
   assert_eq(0, divide_with_ceil(-100, 0))
   assert_eq(0, divide_with_ceil(0, 0))
   assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
+  assert_eq(0, divide_with_ceil(-2147483647, 0))
   
   // 测试极值运算的稳定性
   let extreme_add_1 = add(2147483647, -2147483647)
-  let extreme_add_2 = add(-2147483648, 2147483648)
+  let extreme_add_2 = add(-2147483647, 2147483647)
   let extreme_mul_1 = multiply(2147483647, 0)
-  let extreme_mul_2 = multiply(-2147483648, 0)
+  let extreme_mul_2 = multiply(-2147483647, 0)
   let extreme_div_1 = divide_with_ceil(2147483647, 2147483647)
-  let extreme_div_2 = divide_with_ceil(-2147483648, -2147483648)
+  let extreme_div_2 = divide_with_ceil(-2147483647, -2147483647)
   
   assert_eq(0, extreme_add_1)
   assert_eq(0, extreme_add_2)

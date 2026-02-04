@@ -1,88 +1,32 @@
 #!/bin/bash
 
-# 修复所有测试文件中的未绑定标识符问题
-echo "Fixing unbound identifiers in test files..."
+# 更全面地修复未绑定标识符的脚本
 
-# 修复 azimuth/test 目录下的文件
-cd src/azimuth/test
-
-# 需要添加导入的文件列表
-files_to_fix=(
-    "additional_comprehensive_test.mbt"
-    "basic_test_fixed.mbt"
-    "math_fundamentals_test.mbt"
-    "simple_import_test.mbt"
-    "standalone_test.mbt"
-)
-
-for file in "${files_to_fix[@]}"; do
-    if [ -f "$file" ]; then
-        echo "Fixing $file..."
-        # 在文件开头添加 test_helper 导入
-        sed -i '1i\
-// 导入 test_helper 中的函数\
-include "test_helper.mbt"\
-' "$file"
+# 遍历所有测试文件
+for file in $(find /home/runner/work/Azimuth/Azimuth/src/azimuth/test -name "*.mbt"); do
+    # 检查文件是否包含未绑定的标识符
+    if grep -q "assert_eq\|add\|multiply\|greet\|divide_with_ceil\|subtract\|assert_eq_string\|assert_true\|assert_false" "$file"; then
+        echo "Fixing $file"
+        # 使用sed替换函数调用，包括前面没有@azimuth.的情况
+        sed -i 's/\([^@.]\)assert_eq(/\1@azimuth.assert_eq(/g' "$file"
+        sed -i 's/^assert_eq(/@azimuth.assert_eq(/g' "$file"
+        sed -i 's/\([^@.]\)assert_eq_string(/\1@azimuth.assert_eq_string(/g' "$file"
+        sed -i 's/^assert_eq_string(/@azimuth.assert_eq_string(/g' "$file"
+        sed -i 's/\([^@.]\)assert_true(/\1@azimuth.assert_true(/g' "$file"
+        sed -i 's/^assert_true(/@azimuth.assert_true(/g' "$file"
+        sed -i 's/\([^@.]\)assert_false(/\1@azimuth.assert_false(/g' "$file"
+        sed -i 's/^assert_false(/@azimuth.assert_false(/g' "$file"
+        sed -i 's/\([^@.]\)add(/\1@azimuth.add(/g' "$file"
+        sed -i 's/^add(/@azimuth.add(/g' "$file"
+        sed -i 's/\([^@.]\)multiply(/\1@azimuth.multiply(/g' "$file"
+        sed -i 's/^multiply(/@azimuth.multiply(/g' "$file"
+        sed -i 's/\([^@.]\)greet(/\1@azimuth.greet(/g' "$file"
+        sed -i 's/^greet(/@azimuth.greet(/g' "$file"
+        sed -i 's/\([^@.]\)divide_with_ceil(/\1@azimuth.divide_with_ceil(/g' "$file"
+        sed -i 's/^divide_with_ceil(/@azimuth.divide_with_ceil(/g' "$file"
+        sed -i 's/\([^@.]\)subtract(/\1@azimuth.subtract(/g' "$file"
+        sed -i 's/^subtract(/@azimuth.subtract(/g' "$file"
     fi
 done
 
-# 修复 clean_test/test 目录下的文件
-cd ../../clean_test/test
-
-# 需要添加导入的文件列表
-clean_files_to_fix=(
-    "additional_comprehensive_test.mbt"
-    "additional_comprehensive_tests.mbt"
-    "additional_coverage_tests.mbt"
-    "additional_enhanced_tests.mbt"
-    "additional_practical_tests.mbt"
-    "additional_scenario_tests.mbt"
-    "additional_standard_tests.mbt"
-    "additional_tests.mbt"
-    "advanced_test_scenarios.mbt"
-    "algorithmic_tests.mbt"
-    "comprehensive_test_cases.mbt"
-    "comprehensive_tests.mbt"
-    "concise_tests.mbt"
-    "core_functionality_tests.mbt"
-    "debug_test.mbt"
-    "enhanced_math_properties_test.mbt"
-    "enhanced_test_suite.mbt"
-    "essential_tests.mbt"
-    "extended_test.mbt"
-    "focused_additional_tests.mbt"
-    "focused_comprehensive_tests.mbt"
-    "focused_enhanced_tests.mbt"
-    "focused_test_cases.mbt"
-    "focused_unit_tests.mbt"
-    "lib_test.mbt"
-    "math_fundamentals_test.mbt"
-    "new_additional_tests.mbt"
-    "new_comprehensive_tests.mbt"
-    "new_feature_tests.mbt"
-    "new_focused_tests.mbt"
-    "new_standard_tests.mbt"
-    "new_tests.mbt"
-    "performance_test.mbt"
-    "practical_scenario_tests.mbt"
-    "quality_test_suite.mbt"
-    "simple_test.mbt"
-    "simple_test_verify.mbt"
-    "specialized_test_cases.mbt"
-    "standard_moonbit_tests.mbt"
-    "standard_tests.mbt"
-    "unique_test_cases.mbt"
-)
-
-for file in "${clean_files_to_fix[@]}"; do
-    if [ -f "$file" ]; then
-        echo "Fixing $file..."
-        # 在文件开头添加 test_helper 导入
-        sed -i '1i\
-// 导入 test_helper 中的函数\
-include "test_helper.mbt"\
-' "$file"
-    fi
-done
-
-cd ../../..
+echo "Done fixing unbound identifiers"

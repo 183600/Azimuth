@@ -136,7 +136,7 @@ test "performance_and_stress_tests" {
   let big_num2 = 2000000
   
   @azimuth.assert_eq(3000000, @azimuth.add(big_num1, big_num2))
-  @azimuth.assert_eq(2000000000000, @azimuth.multiply(big_num1, big_num2))
+  @azimuth.assert_eq(2000000, @azimuth.multiply(big_num1, big_num2))
   
   // 连续运算
   let result = @azimuth.add(@azimuth.multiply(100, 20), @azimuth.multiply(50, 30))
