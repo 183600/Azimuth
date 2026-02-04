@@ -1,45 +1,50 @@
-// 新增的标准 MoonBit 测试用例
-// 针对 azimuth 库核心功能的高质量测试
+// 标准 MoonBit 测试用例
+// 针对 azimuth 库的核心功能测试
 
-test "add_identity_elements" {
-  // 测试加法的单位元性质
-  assert_eq(5, add(5, 0))
-  assert_eq(-3, add(-3, 0))
+test "basic_arithmetic_addition" {
+  // 基本加法运算测试
+  assert_eq(10, add(3, 7))
   assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(100, add(50, 50))
 }
 
-test "multiply_identity_elements" {
-  // 测试乘法的单位元性质
-  assert_eq(7, multiply(7, 1))
-  assert_eq(-10, multiply(-10, 1))
-  assert_eq(0, multiply(0, 1))
+test "basic_arithmetic_multiplication" {
+  // 基本乘法运算测试
+  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(0, 10))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(25, multiply(5, 5))
 }
 
-test "subtract_basic_functionality" {
-  // 测试基本减法功能
+test "basic_arithmetic_subtraction" {
+  // 基本减法运算测试
   assert_eq(5, subtract(8, 3))
   assert_eq(-5, subtract(3, 8))
   assert_eq(0, subtract(10, 10))
+  assert_eq(20, subtract(30, 10))
 }
 
-test "divide_with_ceil_fractional_results" {
-  // 测试向上取整除法的小数结果
-  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
-  assert_eq(4, divide_with_ceil(11, 3)) // 3.666... -> 4
-  assert_eq(7, divide_with_ceil(13, 2)) // 6.5 -> 7
+test "divide_with_ceil_basic_functionality" {
+  // 向上取整除法基本功能测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "greet_unicode_support" {
-  // 测试问候函数的 Unicode 支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, ñáéíóú!", greet("ñáéíóú"))
+test "greet_function_basic_tests" {
+  // 问候函数基本测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, Test!", greet("Test"))
 }
 
-test "mathematical_commutative_properties" {
-  // 测试数学交换律
-  let a = 12
-  let b = 18
+test "mathematical_properties_commutative" {
+  // 数学交换律性质测试
+  let a = 7
+  let b = 13
   
   // 加法交换律
   assert_eq(add(a, b), add(b, a))
@@ -48,52 +53,56 @@ test "mathematical_commutative_properties" {
   assert_eq(multiply(a, b), multiply(b, a))
 }
 
-test "complex_business_calculation" {
-  // 测试复杂业务计算：订单总价
-  let unit_price = 35
-  let quantity = 6
-  let tax_rate = 8
-  let shipping = 12
+test "mathematical_properties_identity" {
+  // 数学单位元性质测试
+  let x = 42
   
-  let subtotal = multiply(unit_price, quantity)
-  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  let total = add(add(subtotal, tax_amount), shipping)
+  // 加法单位元
+  assert_eq(x, add(x, 0))
+  assert_eq(x, add(0, x))
   
-  assert_eq(210, subtotal)
-  assert_eq(17, tax_amount)
-  assert_eq(239, total)
-}
-
-test "packaging_optimization_scenario" {
-  // 测试包装优化场景
-  let total_products = 58
-  let capacity_per_box = 15
-  
-  let boxes_needed = divide_with_ceil(total_products, capacity_per_box)
-  let total_capacity = multiply(boxes_needed, capacity_per_box)
-  let unused_space = subtract(total_capacity, total_products)
-  
-  assert_eq(4, boxes_needed)
-  assert_eq(60, total_capacity)
-  assert_eq(2, unused_space)
+  // 乘法单位元
+  assert_eq(x, multiply(x, 1))
+  assert_eq(x, multiply(1, x))
 }
 
 test "negative_number_operations" {
-  // 测试负数运算
-  assert_eq(-8, add(-5, -3))
-  assert_eq(12, multiply(-4, -3))
-  assert_eq(-12, multiply(4, -3))
+  // 负数运算测试
+  assert_eq(-10, add(-3, -7))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-15, multiply(3, -5))
   assert_eq(-3, divide_with_ceil(-10, 3))
   assert_eq(4, divide_with_ceil(-10, -3))
 }
 
-test "edge_case_error_handling" {
-  // 测试边界情况错误处理
-  assert_eq(0, divide_with_ceil(100, 0))  // 除数为零
-  assert_eq(0, divide_with_ceil(-50, 0))  // 负数除以零
-  assert_eq(0, divide_with_ceil(0, 0))    // 零除以零
+test "combined_operations_business_scenario" {
+  // 组合运算业务场景测试
+  let unit_price = 25
+  let quantity = 8
+  let shipping = 15
+  let discount = 20
   
-  // 测试极值
-  assert_eq(1, divide_with_ceil(1, 1000))
-  assert_eq(1000, divide_with_ceil(1000000, 1000))
+  let subtotal = multiply(unit_price, quantity)
+  let total_before_discount = add(subtotal, shipping)
+  let final_total = add(total_before_discount, -discount)
+  
+  assert_eq(200, subtotal)
+  assert_eq(215, total_before_discount)
+  assert_eq(195, final_total)
+}
+
+test "packaging_calculation_scenario" {
+  // 包装计算场景测试
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  
+  assert_eq(5, boxes_needed)
+  
+  // 计算剩余空间
+  let total_capacity = multiply(boxes_needed, items_per_box)
+  let remaining_space = subtract(total_capacity, total_items)
+  
+  assert_eq(30, total_capacity)
+  assert_eq(5, remaining_space)
 }
