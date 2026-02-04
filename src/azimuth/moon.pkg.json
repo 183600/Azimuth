@@ -294,6 +294,7 @@
     "standard_moonbit_tests.mbt",
     "test/standard_moonbit_tests.mbt",
     "azimuth_enhanced_test_cases.mbt",
+    "new_comprehensive_azimuth_tests.mbt",
     "standard_moonbit_tests_v22.mbt",
     "azimuth_high_quality_test_suite.mbt",
     "azimuth_new_standard_tests.mbt",
