@@ -1,187 +1,192 @@
-// 高质量增强测试套件 - 针对 azimuth 库的深度测试
-// 包含极端边界情况、复杂算法和高级应用场景
+// 高质量增强测试套件 - Azimuth 库
+// 包含针对核心功能的全面测试用例
 
-test "extreme_boundary_conditions" {
-  // 极端边界条件测试
-  let max_int = 2147483647
-  let min_int = -2147483648
+test "mathematical_identity_properties" {
+
+test "mathematical_identity_properties" {
+  // 测试数学单位元性质
+  let x = 42
   
-  // 测试接近最大值的运算
-  assert_eq(2147483646, add(max_int - 1, 1))
-  assert_eq(-2147483647, add(min_int + 1, -1))
+  // 加法单位元：x + 0 = x
+  assert_eq(x, add(x, 0))
+  assert_eq(x, add(0, x))
   
-  // 测试极端除法情况
-  assert_eq(2147483647, divide_with_ceil(max_int, 1))
-  assert_eq(-2147483648, divide_with_ceil(min_int, 1))
-  assert_eq(0, divide_with_ceil(max_int, max_int))
+  // 乘法单位元：x * 1 = x
+  assert_eq(x, multiply(x, 1))
+  assert_eq(x, multiply(1, x))
   
-  // 测试极端乘法情况
-  assert_eq(46340, multiply(46340, 1))  // sqrt(INT_MAX)
-  assert_eq(-46340, multiply(-46340, 1))
+  // 减法单位元：x - x = 0
+  assert_eq(0, subtract(x, x))
 }
 
-test "complex_algorithmic_patterns" {
-  // 复杂算法模式测试
-  // 模拟斐波那契数列的高效计算
-  let n = 10
-  let fib_n = divide_with_ceil(multiply(55, 100), 100)  // 第10个斐波那契数
-  assert_eq(55, fib_n)
+test "divide_with_ceil_precision_edge_cases" {
+  // 测试向上取整除法的精度和边界情况
+  // 完全整除的情况
+  assert_eq(5, divide_with_ceil(10, 2))
+  assert_eq(-3, divide_with_ceil(-9, 3))
   
-  // 模拟阶乘计算的部分实现
-  let factorial_5 = multiply(multiply(multiply(multiply(1, 2), 3), 4), 5)
-  assert_eq(120, factorial_5)
+  // 需要向上取整的情况
+  assert_eq(4, divide_with_ceil(11, 3))  // 11/3 = 3.666... -> 4
+  assert_eq(2, divide_with_ceil(3, 2))   // 3/2 = 1.5 -> 2
   
-  // 模拟幂运算
-  let power_2_8 = multiply(multiply(multiply(multiply(1, 2), 2), 2), 2)
-  assert_eq(16, power_2_8)
+  // 边界情况
+  assert_eq(0, divide_with_ceil(0, 100))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(1, divide_with_ceil(1, 1))
 }
 
-test "advanced_financial_modeling" {
-  // 高级金融建模测试
+test "complex_financial_calculation" {
+  // 复杂金融计算场景
   let principal = 10000
-  let annual_rate = 8
-  let years = 5
-  let compound_frequency = 12  // 月复利
+  let annual_rate = 5
+  let years = 3
   
-  // 简化的复利计算
-  let monthly_rate = divide_with_ceil(annual_rate, compound_frequency)
-  let total_periods = multiply(years, compound_frequency)
+  // 计算复利（简化版，使用向上取整）
+  let year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, annual_rate), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, annual_rate), 100))
   
-  // 模拟复利增长（简化版本）
-  let amount_after_1_year = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
-  let amount_after_5_years = multiply(amount_after_1_year, divide_with_ceil(140, 100))  // 简化计算
-  
-  assert_eq(10800, amount_after_1_year)
-  assert_eq(15120, amount_after_5_years)
+  // 验证结果
+  assert_eq(10500, year1)  // 10000 + 500
+  assert_eq(11025, year2)  // 10500 + 525
+  assert_eq(11576, year3)  // 11025 + 551
 }
 
-test "data_processing_pipeline" {
-  // 数据处理管道测试
-  // 模拟大数据集的批处理
-  let batch_size = 1000
-  let num_batches = 50
-  let processing_time_per_batch = 15  // 分钟
+test "inventory_optimization_problem" {
+  // 库存优化问题
+  let demand_per_month = 150
+  let months_to_plan = 12
+  let package_size = 24
   
-  let total_records = multiply(batch_size, num_batches)
-  let total_processing_time = multiply(processing_time_per_batch, num_batches)
-  let throughput = divide_with_ceil(total_records, total_processing_time)
+  // 计算总需求
+  let total_demand = multiply(demand_per_month, months_to_plan)
   
-  assert_eq(50000, total_records)
-  assert_eq(750, total_processing_time)
-  assert_eq(67, throughput)
+  // 计算需要的包装数量
+  let packages_needed = divide_with_ceil(total_demand, package_size)
+  
+  // 计算剩余库存
+  let total_capacity = multiply(packages_needed, package_size)
+  let surplus = subtract(total_capacity, total_demand)
+  
+  assert_eq(1800, total_demand)
+  assert_eq(75, packages_needed)
+  assert_eq(1800, total_capacity)
+  assert_eq(0, surplus)
 }
 
-test "scientific_computation_scenarios" {
-  // 科学计算场景测试
-  // 模拟物理计算：自由落体
-  let gravity = 9.8  // 简化为整数 10
-  let time_seconds = 5
-  let initial_velocity = 0
-  
-  let distance = multiply(divide_with_ceil(multiply(10, multiply(time_seconds, time_seconds)), 2), 1)
-  assert_eq(125, distance)  // 0.5 * 10 * 5^2 = 125
-  
-  // 模拟化学反应计算
-  let concentration_a = 25
-  let concentration_b = 30
-  let reaction_rate = 2
-  
-  let product_concentration = multiply(reaction_rate, multiply(concentration_a, concentration_b))
-  assert_eq(1500, product_concentration)
+test "string_greeting_internationalization" {
+  // 字符串问候国际化测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, María!", greet("María"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
 }
 
-test "optimization_algorithms" {
-  // 优化算法测试
-  // 模拟资源分配优化
-  let total_resources = 1000
-  let project_a_efficiency = 8
-  let project_b_efficiency = 6
-  let project_c_efficiency = 10
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟
+  let base_operations = 100
+  let input_size = 50
+  let growth_factor = 2
   
-  // 计算最优分配（简化版本）
-  let optimal_a = multiply(total_resources, divide_with_ceil(project_a_efficiency, add(add(project_a_efficiency, project_b_efficiency), project_c_efficiency)))
-  let optimal_b = multiply(total_resources, divide_with_ceil(project_b_efficiency, add(add(project_a_efficiency, project_b_efficiency), project_c_efficiency)))
-  let optimal_c = multiply(total_resources, divide_with_ceil(project_c_efficiency, add(add(project_a_efficiency, project_b_efficiency), project_c_efficiency)))
+  // 模拟 O(n) 算法
+  let linear_operations = multiply(base_operations, input_size)
   
-  assert_eq(333, optimal_a)
-  assert_eq(250, optimal_b)
-  assert_eq(417, optimal_c)
+  // 模拟 O(n²) 算法
+  let quadratic_operations = multiply(base_operations, multiply(input_size, input_size))
+  
+  // 模拟 O(log n) 算法（简化为除法）
+  let logarithmic_operations = divide_with_ceil(input_size, growth_factor)
+  
+  assert_eq(5000, linear_operations)
+  assert_eq(250000, quadratic_operations)
+  assert_eq(25, logarithmic_operations)
 }
 
-test "machine_learning_metrics" {
-  // 机器学习指标测试
-  let true_positives = 85
-  let false_positives = 15
-  let false_negatives = 20
-  let true_negatives = 80
+test "energy_efficiency_calculation" {
+  // 能效计算
+  let power_consumption = 150  // 瓦特
+  let operating_hours = 8      // 小时
+  let days_per_month = 30
+  let cost_per_kwh = 12        // 分
   
-  // 计算准确率
-  let total_predictions = add(add(add(true_positives, false_positives), false_negatives), true_negatives)
-  let correct_predictions = add(true_positives, true_negatives)
-  let accuracy = divide_with_ceil(multiply(correct_predictions, 100), total_predictions)
+  // 计算日耗电量（瓦时）
+  let daily_consumption_wh = multiply(power_consumption, operating_hours)
   
-  // 计算精确率
-  let precision = divide_with_ceil(multiply(true_positives, 100), add(true_positives, false_positives))
+  // 计算月耗电量（千瓦时，向上取整）
+  let monthly_consumption_kwh = divide_with_ceil(
+    multiply(daily_consumption_wh, days_per_month), 
+    1000
+  )
   
-  // 计算召回率
-  let recall = divide_with_ceil(multiply(true_positives, 100), add(true_positives, false_negatives))
+  // 计算月成本（分）
+  let monthly_cost = multiply(monthly_consumption_kwh, cost_per_kwh)
   
-  assert_eq(81, accuracy)
-  assert_eq(85, precision)
-  assert_eq(81, recall)
+  assert_eq(1200, daily_consumption_wh)
+  assert_eq(36, monthly_consumption_kwh)
+  assert_eq(432, monthly_cost)
 }
 
-test "cryptography_simulation" {
-  // 密码学模拟测试
-  let message = 12345
-  let key_a = 17
-  let key_b = 23
-  let modulus = 1000
+test "resource_allocation_optimization" {
+  // 资源分配优化
+  let total_budget = 10000
+  let team_a_size = 5
+  let team_b_size = 8
+  let team_c_size = 3
   
-  // 简化的RSA加密模拟
-  let encrypted = multiply(message, key_a) % modulus
-  let decrypted = multiply(encrypted, key_b) % modulus
+  let total_people = add(add(team_a_size, team_b_size), team_c_size)
   
-  assert_eq(885, encrypted)
-  assert_eq(355, decrypted)
+  // 平均分配（向上取整）
+  let budget_per_person = divide_with_ceil(total_budget, total_people)
+  
+  // 实际分配
+  let team_a_budget = multiply(team_a_size, budget_per_person)
+  let team_b_budget = multiply(team_b_size, budget_per_person)
+  let team_c_budget = multiply(team_c_size, budget_per_person)
+  
+  let total_allocated = add(add(team_a_budget, team_b_budget), team_c_budget)
+  
+  assert_eq(16, total_people)
+  assert_eq(625, budget_per_person)
+  assert_eq(3125, team_a_budget)
+  assert_eq(5000, team_b_budget)
+  assert_eq(1875, team_c_budget)
+  assert_eq(10000, total_allocated)
 }
 
-test "network_topology_analysis" {
-  // 网络拓扑分析测试
-  let nodes = 10
-  let connections_per_node = 3
-  let data_packet_size = 1024
-  let hops_per_packet = 4
+test "data_transmission_calculation" {
+  // 数据传输计算
+  let file_size_mb = 850
+  let network_speed_mbps = 50
+  let overhead_percentage = 10
   
-  // 计算网络总连接数
-  let total_connections = multiply(nodes, divide_with_ceil(connections_per_node, 2))
+  // 计算传输时间（秒，向上取整）
+  let base_time = divide_with_ceil(file_size_mb, network_speed_mbps)
   
-  // 计算数据传输量
-  let total_data_transferred = multiply(data_packet_size, hops_per_packet)
+  // 计算开销时间
+  let overhead_time = divide_with_ceil(multiply(base_time, overhead_percentage), 100)
   
-  // 计算网络延迟（简化）
-  let network_delay = multiply(hops_per_packet, divide_with_ceil(100, nodes))
+  // 总时间
+  let total_time = add(base_time, overhead_time)
   
-  assert_eq(15, total_connections)
-  assert_eq(4096, total_data_transferred)
-  assert_eq(40, network_delay)
+  assert_eq(17, base_time)
+  assert_eq(2, overhead_time)
+  assert_eq(19, total_time)
 }
 
-test "advanced_string_processing" {
-  // 高级字符串处理测试
-  let base_string = "Hello"
-  let suffix = "World"
-  let prefix = "Hi"
+test "mathematical_series_summation" {
+  // 数学级数求和
+  let first_term = 3
+  let common_difference = 2
+  let number_of_terms = 10
   
-  // 测试复杂的字符串组合
-  let complex_greeting = greet(base_string + " " + suffix)
-  let simple_greeting = greet(prefix)
+  // 使用公式计算等差数列和：S = n/2 * (2a + (n-1)d)
+  let sum = divide_with_ceil(
+    multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference))),
+    2
+  )
   
-  assert_eq_string("Hello, Hello World!", complex_greeting)
-  assert_eq_string("Hello, Hi!", simple_greeting)
-  
-  // 测试数字字符串处理
-  let numeric_string = "12345"
-  let numeric_greeting = greet(numeric_string)
-  assert_eq_string("Hello, 12345!", numeric_greeting)
+  // 验证结果：3 + 5 + 7 + 9 + 11 + 13 + 15 + 17 + 19 + 21 = 120
+  assert_eq(120, sum)
 }
