@@ -596,4 +596,5 @@
     "azimuth_enhanced_quality_tests.mbt",
     "azimuth_simple_quality_tests.mbt",
     "high_quality_moonbit_tests.mbt",
-    "test/concise_quality_tests.mbt"                                                                                                                                           ]}
+    "test/concise_quality_tests.mbt",
+    "azimuth_enhanced_test_suite.mbt"                                                                                                                                           ]}
