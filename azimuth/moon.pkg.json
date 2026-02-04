@@ -12,6 +12,7 @@
         "subtract"
     ],
     "files": [
+        "new_standard_test_cases.mbt",
         "simple_standard_tests.mbt",
         "standard_comprehensive_test_cases.mbt",
         "aa_new_tests.mbt",
