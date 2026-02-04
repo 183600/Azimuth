@@ -380,6 +380,7 @@
     "azimuth_standard_tests.mbt",
     "lib.mbt",
     "standard_tests.mbt",
+    "standard_azimuth_tests.mbt",
     "standard_moonbit_tests.mbt",
     "standard_moonbit_tests.mbt",
     "simple_new_tests.mbt",
