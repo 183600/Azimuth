@@ -235,3 +235,49 @@ test "error_handling_robustness" {
   assert_eq(0, multiply(0, 1000000))
   assert_eq(0, divide_with_ceil(0, 1000000))
 }
+
+// 新增的标准 MoonBit 测试用例
+test "azimuth_add_enhanced" {
+  // 增强加法功能测试
+  assert_eq(8, add(3, 5))
+  assert_eq(0, add(0, 0))
+  assert_eq(-2, add(-5, 3))
+  assert_eq(100, add(50, 50))
+  assert_eq(-100, add(-50, -50))
+}
+
+test "azimuth_multiply_enhanced" {
+  // 增强乘法功能测试
+  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-15, multiply(-3, 5))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(10000, multiply(100, 100))
+}
+
+test "azimuth_divide_ceil_enhanced" {
+  // 增强向上取整除法测试
+  assert_eq(3, divide_with_ceil(8, 3))
+  assert_eq(2, divide_with_ceil(6, 3))
+  assert_eq(1, divide_with_ceil(1, 5))
+  assert_eq(0, divide_with_ceil(0, 10))
+  assert_eq(0, divide_with_ceil(10, 0))
+}
+
+test "azimuth_greet_enhanced" {
+  // 增强问候函数测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+}
+
+test "azimuth_subtract_enhanced" {
+  // 增强减法函数测试
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(15, 15))
+  assert_eq(20, subtract(10, -10))
+  assert_eq(-20, subtract(-10, 10))
+}
