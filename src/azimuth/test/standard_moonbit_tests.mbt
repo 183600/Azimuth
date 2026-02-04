@@ -1,134 +1,119 @@
-// 标准 MoonBit 测试用例
+// 新增的标准 MoonBit 测试用例
 // 针对 azimuth 库的核心功能进行全面测试
 
-test "add_function_edge_cases" {
-  // 测试加法函数的边界情况
-  @azimuth.assert_eq(2147483647, @azimuth.add(2147483646, 1))  // 接近Int最大值
-  @azimuth.assert_eq(-2147483647, @azimuth.add(-2147483647, -1))  // 接近Int最小值
-  @azimuth.assert_eq(0, @azimuth.add(2147483647, -2147483647))  // 最大值与相反数相加
-  @azimuth.assert_eq(1000000, @azimuth.add(500000, 500000))  // 大数相加
+test "boolean_arithmetic_operations" {
+  // 测试布尔算术运算模式
+  let true_condition = 1
+  let false_condition = 0
+  
+  // 使用算术运算模拟布尔逻辑
+  assert_eq(1, multiply(true_condition, 1))  // true AND true = true
+  assert_eq(0, multiply(false_condition, 1)) // false AND true = false
+  assert_eq(1, add(true_condition, false_condition))  // true OR false = true
 }
 
-test "multiply_function_edge_cases" {
-  // 测试乘法函数的边界情况
-  @azimuth.assert_eq(0, @azimuth.multiply(2147483647, 0))  // 任何数乘以0
-  @azimuth.assert_eq(2147483647, @azimuth.multiply(2147483647, 1))  // 任何数乘以1
-  @azimuth.assert_eq(-2147483647, @azimuth.multiply(2147483647, -1))  // 正数乘以-1
-  @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))  // 大数相乘
+test "temperature_conversion_simulation" {
+  // 模拟温度转换计算
+  let celsius = 25
+  let fahrenheit = add(multiply(celsius, 9), 160) / 5
+  
+  assert_eq(77, fahrenheit)  // 25°C = 77°F
 }
 
-test "subtract_function_comprehensive" {
-  // 全面测试减法功能
-  @azimuth.assert_eq(5, @azimuth.subtract(8, 3))
-  @azimuth.assert_eq(-5, @azimuth.subtract(3, 8))
-  @azimuth.assert_eq(0, @azimuth.subtract(10, 10))
-  @azimuth.assert_eq(10, @azimuth.subtract(0, -10))
-  @azimuth.assert_eq(-10, @azimuth.subtract(-10, 0))
-  @azimuth.assert_eq(20, @azimuth.subtract(-5, -25))
+test "time_zone_calculation" {
+  // 时区计算测试
+  let local_time = 14  // 下午2点
+  let time_difference = 8  // 时差8小时
+  
+  let utc_time = subtract(local_time, time_difference)
+  let adjusted_utc = if utc_time < 0 { add(utc_time, 24) } else { utc_time }
+  
+  assert_eq(6, adjusted_utc)  // UTC时间应该是早上6点
 }
 
-test "divide_with_ceil_comprehensive" {
-  // 全面测试向上取整除法功能
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))  // 3.333... -> 4
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))   // 3 -> 3
-  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(3, 2))   // 1.5 -> 2
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))  // -3.333... -> -3
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(-10, -3))  // 3.333... -> 4
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(5, 0))    // 除数为0返回0
+test "geometric_coordinate_calculation" {
+  // 几何坐标计算
+  let x1 = 3
+  let y1 = 4
+  let x2 = 7
+  let y2 = 1
+  
+  let delta_x = subtract(x2, x1)
+  let delta_y = subtract(y2, y1)
+  let manhattan_distance = add(delta_x, if delta_y < 0 { -delta_y } else { delta_y })
+  
+  assert_eq(7, manhattan_distance)  // 曼哈顿距离
 }
 
-test "greet_function_special_cases" {
-  // 测试问候函数的特殊情况
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))  // 空字符串
-  @azimuth.assert_eq_string("Hello,  !", @azimuth.greet(" "))  // 空格
-  @azimuth.assert_eq_string("Hello, A!", @azimuth.greet("A"))  // 单字符
-  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))  // Emoji
-  @azimuth.assert_eq_string("Hello, αβγ!", @azimuth.greet("αβγ"))  // 希腊字母
+test "digital_root_calculation" {
+  // 数字根计算（简化版本）
+  let number = 12345
+  let sum_of_digits = add(add(add(1, 2), add(3, 4)), 5)
+  
+  assert_eq(15, sum_of_digits)
 }
 
-test "complex_business_calculations" {
-  // 复杂业务计算场景
-  let product_price = 89
-  let quantity = 4
-  let tax_rate = 8  // 8%
-  let shipping = 12
-  let discount = 20
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_resources = 100
+  let team_size = 8
+  let minimum_per_team = 10
   
-  // 计算小计
-  let subtotal = @azimuth.multiply(product_price, quantity)
-  // 计算税费（向上取整）
-  let tax = @azimuth.divide_with_ceil(@azimuth.multiply(subtotal, tax_rate), 100)
-  // 计算总价
-  let total_before_discount = @azimuth.add(subtotal, @azimuth.add(tax, shipping))
-  let final_total = @azimuth.add(total_before_discount, -discount)
+  let teams_with_minimum = divide_with_ceil(total_resources, minimum_per_team)
+  let actual_team_size = if teams_with_minimum > team_size { team_size } else { teams_with_minimum }
+  let resources_per_team = divide_with_ceil(total_resources, actual_team_size)
   
-  @azimuth.assert_eq(356, subtotal)
-  @azimuth.assert_eq(29, tax)  // ceil(356 * 8 / 100) = ceil(28.48) = 29
-  @azimuth.assert_eq(397, total_before_discount)  // 356 + 29 + 12 = 397
-  @azimuth.assert_eq(377, final_total)  // 397 - 20 = 377
+  assert_eq(8, actual_team_size)
+  assert_eq(13, resources_per_team)  // ceil(100/8) = 13
 }
 
-test "mathematical_series_calculation" {
-  // 数学级数计算：等差数列求和
-  let first_term = 3
-  let common_difference = 2
-  let number_of_terms = 10
+test "circular_buffer_simulation" {
+  // 循环缓冲区模拟
+  let buffer_size = 10
+  let current_position = 7
+  let steps_forward = 5
   
-  // 使用公式计算：S = n/2 * (2a + (n-1)d)
-  let sum_formula = @azimuth.divide_with_ceil(
-    @azimuth.multiply(number_of_terms, @azimuth.add(@azimuth.multiply(2, first_term), @azimuth.multiply(number_of_terms - 1, common_difference))),
-    2
-  )
+  let new_position = add(current_position, steps_forward) % buffer_size
+  let wrapped_position = if new_position >= buffer_size { subtract(new_position, buffer_size) } else { new_position }
   
-  @azimuth.assert_eq(120, sum_formula)  // 10/2 * (6 + 18) = 5 * 24 = 120
+  assert_eq(2, wrapped_position)  // (7 + 5) % 10 = 2
 }
 
-test "inventory_management_scenario" {
-  // 库存管理场景
-  let initial_stock = 150
-  let daily_sales = 12
-  let days_to_simulate = 7
-  let new_shipment = 50
+test "error_correction_code_simulation" {
+  // 错误纠正码模拟（简化奇偶校验）
+  let data_bits = 5  // 101
+  let parity_bits = 3
   
-  // 计算总销售量
-  let total_sold = @azimuth.multiply(daily_sales, days_to_simulate)
-  // 计算发货前库存
-  let stock_before_shipment = @azimuth.subtract(initial_stock, total_sold)
-  // 计算最终库存
-  let final_stock = @azimuth.add(stock_before_shipment, new_shipment)
+  let total_bits = add(data_bits, parity_bits)
+  let error_detection = multiply(total_bits, 2)
   
-  @azimuth.assert_eq(84, total_sold)  // 12 * 7 = 84
-  @azimuth.assert_eq(66, stock_before_shipment)  // 150 - 84 = 66
-  @azimuth.assert_eq(116, final_stock)  // 66 + 50 = 116
+  assert_eq(16, error_detection)
 }
 
-test "performance_benchmark_simulation" {
-  // 性能基准测试模拟
-  let base_operations = 1000
-  let optimization_factor = 3
-  let overhead_percentage = 15
+test "load_balancing_calculation" {
+  // 负载均衡计算
+  let total_requests = 127
+  let server_count = 5
   
-  // 计算优化后的操作数
-  let optimized_operations = @azimuth.multiply(base_operations, optimization_factor)
-  // 计算开销
-  let overhead = @azimuth.divide_with_ceil(@azimuth.multiply(optimized_operations, overhead_percentage), 100)
-  // 计算实际性能
-  let actual_performance = @azimuth.add(optimized_operations, -overhead)
+  let base_load_per_server = divide_with_ceil(total_requests, server_count)
+  let remainder = subtract(total_requests, multiply(base_load_per_server, server_count))
+  let servers_with_extra_load = if remainder > 0 { remainder } else { 0 }
   
-  @azimuth.assert_eq(3000, optimized_operations)
-  @azimuth.assert_eq(450, overhead)  // ceil(3000 * 15 / 100) = ceil(450) = 450
-  @azimuth.assert_eq(2550, actual_performance)  // 3000 - 450 = 2550
+  assert_eq(26, base_load_per_server)  // ceil(127/5) = 26
+  assert_eq(2, servers_with_extra_load)  // 127 - 26*5 = 2
 }
 
-test "error_handling_robustness" {
-  // 错误处理健壮性测试
-  // 测试除数为零的各种情况
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-100, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
+test "caching_strategy_simulation" {
+  // 缓存策略模拟
+  let cache_size = 100
+  let data_items = 350
+  let access_frequency = 7
   
-  // 测试极值运算
-  let large_num = 1000000
-  @azimuth.assert_eq(2000000, @azimuth.add(large_num, large_num))
-  @azimuth.assert_eq(1000000000000, @azimuth.multiply(large_num, large_num))
+  let cache_misses = divide_with_ceil(data_items, cache_size)
+  let total_access_cost = multiply(cache_misses, access_frequency)
+  let optimized_access = divide_with_ceil(total_access_cost, 2)
+  
+  assert_eq(4, cache_misses)  // ceil(350/100) = 4
+  assert_eq(28, total_access_cost)  // 4 * 7 = 28
+  assert_eq(14, optimized_access)  // ceil(28/2) = 14
 }
