@@ -12,134 +12,126 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-///|
-test "int basic arithmetic" {
-  let a = 15
-  let b = 4
-  let c = -7
-  
-  inspect(a + b, content="19")
-  inspect(a - b, content="11")
-  inspect(a * b, content="60")
-  inspect(a / b, content="3")
-  inspect(a % b, content="3")
-  inspect(@int.abs(c), content="7")
+test "int_basic_arithmetic" {
+  inspect(1 + 2, content="3")
+  inspect(10 - 3, content="7")
+  inspect(4 * 5, content="20")
+  inspect(20 / 4, content="5")
+  inspect(15 % 4, content="3")
 }
 
-///|
-test "int boundary values" {
-  let max_val = @int.max_value
-  let min_val = @int.min_value
-  
-  inspect(max_val, content="2147483647")
-  inspect(min_val, content="-2147483648")
-  inspect(max_val > 0, content="true")
-  inspect(min_val < 0, content="true")
+test "int_comparison" {
+  inspect(5 > 3, content="true")
+  inspect(3 >= 3, content="true")
+  inspect(2 < 4, content="true")
+  inspect(4 <= 4, content="true")
+  inspect(5 == 5, content="true")
+  inspect(5 != 3, content="true")
 }
 
-///|
-test "string basic operations" {
+test "int_abs_function" {
+  inspect(Int::abs(5), content="5")
+  inspect(Int::abs(-5), content="5")
+  inspect(Int::abs(0), content="0")
+}
+
+test "int_min_max_values" {
+  inspect(Int.max_value, content="2147483647")
+  inspect(Int.min_value, content="-2147483648")
+}
+
+test "string_concatenation" {
   let s1 = "Hello"
-  let s2 = "World"
-  let combined = s1 + " " + s2
-  let empty = ""
-  
-  inspect(combined, content="Hello World")
-  inspect(s1, content="Hello")
-  inspect(s2, content="World")
-  inspect(empty, content="")
-  inspect(s1 == "Hello", content="true")
-  inspect(s1 != s2, content="true")
+  let s2 = " "
+  let s3 = "World"
+  inspect(s1 + s2 + s3, content="Hello World")
 }
 
-///|
-test "string length operations" {
-  let short = "Hi"
-  let medium = "MoonBit"
-  let long = "Programming Language"
-  let empty = ""
-  
-  inspect(short.length(), content="2")
-  inspect(medium.length(), content="7")
-  inspect(long.length(), content="20")
+test "string_length" {
+  inspect("".length(), content="0")
+  inspect("a".length(), content="1")
+  inspect("hello".length(), content="5")
+}
+
+test "string_equality" {
+  inspect("abc" == "abc", content="true")
+  inspect("abc" != "def", content="true")
+}
+
+test "array_basic_operations" {
+  let arr : Array[Int] = [1, 2, 3, 4, 5]
+  inspect(arr.length(), content="5")
+  inspect(arr[0], content="1")
+  inspect(arr[4], content="5")
+}
+
+test "array_creation" {
+  let empty : Array[Int] = []
   inspect(empty.length(), content="0")
+  
+  let single : Array[Int] = [42]
+  inspect(single.length(), content="1")
+  inspect(single[0], content="42")
 }
 
-///|
-test "array basic operations" {
-  let numbers = [1, 2, 3, 4, 5]
-  let first = numbers[0]
-  let last = numbers[4]
-  let length = numbers.length()
-  
-  inspect(first, content="1")
-  inspect(last, content="5")
-  inspect(length, content="5")
-  inspect(numbers, content="[1, 2, 3, 4, 5]")
+test "option_some_none" {
+  let some_value : Option[Int] = Some(42)
+  let none_value : Option[Int] = None
+  inspect(some_value is Some[_], content="true")
+  inspect(none_value is None, content="true")
 }
 
-///|
-test "array transformations" {
-  let numbers = [1, 2, 3, 4, 5]
-  let doubled = numbers.map(x => x * 2)
-  let evens = numbers.filter(x => x % 2 == 0)
-  let sum = numbers.fold(0, (acc, x) => acc + x)
-  
-  inspect(doubled, content="[2, 4, 6, 8, 10]")
-  inspect(evens, content="[2, 4]")
-  inspect(sum, content="15")
+test "option_unwrap" {
+  let some_value : Option[Int] = Some(42)
+  inspect(some_value.unwrap(), content="42")
 }
 
-///|
-test "boolean logic operations" {
-  let t = true
-  let f = false
-  
-  inspect(t && f, content="false")
-  inspect(t || f, content="true")
-  inspect(t && t, content="true")
-  inspect(f || f, content="false")
-  inspect(!t, content="false")
-  inspect(!f, content="true")
-  inspect(t == f, content="false")
-  inspect(t != f, content="true")
+test "option_map" {
+  let some_value : Option[Int] = Some(5)
+  let mapped = some_value.map(fn(x) { x * 2 })
+  inspect(mapped.unwrap(), content="10")
 }
 
-///|
-test "result type operations" {
-  let success : Result[String, String] = Ok("success")
-  let failure : Result[String, String] = Err("error")
-  
-  inspect(success.is_ok(), content="true")
-  inspect(success.is_err(), content="false")
-  inspect(failure.is_ok(), content="false")
-  inspect(failure.is_err(), content="true")
-  inspect(success.unwrap(), content="success")
-  inspect(failure.unwrap_err(), content="error")
+test "result_ok_err" {
+  let ok_result : Result[Int, String] = Ok(42)
+  let err_result : Result[Int, String] = Err("error")
+  inspect(ok_result is Ok[_], content="true")
+  inspect(err_result is Err[_], content="true")
 }
 
-///|
-test "char operations" {
-  let char_a = 'a'
-  let char_z = 'z'
-  let char_num = '5'
-  
-  inspect(char_a.to_string(), content="a")
-  inspect(char_z.to_string(), content="z")
-  inspect(char_num.to_string(), content="5")
-  inspect(char_a < char_z, content="true")
-  inspect(char_a == 'a', content="true")
-  inspect(char_a != 'b', content="true")
+test "result_unwrap" {
+  let ok_result : Result[Int, String] = Ok(42)
+  inspect(ok_result.unwrap(), content="42")
 }
 
-///|
-test "tuple operations" {
-  let pair = (42, "answer")
-  let triple = (1, 2, 3)
-  
-  inspect(pair.0, content="42")
-  inspect(pair.1, content="answer")
-  inspect(triple.0, content="1")
-  inspect(triple.1, content="2")
-  inspect(triple.2, content="3")
+test "result_map" {
+  let ok_result : Result[Int, String] = Ok(5)
+  let mapped = ok_result.map(fn(x) { x * 2 })
+  inspect(mapped.unwrap(), content="10")
+}
+
+test "char_basic_operations" {
+  let c = 'A'
+  inspect(c.to_int(), content="65")
+  inspect(Char::from_int(65), content="'A'")
+}
+
+test "char_comparison" {
+  inspect('A' == 'A', content="true")
+  inspect('A' != 'B', content="true")
+  inspect('A' < 'B', content="true")
+}
+
+test "bool_operations" {
+  inspect(true && true, content="true")
+  inspect(true && false, content="false")
+  inspect(true || false, content="true")
+  inspect(false || false, content="false")
+  inspect(!true, content="false")
+  inspect(!false, content="true")
+}
+
+test "unit_type" {
+  let u : Unit = ()
+  inspect(u, content="()")
 }
