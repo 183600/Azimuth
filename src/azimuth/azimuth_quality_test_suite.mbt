@@ -1,174 +1,123 @@
-// Azimuth 库质量测试套件
-// 包含针对核心功能的高质量测试用例
+// Azimuth 库的高质量测试套件
+// 包含核心功能的全面测试用例
 
-test "mathematical_commutativity_laws" {
-  // 测试数学交换律
-  let a = 42
-  let b = 17
+test "add_function_comprehensive_test" {
+  // 全面测试加法功能
+  assert_eq(10, add(3, 7))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(1000, add(500, 500))
+  assert_eq(0, add(100, -100))
+}
+
+test "multiply_function_edge_cases" {
+  // 测试乘法函数的边界情况
+  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(0, 10))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(6, multiply(-2, -3))
+  assert_eq(1, multiply(1, 1000))
+}
+
+test "subtract_function_comprehensive" {
+  // 全面测试减法功能
+  assert_eq(5, subtract(8, 3))
+  assert_eq(-5, subtract(3, 8))
+  assert_eq(0, subtract(10, 10))
+  assert_eq(10, subtract(0, -10))
+  assert_eq(20, subtract(-5, -25))
+}
+
+test "divide_with_ceil_precision_test" {
+  // 测试向上取整除法的精度
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(0, divide_with_ceil(5, 0))
+}
+
+test "greet_function_unicode_support" {
+  // 测试问候函数的Unicode支持
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, !", greet(""))
+}
+
+test "mathematical_properties_validation" {
+  // 验证数学性质
+  let a = 7
+  let b = 13
   
-  // 加法交换律: a + b = b + a
+  // 加法交换律
   assert_eq(add(a, b), add(b, a))
   
-  // 乘法交换律: a * b = b * a
+  // 乘法交换律
   assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 零元素性质
+  assert_eq(0, multiply(a, 0))
+  assert_eq(a, add(a, 0))
 }
 
-test "division_ceil_precision_edge_cases" {
-  // 测试向上取整除法的精度边界情况
-  // 测试接近整数的除法
-  assert_eq(4, divide_with_ceil(11, 3))  // 3.666... -> 4
-  assert_eq(4, divide_with_ceil(12, 3))  // 4 -> 4
-  assert_eq(5, divide_with_ceil(13, 3))  // 4.333... -> 5
+test "business_calculation_scenario" {
+  // 业务计算场景测试
+  let unit_price = 25
+  let quantity = 8
+  let shipping = 15
+  let discount = 20
   
-  // 测试大数除法
-  assert_eq(33334, divide_with_ceil(100000, 3))  // 33333.333... -> 33334
-  assert_eq(20001, divide_with_ceil(40001, 2))  // 20000.5 -> 20001
+  let subtotal = multiply(unit_price, quantity)
+  let total_before_discount = add(subtotal, shipping)
+  let final_total = add(total_before_discount, -discount)
+  
+  assert_eq(200, subtotal)
+  assert_eq(215, total_before_discount)
+  assert_eq(195, final_total)
 }
 
-test "string_greeting_multilingual_support" {
-  // 测试多语言问候支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, Mundo!", greet("Mundo"))
-  assert_eq_string("Hello, Monde!", greet("Monde"))
-  assert_eq_string("Hello, Мир!", greet("Мир"))
-  assert_eq_string("Hello, 🌍!", greet("🌍"))
+test "packaging_optimization_test" {
+  // 包装优化测试
+  let total_items = 47
+  let items_per_box = 12
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  
+  assert_eq(4, boxes_needed)
+  
+  // 计算剩余空间
+  let total_capacity = multiply(boxes_needed, items_per_box)
+  let remaining_space = subtract(total_capacity, total_items)
+  
+  assert_eq(48, total_capacity)
+  assert_eq(1, remaining_space)
 }
 
-test "complex_financial_calculations" {
-  // 测试复杂金融计算场景
-  let principal = 10000
-  let rate_percent = 8
-  let years = 3
+test "complex_financial_calculation" {
+  // 复杂金融计算测试
+  let principal = 1000
+  let rate_percent = 5
   
-  // 计算复利（简化版，使用向上取整）
-  let year1_amount = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, rate_percent), 100))
-  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, rate_percent), 100))
+  // 简化的复利计算（每年计算一次）
+  let amount_after_year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let amount_after_year2 = add(amount_after_year1, divide_with_ceil(multiply(amount_after_year1, rate_percent), 100))
   
-  // 验证结果（由于使用向上取整，结果会略高于标准复利）
-  assert_eq(10800, year1_amount)  // 10000 + 800 = 10800
-  assert_eq(11664, year2_amount)  // 10800 + 864 = 11664
-  assert_eq(12597, year3_amount)  // 11664 + 933 = 12597
+  assert_eq(1050, amount_after_year1)
+  assert_eq(1103, amount_after_year2)
 }
 
-test "inventory_optimization_problem" {
-  // 测试库存优化问题
-  let demand_forecast = 247
-  let batch_size = 50
-  let safety_stock = 20
+test "inventory_management_workflow" {
+  // 库存管理工作流测试
+  let initial_stock = 150
+  let daily_sales = 12
+  let days_to_simulate = 7
+  let new_shipment = 50
   
-  // 计算需要的批次数
-  let batches_needed = divide_with_ceil(demand_forecast, batch_size)
+  let total_sold = multiply(daily_sales, days_to_simulate)
+  let stock_before_shipment = subtract(initial_stock, total_sold)
+  let final_stock = add(stock_before_shipment, new_shipment)
   
-  // 计算总库存量
-  let total_inventory = add(multiply(batches_needed, batch_size), safety_stock)
-  
-  // 计算过剩库存
-  let excess_inventory = subtract(total_inventory, add(demand_forecast, safety_stock))
-  
-  assert_eq(5, batches_needed)  // ceil(247/50) = 5
-  assert_eq(270, total_inventory)  // 5*50 + 20 = 270
-  assert_eq(3, excess_inventory)  // 270 - (247 + 20) = 3
-}
-
-test "resource_allocation_algorithm" {
-  // 测试资源分配算法
-  let total_resources = 100
-  let project_requirements = [23, 31, 19, 27]
-  
-  // 计算总需求
-  let total_demand = add(add(add(project_requirements[0], project_requirements[1]), project_requirements[2]), project_requirements[3])
-  
-  // 计算每个项目按比例分配的资源（简化计算）
-  let project1_allocation = divide_with_ceil(multiply(total_resources, project_requirements[0]), total_demand)
-  let project2_allocation = divide_with_ceil(multiply(total_resources, project_requirements[1]), total_demand)
-  let project3_allocation = divide_with_ceil(multiply(total_resources, project_requirements[2]), total_demand)
-  let project4_allocation = divide_with_ceil(multiply(total_resources, project_requirements[3]), total_demand)
-  
-  // 计算总分配量
-  let total_allocated = add(add(add(project1_allocation, project2_allocation), project3_allocation), project4_allocation)
-  
-  assert_eq(100, total_demand)  // 23 + 31 + 19 + 27 = 100
-  assert_eq(23, project1_allocation)  // ceil(100*23/100) = 23
-  assert_eq(31, project2_allocation)  // ceil(100*31/100) = 31
-  assert_eq(19, project3_allocation)  // ceil(100*19/100) = 19
-  assert_eq(27, project4_allocation)  // ceil(100*27/100) = 27
-  assert_eq(100, total_allocated)  // 23 + 31 + 19 + 27 = 100
-}
-
-test "time_series_analysis" {
-  // 测试时间序列分析
-  let daily_values = [120, 135, 128, 142, 155, 148, 163]
-  let days_in_week = 7
-  
-  // 计算周总和
-  let weekly_total = add(add(add(add(add(add(daily_values[0], daily_values[1]), daily_values[2]), daily_values[3]), daily_values[4]), daily_values[5]), daily_values[6])
-  
-  // 计算日平均值（向上取整）
-  let daily_average = divide_with_ceil(weekly_total, days_in_week)
-  
-  // 计算最大值与最小值的差
-  let max_value = 163
-  let min_value = 120
-  let range = subtract(max_value, min_value)
-  
-  assert_eq(991, weekly_total)
-  assert_eq(142, daily_average)  // ceil(991/7) = 142
-  assert_eq(43, range)  // 163 - 120 = 43
-}
-
-test "error_boundary_conditions" {
-  // 测试错误边界条件
-  // 测试除数为零的各种情况
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  
-  // 测试极值运算
-  let large_positive = 1000000
-  let large_negative = -1000000
-  let zero = 0
-  
-  assert_eq(0, add(large_positive, large_negative))
-  assert_eq(large_positive, add(large_positive, zero))
-  assert_eq(0, multiply(large_positive, zero))
-  assert_eq(0, multiply(zero, large_negative))
-}
-
-test "data_structure_simulation" {
-  // 测试数据结构模拟（栈操作）
-  let initial_stack = 0
-  let push1 = 10
-  let push2 = 20
-  let push3 = 30
-  let pop1 = subtract(add(add(initial_stack, push1), push2), push2)
-  let pop2 = subtract(pop1, push1)
-  let push_after_pop = add(pop2, push3)
-  
-  assert_eq(10, pop1)  // (0 + 10 + 20) - 20 = 10
-  assert_eq(0, pop2)   // 10 - 10 = 0
-  assert_eq(30, push_after_pop)  // 0 + 30 = 30
-}
-
-test "algorithm_complexity_simulation" {
-  // 测试算法复杂度模拟
-  let n = 100
-  let constant_factor = 5
-  
-  // O(1) 常数时间
-  let constant_time = constant_factor
-  
-  // O(n) 线性时间
-  let linear_time = multiply(n, constant_factor)
-  
-  // O(n²) 平方时间（简化计算）
-  let quadratic_time = multiply(multiply(n, n), constant_factor) / 1000  // 缩放以避免溢出
-  
-  // O(log n) 对数时间（简化为向上取整除法模拟）
-  let logarithmic_time = divide_with_ceil(n, 10)  // 简化的对数计算
-  
-  assert_eq(5, constant_time)
-  assert_eq(500, linear_time)
-  assert_eq(50, quadratic_time)
-  assert_eq(10, logarithmic_time)
+  assert_eq(84, total_sold)
+  assert_eq(66, stock_before_shipment)
+  assert_eq(116, final_stock)
 }
