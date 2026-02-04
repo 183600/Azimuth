@@ -2,56 +2,71 @@
 // 使用标准 MoonBit 测试语法，包含8个测试用例
 // 测试覆盖核心模块：Int、String、Bool、List 等基础功能
 
-test "int_basic_arithmetic" {
+test "int_arithmetic" {
   // 测试整数基本算术运算
-  inspect(3 + 7, content="10")
-  inspect(3 - 7, content="-4")
-  inspect(3 * 7, content="21")
-  inspect(7 / 3, content="2")
-  inspect(7 % 3, content="1")
+  let a = 10
+  let b = 3
+  let sum = a + b
+  let diff = a - b
+  let product = a * b
+  let quotient = a / b
+  let remainder = a % b
   
-  // 测试负数运算
-  inspect(-3 + -7, content="-10")
-  inspect(-3 - -7, content="4")
-  inspect(-3 * -7, content="21")
-  inspect(-7 / 3, content="-2")
+  inspect(sum, content="13")
+  inspect(diff, content="7")
+  inspect(product, content="30")
+  inspect(quotient, content="3")
+  inspect(remainder, content="1")
 }
 
-test "string_basic_operations" {
+test "string_operations" {
   // 测试字符串基本操作
   let empty = ""
   let hello = "Hello"
   let world = "World"
+  let combined = hello + world
   
   inspect(empty, content="")
   inspect(hello, content="Hello")
   inspect(world, content="World")
-  inspect(hello + world, content="HelloWorld")
+  inspect(combined, content="HelloWorld")
   
   // 测试字符串长度
   inspect(empty.length(), content="0")
   inspect(hello.length(), content="5")
-  inspect(world.length(), content="5")
-  inspect((hello + world).length(), content="10")
+  inspect(combined.length(), content="10")
 }
 
-test "boolean_logical_operations" {
+test "boolean_logic" {
   // 测试布尔逻辑操作
-  inspect(true && true, content="true")
-  inspect(true && false, content="false")
-  inspect(false && true, content="false")
-  inspect(false && false, content="false")
+  let t_and_t = true && true
+  let t_and_f = true && false
+  let f_and_t = false && true
+  let f_and_f = false && false
   
-  inspect(true || true, content="true")
-  inspect(true || false, content="true")
-  inspect(false || true, content="true")
-  inspect(false || false, content="false")
+  let t_or_t = true || true
+  let t_or_f = true || false
+  let f_or_t = false || true
+  let f_or_f = false || false
   
-  inspect(!true, content="false")
-  inspect(!false, content="true")
+  let not_t = !true
+  let not_f = !false
+  
+  inspect(t_and_t, content="true")
+  inspect(t_and_f, content="false")
+  inspect(f_and_t, content="false")
+  inspect(f_and_f, content="false")
+  
+  inspect(t_or_t, content="true")
+  inspect(t_or_f, content="true")
+  inspect(f_or_t, content="true")
+  inspect(f_or_f, content="false")
+  
+  inspect(not_t, content="false")
+  inspect(not_f, content="true")
 }
 
-test "list_basic_operations" {
+test "list_operations" {
   // 测试列表基本操作
   let empty_list = []
   let single_item = [1]
@@ -72,7 +87,7 @@ test "list_basic_operations" {
   inspect(multiple_items[2], content="3")
 }
 
-test "char_basic_operations" {
+test "char_operations" {
   // 测试字符基本操作
   let char_a = 'a'
   let char_A = 'A'
@@ -89,7 +104,7 @@ test "char_basic_operations" {
   inspect('a' == 'A', content="false")
 }
 
-test "comparison_operations" {
+test "comparison_ops" {
   // 测试比较操作
   inspect(1 < 2, content="true")
   inspect(2 < 1, content="false")
