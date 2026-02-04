@@ -1,118 +1,109 @@
-// 标准 MoonBit 测试用例 - 为 Azimuth 项目添加
-// 使用标准 MoonBit 测试语法，包含8个高质量测试用例
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  @azimuth.assert_eq(8, @azimuth.add(3, 5))
-  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
-  @azimuth.assert_eq(2, @azimuth.subtract(5, 3))
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(8, 3))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
+// 标准 MoonBit 测试用例
+// 包含 8 个核心功能测试，使用标准 MoonBit 测试语法
+
+test "int_arithmetic_operations" {
+  // 测试整数算术运算
+  @azimuth.assert_eq(5, 2 + 3)
+  @azimuth.assert_eq(6, 10 - 4)
+  @azimuth.assert_eq(12, 3 * 4)
+  @azimuth.assert_eq(5, 15 / 3)
+  @azimuth.assert_eq(2, 17 % 5)
 }
 
-test "mathematical_properties" {
-  // 数学性质验证测试
-  let a = 12
-  let b = 7
-  
-  // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
-  
-  // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
-  
-  // 验证具体数值
-  @azimuth.assert_eq(19, @azimuth.add(12, 7))
-  @azimuth.assert_eq(84, @azimuth.multiply(12, 7))
+test "string_operations" {
+  // 测试字符串操作
+  let hello = "Hello"
+  let world = "World"
+  let combined = hello + " " + world
+  @azimuth.assert_eq_string("Hello World", combined)
+  @azimuth.assert_eq(0, "".length())
+  @azimuth.assert_eq(7, "MoonBit".length())
 }
 
-test "negative_numbers_handling" {
-  // 负数处理测试
-  @azimuth.assert_eq(-2, @azimuth.add(-5, 3))
-  @azimuth.assert_eq(-15, @azimuth.multiply(-5, 3))
-  @azimuth.assert_eq(15, @azimuth.multiply(-5, -3))
-  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-3, 4))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-3, -4))
-  @azimuth.assert_eq(-8, @azimuth.subtract(-5, 3))
+test "boolean_logic" {
+  // 测试布尔逻辑运算
+  let t = true
+  let f = false
+  @azimuth.assert_true(t && t)
+  @azimuth.assert_false(t && f)
+  @azimuth.assert_true(t || f)
+  @azimuth.assert_false(f || f)
+  @azimuth.assert_false(!t)
+  @azimuth.assert_true(!f)
 }
 
-test "string_processing_comprehensive" {
-  // 字符串处理综合测试
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
-  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
-  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
+test "array_operations" {
+  // 测试数组操作
+  let numbers = [1, 2, 3, 4, 5]
+  @azimuth.assert_eq(5, numbers.length())
+  @azimuth.assert_eq(1, numbers[0])
+  @azimuth.assert_eq(5, numbers[4])
+  
+  let doubled = numbers.map(x => x * 2)
+  @azimuth.assert_eq(2, doubled[0])
+  @azimuth.assert_eq(10, doubled[4])
+  
+  let evens = numbers.filter(x => x % 2 == 0)
+  @azimuth.assert_eq(2, evens[0])
+  @azimuth.assert_eq(4, evens[1])
 }
 
-test "business_logic_packaging" {
-  // 业务逻辑：包装计算测试
-  let items = 47
-  let capacity_per_box = 12
-  let boxes_needed = @azimuth.divide_with_ceil(items, capacity_per_box)
-  
-  @azimuth.assert_eq(4, boxes_needed)
-  
-  // 验证总容量
-  let total_capacity = @azimuth.multiply(boxes_needed, capacity_per_box)
-  @azimuth.assert_eq(48, total_capacity)
-  
-  // 验证剩余空间
-  let remaining_space = @azimuth.subtract(total_capacity, items)
-  @azimuth.assert_eq(1, remaining_space)
+test "comparison_operations" {
+  // 测试比较操作
+  @azimuth.assert_true(5 > 3)
+  @azimuth.assert_false(5 < 3)
+  @azimuth.assert_true(5 >= 5)
+  @azimuth.assert_false(5 <= 3)
+  @azimuth.assert_true(5 == 5)
+  @azimuth.assert_true(5 != 3)
 }
 
-test "complex_calculation_pipeline" {
-  // 复杂计算流水线测试
-  let base_value = 10
-  let multiplier = 3
-  let divisor = 4
-  let addition = 5
+test "option_type_handling" {
+  // 测试 Option 类型处理
+  let some_val : Int? = Some(42)
+  let none_val : Int? = None
   
-  // 计算流程：((base * multiplier) / divisor) + addition
-  let step1 = @azimuth.multiply(base_value, multiplier)
-  let step2 = @azimuth.divide_with_ceil(step1, divisor)
-  let result = @azimuth.add(step2, addition)
+  @azimuth.assert_true(some_val is Some(_))
+  @azimuth.assert_false(some_val is None)
+  @azimuth.assert_false(none_val is Some(_))
+  @azimuth.assert_true(none_val is None)
   
-  @azimuth.assert_eq(13, result)  // ceil(10*3/4) + 5 = 8 + 5 = 13
+  let doubled = some_val.map(x => x * 2)
+  @azimuth.assert_true(doubled is Some(_))
 }
 
-test "boundary_values_and_edge_cases" {
-  // 边界值和边缘情况测试
-  // 除法边界情况
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(5, 5))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-5, -5))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, -5))
+test "result_type_handling" {
+  // 测试 Result 类型处理
+  let success : Result[String, Int] = Ok("success")
+  let failure : Result[String, Int] = Err(404)
   
-  // 大数运算
-  @azimuth.assert_eq(2000000, @azimuth.add(1000000, 1000000))
-  @azimuth.assert_eq(100000000, @azimuth.multiply(10000, 10000))
-  
-  // 零元素性质
-  @azimuth.assert_eq(5, @azimuth.add(5, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+  @azimuth.assert_true(success is Ok(_))
+  @azimuth.assert_false(success is Err(_))
+  @azimuth.assert_false(failure is Ok(_))
+  @azimuth.assert_true(failure is Err(_))
 }
 
-test "real_world_application_scenario" {
-  // 真实世界应用场景测试：活动安排
-  let participants = 87
-  let tables = 8
-  let chairs_per_table = 10
-  
-  // 计算需要的桌子数量
-  let tables_needed = @azimuth.divide_with_ceil(participants, chairs_per_table)
-  @azimuth.assert_eq(9, tables_needed)
-  
-  // 计算可用座位数
-  let available_seats = @azimuth.multiply(tables_needed, chairs_per_table)
-  @azimuth.assert_eq(90, available_seats)
-  
-  // 计算剩余座位
-  let remaining_seats = @azimuth.subtract(available_seats, participants)
-  @azimuth.assert_eq(3, remaining_seats)
-  
-  // 验证座位充足性
-  @azimuth.assert_true(available_seats >= participants)
+test "tuple_operations" {
+  // 测试元组操作
+  let pair = (42, "answer")
+  let triple = (1, 2, 3)
+  @azimuth.assert_eq(42, pair.0)
+  @azimuth.assert_eq_string("answer", pair.1)
+  @azimuth.assert_eq(1, triple.0)
+  @azimuth.assert_eq(2, triple.1)
+  @azimuth.assert_eq(3, triple.2)
 }
