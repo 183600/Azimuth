@@ -29,6 +29,7 @@
     "standard_moonbit_tests.mbt",
     "enhanced_standard_moonbit_tests.mbt",
     "user_simple_tests.mbt",
+    "azimuth_standard_enhanced_test_cases.mbt",
     "basic_tests.mbt",
     "azimuth_enhanced_unit_tests.mbt",
     "standard_azimuth_comprehensive_tests.mbt",
