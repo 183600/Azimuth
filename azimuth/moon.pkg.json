@@ -18,6 +18,8 @@
         "aa_new_tests.mbt",
         "lib.mbt",
         "test_simple.mbt",
+        "quality_moonbit_tests.mbt",
+        "quality_test_cases.mbt",
         "azimuth_simple_new_tests.mbt",
         "azimuth_enhanced_standard_tests.mbt",
         "azimuth_standard_test_suite.mbt",
