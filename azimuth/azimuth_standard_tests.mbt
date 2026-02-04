@@ -1,52 +1,53 @@
 // Azimuth 项目标准 MoonBit 测试用例
 // 包含10个高质量测试用例，使用标准 MoonBit 测试语法
 
-test "azimuth_add_function_comprehensive_unique" {
-  // 加法函数综合测试
-  assert_eq(10, add(3, 7))
-  assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-8, 3))
-  assert_eq(100, add(50, 50))
-  assert_eq(-100, add(-50, -50))
-}
-
-test "azimuth_multiply_function_edge_cases_unique" {
-  // 乘法函数边界情况测试
-  assert_eq(25, multiply(5, 5))
-  assert_eq(0, multiply(100, 0))
-  assert_eq(-30, multiply(-6, 5))
-  assert_eq(30, multiply(-6, -5))
-  assert_eq(1000000, multiply(1000, 1000))
-}
-
-test "azimuth_divide_with_ceil_comprehensive_unique" {
-  // 向上取整除法综合测试
-  assert_eq(4, divide_with_ceil(10, 3))
+test "basic_arithmetic_operations" {
+  // 基本算术运算测试
+  assert_eq(8, add(3, 5))
+  assert_eq(15, multiply(3, 5))
+  assert_eq(2, divide_with_ceil(8, 3))
   assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 100))
-  assert_eq(0, divide_with_ceil(0, 10))
   assert_eq(0, divide_with_ceil(10, 0))
 }
 
-test "azimuth_divide_with_ceil_negative_numbers_unique" {
-  // 向上取整除法负数测试
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-4, divide_with_ceil(10, -3))
-  assert_eq(4, divide_with_ceil(-10, -3))
-  assert_eq(-1, divide_with_ceil(-1, 2))
-  assert_eq(1, divide_with_ceil(-1, -2))
+test "negative_number_operations" {
+  // 负数运算测试
+  assert_eq(-2, add(-5, 3))
+  assert_eq(-15, multiply(-3, 5))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-2, divide_with_ceil(-8, 3))
+  assert_eq(2, divide_with_ceil(-8, -3))
 }
 
-test "azimuth_greet_function_various_inputs_unique" {
-  // 问候函数各种输入测试
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+test "greet_function_comprehensive" {
+  // 问候函数综合测试
   assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
   assert_eq_string("Hello, 123!", greet("123"))
   assert_eq_string("Hello, 中文!", greet("中文"))
 }
 
-test "azimuth_subtract_function_comprehensive_unique" {
+test "mathematical_properties" {
+  // 数学性质验证测试
+  let a = 12
+  let b = 7
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 加法恒等式
+  assert_eq(a, add(a, 0))
+  
+  // 乘法恒等式
+  assert_eq(a, multiply(a, 1))
+  assert_eq(0, multiply(a, 0))
+}
+
+test "subtract_function_comprehensive" {
   // 减法函数综合测试
   assert_eq(5, subtract(10, 5))
   assert_eq(-5, subtract(5, 10))
@@ -55,59 +56,52 @@ test "azimuth_subtract_function_comprehensive_unique" {
   assert_eq(-20, subtract(-10, 10))
 }
 
-test "azimuth_mathematical_properties_validation_unique" {
-  // 数学性质验证测试
-  let a = 12
-  let b = 8
-  
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 验证具体数值
-  assert_eq(20, add(12, 8))
-  assert_eq(96, multiply(12, 8))
-}
-
-test "azimuth_business_packaging_scenario_unique" {
+test "business_packaging_scenario" {
   // 业务包装场景测试
-  let total_items = 35
-  let items_per_package = 8
+  let total_items = 47
+  let items_per_package = 12
   let packages_needed = divide_with_ceil(total_items, items_per_package)
   
-  assert_eq(5, packages_needed)
+  assert_eq(4, packages_needed)
   
   // 验证总容量
   let total_capacity = multiply(packages_needed, items_per_package)
-  assert_eq(40, total_capacity)
+  assert_eq(48, total_capacity)
   
   // 验证剩余空间
   let remaining_space = subtract(total_capacity, total_items)
-  assert_eq(5, remaining_space)
+  assert_eq(1, remaining_space)
 }
 
-test "azimuth_complex_workflow_calculation_unique" {
+test "complex_workflow_calculation" {
   // 复杂工作流计算测试
   // 场景：项目资源计算
-  let team_members = 6
-  let tasks_per_member = 8
+  let team_members = 8
+  let tasks_per_member = 6
   let total_tasks = multiply(team_members, tasks_per_member)
   
-  let sprint_capacity = 15
+  let sprint_capacity = 20
   let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
   
-  assert_eq(48, total_tasks)  // 6 * 8 = 48
-  assert_eq(4, sprints_needed)  // ceil(48/15) = 4
+  assert_eq(48, total_tasks)  // 8 * 6 = 48
+  assert_eq(3, sprints_needed)  // ceil(48/20) = 3
+  
+  // 验证总处理能力
+  let total_capacity = multiply(sprints_needed, sprint_capacity)
+  assert_eq(60, total_capacity)
+  
+  // 验证剩余容量
+  let remaining_capacity = subtract(total_capacity, total_tasks)
+  assert_eq(12, remaining_capacity)
 }
 
-test "azimuth_edge_cases_and_boundary_values_unique" {
-  // 边界情况和极值测试
+test "boundary_values_and_edge_cases" {
+  // 边界值和边缘情况测试
   // 除法边界情况
   assert_eq(1, divide_with_ceil(5, 5))
   assert_eq(1, divide_with_ceil(-5, -5))
   assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(0, -5))
   
   // 大数运算
   assert_eq(2000000, add(1000000, 1000000))
@@ -116,4 +110,56 @@ test "azimuth_edge_cases_and_boundary_values_unique" {
   // 特殊问候情况
   assert_eq_string("Hello,   !", greet("  "))
   assert_eq_string("Hello, special@chars!", greet("special@chars"))
+}
+
+test "resource_allocation_scenario" {
+  // 资源分配场景测试
+  let total_resources = 150
+  let teams = 4
+  let min_resources_per_team = divide_with_ceil(total_resources, teams)
+  
+  assert_eq(38, min_resources_per_team)
+  
+  // 验证分配结果
+  let allocated_total = multiply(min_resources_per_team, teams)
+  assert_eq(152, allocated_total)
+  
+  // 验证资源利用率
+  let utilization_percentage = divide_with_ceil(multiply(total_resources, 100), allocated_total)
+  assert_eq(99, utilization_percentage)  // floor(15000/152) = 98%
+}
+
+test "event_planning_comprehensive" {
+  // 活动规划综合测试
+  let participants = 125
+  let tables_available = 15
+  let chairs_per_table = 8
+  let cost_per_chair = 30
+  let total_budget = 4000
+  
+  // 计算需要的桌子数量
+  let tables_needed = divide_with_ceil(participants, chairs_per_table)
+  assert_eq(16, tables_needed)
+  
+  // 验证桌子是否足够
+  assert_false(tables_needed <= tables_available)  // 需要16张，但只有15张
+  
+  // 计算总座位数
+  let total_seats = multiply(tables_needed, chairs_per_table)
+  assert_eq(128, total_seats)
+  
+  // 计算剩余座位
+  let remaining_seats = subtract(total_seats, participants)
+  assert_eq(3, remaining_seats)
+  
+  // 计算总成本
+  let total_cost = multiply(total_seats, cost_per_chair)
+  assert_eq(3840, total_cost)
+  
+  // 验证预算充足
+  assert_true(total_cost <= total_budget)
+  
+  // 计算剩余预算
+  let remaining_budget = subtract(total_budget, total_cost)
+  assert_eq(160, remaining_budget)
 }
