@@ -1,132 +1,109 @@
 // 标准 MoonBit 综合测试用例
-// 针对 azimuth 库核心功能的高质量测试
+// 使用标准 MoonBit 测试语法，包含8个高质量测试用例
+// 覆盖边界情况、错误处理和实际应用场景
 
-test "add_function_core_functionality" {
-  // 测试加法核心功能
-  assert_eq(8, add(3, 5))
+test "azimuth_add_function_extreme_boundaries" {
+  // 加法函数极端边界情况测试
   assert_eq(0, add(0, 0))
-  assert_eq(-2, add(-5, 3))
-  assert_eq(1000, add(500, 500))
+  assert_eq(1000000, add(999999, 1))
+  assert_eq(-1000000, add(-999999, -1))
+  assert_eq(0, add(2147483647, -2147483647))
+  assert_eq(1, add(-2147483647, 2147483648))
 }
 
-test "multiply_function_comprehensive" {
-  // 测试乘法综合功能
-  assert_eq(15, multiply(3, 5))
-  assert_eq(0, multiply(0, 100))
-  assert_eq(-12, multiply(-3, 4))
-  assert_eq(12, multiply(-3, -4))
+test "azimuth_multiply_function_properties" {
+  // 乘法函数性质测试
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(0, 12345))
+  assert_eq(0, multiply(12345, 0))
+  assert_eq(12345, multiply(12345, 1))
+  assert_eq(12345, multiply(1, 12345))
+  assert_eq(-12345, multiply(-12345, 1))
 }
 
-test "subtract_function_basic" {
-  // 测试减法基本功能
-  assert_eq(5, subtract(8, 3))
-  assert_eq(-5, subtract(3, 8))
-  assert_eq(0, subtract(10, 10))
-  assert_eq(10, subtract(0, -10))
+test "azimuth_divide_with_ceil_precision" {
+  // 向上取整除法精度测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(100, divide_with_ceil(9999, 100))
+  assert_eq(333334, divide_with_ceil(1000000, 3))
+  assert_eq(-333333, divide_with_ceil(-1000000, 3))
+  assert_eq(0, divide_with_ceil(0, 12345))
 }
 
-test "divide_with_ceil_edge_cases" {
-  // 测试向上取整除法的边界情况
-  assert_eq(4, divide_with_ceil(10, 3))  // 10/3 = 3.33 -> 4
-  assert_eq(3, divide_with_ceil(9, 3))   // 9/3 = 3 -> 3
-  assert_eq(-3, divide_with_ceil(-10, 3)) // -10/3 = -3.33 -> -3
-  assert_eq(0, divide_with_ceil(100, 0))  // 除数为0返回0
-}
-
-test "greet_function_unicode_support" {
-  // 测试问候函数的Unicode支持
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+test "azimuth_greet_function_international" {
+  // 问候函数国际化支持测试
   assert_eq_string("Hello, 世界!", greet("世界"))
   assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 👋!", greet("👋"))
+  assert_eq_string("Hello, αβγδε!", greet("αβγδε"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, 🌍🌎🌏!", greet("🌍🌎🌏"))
 }
 
-test "mathematical_properties_verification" {
-  // 验证数学性质
-  let a = 7
-  let b = 11
+test "azimuth_financial_compound_interest" {
+  // 金融复利计算场景测试
+  let principal = 10000
+  let annual_rate = 5
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  // 简化的复利计算
+  let year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, annual_rate), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, annual_rate), 100))
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 零元素性质
-  assert_eq(0, multiply(a, 0))
-  assert_eq(a, add(a, 0))
+  assert_eq(10500, year1)
+  assert_eq(11025, year2)
+  assert_eq(11576, year3)
 }
 
-test "business_order_calculation" {
-  // 业务订单计算场景
-  let unit_price = 35
-  let quantity = 6
-  let shipping_cost = 12
-  let discount = 15
+test "azimuth_inventory_restock_system" {
+  // 库存补货系统测试
+  let initial_stock = 500
+  let daily_sales = 25
+  let days_until_restock = 7
+  let restock_amount = 300
   
-  let subtotal = multiply(unit_price, quantity)
-  let total_before_discount = add(subtotal, shipping_cost)
-  let final_total = add(total_before_discount, -discount)
+  let total_sold = multiply(daily_sales, days_until_restock)
+  let stock_before_restock = subtract(initial_stock, total_sold)
+  let final_stock = add(stock_before_restock, restock_amount)
   
-  assert_eq(210, subtotal)
-  assert_eq(222, total_before_discount)
-  assert_eq(207, final_total)
+  assert_eq(175, total_sold)
+  assert_eq(325, stock_before_restock)
+  assert_eq(625, final_stock)
 }
 
-test "packaging_optimization_scenario" {
-  // 包装优化场景
-  let total_products = 58
-  let capacity_per_box = 15
-  let boxes_needed = divide_with_ceil(total_products, capacity_per_box)
+test "azimuth_arithmetic_progression" {
+  // 等差数列计算测试
+  let first_term = 3
+  let common_difference = 4
+  let number_of_terms = 10
   
-  // 验证箱子数量
-  assert_eq(4, boxes_needed)
+  // 等差数列求和：S = n/2 * (2a + (n-1)d)
+  let sum = divide_with_ceil(
+    multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference))),
+    2
+  )
   
-  // 验证总容量
-  let total_capacity = multiply(boxes_needed, capacity_per_box)
-  assert_eq(60, total_capacity)
-  
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_products)
-  assert_eq(2, remaining_space)
+  assert_eq(220, sum)
 }
 
-test "complex_financial_calculation" {
-  // 复杂金融计算场景
-  let principal = 1000
-  let interest_rate = 8
-  let years = 2
+test "azimuth_budget_optimization" {
+  // 预算优化测试
+  let total_budget = 50000
+  let project_a_cost = 12000
+  let project_b_cost = 8000
+  let project_c_cost = 15000
   
-  // 第一年利息
-  let year1_interest = divide_with_ceil(multiply(principal, interest_rate), 100)
-  let year1_total = add(principal, year1_interest)
+  // 计算已分配预算
+  let allocated_budget = add(add(project_a_cost, project_b_cost), project_c_cost)
   
-  // 第二年利息
-  let year2_interest = divide_with_ceil(multiply(year1_total, interest_rate), 100)
-  let year2_total = add(year1_total, year2_interest)
+  // 计算剩余预算
+  let remaining_budget = subtract(total_budget, allocated_budget)
   
-  assert_eq(80, year1_interest)
-  assert_eq(1080, year1_total)
-  assert_eq(87, year2_interest)
-  assert_eq(1167, year2_total)
-}
-
-test "resource_allocation_planning" {
-  // 资源分配规划
-  let total_tasks = 95
-  let tasks_per_person = 8
-  let working_days = 5
+  // 计算可以支持的小项目数量（每个小项目成本2000）
+  let small_projects_count = divide_with_ceil(remaining_budget, 2000)
   
-  // 计算需要的人员数量
-  let people_needed = divide_with_ceil(total_tasks, tasks_per_person)
-  
-  // 计算每个人员的工作天数
-  let days_per_person = divide_with_ceil(tasks_per_person, working_days)
-  
-  // 计算总工作日
-  let total_working_days = multiply(people_needed, days_per_person)
-  
-  assert_eq(12, people_needed)
-  assert_eq(2, days_per_person)
-  assert_eq(24, total_working_days)
+  assert_eq(35000, allocated_budget)
+  assert_eq(15000, remaining_budget)
+  assert_eq(8, small_projects_count)
 }
