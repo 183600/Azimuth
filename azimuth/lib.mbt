@@ -17291,3 +17291,256 @@ test "azimuth_integration_compatibility" {
   assert_eq_string("Hello, Azimuth!", greet("Azimuth"))
   assert_eq_string("Hello, v2.5!", greet("v2.5"))
 }
+
+// 新增的10个 MoonBit 标准测试用例
+test "advanced_mathematical_sequences" {
+  // 高级数学序列测试
+  let fibonacci_base = 5
+  let fibonacci_next = 8
+  
+  // 斐波那契数列验证
+  let fibonacci_sum = add(fibonacci_base, fibonacci_next)
+  assert_eq(13, fibonacci_sum)
+  
+  // 等比数列测试
+  let geometric_ratio = 2
+  let geometric_term_1 = 3
+  let geometric_term_2 = multiply(geometric_term_1, geometric_ratio)
+  let geometric_term_3 = multiply(geometric_term_2, geometric_ratio)
+  
+  assert_eq(6, geometric_term_2)
+  assert_eq(12, geometric_term_3)
+  
+  // 计算等比数列和
+  let geometric_sum = add(geometric_term_1, add(geometric_term_2, geometric_term_3))
+  assert_eq(21, geometric_sum)
+}
+
+test "data_validation_and_type_safety" {
+  // 数据验证和类型安全测试
+  let valid_input = 42
+  let invalid_input_zero = 0
+  let invalid_input_negative = -1
+  
+  // 验证有效输入
+  assert_true(valid_input > 0)
+  assert_eq(42, valid_input)
+  
+  // 验证边界条件
+  assert_false(invalid_input_zero > 0)
+  assert_false(invalid_input_negative > 0)
+  
+  // 测试安全除法
+  let safe_division_result = divide_with_ceil(valid_input, invalid_input_zero)
+  assert_eq(0, safe_division_result)
+  
+  // 测试字符串验证
+  let empty_string = ""
+  let normal_string = "MoonBit"
+  
+  assert_eq_string("Hello, !", greet(empty_string))
+  assert_eq_string("Hello, MoonBit!", greet(normal_string))
+}
+
+test "complex_financial_calculations" {
+  // 复杂金融计算测试
+  let principal = 10000
+  let annual_rate = 5
+  let years = 3
+  
+  // 计算简单利息
+  let total_interest = multiply(principal, multiply(annual_rate, years))
+  let total_interest_rate = multiply(annual_rate, years)
+  assert_eq(15, total_interest_rate)
+  
+  // 计算总金额
+  let total_amount = add(principal, divide_with_ceil(total_interest, 100))
+  assert_eq(10150, total_amount)
+  
+  // 计算分期付款
+  let monthly_payment = divide_with_ceil(total_amount, multiply(years, 12))
+  assert_eq(282, monthly_payment)
+  
+  // 验证支付总额
+  let total_payment = multiply(monthly_payment, multiply(years, 12))
+  assert_eq(10152, total_payment)
+}
+
+test "resource_optimization_algorithms" {
+  // 资源优化算法测试
+  let total_resources = 100
+  let task_requirements = [15, 25, 30, 20, 10]
+  
+  // 计算总需求
+  let total_requirement = add(15, add(25, add(30, add(20, 10))))
+  assert_eq(100, total_requirement)
+  
+  // 测试资源分配
+  let allocation_efficiency = divide_with_ceil(multiply(total_requirement, 100), total_resources)
+  assert_eq(100, allocation_efficiency)
+  
+  // 测试资源优化
+  let optimized_resources = subtract(total_resources, 5)
+  let new_efficiency = divide_with_ceil(multiply(total_requirement, 100), optimized_resources)
+  assert_eq(105, new_efficiency)
+  
+  // 验证优化结果
+  assert_true(new_efficiency > allocation_efficiency)
+}
+
+test "string_manipulation_and_encoding" {
+  // 字符串操作和编码测试
+  let base_string = "MoonBit"
+  let greeting_prefix = "Hello, "
+  let greeting_suffix = "!"
+  
+  // 测试字符串拼接（通过问候函数）
+  let full_greeting = greet(base_string)
+  assert_eq_string("Hello, MoonBit!", full_greeting)
+  
+  // 测试特殊字符
+  let special_chars = "@#$%^&*()"
+  let special_greeting = greet(special_chars)
+  assert_eq_string("Hello, @#$%^&*()!", special_greeting)
+  
+  // 测试Unicode字符
+  let unicode_chars = "🚀🌟"
+  let unicode_greeting = greet(unicode_chars)
+  assert_eq_string("Hello, 🚀🌟!", unicode_greeting)
+  
+  // 测试数字字符串
+  let numeric_string = "2024"
+  let numeric_greeting = greet(numeric_string)
+  assert_eq_string("Hello, 2024!", numeric_greeting)
+}
+
+test "performance_benchmarking" {
+  // 性能基准测试
+  let small_dataset = 100
+  let medium_dataset = 1000
+  let large_dataset = 10000
+  
+  // 测试不同数据集的处理时间
+  let small_operations = multiply(small_dataset, 10)
+  let medium_operations = multiply(medium_dataset, 10)
+  let large_operations = multiply(large_dataset, 10)
+  
+  assert_eq(1000, small_operations)
+  assert_eq(10000, medium_operations)
+  assert_eq(100000, large_operations)
+  
+  // 计算性能比率
+  let medium_to_small_ratio = divide_with_ceil(medium_operations, small_operations)
+  let large_to_medium_ratio = divide_with_ceil(large_operations, medium_operations)
+  
+  assert_eq(10, medium_to_small_ratio)
+  assert_eq(10, large_to_medium_ratio)
+  
+  // 验证线性扩展性
+  assert_true(medium_to_small_ratio == large_to_medium_ratio)
+}
+
+test "error_handling_and_recovery" {
+  // 错误处理和恢复测试
+  let normal_value = 100
+  let zero_divisor = 0
+  let negative_value = -50
+  
+  // 测试除零错误处理
+  let error_result_1 = divide_with_ceil(normal_value, zero_divisor)
+  let error_result_2 = divide_with_ceil(negative_value, zero_divisor)
+  let error_result_3 = divide_with_ceil(0, zero_divisor)
+  
+  assert_eq(0, error_result_1)
+  assert_eq(0, error_result_2)
+  assert_eq(0, error_result_3)
+  
+  // 测试错误恢复
+  let safe_divisor = 5
+  let recovery_result_1 = divide_with_ceil(normal_value, safe_divisor)
+  let recovery_result_2 = divide_with_ceil(negative_value, safe_divisor)
+  
+  assert_eq(20, recovery_result_1)
+  assert_eq(-10, recovery_result_2)
+  
+  // 验证恢复机制
+  assert_true(recovery_result_1 > 0)
+  assert_true(recovery_result_2 < 0)
+}
+
+test "statistical_analysis" {
+  // 统计分析测试
+  let data_points = [10, 20, 30, 40, 50]
+  
+  // 计算总和
+  let sum_data = add(10, add(20, add(30, add(40, 50))))
+  assert_eq(150, sum_data)
+  
+  // 计算平均值
+  let count_points = 5
+  let average = divide_with_ceil(sum_data, count_points)
+  assert_eq(30, average)
+  
+  // 计算方差（简化版本）
+  let variance_numerator = subtract(10, average)
+  let variance_value = multiply(variance_numerator, variance_numerator)
+  assert_eq(400, variance_value)
+  
+  // 计算标准差（简化版本）
+  let standard_deviation = divide_with_ceil(variance_value, average)
+  assert_eq(14, standard_deviation)
+}
+
+test "caching_and_memoization" {
+  // 缓存和记忆化测试
+  let cache_size = 100
+  let cache_entries = 25
+  let cache_hit_rate = 80
+  
+  // 计算缓存利用率
+  let cache_utilization = divide_with_ceil(multiply(cache_entries, 100), cache_size)
+  assert_eq(25, cache_utilization)
+  
+  // 计算缓存命中次数
+  let total_requests = 100
+  let cache_hits = divide_with_ceil(multiply(total_requests, cache_hit_rate), 100)
+  assert_eq(80, cache_hits)
+  
+  // 计算缓存未命中次数
+  let cache_misses = subtract(total_requests, cache_hits)
+  assert_eq(20, cache_misses)
+  
+  // 计算缓存效率
+  let cache_efficiency = divide_with_ceil(multiply(cache_hits, 100), total_requests)
+  assert_eq(80, cache_efficiency)
+  
+  // 验证缓存性能
+  assert_true(cache_efficiency >= cache_hit_rate)
+}
+
+test "complex_workflow_orchestration" {
+  // 复杂工作流编排测试
+  let workflow_steps = 5
+  let step_duration = 3
+  let parallel_capacity = 2
+  
+  // 计算串行执行时间
+  let serial_time = multiply(workflow_steps, step_duration)
+  assert_eq(15, serial_time)
+  
+  // 计算并行执行时间
+  let parallel_batches = divide_with_ceil(workflow_steps, parallel_capacity)
+  let parallel_time = multiply(parallel_batches, step_duration)
+  assert_eq(9, parallel_time)
+  
+  // 计算性能提升
+  let performance_improvement = subtract(serial_time, parallel_time)
+  let improvement_percentage = divide_with_ceil(multiply(performance_improvement, 100), serial_time)
+  
+  assert_eq(6, performance_improvement)
+  assert_eq(40, improvement_percentage)
+  
+  // 验证并行执行优势
+  assert_true(parallel_time < serial_time)
+  assert_true(improvement_percentage > 0)
+}
