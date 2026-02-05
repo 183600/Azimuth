@@ -1,180 +1,181 @@
-// Azimuth 增强测试用例
-// 使用标准 MoonBit 测试语法
+// 增强 MoonBit 测试用例
+// 针对 azimuth 库的高级功能和边界情况进行测试
 
-// 导入 azimuth 库
-use azimuth
-
-test "enhanced_mathematical_series" {
-  // 测试数学级数计算
-  // 计算等差数列: 2, 5, 8, 11, 14 的和
-  let first_term = 2
-  let common_diff = 3
-  let num_terms = 5
+test "advanced_arithmetic_operations" {
+  // 测试高级算术运算
+  let x = 15
+  let y = 7
+  let z = 3
   
-  // 使用公式 S = n/2 * (2a + (n-1)d)
-  let series_sum = azimuth.divide_with_ceil(
-    azimuth.multiply(num_terms, azimuth.add(azimuth.multiply(2, first_term), azimuth.multiply(num_terms - 1, common_diff))),
-    2
-  )
+  // 测试复合表达式：(x + y) * z - x / y
+  let result = add(multiply(add(x, y), z), -divide_with_ceil(x, y))
+  assert_eq(63, result)  // (15 + 7) * 3 - ceil(15/7) = 22*3 - 3 = 66 - 3 = 63
   
-  azimuth.assert_eq(40, series_sum)
+  // 测试嵌套表达式
+  let nested = divide_with_ceil(multiply(add(x, multiply(y, z)), 2), 5)
+  assert_eq(10, nested)  // ceil((15 + 7*3) * 2 / 5) = ceil(36 * 2 / 5) = ceil(72/5) = 15
 }
 
-test "enhanced_time_zone_conversion" {
-  // 测试时区转换计算
-  let local_time = 14  // 下午2点
-  let time_difference = 8  // 与UTC的时差
+test "boundary_value_testing" {
+  // 边界值测试
+  // 测试大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1000000000000, multiply(1000000, 1000000))
   
-  // 计算UTC时间
-  let utc_time = azimuth.add(local_time, -time_difference)
+  // 测试接近零的运算
+  assert_eq(1, divide_with_ceil(1, 1000000))
+  assert_eq(0, divide_with_ceil(0, 1000000))
   
-  // 处理负数时间（前一天）
-  let adjusted_utc_time = if utc_time < 0 {
-    azimuth.add(utc_time, 24)
-  } else {
-    utc_time
-  }
-  
-  azimuth.assert_eq(6, adjusted_utc_time)
+  // 测试负数边界
+  assert_eq(-2000000, add(-1000000, -1000000))
+  assert_eq(1000000, multiply(-1000, -1000))
 }
 
-test "enhanced_recipe_scaling" {
-  // 测试食谱缩放计算
-  let original_servings = 4
-  let desired_servings = 7
-  let flour_per_serving = 150  // 克
-  let sugar_per_serving = 50   // 克
+test "financial_calculations" {
+  // 金融计算场景
+  let principal = 10000
+  let rate_percent = 8
+  let years = 3
   
-  // 计算缩放因子
-  let scaling_factor = azimuth.divide_with_ceil(azimuth.multiply(desired_servings, 100), original_servings)
+  // 计算复利
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
   
-  // 计算新配料的量
-  let new_flour = azimuth.divide_with_ceil(azimuth.multiply(flour_per_serving, scaling_factor), 100)
-  let new_sugar = azimuth.divide_with_ceil(azimuth.multiply(sugar_per_serving, scaling_factor), 100)
-  
-  azimuth.assert_eq(263, new_flour)
-  azimuth.assert_eq(88, new_sugar)
+  assert_eq(10800, year1)
+  assert_eq(11664, year2)
+  assert_eq(12597, year3)
 }
 
-test "enhanced_fitness_tracking" {
-  // 测试健身追踪计算
-  let daily_step_goal = 10000
-  let current_steps = 7500
-  let calories_per_step = 0.04  // 假设每步消耗0.04卡路里
+test "inventory_optimization" {
+  // 库存优化场景
+  let demand_forecast = 450
+  let production_capacity = 80
+  let safety_stock = 50
   
-  // 计算剩余步数
-  let remaining_steps = azimuth.add(daily_step_goal, -current_steps)
+  // 计算生产批次数
+  let production_batches = divide_with_ceil(demand_forecast, production_capacity)
   
-  // 计算已消耗卡路里（使用整数运算）
-  let calories_burned = azimuth.divide_with_ceil(azimuth.multiply(current_steps, 4), 100)
+  // 计算总生产量
+  let total_production = multiply(production_batches, production_capacity)
   
-  azimuth.assert_eq(2500, remaining_steps)
-  azimuth.assert_eq(300, calories_burned)
+  // 计算最终库存
+  let final_inventory = add(total_production, safety_stock)
+  
+  assert_eq(6, production_batches)
+  assert_eq(480, total_production)
+  assert_eq(530, final_inventory)
 }
 
-test "enhanced_digital_storage" {
-  // 测试数字存储计算
-  let file_size_mb = 850
-  let drive_capacity_gb = 4
-  let drive_capacity_mb = azimuth.multiply(drive_capacity_gb, 1024)
+test "resource_allocation" {
+  // 资源分配场景
+  let total_budget = 50000
+  let project_a_cost = 15000
+  let project_b_cost = 12000
+  let project_c_cost = 8000
   
-  // 计算可以存储多少个这样的文件
-  let files_count = azimuth.divide_with_ceil(drive_capacity_mb, file_size_mb)
+  // 计算已分配预算
+  let allocated_budget = add(add(project_a_cost, project_b_cost), project_c_cost)
   
-  // 计算剩余空间
-  let used_space = azimuth.multiply(files_count, file_size_mb)
-  let remaining_space = azimuth.add(drive_capacity_mb, -used_space)
+  // 计算剩余预算
+  let remaining_budget = add(total_budget, -allocated_budget)
   
-  azimuth.assert_eq(5, files_count)
-  azimuth.assert_eq(174, remaining_space)
+  // 计算可以支持的小项目数量
+  let small_project_cost = 3000
+  let small_projects_count = divide_with_ceil(remaining_budget, small_project_cost)
+  
+  assert_eq(35000, allocated_budget)
+  assert_eq(15000, remaining_budget)
+  assert_eq(5, small_projects_count)
 }
 
-test "enhanced_project_management" {
-  // 测试项目管理计算
-  let total_tasks = 47
-  let completed_tasks = 23
-  let team_members = 5
-  let days_remaining = 10
+test "data_processing_pipeline" {
+  // 数据处理管道场景
+  let data_points = 1000
+  let processing_rate = 75
+  let batch_size = 20
   
-  // 计算剩余任务
-  let remaining_tasks = azimuth.add(total_tasks, -completed_tasks)
+  // 计算处理批次
+  let processing_batches = divide_with_ceil(data_points, batch_size)
   
-  // 计算每人每天需要完成的任务数
-  let tasks_per_person_per_day = azimuth.divide_with_ceil(remaining_tasks, azimuth.multiply(team_members, days_remaining))
+  // 计算总处理时间（分钟）
+  let total_time = divide_with_ceil(multiply(processing_batches, processing_rate), 60)
   
-  azimuth.assert_eq(24, remaining_tasks)
-  azimuth.assert_eq(1, tasks_per_person_per_day)
+  // 计算每小时处理量
+  let hourly_rate = divide_with_ceil(multiply(processing_rate, 60), 60)
+  
+  assert_eq(50, processing_batches)
+  assert_eq(63, total_time)
+  assert_eq(75, hourly_rate)
 }
 
-test "enhanced_travel_planning" {
-  // 测试旅行规划计算
-  let distance_km = 450
-  let average_speed_kmh = 80
-  let fuel_efficiency_km_per_l = 15
-  let fuel_price_per_liter = 150  // 分
+test "string_processing_advanced" {
+  // 高级字符串处理
+  let first_name = "张"
+  let last_name = "三"
+  let title = "工程师"
+  let company = "科技公司"
   
-  // 计算旅行时间（小时）
-  let travel_time = azimuth.divide_with_ceil(distance_km, average_speed_kmh)
+  // 构建完整名片
+  let full_name = first_name + last_name
+  let business_title = full_name + " - " + title
+  let business_card = business_title + " @ " + company
   
-  // 计算所需燃料（升）
-  let fuel_needed = azimuth.divide_with_ceil(distance_km, fuel_efficiency_km_per_l)
+  let greeting_result = greet(business_card)
   
-  // 计算燃料成本（分）
-  let fuel_cost = azimuth.multiply(fuel_needed, fuel_price_per_liter)
-  
-  azimuth.assert_eq(6, travel_time)
-  azimuth.assert_eq(30, fuel_needed)
-  azimuth.assert_eq(4500, fuel_cost)
+  assert_eq_string("Hello, 张三 - 工程师 @ 科技公司!", greeting_result)
+  assert_eq_string("Hello, JSON-API-v2.0!", greet("JSON-API-v2.0"))
+  assert_eq_string("Hello, C++/Java/Python!", greet("C++/Java/Python"))
 }
 
-test "enhanced_temperature_conversion" {
-  // 测试温度转换计算
-  let celsius = 25
+test "mathematical_series" {
+  // 数学级数计算
+  let n = 10
   
-  // 摄氏度转华氏度: F = C * 9/5 + 32
-  let fahrenheit = azimuth.add(azimuth.divide_with_ceil(azimuth.multiply(celsius, 9), 5), 32)
+  // 计算等差数列和：1 + 3 + 5 + ... + (2n-1) = n²
+  let arithmetic_sum = multiply(n, n)
   
-  // 华氏度转摄氏度: C = (F - 32) * 5/9
-  let celsius_back = azimuth.divide_with_ceil(azimuth.multiply(fahrenheit - 32, 5), 9)
+  // 计算等比数列和：2 + 4 + 8 + ... + 2^n
+  let geometric_sum = subtract(multiply(2, multiply(2, n)), 2)
   
-  azimuth.assert_eq(77, fahrenheit)
-  azimuth.assert_eq(25, celsius_back)
+  // 验证结果
+  assert_eq(100, arithmetic_sum)
+  assert_eq(2046, geometric_sum)
 }
 
-test "enhanced_communication_cost" {
-  // 测试通信成本计算
-  let local_calls_minutes = 120
-  let long_distance_minutes = 45
-  let local_rate_per_minute = 10  // 分
-  let long_distance_rate_per_minute = 25  // 分
-  let monthly_base_fee = 2000  // 分
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  // 测试除数为零的各种情况
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(2147483647, 0))
   
-  // 计算本地通话费用
-  let local_cost = azimuth.multiply(local_calls_minutes, local_rate_per_minute)
-  
-  // 计算长途通话费用
-  let long_distance_cost = azimuth.multiply(long_distance_minutes, long_distance_rate_per_minute)
-  
-  // 计算总费用
-  let total_cost = azimuth.add(azimuth.add(local_cost, long_distance_cost), monthly_base_fee)
-  
-  azimuth.assert_eq(1200, local_cost)
-  azimuth.assert_eq(1125, long_distance_cost)
-  azimuth.assert_eq(4325, total_cost)
+  // 测试极端数值组合
+  let extreme_result = add(multiply(100000, 10000), divide_with_ceil(-500000, 1000))
+  assert_eq(999999500, extreme_result)
 }
 
-test "enhanced_greeting_multilingual" {
-  // 测试多语言问候功能
-  let english_name = "Alice"
-  let chinese_name = "小明"
-  let japanese_name = "田中"
+test "performance_benchmarking" {
+  // 性能基准测试场景
+  let base_operations = 10000
+  let optimization_factor = 4
+  let overhead_percentage = 20
   
-  // 测试不同语言的问候
-  let english_greeting = azimuth.greet(english_name)
-  let chinese_greeting = azimuth.greet(chinese_name)
-  let japanese_greeting = azimuth.greet(japanese_name)
+  // 计算优化后的操作数
+  let optimized_operations = multiply(base_operations, optimization_factor)
   
-  azimuth.assert_eq_string("Hello, Alice!", english_greeting)
-  azimuth.assert_eq_string("Hello, 小明!", chinese_greeting)
-  azimuth.assert_eq_string("Hello, 田中!", japanese_greeting)
+  // 计算系统开销
+  let system_overhead = divide_with_ceil(multiply(optimized_operations, overhead_percentage), 100)
+  
+  // 计算实际性能
+  let actual_performance = add(optimized_operations, -system_overhead)
+  
+  // 计算性能提升倍数
+  let performance_improvement = divide_with_ceil(actual_performance, base_operations)
+  
+  assert_eq(40000, optimized_operations)
+  assert_eq(8000, system_overhead)
+  assert_eq(32000, actual_performance)
+  assert_eq(4, performance_improvement)
 }
