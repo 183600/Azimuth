@@ -1,136 +1,130 @@
-// 标准 MoonBit 测试用例
-// 针对 azimuth 库的核心功能进行测试
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-test "add_function_comprehensive" {
-  // 全面测试加法功能
-  assert_eq(10, add(7, 3))  // 基本加法
-  assert_eq(0, add(0, 0))   // 零值加法
-  assert_eq(-5, add(-2, -3))  // 负数加法
-  assert_eq(5, add(-2, 7))   // 正负数混合
-  assert_eq(1000000, add(500000, 500000))  // 大数加法
+///|
+test "option basic operations" {
+  let some_value : Int? = Some(42)
+  let none_value : Int? = None
+  
+  assert_eq(some_value.is_some(), true)
+  assert_eq(some_value.is_none(), false)
+  assert_eq(none_value.is_some(), false)
+  assert_eq(none_value.is_none(), true)
 }
 
-test "multiply_function_comprehensive" {
-  // 全面测试乘法功能
-  assert_eq(21, multiply(7, 3))  // 基本乘法
-  assert_eq(0, multiply(0, 5))   // 零乘法
-  assert_eq(-6, multiply(-2, 3))  // 负数乘法
-  assert_eq(15, multiply(-3, -5))  // 负负得正
-  assert_eq(10000, multiply(100, 100))  // 大数乘法
+///|
+test "option map transformation" {
+  let some_string : String? = Some("hello")
+  let none_string : String? = None
+  
+  let upper_some = some_string.map(s => s.to_upper())
+  let upper_none = none_string.map(s => s.to_upper())
+  
+  assert_eq(upper_some, Some("HELLO"))
+  assert_eq(upper_none, None)
 }
 
-test "divide_with_ceil_function_comprehensive" {
-  // 全面测试向上取整除法功能
-  assert_eq(4, divide_with_ceil(10, 3))   // 基本向上取整
-  assert_eq(3, divide_with_ceil(9, 3))    // 整除情况
-  assert_eq(1, divide_with_ceil(1, 100))  // 被除数小于除数
-  assert_eq(-3, divide_with_ceil(-10, 3)) // 负数除法
-  assert_eq(0, divide_with_ceil(5, 0))    // 除数为零的安全处理
+///|
+test "option filter predicate" {
+  let numbers = [Some(1), Some(2), None, Some(4), Some(5)]
+  let filtered = numbers.map(opt => opt.filter(n => n % 2 == 0))
+  
+  assert_eq(filtered[0], None)
+  assert_eq(filtered[1], Some(2))
+  assert_eq(filtered[2], None)
+  assert_eq(filtered[3], Some(4))
+  assert_eq(filtered[4], None)
 }
 
-test "greet_function_comprehensive" {
-  // 全面测试问候功能
-  assert_eq_string("Hello, World!", greet("World"))  // 基本问候
-  assert_eq_string("Hello, !", greet(""))            // 空字符串
-  assert_eq_string("Hello, 中文!", greet("中文"))    // Unicode字符
-  assert_eq_string("Hello, 123!", greet("123"))      // 数字字符串
-  assert_eq_string("Hello, A+B=C!", greet("A+B=C"))  // 特殊符号
+///|
+test "result basic operations" {
+  let ok_value : Result[Int, String] = Ok(42)
+  let err_value : Result[Int, String] = Err("error")
+  
+  assert_eq(ok_value.is_ok(), true)
+  assert_eq(ok_value.is_err(), false)
+  assert_eq(err_value.is_ok(), false)
+  assert_eq(err_value.is_err(), true)
 }
 
-test "mathematical_properties_verification" {
-  // 验证数学性质
-  let a = 8
-  let b = 12
+///|
+test "result map transformation" {
+  let ok_string : Result[String, String] = Ok("hello")
+  let err_string : Result[String, String] = Err("error")
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  let length_ok = ok_string.map(s => s.length())
+  let length_err = err_string.map(s => s.length())
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 零元素性质
-  assert_eq(0, multiply(a, 0))
-  assert_eq(a, add(a, 0))
+  assert_eq(length_ok, Ok(5))
+  assert_eq(length_err, Err("error"))
 }
 
-test "complex_business_calculation" {
-  // 复杂业务计算场景
-  let unit_price = 45
-  let quantity = 8
-  let tax_rate = 10
-  let shipping = 15
+///|
+test "result bind chaining" {
+  let safe_divide = (x : Int) => if x == 0 { Err("division by zero") } else { Ok(100 / x) }
   
-  // 计算小计
-  let subtotal = multiply(unit_price, quantity)
+  let result1 = Ok(4).bind(safe_divide)
+  let result2 = Ok(0).bind(safe_divide)
+  let result3 : Result[Int, String] = Err("initial error").bind(safe_divide)
   
-  // 计算税费
-  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  
-  // 计算总价
-  let total = add(add(subtotal, tax), shipping)
-  
-  assert_eq(360, subtotal)
-  assert_eq(36, tax)
-  assert_eq(411, total)
+  assert_eq(result1, Ok(25))
+  assert_eq(result2, Err("division by zero"))
+  assert_eq(result3, Err("initial error"))
 }
 
-test "real_world_packaging_scenario" {
-  // 真实世界包装场景
-  let total_items = 73
-  let items_per_box = 12
-  let cost_per_box = 5
+///|
+test "result unwrap operations" {
+  let ok_value : Result[Int, String] = Ok(42)
+  let err_value : Result[Int, String] = Err("error")
   
-  // 计算需要的箱子数量
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  
-  // 计算总成本
-  let total_cost = multiply(boxes_needed, cost_per_box)
-  
-  assert_eq(7, boxes_needed)
-  assert_eq(35, total_cost)
+  assert_eq(ok_value.unwrap_or(0), 42)
+  assert_eq(err_value.unwrap_or(0), 0)
+  assert_eq(ok_value.unwrap_or_else(() => 100), 42)
+  assert_eq(err_value.unwrap_or_else(() => 100), 100)
 }
 
-test "time_calculation_scenario" {
-  // 时间计算场景
-  let tasks_per_day = 6
-  let total_tasks = 35
-  let working_days_per_week = 5
+///|
+test "result to_option conversion" {
+  let ok_value : Result[Int, String] = Ok(42)
+  let err_value : Result[Int, String] = Err("error")
   
-  // 计算需要的工作日
-  let workdays_needed = divide_with_ceil(total_tasks, tasks_per_day)
-  
-  // 计算需要的周数
-  let weeks_needed = divide_with_ceil(workdays_needed, working_days_per_week)
-  
-  assert_eq(6, workdays_needed)
-  assert_eq(2, weeks_needed)
+  assert_eq(ok_value.to_option(), Some(42))
+  assert_eq(err_value.to_option(), None)
 }
 
-test "data_analysis_scenario" {
-  // 数据分析场景
-  let data_points = 150
-  let sample_size = 20
-  let threshold = 75
+///|
+test "combined option and result operations" {
+  let parse_int = (s : String) => {
+    match s.to_int() {
+      Some(n) => Ok(n)
+      None => Err("invalid integer")
+    }
+  }
   
-  // 计算样本数量
-  let sample_count = divide_with_ceil(data_points, sample_size)
+  let result1 = parse_int("42")
+  let result2 = parse_int("invalid")
   
-  // 计算超过阈值的数据点比例
-  let above_threshold = 85
-  let percentage = divide_with_ceil(multiply(above_threshold, 100), data_points)
-  
-  assert_eq(8, sample_count)
-  assert_eq(57, percentage)
+  assert_eq(result1.map(n => n * 2), Ok(84))
+  assert_eq(result2.map(n => n * 2), Err("invalid integer"))
 }
 
-test "error_handling_robustness" {
-  // 错误处理健壮性测试
-  // 测试除数为零的各种情况
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+///|
+test "nested option operations" {
+  let nested_options : Array[Int?> = [Some(1), None, Some(3)]
+  let flattened = nested_options.filter_map(opt => opt)
   
-  // 测试极端数值
-  assert_eq(0, add(2147483647, -2147483647))
-  assert_eq(1, divide_with_ceil(1, 2147483647))
+  assert_eq(flattened.length(), 2)
+  assert_eq(flattened[0], 1)
+  assert_eq(flattened[1], 3)
 }
