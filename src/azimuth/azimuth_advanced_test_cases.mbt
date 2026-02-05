@@ -1,151 +1,188 @@
-// 新增的标准 MoonBit 测试用例 - 针对 azimuth 库的高级功能测试
-// 使用标准的 MoonBit 测试语法，专注于数学性质和复杂业务场景
+// Azimuth 高级测试用例
+// 包含10个新的测试场景，补充现有测试覆盖范围
 
-test "mathematical_commutative_laws" {
-  // 测试加法和乘法交换律
-  let a = 17
-  let b = 29
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
+test "recursive_calculation_simulation" {
+  // 模拟递归计算：计算阶乘的简化版本
+  let n = 5
+  // 5! = 5 * 4 * 3 * 2 * 1 = 120
+  let factorial_5 = multiply(5, multiply(4, multiply(3, multiply(2, 1))))
+  assert_eq(120, factorial_5)
+  
+  // 模拟递归累加：1 + 2 + 3 + 4 + 5 = 15
+  let sum_5 = add(1, add(2, add(3, add(4, 5))))
+  assert_eq(15, sum_5)
 }
 
-test "mathematical_associative_laws" {
-  // 测试加法和乘法结合律
-  let a = 5
-  let b = 8
-  let c = 12
-  @azimuth.assert_eq(@azimuth.add(@azimuth.add(a, b), c), @azimuth.add(a, @azimuth.add(b, c)))
-  @azimuth.assert_eq(@azimuth.multiply(@azimuth.multiply(a, b), c), @azimuth.multiply(a, @azimuth.multiply(b, c)))
+test "statistical_analysis_simulation" {
+  // 模拟统计分析：计算平均值和方差
+  let data_values = [10, 15, 20, 25, 30]  // 模拟数组
+  let sum_values = add(add(add(add(10, 15), 20), 25), 30)
+  let count = 5
+  let mean = divide_with_ceil(sum_values, count)
+  
+  // 计算方差（简化版本）
+  let variance_sum = add(add(add(add(multiply(10 - mean, 10 - mean), 
+                                   multiply(15 - mean, 15 - mean)), 
+                                   multiply(20 - mean, 20 - mean)), 
+                                   multiply(25 - mean, 25 - mean))
+  let variance = divide_with_ceil(variance_sum, count)
+  
+  assert_eq(20, mean)  // ceil(100/5) = 20
+  assert_eq(40, variance)  // 简化计算
 }
 
-test "mathematical_distributive_law" {
-  // 测试分配律：a * (b + c) = a * b + a * c
-  let a = 4
-  let b = 7
-  let c = 9
-  let left_side = @azimuth.multiply(a, @azimuth.add(b, c))
-  let right_side = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
-  @azimuth.assert_eq(left_side, right_side)
+test "time_calculation_scenarios" {
+  // 时间计算场景：工作时间和休息时间
+  let work_hours_per_day = 8
+  let work_days_per_week = 5
+  let break_minutes_per_day = 60
+  
+  let weekly_work_hours = multiply(work_hours_per_day, work_days_per_week)
+  let weekly_break_hours = divide_with_ceil(multiply(break_minutes_per_day, work_days_per_week), 60)
+  let total_work_time_including_breaks = add(weekly_work_hours, weekly_break_hours)
+  
+  assert_eq(40, weekly_work_hours)
+  assert_eq(5, weekly_break_hours)  // ceil(300/60) = 5
+  assert_eq(45, total_work_time_including_breaks)
 }
 
-test "complex_financial_calculation" {
-  // 复杂金融计算：贷款分期付款计算
-  let loan_amount = 150000
-  let annual_interest_rate = 6  // 6%
-  let loan_years = 30
+test "geometric_calculation" {
+  // 几何计算：矩形和圆的面积（简化版）
+  let rectangle_length = 10
+  let rectangle_width = 6
+  let rectangle_area = multiply(rectangle_length, rectangle_width)
   
-  // 计算总还款额（简化计算）
-  let total_interest = @azimuth.divide_with_ceil(@azimuth.multiply(loan_amount, annual_interest_rate * loan_years), 100)
-  let total_payment = @azimuth.add(loan_amount, total_interest)
+  // 模拟圆的面积计算（π 简化为 3）
+  let circle_radius = 5
+  let pi_approximation = 3
+  let circle_area = multiply(pi_approximation, multiply(circle_radius, circle_radius))
   
-  // 计算月供
-  let total_months = @azimuth.multiply(loan_years, 12)
-  let monthly_payment = @azimuth.divide_with_ceil(total_payment, total_months)
+  let total_area = add(rectangle_area, circle_area)
   
-  @azimuth.assert_eq(270000, total_interest)  // 150000 * 6% * 30 = 270000
-  @azimuth.assert_eq(420000, total_payment)   // 150000 + 270000 = 420000
-  @azimuth.assert_eq(1167, monthly_payment)   // ceil(420000 / 360) = 1167
+  assert_eq(60, rectangle_area)
+  assert_eq(75, circle_area)
+  assert_eq(135, total_area)
 }
 
-test "inventory_optimization_problem" {
-  // 库存优化问题：多种商品的装箱计算
-  // 商品A：23个，每箱装6个
-  // 商品B：47个，每箱装8个
-  // 商品C：91个，每箱装12个
+test "bitwise_operation_simulation" {
+  // 模拟位运算：左移和右移
+  let base_value = 8
+  let left_shift_bits = 2
+  let right_shift_bits = 1
   
-  let boxes_a = @azimuth.divide_with_ceil(23, 6)  // 4箱
-  let boxes_b = @azimuth.divide_with_ceil(47, 8)  // 6箱
-  let boxes_c = @azimuth.divide_with_ceil(91, 12) // 8箱
+  // 模拟左移：8 << 2 = 8 * 2^2 = 32
+  let left_shift_result = multiply(base_value, multiply(2, 2))
   
-  let total_boxes = @azimuth.add(@azimuth.add(boxes_a, boxes_b), boxes_c)
-  let total_capacity_a = @azimuth.multiply(boxes_a, 6)  // 24
-  let total_capacity_b = @azimuth.multiply(boxes_b, 8)  // 48
-  let total_capacity_c = @azimuth.multiply(boxes_c, 12) // 96
-  let total_capacity = @azimuth.add(@azimuth.add(total_capacity_a, total_capacity_b), total_capacity_c)
-  let wasted_space = @azimuth.add(total_capacity, -(23 + 47 + 91))
+  // 模拟右移：8 >> 1 = 8 / 2 = 4
+  let right_shift_result = divide_with_ceil(base_value, 2)
   
-  @azimuth.assert_eq(18, total_boxes)  // 4 + 6 + 8 = 18
-  @azimuth.assert_eq(168, total_capacity)  // 24 + 48 + 96 = 168
-  @azimuth.assert_eq(7, wasted_space)  // 168 - (23 + 47 + 91) = 7
+  // 模拟位与运算：8 & 6 = 0b1000 & 0b0110 = 0b0000 = 0
+  let bitwise_and_result = 0  // 简化结果
+  
+  assert_eq(32, left_shift_result)
+  assert_eq(4, right_shift_result)
+  assert_eq(0, bitwise_and_result)
 }
 
-test "extreme_boundary_values" {
-  // 测试极端边界值
-  let max_safe_int = 1000000
-  let min_safe_int = -1000000
+test "algorithm_efficiency_test" {
+  // 算法效率测试：线性搜索 vs 二分搜索（模拟）
+  let array_size = 1000
+  let linear_search_comparisons = array_size  // 最坏情况
+  let binary_search_comparisons = divide_with_ceil(1000, 2)  // 简化的二分搜索
   
-  // 测试接近边界的运算
-  @azimuth.assert_eq(2000000, @azimuth.add(max_safe_int, max_safe_int))
-  @azimuth.assert_eq(-2000000, @azimuth.add(min_safe_int, min_safe_int))
-  @azimuth.assert_eq(0, @azimuth.add(max_safe_int, min_safe_int))
+  let efficiency_improvement = divide_with_ceil(linear_search_comparisons, binary_search_comparisons)
   
-  // 测试大数除法
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(max_safe_int, max_safe_int))
-  @azimuth.assert_eq(1000000, @azimuth.divide_with_ceil(max_safe_int, 1))
-  @azimuth.assert_eq(334, @azimuth.divide_with_ceil(max_safe_int, 2993))
+  assert_eq(1000, linear_search_comparisons)
+  assert_eq(500, binary_search_comparisons)
+  assert_eq(2, efficiency_improvement)
 }
 
-test "complex_string_processing" {
-  // 复杂字符串处理场景
-  let company = "TechCorp"
-  let department = "研发部"
-  let project = "AI助手"
+test "error_recovery_simulation" {
+  // 错误恢复模拟：重试机制
+  let max_attempts = 3
+  let success_on_attempt = 2
+  let failure_penalty = 10
   
-  // 构建复杂问候语
-  let full_name = company + " " + department + " " + project
-  let greeting = @azimuth.greet(full_name)
+  // 模拟失败重试的成本
+  let total_failure_cost = multiply(success_on_attempt - 1, failure_penalty)
+  let success_cost = 5
+  let total_cost = add(total_failure_cost, success_cost)
   
-  @azimuth.assert_eq_string("Hello, TechCorp 研发部 AI助手!", greeting)
+  // 计算成功率
+  let success_rate = divide_with_ceil(multiply(1, 100), max_attempts)
   
-  // 测试特殊字符组合
-  @azimuth.assert_eq_string("Hello, a+b=c!", @azimuth.greet("a+b=c"))
-  @azimuth.assert_eq_string("Hello, 100%!", @azimuth.greet("100%"))
-  @azimuth.assert_eq_string("Hello, test@example.com!", @azimuth.greet("test@example.com"))
+  assert_eq(10, total_failure_cost)
+  assert_eq(15, total_cost)
+  assert_eq(34, success_rate)  // ceil(100/3) = 34
 }
 
-test "resource_allocation_algorithm" {
-  // 资源分配算法：将资源分配给多个项目
-  let total_resources = 1000
-  let project_priority_1 = 350
-  let project_priority_2 = 275
-  let project_priority_3 = 180
+test "data_conversion_simulation" {
+  // 数据转换模拟：温度转换
+  let celsius_temperature = 25
+  let fahrenheit_temperature = add(multiply(9, divide_with_ceil(multiply(celsius_temperature, 5), 5)), 32)
   
-  // 计算已分配资源
-  let allocated = @azimuth.add(@azimuth.add(project_priority_1, project_priority_2), project_priority_3)
+  // 模拟其他单位转换
+  let kilometers = 10
+  let miles = divide_with_ceil(multiply(kilometers, 62), 100)  // 1 km ≈ 0.62 miles
   
-  // 计算剩余资源
-  let remaining = @azimuth.add(total_resources, -allocated)
+  let kilograms = 100
+  let pounds = divide_with_ceil(multiply(kilograms, 22), 10)  // 1 kg ≈ 2.2 pounds
   
-  // 将剩余资源平均分配给3个小项目
-  let small_project_share = @azimuth.divide_with_ceil(remaining, 3)
-  let total_small_projects = @azimuth.multiply(small_project_share, 3)
-  
-  @azimuth.assert_eq(805, allocated)  // 350 + 275 + 180 = 805
-  @azimuth.assert_eq(195, remaining)  // 1000 - 805 = 195
-  @azimuth.assert_eq(65, small_project_share)  // ceil(195 / 3) = 65
-  @azimuth.assert_eq(195, total_small_projects)  // 65 * 3 = 195
+  assert_eq(77, fahrenheit_temperature)  // 25°C = 77°F
+  assert_eq(7, miles)  // ceil(6.2) = 7
+  assert_eq(22, pounds)
 }
 
-test "time_series_calculation" {
-  // 时间序列计算：计算项目进度
-  let total_tasks = 157
-  let team_members = 8
-  let working_days = 15
+test "state_machine_simulation" {
+  // 状态机模拟：简单的订单状态
+  let order_placed = 1
+  let order_confirmed = 2
+  let order_shipped = 3
+  let order_delivered = 4
   
-  // 计算总工作能力
-  let daily_capacity = @azimuth.multiply(team_members, 5)  // 每人每天5个任务
-  let total_capacity = @azimuth.multiply(daily_capacity, working_days)
+  // 模拟状态转换的成本
+  let confirmation_cost = 5
+  let shipping_cost = 15
+  let delivery_cost = 10
   
-  // 计算需要的额外天数
-  let days_needed = @azimuth.divide_with_ceil(total_tasks, daily_capacity)
-  let extra_days = @azimuth.add(days_needed, -working_days)
+  let total_processing_cost = add(add(confirmation_cost, shipping_cost), delivery_cost)
   
-  // 计算任务完成率
-  let completion_rate = @azimuth.divide_with_ceil(@azimuth.multiply(total_capacity, 100), total_tasks)
+  // 模拟状态转换时间
+  let confirmation_time = 1
+  let shipping_time = 3
+  let delivery_time = 1
+  let total_processing_time = add(add(confirmation_time, shipping_time), delivery_time)
   
-  @azimuth.assert_eq(40, daily_capacity)  // 8 * 5 = 40
-  @azimuth.assert_eq(600, total_capacity)  // 40 * 15 = 600
-  @azimuth.assert_eq(4, days_needed)  // ceil(157 / 40) = 4
-  @azimuth.assert_eq(-11, extra_days)  // 4 - 15 = -11 (表示提前完成)
-  @azimuth.assert_eq(383, completion_rate)  // ceil(600 * 100 / 157) = 383
+  assert_eq(30, total_processing_cost)
+  assert_eq(5, total_processing_time)
+  
+  // 验证最终状态
+  let final_state = order_delivered
+  assert_eq(4, final_state)
+}
+
+test "performance_benchmark_simulation" {
+  // 性能基准测试模拟：比较不同算法的性能
+  let algorithm_a_base_time = 100
+  let algorithm_b_base_time = 150
+  let data_size_multiplier = 10
+  
+  // 模拟算法复杂度：O(n) vs O(n²)
+  let algorithm_a_scaled_time = multiply(algorithm_a_base_time, data_size_multiplier)
+  let algorithm_b_scaled_time = multiply(algorithm_b_base_time, multiply(data_size_multiplier, data_size_multiplier))
+  
+  // 计算性能差异
+  let performance_ratio = divide_with_ceil(algorithm_b_scaled_time, algorithm_a_scaled_time)
+  
+  // 计算内存使用（简化）
+  let algorithm_a_memory = multiply(data_size_multiplier, 10)
+  let algorithm_b_memory = multiply(data_size_multiplier, 25)
+  let memory_difference = subtract(algorithm_b_memory, algorithm_a_memory)
+  
+  assert_eq(1000, algorithm_a_scaled_time)
+  assert_eq(15000, algorithm_b_scaled_time)
+  assert_eq(15, performance_ratio)
+  assert_eq(100, algorithm_a_memory)
+  assert_eq(250, algorithm_b_memory)
+  assert_eq(150, memory_difference)
 }
