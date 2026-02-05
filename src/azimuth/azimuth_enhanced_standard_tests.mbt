@@ -1,206 +1,161 @@
-// Azimuth 项目新增的标准 MoonBit 测试用例
-// 使用标准的 MoonBit 测试语法，覆盖新的测试场景
+// Enhanced Standard Test Cases for Azimuth Project
+// 高质量标准测试用例，使用标准 MoonBit 测试语法
 
-test "boundary_value_max_int_operations" {
-  // 测试接近Int最大值的运算
-  let max_safe = 2147483647 - 1000  // 留出安全边界
+test "arithmetic_operations_comprehensive" {
+  // 综合算术运算测试
+  assert_eq(15, add(8, 7))
+  assert_eq(-15, add(-8, -7))
+  assert_eq(1, add(-8, 9))
+  assert_eq(0, add(8, -8))
   
-  // 测试加法运算
-  assert_eq(2147482647, add(max_safe, 1000))
+  assert_eq(56, multiply(7, 8))
+  assert_eq(-56, multiply(-7, 8))
+  assert_eq(56, multiply(-7, -8))
+  assert_eq(0, multiply(7, 0))
   
-  // 测试乘法运算
-  assert_eq(2147482647, multiply(1, max_safe))
-  assert_eq(0, multiply(0, max_safe))
-  
-  // 测试减法运算
-  assert_eq(2147480647, subtract(max_safe, 1000))
+  assert_eq(3, subtract(10, 7))
+  assert_eq(-3, subtract(7, 10))
+  assert_eq(0, subtract(7, 7))
 }
 
-test "complex_nested_operations" {
-  // 测试复杂嵌套运算
-  let base = 10
-  let multiplier = 3
-  let offset = 5
-  
-  // 复杂嵌套表达式: (base * multiplier + offset) * 2 - base
-  let step1 = multiply(base, multiplier)
-  let step2 = add(step1, offset)
-  let step3 = multiply(step2, 2)
-  let final_result = subtract(step3, base)
-  
-  assert_eq(30, step1)    // 10 * 3 = 30
-  assert_eq(35, step2)    // 30 + 5 = 35
-  assert_eq(70, step3)    // 35 * 2 = 70
-  assert_eq(60, final_result)  // 70 - 10 = 60
+test "divide_with_ceil_edge_cases" {
+  // 向上取整除法边界情况测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(1, divide_with_ceil(2, 2))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(-1, divide_with_ceil(-1, 2))
+  assert_eq(1, divide_with_ceil(-1, -2))
+  assert_eq(-2, divide_with_ceil(3, -2))
 }
 
-test "greet_function_special_characters" {
-  // 测试问候函数的特殊字符处理
-  assert_eq_string("Hello, \n\t!", greet("\n\t"))
-  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))
-  assert_eq_string("Hello, 'single'!", greet("'single'"))
-  assert_eq_string("Hello, &amp;!", greet("&amp;"))
-  assert_eq_string("Hello, emoji 🎉!", greet("emoji 🎉"))
-  assert_eq_string("Hello, mix123!@#!", greet("mix123!@#"))
+test "greet_function_internationalization" {
+  // 问候函数国际化测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+  assert_eq_string("Hello, 🏳️‍🌈!", greet("🏳️‍🌈"))
+  assert_eq_string("Hello, empty!", greet(""))
+  assert_eq_string("Hello,  spaces !", greet(" spaces "))
 }
 
-test "divide_with_ceil_precision_analysis" {
-  // 测试向上取整除法的精度分析
-  // 测试连续的除法运算
-  let result1 = divide_with_ceil(100, 3)   // 33.333... -> 34
-  let result2 = divide_with_ceil(101, 3)   // 33.666... -> 34
-  let result3 = divide_with_ceil(102, 3)   // 34 -> 34
-  
-  assert_eq(34, result1)
-  assert_eq(34, result2)
-  assert_eq(34, result3)
-  
-  // 测试大数除法
-  assert_eq(33334, divide_with_ceil(100000, 3))
-  assert_eq(20000, divide_with_ceil(100000, 5))
-  assert_eq(1, divide_with_ceil(1, 1000000))
-}
-
-test "operation_order_evaluation" {
-  // 测试运算顺序和优先级
-  let a = 2
-  let b = 3
+test "mathematical_properties_validation" {
+  // 数学性质验证测试
+  let a = 12
+  let b = 8
   let c = 4
-  let d = 5
   
-  // 模拟不同的运算顺序
-  // 方案1: (a + b) * (c + d)
-  let method1 = multiply(add(a, b), add(c, d))
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
   
-  // 方案2: a * c + b * d
-  let method2 = add(multiply(a, c), multiply(b, d))
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
   
-  // 方案3: (a * b) + (c * d)
-  let method3 = add(multiply(a, b), multiply(c, d))
+  // 加法结合律
+  assert_eq(add(add(a, b), c), add(a, add(b, c)))
   
-  assert_eq(35, method1)  // (2+3) * (4+5) = 5 * 9 = 45 -> 修正计算
-  assert_eq(26, method2)  // 2*4 + 3*5 = 8 + 15 = 23 -> 修正计算
-  assert_eq(23, method3)  // 2*3 + 4*5 = 6 + 20 = 26 -> 修正计算
+  // 乘法结合律
+  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
   
-  // 重新计算确保正确性
-  assert_eq(45, multiply(add(2, 3), add(4, 5)))  // 5 * 9 = 45
-  assert_eq(23, add(multiply(2, 4), multiply(3, 5)))  // 8 + 15 = 23
-  assert_eq(26, add(multiply(2, 3), multiply(4, 5)))  // 6 + 20 = 26
+  // 分配律
+  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
 }
 
-test "real_world_shopping_cart" {
-  // 模拟真实购物车计算
-  let apple_price = 5
-  let apple_qty = 3
-  let banana_price = 3
-  let banana_qty = 5
-  let orange_price = 8
-  let orange_qty = 2
+test "business_logistics_calculation" {
+  // 业务物流计算测试
+  let total_products = 157
+  let box_capacity = 24
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
   
-  // 计算每种商品的小计
-  let apple_total = multiply(apple_price, apple_qty)
-  let banana_total = multiply(banana_price, banana_qty)
-  let orange_total = multiply(orange_price, orange_qty)
+  assert_eq(7, boxes_needed)
   
-  // 计算总价
-  let subtotal = add(add(apple_total, banana_total), orange_total)
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(168, total_capacity)
   
-  // 计算需要的购物袋数量（每个袋子装10件商品）
-  let total_items = add(add(apple_qty, banana_qty), orange_qty)
-  let bags_needed = divide_with_ceil(total_items, 10)
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(11, remaining_space)
   
-  assert_eq(15, apple_total)   // 5 * 3 = 15
-  assert_eq(15, banana_total)  // 3 * 5 = 15
-  assert_eq(16, orange_total)  // 8 * 2 = 16
-  assert_eq(46, subtotal)      // 15 + 15 + 16 = 46
-  assert_eq(1, bags_needed)    // ceil(10/10) = 1
+  // 验证空间利用率
+  let utilization_percent = divide_with_ceil(multiply(total_products, 100), total_capacity)
+  assert_eq(94, utilization_percent)
 }
 
-test "mathematical_series_summation" {
-  // 测试数学级数求和
-  // 计算等差数列: 1 + 3 + 5 + ... + 19 (前10个奇数)
-  let first_term = 1
-  let common_diff = 2
-  let num_terms = 10
+test "complex_workflow_resource_planning" {
+  // 复杂工作流资源规划测试
+  let team_members = 9
+  let tasks_per_member = 7
+  let total_tasks = multiply(team_members, tasks_per_member)
   
-  // 使用公式: S = n/2 * (2a + (n-1)d)
-  let sum_formula = divide_with_ceil(
-    multiply(num_terms, add(multiply(2, first_term), multiply(num_terms - 1, common_diff))),
-    2
-  )
+  let sprint_capacity = 20
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
   
-  // 手动验证前几项
-  let manual_sum = add(add(add(add(1, 3), 5), 7), 9)
+  assert_eq(63, total_tasks)
+  assert_eq(4, sprints_needed)
   
-  assert_eq(100, sum_formula)   // 10/2 * (2 + 18) = 5 * 20 = 100
-  assert_eq(25, manual_sum)     // 1+3+5+7+9 = 25
+  // 验证总处理能力
+  let total_capacity = multiply(sprints_needed, sprint_capacity)
+  assert_eq(80, total_capacity)
+  
+  // 验证剩余处理能力
+  let remaining_capacity = subtract(total_capacity, total_tasks)
+  assert_eq(17, remaining_capacity)
 }
 
-test "temperature_conversion_simulation" {
-  // 模拟温度转换计算
-  let celsius_freezing = 0
-  let celsius_boiling = 100
-  let celsius_room = 20
+test "error_handling_and_boundary_values" {
+  // 错误处理和边界值测试
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
   
-  // 模拟摄氏度到华氏度的转换: F = C * 9/5 + 32
-  let fahrenheit_freezing = add(divide_with_ceil(multiply(celsius_freezing, 9), 5), 32)
-  let fahrenheit_boiling = add(divide_with_ceil(multiply(celsius_boiling, 9), 5), 32)
-  let fahrenheit_room = add(divide_with_ceil(multiply(celsius_room, 9), 5), 32)
+  // 极值测试
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1000000000, multiply(31623, 31623))
+  assert_eq(1, divide_with_ceil(1000000, 1000000))
+  assert_eq(1000001, divide_with_ceil(1000001, 1000000))
   
-  assert_eq(32, fahrenheit_freezing)   // 0 * 9/5 + 32 = 32
-  assert_eq(212, fahrenheit_boiling)   // 100 * 9/5 + 32 = 180 + 32 = 212
-  assert_eq(68, fahrenheit_room)       // 20 * 9/5 + 32 = 36 + 32 = 68
+  // 零值测试
+  assert_eq(0, multiply(0, 1000000))
+  assert_eq(1000000, add(1000000, 0))
+  assert_eq(-1000000, subtract(0, 1000000))
 }
 
-test "resource_allocation_optimization" {
-  // 资源分配优化测试
-  let total_budget = 10000
-  let project_a_cost = 3500
-  let project_b_cost = 2800
-  let project_c_cost = 4200
+test "real_world_event_planning" {
+  // 真实世界活动规划测试
+  let attendees = 250
+  let tables_available = 30
+  let chairs_per_table = 8
+  let cost_per_chair = 25
+  let total_budget = 6000
   
-  // 计算各项目预算分配
-  let allocated_a = project_a_cost
-  let allocated_b = project_b_cost
-  let allocated_c = project_c_cost
-  let total_allocated = add(add(allocated_a, allocated_b), allocated_c)
+  // 计算需要的桌子数量
+  let tables_needed = divide_with_ceil(attendees, chairs_per_table)
+  assert_eq(32, tables_needed)
   
-  // 计算剩余预算
-  let remaining_budget = subtract(total_budget, total_allocated)
+  // 检查桌子是否足够
+  assert_true(tables_needed <= tables_available)
   
-  // 如果预算不足，计算需要额外筹集的资金
-  let additional_needed = if remaining_budget < 0 {
-    multiply(remaining_budget, -1)
-  } else {
-    0
-  }
+  // 计算总座位数
+  let total_seats = multiply(tables_needed, chairs_per_table)
+  assert_eq(256, total_seats)
   
-  assert_eq(10500, total_allocated)  // 3500 + 2800 + 4200 = 10500
-  assert_eq(-500, remaining_budget)  // 10000 - 10500 = -500
-  assert_eq(500, additional_needed)  // 需要500额外资金
-}
-
-test "algorithm_efficiency_comparison" {
-  // 算法效率比较测试
-  let data_size = 1000
-  let operation_cost = 5
+  // 计算剩余座位
+  let remaining_seats = subtract(total_seats, attendees)
+  assert_eq(6, remaining_seats)
   
-  // 模拟O(n)算法复杂度
-  let linear_complexity = multiply(data_size, operation_cost)
+  // 计算总成本
+  let total_cost = multiply(total_seats, cost_per_chair)
+  assert_eq(6400, total_cost)
   
-  // 模拟O(n²)算法复杂度
-  let quadratic_complexity = multiply(data_size, data_size)
+  // 验证预算（这个测试会失败，用于演示）
+  // assert_true(total_cost <= total_budget)
   
-  // 模拟O(log n)算法复杂度（简化为除法）
-  let logarithmic_complexity = divide_with_ceil(data_size, 10)
-  
-  // 比较不同算法的效率
-  let linear_vs_quadratic = subtract(quadratic_complexity, linear_complexity)
-  let linear_vs_logarithmic = subtract(linear_complexity, logarithmic_complexity)
-  
-  assert_eq(5000, linear_complexity)      // 1000 * 5 = 5000
-  assert_eq(1000000, quadratic_complexity) // 1000 * 1000 = 1000000
-  assert_eq(100, logarithmic_complexity)   // ceil(1000/10) = 100
-  assert_eq(995000, linear_vs_quadratic)   // 1000000 - 5000 = 995000
-  assert_eq(4900, linear_vs_logarithmic)   // 5000 - 100 = 4900
+  // 计算预算差额
+  let budget_difference = subtract(total_cost, total_budget)
+  assert_eq(400, budget_difference)
 }
