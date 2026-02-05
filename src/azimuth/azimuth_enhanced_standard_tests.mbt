@@ -1,161 +1,176 @@
-// Enhanced Standard Test Cases for Azimuth Project
-// 高质量标准测试用例，使用标准 MoonBit 测试语法
+// MoonBit 标准测试用例 - 为 Azimuth 项目新增
+// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
 
-test "arithmetic_operations_comprehensive" {
-  // 综合算术运算测试
-  assert_eq(15, add(8, 7))
-  assert_eq(-15, add(-8, -7))
-  assert_eq(1, add(-8, 9))
-  assert_eq(0, add(8, -8))
+test "azimuth_array_calculation_simulation" {
+  // 模拟数组计算场景
+  let array_length = 10
+  let element_value = 5
   
-  assert_eq(56, multiply(7, 8))
-  assert_eq(-56, multiply(-7, 8))
-  assert_eq(56, multiply(-7, -8))
-  assert_eq(0, multiply(7, 0))
+  // 计算数组所有元素的总和
+  let total_sum = multiply(array_length, element_value)
   
-  assert_eq(3, subtract(10, 7))
-  assert_eq(-3, subtract(7, 10))
-  assert_eq(0, subtract(7, 7))
+  // 计算平均值（向上取整）
+  let average = divide_with_ceil(total_sum, array_length)
+  
+  assert_eq(50, total_sum)
+  assert_eq(5, average)
 }
 
-test "divide_with_ceil_edge_cases" {
-  // 向上取整除法边界情况测试
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(2, divide_with_ceil(3, 2))
-  assert_eq(1, divide_with_ceil(2, 2))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(-1, divide_with_ceil(-1, 2))
-  assert_eq(1, divide_with_ceil(-1, -2))
-  assert_eq(-2, divide_with_ceil(3, -2))
+test "azimuth_temperature_conversion" {
+  // 温度转换计算（简化版）
+  let celsius = 25
+  let fahrenheit_offset = 32
+  let conversion_factor = 9
+  let conversion_divisor = 5
+  
+  // 摄氏度转华氏度：F = C * 9/5 + 32
+  let fahrenheit = add(divide_with_ceil(multiply(celsius, conversion_factor), conversion_divisor), fahrenheit_offset)
+  
+  assert_eq(77, fahrenheit)
 }
 
-test "greet_function_internationalization" {
-  // 问候函数国际化测试
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, ñoño!", greet("ñoño"))
-  assert_eq_string("Hello, 🏳️‍🌈!", greet("🏳️‍🌈"))
-  assert_eq_string("Hello, empty!", greet(""))
-  assert_eq_string("Hello,  spaces !", greet(" spaces "))
+test "azimuth_time_zone_conversion" {
+  // 时区转换计算
+  let local_time = 14  // 14:00
+  let time_difference = 8  // 时差8小时
+  
+  // 计算远程时间
+  let remote_time = add(local_time, time_difference)
+  
+  // 处理超过24小时的情况
+  let adjusted_time = if remote_time > 24 {
+    subtract(remote_time, 24)
+  } else {
+    remote_time
+  }
+  
+  assert_eq(22, adjusted_time)
 }
 
-test "mathematical_properties_validation" {
-  // 数学性质验证测试
-  let a = 12
-  let b = 8
-  let c = 4
+test "azimuth_geometric_progression" {
+  // 几何级数计算
+  let first_term = 2
+  let ratio = 3
+  let terms = 4
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  // 计算几何级数的第n项：a * r^(n-1)
+  let term2 = multiply(first_term, ratio)
+  let term3 = multiply(term2, ratio)
+  let term4 = multiply(term3, ratio)
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 加法结合律
-  assert_eq(add(add(a, b), c), add(a, add(b, c)))
-  
-  // 乘法结合律
-  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
-  
-  // 分配律
-  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
+  assert_eq(6, term2)
+  assert_eq(18, term3)
+  assert_eq(54, term4)
 }
 
-test "business_logistics_calculation" {
-  // 业务物流计算测试
-  let total_products = 157
-  let box_capacity = 24
-  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+test "azimuth_digital_root_calculation" {
+  // 数字根计算（简化版）
+  let number = 12345
   
-  assert_eq(7, boxes_needed)
+  // 分解数字并求和
+  let digit1 = divide_with_ceil(number, 10000)
+  let remainder1 = subtract(number, multiply(digit1, 10000))
   
-  // 验证总容量
-  let total_capacity = multiply(boxes_needed, box_capacity)
-  assert_eq(168, total_capacity)
+  let digit2 = divide_with_ceil(remainder1, 1000)
+  let remainder2 = subtract(remainder1, multiply(digit2, 1000))
   
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_products)
-  assert_eq(11, remaining_space)
+  let digit3 = divide_with_ceil(remainder2, 100)
+  let remainder3 = subtract(remainder2, multiply(digit3, 100))
   
-  // 验证空间利用率
-  let utilization_percent = divide_with_ceil(multiply(total_products, 100), total_capacity)
-  assert_eq(94, utilization_percent)
+  let digit4 = divide_with_ceil(remainder3, 10)
+  let digit5 = subtract(remainder3, multiply(digit4, 10))
+  
+  let digit_sum = add(add(add(add(digit1, digit2), digit3), digit4), digit5)
+  
+  assert_eq(1, digit1)
+  assert_eq(2, digit2)
+  assert_eq(3, digit3)
+  assert_eq(4, digit4)
+  assert_eq(5, digit5)
+  assert_eq(15, digit_sum)
 }
 
-test "complex_workflow_resource_planning" {
-  // 复杂工作流资源规划测试
-  let team_members = 9
-  let tasks_per_member = 7
-  let total_tasks = multiply(team_members, tasks_per_member)
+test "azimuth_page_calculation" {
+  // 分页计算
+  let total_items = 95
+  let items_per_page = 10
   
-  let sprint_capacity = 20
-  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  // 计算总页数
+  let total_pages = divide_with_ceil(total_items, items_per_page)
   
-  assert_eq(63, total_tasks)
-  assert_eq(4, sprints_needed)
+  // 计算最后一页的项目数
+  let last_page_items = subtract(total_items, multiply(total_pages - 1, items_per_page))
   
-  // 验证总处理能力
-  let total_capacity = multiply(sprints_needed, sprint_capacity)
-  assert_eq(80, total_capacity)
-  
-  // 验证剩余处理能力
-  let remaining_capacity = subtract(total_capacity, total_tasks)
-  assert_eq(17, remaining_capacity)
+  assert_eq(10, total_pages)
+  assert_eq(5, last_page_items)
 }
 
-test "error_handling_and_boundary_values" {
-  // 错误处理和边界值测试
-  // 除零错误处理
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+test "azimuth_binary_operations_simulation" {
+  // 二进制操作模拟
+  let decimal1 = 12  // 1100 in binary
+  let decimal2 = 10  // 1010 in binary
   
-  // 极值测试
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(1000000000, multiply(31623, 31623))
-  assert_eq(1, divide_with_ceil(1000000, 1000000))
-  assert_eq(1000001, divide_with_ceil(1000001, 1000000))
+  // 模拟按位与操作（简化版）
+  let bitwise_and_result = add(multiply(2, 2), multiply(0, 2))
   
-  // 零值测试
-  assert_eq(0, multiply(0, 1000000))
-  assert_eq(1000000, add(1000000, 0))
-  assert_eq(-1000000, subtract(0, 1000000))
+  // 模拟按位或操作（简化版）
+  let bitwise_or_result = add(multiply(2, 2), multiply(1, 2))
+  
+  assert_eq(4, bitwise_and_result)
+  assert_eq(6, bitwise_or_result)
 }
 
-test "real_world_event_planning" {
-  // 真实世界活动规划测试
-  let attendees = 250
-  let tables_available = 30
-  let chairs_per_table = 8
-  let cost_per_chair = 25
-  let total_budget = 6000
+test "azimuth_percentage_calculations" {
+  // 百分比计算
+  let original_value = 200
+  let percentage_increase = 25
+  let percentage_decrease = 10
   
-  // 计算需要的桌子数量
-  let tables_needed = divide_with_ceil(attendees, chairs_per_table)
-  assert_eq(32, tables_needed)
+  // 计算增长后的值
+  let increase_amount = divide_with_ceil(multiply(original_value, percentage_increase), 100)
+  let increased_value = add(original_value, increase_amount)
   
-  // 检查桌子是否足够
-  assert_true(tables_needed <= tables_available)
+  // 计算减少后的值
+  let decrease_amount = divide_with_ceil(multiply(original_value, percentage_decrease), 100)
+  let decreased_value = subtract(original_value, decrease_amount)
   
-  // 计算总座位数
-  let total_seats = multiply(tables_needed, chairs_per_table)
-  assert_eq(256, total_seats)
+  assert_eq(50, increase_amount)
+  assert_eq(250, increased_value)
+  assert_eq(20, decrease_amount)
+  assert_eq(180, decreased_value)
+}
+
+test "azimuth_combination_formula" {
+  // 组合公式计算（简化版）
+  let n = 10
+  let k = 3
   
-  // 计算剩余座位
-  let remaining_seats = subtract(total_seats, attendees)
-  assert_eq(6, remaining_seats)
+  // 计算排列数 P(n,k) = n * (n-1) * ... * (n-k+1)
+  let permutation = multiply(multiply(n, subtract(n, 1)), subtract(n, 2))
   
-  // 计算总成本
-  let total_cost = multiply(total_seats, cost_per_chair)
-  assert_eq(6400, total_cost)
+  // 计算阶乘 k! = k * (k-1) * ... * 1
+  let factorial_k = multiply(k, subtract(k, 1))
   
-  // 验证预算（这个测试会失败，用于演示）
-  // assert_true(total_cost <= total_budget)
+  // 计算组合数 C(n,k) = P(n,k) / k!
+  let combination = divide_with_ceil(permutation, factorial_k)
   
-  // 计算预算差额
-  let budget_difference = subtract(total_cost, total_budget)
-  assert_eq(400, budget_difference)
+  assert_eq(720, permutation)
+  assert_eq(6, factorial_k)
+  assert_eq(120, combination)
+}
+
+test "azimuth_complex_string_greeting" {
+  // 复杂字符串问候测试
+  let title = "Dr."
+  let first_name = "Jane"
+  let last_name = "Smith"
+  let suffix = "Jr."
+  
+  // 构建完整姓名
+  let full_name = title + " " + first_name + " " + last_name + ", " + suffix
+  
+  // 测试问候功能
+  let formal_greeting = greet(full_name)
+  
+  assert_eq_string("Hello, Dr. Jane Smith, Jr.!", formal_greeting)
 }

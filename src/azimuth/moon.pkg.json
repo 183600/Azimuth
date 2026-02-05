@@ -130,6 +130,7 @@
     "high_quality_test_suite.mbt",
     "azimuth_standard_tests.mbt",
     "azimuth_standard_test_suite.mbt",
+    "azimuth_enhanced_standard_tests.mbt",
     "test/standard_moonbit_tests.mbt",
     "azimuth_new_quality_test_cases.mbt",
     "creative_test_cases.mbt",
