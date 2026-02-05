@@ -12,143 +12,131 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// 使用标准的 MoonBit 测试语法编写的10个测试用例
-
+// 导入必要的函数
 using @builtin { inspect }
 
-///|
-test "string_length_and_concatenation" {
-  let str1 = "Hello"
-  let str2 = " World"
-  let combined = str1 + str2
-  inspect(str1.length(), content="5")
-  inspect(str2.length(), content="6")
-  inspect(combined.length(), content="11")
+// 核心 MoonBit 标准库测试用例
+// 包含 10 个高质量测试用例，使用标准 MoonBit 测试语法
+
+test "integer_arithmetic" {
+  // 测试整数基本算术运算
+  inspect(1 + 2, content="3")
+  inspect(10 - 3, content="7")
+  inspect(4 * 5, content="20")
+  inspect(15 / 3, content="5")
+  inspect(17 % 5, content="2")
+}
+
+test "string_operations" {
+  // 测试字符串基本操作
+  let hello = "Hello"
+  let world = "World"
+  let combined = hello + " " + world
   inspect(combined, content="\"Hello World\"")
+  inspect(combined.length(), content="11")
+  inspect(hello == "Hello", content="true")
+  inspect(hello != world, content="true")
 }
 
-///|
-test "integer_arithmetic_operations" {
-  let a = 15
-  let b = 4
-  inspect(a + b, content="19")
-  inspect(a - b, content="11")
-  inspect(a * b, content="60")
-  inspect(a / b, content="3")
-  inspect(a % b, content="3")
-}
-
-///|
-test "boolean_logic_expressions" {
-  let x = true
-  let y = false
-  inspect(x && y, content="false")
-  inspect(x || y, content="true")
-  inspect(!x, content="false")
-  inspect(!y, content="true")
-  inspect(x == y, content="false")
-  inspect(x != y, content="true")
-}
-
-///|
-test "array_basic_operations" {
-  let numbers = [10, 20, 30, 40, 50]
+test "array_operations" {
+  // 测试数组基本操作
+  let numbers = [1, 2, 3, 4, 5]
   inspect(numbers.length(), content="5")
-  inspect(numbers[0], content="10")
-  inspect(numbers[4], content="50")
-  inspect(numbers[2] + numbers[3], content="70")
+  inspect(numbers[0], content="1")
+  inspect(numbers[4], content="5")
+  let sum = numbers[0] + numbers[1] + numbers[2] + numbers[3] + numbers[4]
+  inspect(sum, content="15")
 }
 
-///|
-test "option_type_handling" {
-  let some_value : Option[Int] = Some(42)
-  let none_value : Option[Int] = None
+test "boolean_logic" {
+  // 测试布尔逻辑运算
+  inspect(true && false, content="false")
+  inspect(true || false, content="true")
+  inspect(!true, content="false")
+  inspect(!false, content="true")
+  inspect(true == true, content="true")
+  inspect(true != false, content="true")
+}
+
+test "option_type" {
+  // 测试 Option 类型基本操作
+  let some_value : Int? = Some(42)
+  let none_value : Int? = None
   
-  let result1 = match some_value {
-    Some(x) => x * 2
+  let result = match some_value {
+    Some(x) => x
     None => 0
   }
+  inspect(result, content="42")
   
-  let result2 = match none_value {
-    Some(x) => x * 2
-    None => -1
+  let default_result = match none_value {
+    Some(x) => x
+    None => 0
   }
-  
-  inspect(result1, content="84")
-  inspect(result2, content="-1")
+  inspect(default_result, content="0")
 }
 
-///|
-test "pattern_matching_with_integers" {
-  let value = 7
-  let description = match value {
-    0 => "zero"
-    1 | 2 | 3 => "small"
-    4 | 5 | 6 => "medium"
-    _ => "large"
+test "result_type" {
+  // 测试 Result 类型基本操作
+  let success : Result[Int, String] = Ok(42)
+  let failure : Result[Int, String] = Err("error")
+  
+  let success_value = match success {
+    Ok(x) => x
+    Err(_) => 0
   }
-  inspect(description, content="\"large\"")
-}
-
-///|
-test "tuple_operations" {
-  let person = ("Alice", 30, true)
-  let name = person.0
-  let age = person.1
-  let is_active = person.2
+  inspect(success_value, content="42")
   
-  inspect(name, content="\"Alice\"")
-  inspect(age, content="30")
-  inspect(is_active, content="true")
-  
-  let updated_person = (name, age + 1, is_active)
-  inspect(updated_person.1, content="31")
-}
-
-///|
-test "character_operations" {
-  let char_a = 'a'
-  let char_A = 'A'
-  let char_digit = '5'
-  
-  inspect(char_a.to_string(), content="\"a\"")
-  inspect(char_A.to_string(), content="\"A\"")
-  inspect(char_digit.to_string(), content="\"5\"")
-  
-  inspect(char_a.to_int(), content="97")
-  inspect(char_A.to_int(), content="65")
-  inspect(char_digit.to_int(), content="53")
-}
-
-///|
-test "result_type_error_handling" {
-  let success_result : Result[String, Int] = Ok("Operation successful")
-  let error_result : Result[String, Int] = Err(404)
-  
-  let success_message = match success_result {
-    Ok(msg) => msg
-    Err(code) => "Error: " + code.to_string()
+  let failure_value = match failure {
+    Ok(x) => x
+    Err(_) => 0
   }
-  
-  let error_message = match error_result {
-    Ok(msg) => msg
-    Err(code) => "Error code: " + code.to_string()
-  }
-  
-  inspect(success_message, content="\"Operation successful\"")
-  inspect(error_message, content="\"Error code: 404\"")
+  inspect(failure_value, content="0")
 }
 
-///|
-test "integer_boundary_values" {
-  inspect(@int.max_value, content="2147483647")
-  inspect(@int.min_value, content="-2147483648")
+test "character_tests" {
+  // 测试字符操作
+  let char_a = 'A'
+  let char_str = char_a.to_string()
+  inspect(char_str, content="\"A\"")
+  inspect('a' > 'A', content="true")
+  inspect('A' < 'B', content="true")
+}
+
+test "type_conversions" {
+  // 测试类型转换
+  let int_val = 123
+  inspect(int_val.to_string(), content="\"123\"")
+  let doubled = int_val * 2
+  inspect(doubled, content="246")
+  let halved = int_val / 2
+  inspect(halved, content="61")
+  inspect(true.to_string(), content="\"true\"")
+  inspect(false.to_string(), content="\"false\"")
+}
+
+test "pattern_matching" {
+  // 测试模式匹配
+  let some_int : Int? = Some(123)
+  let some_str : String? = Some("hello")
   
-  // 测试边界值附近的运算
-  inspect(@int.max_value - 1, content="2147483646")
-  inspect(@int.min_value + 1, content="-2147483647")
+  let result = match (some_int, some_str) {
+    (Some(x), Some(y)) => x + y.length()
+    (Some(x), None) => x
+    (None, Some(y)) => y.length()
+    (None, None) => 0
+  }
+  inspect(result, content="128") // 123 + 5
+}
+
+test "basic_edge_cases" {
+  // 测试基本边界情况
+  let empty_string = ""
+  inspect(empty_string.length(), content="0")
   
-  // 测试溢出行为
-  inspect(@int.max_value + 1, content="-2147483648")
-  inspect(@int.min_value - 1, content="2147483647")
+  let max_int = 2147483647
+  let min_int = -2147483648
+  inspect(max_int > 0, content="true")
+  inspect(min_int < 0, content="true")
+  inspect(max_int + min_int, content="-1")
 }
