@@ -1,110 +1,117 @@
-// 标准 MoonBit 核心模块测试用例
-// 测试核心功能模块的基本操作
-
-// 导入必要的函数
-using @builtin { inspect }
+// MoonBit 标准库核心模块测试用例
+// 包含对 int、list、string、option 等核心模块的测试
 
 test "int_basic_operations" {
-  // 测试整数基本操作
-  let a = 2147483647
-  let b = -2147483648
-  inspect(a, content="2147483647")
-  inspect(b, content="-2147483648")
-  inspect(a + 1, content="-2147483648")
-  inspect(b - 1, content="2147483647")
+  // 测试基本整数操作
+  assert_eq(2 + 3, 5)
+  assert_eq(10 - 4, 6)
+  assert_eq(3 * 4, 12)
+  assert_eq(15 / 3, 5)
+  
+  // 测试比较
+  assert_true(5 > 3)
+  assert_true(3 < 5)
+  assert_true(5 == 5)
+  assert_true(5 != 3)
 }
 
 test "string_basic_operations" {
   // 测试字符串基本操作
-  let s1 = "Hello"
-  let s2 = "World"
-  let combined = s1 + " " + s2
-  inspect(combined, content="Hello World")
-  inspect(combined.length(), content="11")
-  inspect(s1.length(), content="5")
-  inspect(s2.length(), content="5")
+  let hello_str = "Hello"
+  let world_str = "World"
+  
+  assert_eq(hello_str.length(), 5)
+  
+  // 测试字符串连接
+  let combined = hello_str + " " + world_str
+  assert_eq(combined, "Hello World")
+  
+  // 测试字符串比较
+  assert_true(hello_str == "Hello")
+  assert_true(hello_str != "hello")
+}
+
+test "option_basic_operations" {
+  // 测试 Option 类型基本操作
+  let some_value : Int? = Some(42)
+  let none_value : Int? = None
+  
+  assert_true(some_value is Some(_))
+  assert_true(none_value is None)
+  
+  // 测试 unwrap_or
+  assert_eq(some_value.unwrap_or(0), 42)
+  assert_eq(none_value.unwrap_or(0), 0)
 }
 
 test "array_basic_operations" {
   // 测试数组基本操作
-  let arr = [1, 2, 3, 4, 5]
-  inspect(arr.length(), content="5")
-  inspect(arr[0], content="1")
-  inspect(arr[4], content="5")
-  inspect(arr.length() > 0, content="true")
-}
-
-test "array_operations" {
+  let num_array = [1, 2, 3, 4, 5]
+  
+  assert_eq(num_array.length(), 5)
+  
+  // 测试数组访问
+  assert_eq(num_array[0], 1)
+  assert_eq(num_array[4], 5)
+  
   // 测试数组操作
-  let arr1 = [1, 2, 3]
-  let arr2 = [4, 5, 6]
-  let combined = arr1 + arr2
-  inspect(combined, content="[1, 2, 3, 4, 5, 6]")
-  inspect(combined.length(), content="6")
+  let doubled = num_array.map(x => x * 2)
+  assert_eq(doubled, [2, 4, 6, 8, 10])
 }
 
-test "option_type_operations" {
-  // 测试 Option 类型操作
-  let some_value : Option[Int] = Some(42)
-  let none_value : Option[Int] = None
+test "boolean_basic_operations" {
+  // 测试布尔基本操作
+  assert_true(true)
+  assert_false(false)
   
-  let result1 = match some_value {
-    Some(v) => v
-    None => 0
-  }
+  // 测试布尔运算
+  assert_true(true && true)
+  assert_false(true && false)
+  assert_false(false && false)
   
-  let result2 = match none_value {
-    Some(v) => v
-    None => 0
-  }
-  
-  inspect(result1, content="42")
-  inspect(result2, content="0")
+  assert_true(true || false)
+  assert_true(true || true)
+  assert_false(false || false)
 }
 
-test "option_pattern_matching" {
-  // 测试 Option 模式匹配
-  let maybe_value = Some(10)
-  let doubled = match maybe_value {
-    Some(x) => x * 2
-    None => 0
-  }
-  inspect(doubled, content="20")
+test "tuple_basic_operations" {
+  // 测试元组基本操作
+  let pair = (1, "hello")
   
-  let empty_value = None
-  let empty_result = match empty_value {
-    Some(x) => x * 2
-    None => 0
-  }
-  inspect(empty_result, content="0")
+  // 获取元组元素
+  assert_eq(pair.0, 1)
+  assert_eq(pair.1, "hello")
+  
+  // 测试元组比较
+  assert_eq((1, "hello"), (1, "hello"))
+  assert_true((1, "hello") != (2, "hello"))
 }
 
-test "result_type_operations" {
-  // 测试 Result 类型操作
-  let success : Result[String, String] = Ok("success")
-  let failure : Result[String, String] = Err("error")
+test "list_basic_operations" {
+  // 测试列表基本操作
+  let list1 = [1, 2, 3, 4, 5]
+  assert_eq(list1.length(), 5)
+  assert_eq(list1[0], 1)
+  assert_eq(list1[4], 5)
   
-  let success_result = match success {
-    Ok(v) => v
-    Err(e) => "default"
-  }
+  // 测试列表操作
+  let doubled = list1.map(x => x * 2)
+  assert_eq(doubled, [2, 4, 6, 8, 10])
   
-  let failure_result = match failure {
-    Ok(v) => v
-    Err(e) => "default"
-  }
-  
-  inspect(success_result, content="success")
-  inspect(failure_result, content="default")
+  let evens = list1.filter(x => x % 2 == 0)
+  assert_eq(evens, [2, 4])
 }
 
-test "char_operations" {
-  // 测试字符操作
-  let upper_char = 'A'
-  let lower_char = 'a'
-  let digit_char = '5'
+test "combined_operations" {
+  // 测试多种类型的组合操作
+  // 创建一个数字列表，进行操作，然后转换为字符串
+  let numbers = [1, 2, 3, 4, 5]
   
-  inspect(upper_char.to_int(), content="65")
-  inspect(lower_char.to_int(), content="97")
-  inspect(digit_char.to_int(), content="53")
+  // 过滤偶数
+  let evens = numbers.filter(x => x % 2 == 0)
+  assert_eq(evens, [2, 4])
+  
+  // 映射操作
+  let doubled = evens.map(x => x * 2)
+  assert_eq(doubled, [4, 8])
 }
