@@ -1,174 +1,259 @@
-// Azimuth 增强测试用例
-// 标准 MoonBit 测试语法，包含8个高质量测试用例
+// Azimuth 增强测试用例 - 专注于高级场景和边界情况
+// 包含10个高质量的 MoonBit 测试用例
 
-test "advanced_arithmetic_sequence" {
-  // 高级算术序列测试
-  let start = 5
-  let difference = 3
-  let terms = 4
+test "complex_mathematical_theorems" {
+  // 复杂数学定理验证测试
+  let a = 12
+  let b = 8
+  let c = 5
   
-  // 计算等差数列的和
-  let term1 = start
-  let term2 = add(term1, difference)
-  let term3 = add(term2, difference)
-  let term4 = add(term3, difference)
+  // 验证分配律: a * (b + c) = a * b + a * c
+  let distributive_left = multiply(a, add(b, c))
+  let distributive_right = add(multiply(a, b), multiply(a, c))
+  assert_eq(distributive_left, distributive_right)
   
-  let sum = add(add(add(term1, term2), term3), term4)
-  assert_eq(32, sum)  // 5 + 8 + 11 + 14 = 38
+  // 验证结合律: (a + b) + c = a + (b + c)
+  let associative_left = add(add(a, b), c)
+  let associative_right = add(a, add(b, c))
+  assert_eq(associative_left, associative_right)
   
-  // 计算平均值
-  let average = divide_with_ceil(sum, terms)
-  assert_eq(10, average)  // ceil(38/4) = 10
+  // 验证减法性质: a - (b + c) = (a - b) - c
+  let subtraction_property = subtract(a, add(b, c))
+  let subtraction_expanded = subtract(subtract(a, b), c)
+  assert_eq(subtraction_property, subtraction_expanded)
 }
 
-test "geometric_progression_calculation" {
-  // 几何级数计算测试
-  let first_term = 2
-  let ratio = 3
-  let terms = 4
+test "advanced_resource_allocation" {
+  // 高级资源分配测试
+  let total_budget = 50000
+  let project_phases = 4
+  let min_budget_per_phase = 10000
   
-  // 计算几何级数的各项
-  let term1 = first_term
-  let term2 = multiply(term1, ratio)
-  let term3 = multiply(term2, ratio)
-  let term4 = multiply(term3, ratio)
+  // 计算每个阶段的最低预算
+  let budget_per_phase = divide_with_ceil(total_budget, project_phases)
+  assert_eq(12500, budget_per_phase)
   
-  assert_eq(2, term1)
-  assert_eq(6, term2)
-  assert_eq(18, term3)
-  assert_eq(54, term4)
+  // 验证总预算分配
+  let allocated_budget = multiply(budget_per_phase, project_phases)
+  assert_eq(50000, allocated_budget)
   
-  // 计算总和
-  let sum = add(add(add(term1, term2), term3), term4)
-  assert_eq(80, sum)  // 2 + 6 + 18 + 54 = 80
+  // 验证每个阶段预算都满足最低要求
+  assert_true(budget_per_phase >= min_budget_per_phase)
+  
+  // 计算预算余量
+  let budget_surplus = subtract(budget_per_phase, min_budget_per_phase)
+  assert_eq(2500, budget_surplus)
 }
 
-test "resource_optimization_scenario" {
-  // 资源优化场景测试
-  let total_tasks = 100
-  let workers = 8
-  let hours_per_day = 8
-  let days_available = 5
+test "comprehensive_error_handling" {
+  // 全面错误处理测试
+  // 除零错误的各种情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
   
-  // 计算总工时
-  let total_work_hours = multiply(workers, multiply(hours_per_day, days_available))
-  assert_eq(320, total_work_hours)  // 8 * 8 * 5 = 320
+  // 边界值测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(-1, divide_with_ceil(-1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
   
-  // 计算每小时需要完成的任务数
-  let tasks_per_hour = divide_with_ceil(total_tasks, total_work_hours)
-  assert_eq(1, tasks_per_hour)  // ceil(100/320) = 1
-  
-  // 计算实际完成时间
-  let actual_hours_needed = divide_with_ceil(total_tasks, multiply(workers, tasks_per_hour))
-  let actual_days_needed = divide_with_ceil(actual_hours_needed, hours_per_day)
-  assert_eq(13, actual_hours_needed)  // ceil(100/(8*1)) = 13
-  assert_eq(2, actual_days_needed)   // ceil(13/8) = 2
+  // 极值测试
+  let large_num = 1000000
+  assert_eq(large_num, divide_with_ceil(large_num, 1))
+  assert_eq(1, divide_with_ceil(large_num, large_num))
+  assert_eq(2, divide_with_ceil(add(large_num, 1), large_num))
 }
 
-test "string_concatenation_validation" {
-  // 字符串连接验证测试
-  let prefix = "Azimuth"
-  let suffix = "Project"
+test "real_world_logistics_optimization" {
+  // 真实世界物流优化测试
+  let total_packages = 347
+  let truck_capacity = 24
+  let delivery_days = 5
+  let trucks_available = 4
   
-  // 测试问候函数的组合使用
-  let greeting1 = greet(prefix)
-  let greeting2 = greet(suffix)
+  // 计算需要的卡车数量
+  let trucks_needed = divide_with_ceil(total_packages, truck_capacity)
+  assert_eq(15, trucks_needed)
   
-  assert_eq_string("Hello, Azimuth!", greeting1)
-  assert_eq_string("Hello, Project!", greeting2)
+  // 验证卡车资源是否充足
+  assert_true(trucks_needed <= trucks_available)
   
-  // 测试空字符串和特殊字符
+  // 计算每天需要的卡车数量
+  let trucks_per_day = divide_with_ceil(trucks_needed, delivery_days)
+  assert_eq(3, trucks_per_day)
+  
+  // 计算总运输能力
+  let total_capacity = multiply(trucks_needed, truck_capacity)
+  assert_eq(360, total_capacity)
+  
+  // 计算剩余运力
+  let remaining_capacity = subtract(total_capacity, total_packages)
+  assert_eq(13, remaining_capacity)
+}
+
+test "string_processing_edge_cases" {
+  // 字符串处理边界情况测试
+  // 空字符串和特殊字符
   assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, @#$%!", greet("@#$%"))
-  assert_eq_string("Hello,   spaces   !", greet("  spaces   "))
+  assert_eq_string("Hello,   !", greet("   "))
+  assert_eq_string("Hello, \t\n\r!", greet("\t\n\r"))
+  
+  // 数字和字母混合
+  assert_eq_string("Hello, test123!", greet("test123"))
+  assert_eq_string("Hello, 123test!", greet("123test"))
+  assert_eq_string("Hello, t1e2s3t!", greet("t1e2s3t"))
+  
+  // 特殊符号
+  assert_eq_string("Hello, !@#$%^&*()!", greet("!@#$%^&*()"))
+  assert_eq_string("Hello, []{}|\\:;\"'<>?,./!", greet("[]{}|\\:;\"'<>?,./"))
 }
 
-test "mathematical_series_summation" {
-  // 数学级数求和测试
-  let n = 10
+test "mathematical_sequence_calculations" {
+  // 数学序列计算测试
+  // 等差数列求和
+  let first_term = 3
+  let common_diff = 2
+  let num_terms = 10
   
-  // 计算平方和：1² + 2² + ... + n²
-  let square_sum = 0
-  let i = 1
-  while (i <= n) {
-    square_sum = add(square_sum, multiply(i, i))
-    i = add(i, 1)
-  }
-  assert_eq(385, square_sum)  // 1² + 2² + ... + 10² = 385
+  // 计算等差数列第n项
+  let nth_term = add(first_term, multiply(common_diff, subtract(num_terms, 1)))
+  assert_eq(21, nth_term)
   
-  // 计算立方和：1³ + 2³ + ... + n³
-  let cube_sum = 0
-  i = 1
-  while (i <= n) {
-    cube_sum = add(cube_sum, multiply(multiply(i, i), i))
-    i = add(i, 1)
-  }
-  assert_eq(3025, cube_sum)  // 1³ + 2³ + ... + 10³ = 3025
+  // 计算等差数列和
+  let sequence_sum = divide_with_ceil(multiply(num_terms, add(first_term, nth_term)), 2)
+  assert_eq(120, sequence_sum)
+  
+  // 验证等比数列性质
+  let ratio = 3
+  let geo_first = 2
+  let geo_terms = 5
+  
+  // 计算等比数列第n项
+  let geo_nth = multiply(geo_first, multiply(ratio, multiply(ratio, multiply(ratio, ratio))))
+  assert_eq(162, geo_nth)
 }
 
-test "inventory_turnover_calculation" {
-  // 库存周转率计算测试
-  let annual_sales = 120000
-  let average_inventory = 30000
-  let days_per_year = 365
+test "complex_financial_calculations" {
+  // 复杂金融计算测试
+  let principal = 100000
+  let annual_rate = 5
+  let years = 10
+  let monthly_payment_limit = 1200
   
-  // 计算库存周转率
-  let turnover_rate = divide_with_ceil(annual_sales, average_inventory)
-  assert_eq(4, turnover_rate)  // ceil(120000/30000) = 4
+  // 计算总利息
+  let total_interest = multiply(principal, multiply(annual_rate, years)) / 100
+  assert_eq(50000, total_interest)
   
-  // 计算库存周转天数
-  let turnover_days = divide_with_ceil(days_per_year, turnover_rate)
-  assert_eq(91, turnover_days)  // ceil(365/4) = 91
+  // 计算总还款额
+  let total_payment = add(principal, total_interest)
+  assert_eq(150000, total_payment)
   
-  // 计算月平均库存
-  let monthly_inventory = divide_with_ceil(average_inventory, 12)
-  assert_eq(2500, monthly_inventory)  // ceil(30000/12) = 2500
+  // 计算月数
+  let total_months = multiply(years, 12)
+  assert_eq(120, total_months)
+  
+  // 计算月供
+  let monthly_payment = divide_with_ceil(total_payment, total_months)
+  assert_eq(1250, monthly_payment)
+  
+  // 验证月供是否超过限制
+  assert_true(monthly_payment > monthly_payment_limit)
+  
+  // 计算超出的月供金额
+  let excess_payment = subtract(monthly_payment, monthly_payment_limit)
+  assert_eq(50, excess_payment)
 }
 
-test "compound_interest_simulation" {
-  // 复利计算模拟测试
-  let principal = 10000
-  let annual_rate = 5  // 5%
-  let years = 3
+test "performance_and_scalability" {
+  // 性能和可扩展性测试
+  // 大数运算测试
+  let large_num1 = 100000
+  let large_num2 = 99999
   
-  // 简化的复利计算（逐年计算）
-  let year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
-  let year2 = add(year1, divide_with_ceil(multiply(year1, annual_rate), 100))
-  let year3 = add(year2, divide_with_ceil(multiply(year2, annual_rate), 100))
+  // 大数加法
+  let large_sum = add(large_num1, large_num2)
+  assert_eq(199999, large_sum)
   
-  assert_eq(10500, year1)  // 10000 + ceil(10000*5/100) = 10500
-  assert_eq(11025, year2)  // 10500 + ceil(10500*5/100) = 11025
-  assert_eq(11576, year3)  // 11025 + ceil(11025*5/100) = 11576
+  // 大数乘法
+  let large_product = multiply(large_num1, 100)
+  assert_eq(10000000, large_product)
   
-  // 计算总收益
-  let total_return = subtract(year3, principal)
-  assert_eq(1576, total_return)  // 11576 - 10000 = 1576
+  // 大数除法
+  let large_division = divide_with_ceil(large_sum, 1000)
+  assert_eq(200, large_division)
+  
+  // 连续运算性能测试
+  let result = large_num1
+  result = add(result, large_num2)  // 199999
+  result = multiply(result, 2)      // 399998
+  result = divide_with_ceil(result, 1000)  // 400
+  result = subtract(result, 100)    // 300
+  assert_eq(300, result)
 }
 
-test "production_efficiency_metrics" {
-  // 生产效率指标测试
-  let units_produced = 1250
-  let labor_hours = 250
-  let machine_hours = 180
-  let defect_rate = 2  // 2%
+test "advanced_business_scenarios" {
+  // 高级业务场景测试
+  let company_revenue = 1000000
+  let num_departments = 5
+  let min_budget_per_dept = 150000
+  let project_costs = [120000, 180000, 200000, 150000, 250000]
   
-  // 计算单位产品劳动时间
-  let labor_per_unit = divide_with_ceil(labor_hours, units_produced)
-  assert_eq(1, labor_per_unit)  // ceil(250/1250) = 1
+  // 计算每个部门的平均预算
+  let avg_budget_per_dept = divide_with_ceil(company_revenue, num_departments)
+  assert_eq(200000, avg_budget_per_dept)
   
-  // 计算单位产品机器时间
-  let machine_per_unit = divide_with_ceil(machine_hours, units_produced)
-  assert_eq(1, machine_per_unit)  // ceil(180/1250) = 1
+  // 验证平均预算满足最低要求
+  assert_true(avg_budget_per_dept >= min_budget_per_dept)
   
-  // 计算缺陷数量
-  let defect_count = divide_with_ceil(multiply(units_produced, defect_rate), 100)
-  assert_eq(25, defect_count)  // ceil(1250*2/100) = 25
+  // 计算项目总成本
+  let total_project_cost = 120000 + 180000 + 200000 + 150000 + 250000
+  assert_eq(900000, total_project_cost)
   
-  // 计算合格产品数量
-  let good_units = subtract(units_produced, defect_count)
-  assert_eq(1225, good_units)  // 1250 - 25 = 1225
+  // 计算剩余资金
+  let remaining_funds = subtract(company_revenue, total_project_cost)
+  assert_eq(100000, remaining_funds)
   
-  // 计算合格率
-  let quality_rate = subtract(100, defect_rate)
-  assert_eq(98, quality_rate)  // 100 - 2 = 98
+  // 计算资金利用率
+  let utilization_rate = divide_with_ceil(multiply(total_project_cost, 100), company_revenue)
+  assert_eq(90, utilization_rate)
+  
+  // 计算可分配的额外资金
+  let extra_funds_per_dept = divide_with_ceil(remaining_funds, num_departments)
+  assert_eq(20000, extra_funds_per_dept)
+}
+
+test "edge_case_comprehensive_analysis" {
+  // 边界情况综合分析测试
+  // 零值和单位值测试
+  assert_eq(0, add(0, 0))
+  assert_eq(5, add(5, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(5, multiply(5, 1))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(1, divide_with_ceil(5, 5))
+  
+  // 负数边界测试
+  assert_eq(-10, add(-5, -5))
+  assert_eq(0, add(-5, 5))
+  assert_eq(25, multiply(-5, -5))
+  assert_eq(-25, multiply(-5, 5))
+  assert_eq(-1, divide_with_ceil(-5, 5))
+  assert_eq(1, divide_with_ceil(-5, -5))
+  
+  // 混合符号测试
+  assert_eq(-2, add(3, -5))
+  assert_eq(2, add(-3, 5))
+  assert_eq(-15, multiply(3, -5))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-1, divide_with_ceil(-3, 5))
+  assert_eq(-2, divide_with_ceil(3, -5))
+  
+  // 极值测试
+  let max_test = 1000000
+  let min_test = -1000000
+  assert_eq(0, add(max_test, min_test))
+  assert_eq(2000000, subtract(max_test, min_test))
+  assert_eq(-1000000000000, multiply(max_test, min_test))
+  assert_eq(-1, divide_with_ceil(min_test, max_test))
 }
