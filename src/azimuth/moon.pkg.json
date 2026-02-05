@@ -619,4 +619,5 @@
     "high_quality_standard_tests.mbt",
     "azimuth_concise_standard_tests.mbt",
     "standard_comprehensive_tests.mbt",
-    "quality_standard_tests.mbt"                                                                                                                                           ]}
+    "quality_standard_tests.mbt",
+    "user_minimal_test.mbt"                                                                                                                                           ]}

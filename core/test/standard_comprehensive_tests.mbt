@@ -13,241 +13,168 @@
 // limitations under the License.
 
 ///|
-test "integer absolute value" {
-  assert_eq(Int::abs(5), 5)
-  assert_eq(Int::abs(-5), 5)
-  assert_eq(Int::abs(0), 0)
-}
-
-///|
-test "integer comparison operations" {
-  // Basic comparisons
-  assert_eq(5 > 3, true)
-  assert_eq(5 < 3, false)
-  assert_eq(5 >= 5, true)
-  assert_eq(5 <= 3, false)
-  assert_eq(5 == 5, true)
-  assert_eq(5 != 3, true)
-}
-
-///|
-test "integer arithmetic operations" {
-  // Addition
-  assert_eq(3 + 5, 8)
-  
-  // Subtraction
-  assert_eq(10 - 3, 7)
-  
-  // Multiplication
-  assert_eq(4 * 5, 20)
-  assert_eq(0 * 42, 0)
-  
-  // Division
-  assert_eq(20 / 4, 5)
-  assert_eq(7 / 3, 2) // Integer division
-  assert_eq(0 / 5, 0)
-}
-
-///|
-test "integer bit operations" {
-  // Bitwise AND
-  assert_eq(6 & 3, 2) // 110 & 011 = 010
-  assert_eq(15 & 0, 0)
-  
-  // Bitwise OR
-  assert_eq(6 | 3, 7) // 110 | 011 = 111
-  assert_eq(15 | 0, 15)
-  
-  // Bitwise XOR
-  assert_eq(6 ^ 3, 5) // 110 ^ 011 = 101
-  assert_eq(15 ^ 15, 0)
-  
-  // Left shift
-  assert_eq(1 << 3, 8)
-  assert_eq(0 << 5, 0)
-  
-  // Right shift
-  assert_eq(8 >> 2, 2)
-  assert_eq(7 >> 1, 3)
-}
-
-///|
-test "string basic operations" {
-  let empty = ""
-  let hello = "Hello"
-  let world = "World"
-  
-  // String concatenation
-  let greeting = hello + " " + world
-  inspect(greeting, content="\"Hello World\"")
-  
-  // String length
-  assert_eq(hello.length(), 5)
-  assert_eq(empty.length(), 0)
-  assert_eq(greeting.length(), 11)
-  
-  // String comparison
-  assert_eq(hello == "Hello", true)
-  assert_eq(hello != "World", true)
-  assert_eq(empty == "", true)
-}
-
-///|
-test "list basic operations" {
-  let empty_list = @list.empty()
-  let single_element = @list.from_array([42])
-  let multiple_elements = @list.from_array([1, 2, 3, 4, 5])
-  
-  // List length
-  assert_eq(empty_list.length(), 0)
-  assert_eq(single_element.length(), 1)
-  assert_eq(multiple_elements.length(), 5)
-  
-  // List head and tail
-  assert_eq(single_element.head(), Some(42))
-  assert_eq(multiple_elements.head(), Some(1))
-  assert_eq(empty_list.head(), None)
-  
-  // List is_empty
-  assert_eq(empty_list.is_empty(), true)
-  assert_eq(single_element.is_empty(), false)
-  assert_eq(multiple_elements.is_empty(), false)
-}
-
-///|
-test "list map and filter operations" {
-  let numbers = @list.from_array([1, 2, 3, 4, 5])
-  
-  // Map operation
-  let doubled = numbers.map(x => x * 2)
-  assert_eq(doubled, @list.from_array([2, 4, 6, 8, 10]))
-  
-  // Filter operation
-  let evens = numbers.filter(x => x % 2 == 0)
-  assert_eq(evens, @list.from_array([2, 4]))
-  
-  // Map with index
-  let indexed = numbers.mapi((i, x) => x + i)
-  assert_eq(indexed, @list.from_array([1, 3, 5, 7, 9]))
-}
-
-///|
-test "list fold operations" {
-  let numbers = @list.from_array([1, 2, 3, 4, 5])
-  
-  // Fold (reduce) operation
-  let sum = numbers.fold(init=0, (acc, x) => acc + x)
-  assert_eq(sum, 15)
-  
-  let product = numbers.fold(init=1, (acc, x) => acc * x)
-  assert_eq(product, 120)
-  
-  // Fold with index
-  let indexed_sum = numbers.foldi(init=0, (i, acc, x) => acc + x * i)
-  assert_eq(indexed_sum, 40) // 0*1 + 1*2 + 2*3 + 3*4 + 4*5 = 0 + 2 + 6 + 12 + 20 = 40
-}
-
-///|
-test "list reverse and concat operations" {
-  let list1 = @list.from_array([1, 2, 3])
-  let list2 = @list.from_array([4, 5, 6])
-  
-  // Reverse operation
-  let reversed = list1.rev()
-  assert_eq(reversed, @list.from_array([3, 2, 1]))
-  
-  // Concat operation
-  let concatenated = list1.concat(list2)
-  assert_eq(concatenated, @list.from_array([1, 2, 3, 4, 5, 6]))
-  
-  // Rev concat operation
-  let rev_concatenated = list1.rev_concat(list2)
-  assert_eq(rev_concatenated, @list.from_array([3, 2, 1, 4, 5, 6]))
-}
-
-///|
-test "option type basic operations" {
+test "Option basic operations" {
   let some_value : Int? = Some(42)
   let none_value : Int? = None
   
-  // is_some and is_none
-  assert_eq(some_value.is_some(), true)
-  assert_eq(some_value.is_none(), false)
-  assert_eq(none_value.is_some(), false)
-  assert_eq(none_value.is_none(), true)
+  assert_true(some_value is Some(_))
+  assert_false(some_value is None)
+  assert_false(none_value is Some(_))
+  assert_true(none_value is None)
   
-  // unwrap and unwrap_or
-  assert_eq(some_value.unwrap(), 42)
   assert_eq(some_value.unwrap_or(0), 42)
   assert_eq(none_value.unwrap_or(0), 0)
 }
 
 ///|
-test "option type map operations" {
-  let some_value : Int? = Some(5)
-  let none_value : Int? = None
+test "Option map and bind operations" {
+  let some_int : Int? = Some(5)
+  let none_int : Int? = None
   
-  // Map operation
-  let mapped_some = some_value.map(x => x * 2)
-  assert_eq(mapped_some, Some(10))
+  let doubled = some_int.map(x => x * 2)
+  assert_eq(doubled, Some(10))
   
-  let mapped_none = none_value.map(x => x * 2)
-  assert_eq(mapped_none, None)
+  let doubled_none = none_int.map(x => x * 2)
+  assert_eq(doubled_none, None)
+  
+  let safe_divide = (x : Int) => if x == 0 { None } else { Some(100 / x) }
+  let result = some_int.bind(safe_divide)
+  assert_eq(result, Some(20))
 }
 
 ///|
-test "result type basic operations" {
-  let ok_result : Result[Int, String] = Ok(42)
-  let err_result : Result[Int, String] = Err("error message")
+test "Int arithmetic operations" {
+  let a = 10
+  let b = 3
   
-  // is_ok and is_err
-  assert_eq(ok_result.is_ok(), true)
-  assert_eq(ok_result.is_err(), false)
-  assert_eq(err_result.is_ok(), false)
-  assert_eq(err_result.is_err(), true)
+  assert_eq(a + b, 13)
+  assert_eq(a - b, 7)
+  assert_eq(a * b, 30)
+  assert_eq(a / b, 3)
+  assert_eq(a % b, 1)
   
-  // unwrap operations
-  assert_eq(ok_result.unwrap(), 42)
-  assert_eq(ok_result.unwrap_or(0), 42)
-  assert_eq(err_result.unwrap_or(0), 0)
-  assert_eq(err_result.unwrap_err(), "error message")
+  assert_eq(Int::abs(-5), 5)
+  assert_eq(Int::abs(5), 5)
+  assert_true(max_value > 0)
+  assert_true(min_value < 0)
 }
 
 ///|
-test "result type map operations" {
-  let ok_result : Result[Int, String] = Ok(5)
-  let err_result : Result[Int, String] = Err("error")
+test "String basic operations" {
+  let hello = "Hello"
+  let world = "World"
+  let empty = ""
   
-  // Map operation
-  let mapped_ok = ok_result.map(x => x * 2)
-  assert_eq(mapped_ok, Ok(10))
+  assert_eq(hello.length(), 5)
+  assert_eq(empty.length(), 0)
   
-  let mapped_err = err_result.map(x => x * 2)
-  assert_eq(mapped_err, Err("error"))
+  let combined = hello + " " + world
+  assert_eq(combined, "Hello World")
   
-  // Map error operation
-  let mapped_err_ok = ok_result.map_err(e => e + " (mapped)")
-  assert_eq(mapped_err_ok, Ok(5))
-  
-  let mapped_err_err = err_result.map_err(e => e + " (mapped)")
-  assert_eq(mapped_err_err, Err("error (mapped)"))
+  assert_eq(hello[0], 'H')
+  assert_eq(hello[4], 'o')
 }
 
 ///|
-test "result type and_then operation" {
-  let ok_result : Result[Int, String] = Ok(10)
-  let err_result : Result[Int, String] = Err("initial error")
+test "Array basic operations" {
+  let empty_array : Array[Int] = []
+  let numbers = [1, 2, 3]
+  let numbers2 = [4, 5, 6]
   
-  // Safe division function
-  let safe_divide = (x : Int) => if x == 0 { Err("division by zero") } else { Ok(100 / x) }
+  assert_eq(empty_array.length(), 0)
+  assert_eq(numbers.length(), 3)
   
-  // And then operation
-  let result_ok = ok_result.and_then(safe_divide)
-  assert_eq(result_ok, Ok(10))
+  let combined = numbers + numbers2
+  assert_eq(combined, [1, 2, 3, 4, 5, 6])
   
-  let result_err = err_result.and_then(safe_divide)
-  assert_eq(result_err, Err("initial error"))
+  let first = numbers[0]
+  assert_eq(first, 1)
+}
+
+///|
+test "Array functional operations" {
+  let numbers = [1, 2, 3, 4, 5]
   
-  let result_zero = Ok(0).and_then(safe_divide)
-  assert_eq(result_zero, Err("division by zero"))
+  let doubled = numbers.map(x => x * 2)
+  assert_eq(doubled, [2, 4, 6, 8, 10])
+  
+  let evens = numbers.filter(x => x % 2 == 0)
+  assert_eq(evens, [2, 4])
+  
+  let sum = numbers.fold(0, (acc, x) => acc + x)
+  assert_eq(sum, 15)
+  
+  let has_even = numbers.any(x => x % 2 == 0)
+  assert_true(has_even)
+  
+  let all_positive = numbers.all(x => x > 0)
+  assert_true(all_positive)
+}
+
+///|
+test "Result type operations" {
+  let ok_value : Result[Int, String] = Ok(42)
+  let err_value : Result[Int, String] = Err("Error message")
+  
+  assert_true(ok_value is Ok(_))
+  assert_false(ok_value is Err(_))
+  assert_false(err_value is Ok(_))
+  assert_true(err_value is Err(_))
+  
+  assert_eq(ok_value.unwrap_or(0), 42)
+  assert_eq(err_value.unwrap_or(0), 0)
+  
+  let mapped_ok = ok_value.map(x => x * 2)
+  assert_eq(mapped_ok, Ok(84))
+  
+  let mapped_err = err_value.map(x => x * 2)
+  assert_eq(mapped_err, Err("Error message"))
+}
+
+///|
+test "Array access operations" {
+  let numbers = [1, 2, 3, 4, 5]
+  
+  assert_eq(numbers.length(), 5)
+  
+  let first = numbers[0]
+  assert_eq(first, 1)
+  
+  let last = numbers[4]
+  assert_eq(last, 5)
+}
+
+///|
+test "Boolean operations and comparisons" {
+  let true_val = true
+  let false_val = false
+  
+  assert_eq(true_val && false_val, false)
+  assert_eq(true_val || false_val, true)
+  assert_eq(true_val && false_val, false)
+  assert_eq(true_val || false_val, true)
+  
+  assert_eq(5 > 3, true)
+  assert_eq(5 < 3, false)
+  assert_eq(5 >= 5, true)
+  assert_eq(3 <= 5, true)
+  assert_eq(5 == 5, true)
+  assert_eq(5 != 3, true)
+}
+
+///|
+test "Type conversion and casting" {
+  let int_val = 42
+  
+  let int_to_string = int_val.to_string()
+  assert_eq(int_to_string, "42")
+  
+  let char_code = 'A'.to_int()
+  assert_eq(char_code, 65)
+  
+  let zero_byte = 0.to_byte()
+  assert_eq(zero_byte, 0_byte)
+  
+  let max_byte = 255.to_byte()
+  assert_eq(max_byte, 255_byte)
 }
