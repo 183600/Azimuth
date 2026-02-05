@@ -1,185 +1,169 @@
-// Azimuth 项目新增标准 MoonBit 测试用例
-// 包含 8 个高质量测试用例，使用标准 MoonBit 测试语法
+// Azimuth 增强测试套件
+// 包含10个高质量的标准 MoonBit 测试用例
 
-test "azimuth_core_arithmetic_precision" {
-  // 核心算术精度测试
-  // 测试大数运算的精度和正确性
-  let large_a = 50000
-  let large_b = 50000
-  
-  // 大数加法
-  assert_eq(100000, add(large_a, large_b))
-  
-  // 大数乘法
-  assert_eq(2500000000, multiply(large_a, large_b))
-  
-  // 复杂运算组合
-  let complex_result = add(multiply(100, 100), divide_with_ceil(999, 10))
-  assert_eq(10999, complex_result)  // 10000 + 100 = 10100
-}
-
-test "azimuth_boundary_value_analysis" {
-  // 边界值分析测试
-  // 测试系统边界条件下的行为
-  
-  // 零值边界
+test "numeric_range_validation" {
+  // 数值范围验证测试
+  // 测试极值和边界情况
   assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(0, 1000000))
-  assert_eq(0, divide_with_ceil(0, 1000))
-  
-  // 单位边界
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(999, 1000))
-  assert_eq(1000, divide_with_ceil(999, 1))
-  
-  // 负数边界
-  assert_eq(-1, divide_with_ceil(-1, 2))
-  assert_eq(1, divide_with_ceil(-1, -2))
-  assert_eq(-999, add(-500, -499))
+  assert_eq(1, add(0, 1))
+  assert_eq(-1, add(0, -1))
+  assert_eq(2147483647, add(2147483646, 1))
+  assert_eq(-2147483648, add(-2147483647, -1))
 }
 
-test "azimuth_error_handling_robustness" {
-  // 错误处理健壮性测试
-  // 测试系统在异常情况下的处理能力
+test "unicode_string_processing" {
+  // Unicode 字符串处理测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, 🏳️‍🌈!", greet("🏳️‍🌈"))
+}
+
+test "complex_mathematical_operations" {
+  // 复杂数学运算测试
+  // 测试多个函数的组合使用
+  let a = 15
+  let b = 4
+  let c = 3
   
-  // 除零错误的多场景测试
+  // 复杂表达式：(a+b) * c / 2
+  let sum_ab = add(a, b)
+  let product = multiply(sum_ab, c)
+  let result = divide_with_ceil(product, 2)
+  
+  assert_eq(19, sum_ab)  // 15 + 4 = 19
+  assert_eq(57, product)  // 19 * 3 = 57
+  assert_eq(29, result)  // ceil(57/2) = 29
+}
+
+test "performance_large_numbers" {
+  // 大数性能测试
+  // 测试大数运算的稳定性
+  let large_num1 = 1000000
+  let large_num2 = 999999
+  
+  assert_eq(1999999, add(large_num1, large_num2))
+  assert_eq(999999000000, multiply(large_num1, large_num2))
+  assert_eq(2, divide_with_ceil(large_num1, large_num2))
+  assert_eq(1, divide_with_ceil(large_num2, large_num1))
+}
+
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  // 测试各种异常情况的处理
   assert_eq(0, divide_with_ceil(100, 0))
   assert_eq(0, divide_with_ceil(-100, 0))
   assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(1, 0))
-  assert_eq(0, divide_with_ceil(-1, 0))
-  
-  // 极值组合运算
-  let extreme_result = add(multiply(1000000, 0), divide_with_ceil(-500, 0))
-  assert_eq(0, extreme_result)
+  assert_eq(0, divide_with_ceil(2147483647, 0))
+  assert_eq(0, divide_with_ceil(-2147483648, 0))
 }
 
-test "azimuth_business_logistics" {
-  // 业务物流场景测试
-  // 模拟真实的物流分配问题
+test "business_inventory_management" {
+  // 业务库存管理测试
+  // 模拟真实库存管理场景
+  let total_products = 1234
+  let box_capacity = 45
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
   
-  let total_packages = 127
-  let truck_capacity = 15
-  let trucks_needed = divide_with_ceil(total_packages, truck_capacity)
+  assert_eq(28, boxes_needed)
   
-  // 验证需要的卡车数量
-  assert_eq(9, trucks_needed)
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(1260, total_capacity)
   
-  // 计算实际运输能力
-  let actual_capacity = multiply(trucks_needed, truck_capacity)
-  assert_eq(135, actual_capacity)
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(26, remaining_space)
   
-  // 计算剩余空间
-  let remaining_space = subtract(actual_capacity, total_packages)
-  assert_eq(8, remaining_space)
-  
-  // 计算空间利用率
-  let utilization_rate = divide_with_ceil(multiply(total_packages, 100), actual_capacity)
-  assert_eq(94, utilization_rate)  // floor(12700/135) = 94%
+  // 验证空间利用率
+  let utilization_percent = divide_with_ceil(multiply(total_products, 100), total_capacity)
+  assert_eq(98, utilization_percent)
 }
 
-test "azimuth_string_processing_edge" {
-  // 字符串处理边界测试
-  // 测试字符串函数的边界情况处理
+test "data_conversion_scenarios" {
+  // 数据转换场景测试
+  // 测试各种数据类型之间的转换和运算
+  let numeric_string = "123"
+  let alphabetic_string = "ABC"
+  let mixed_string = "ABC123"
+  let empty_string = ""
+  let space_string = " "
   
-  // 空字符串和特殊字符
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, \t\n!", greet("\t\n"))
-  assert_eq_string("Hello, \0!", greet("\0"))
-  
-  // 数字和符号组合
-  assert_eq_string("Hello, 123.456!", greet("123.456"))
-  assert_eq_string("Hello, @#$%^&*()!", greet("@#$%^&*()"))
-  assert_eq_string("Hello, []{}|\\!", greet("[]{}|\\"))
-  
-  // Unicode 字符
-  assert_eq_string("Hello, 🚀🌟!", greet("🚀🌟"))
-  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
-  assert_eq_string("Hello, Ñoño!", greet("Ñoño"))
+  // 测试不同字符串输入的问候函数
+  assert_eq_string("Hello, 123!", greet(numeric_string))
+  assert_eq_string("Hello, ABC!", greet(alphabetic_string))
+  assert_eq_string("Hello, ABC123!", greet(mixed_string))
+  assert_eq_string("Hello, !", greet(empty_string))
+  assert_eq_string("Hello,  !", greet(space_string))
 }
 
-test "azimuth mathematical_properties" {
-  // 数学性质验证测试
-  // 验证基本的数学定律和性质
+test "algorithm_complexity_validation" {
+  // 算法复杂度验证测试
+  // 测试不同规模数据的处理性能
+  let small_dataset = 10
+  let medium_dataset = 1000
+  let large_dataset = 100000
   
-  let a = 24
-  let b = 18
-  let c = 6
+  // 测试不同规模数据的除法运算
+  assert_eq(1, divide_with_ceil(small_dataset, 15))
+  assert_eq(67, divide_with_ceil(medium_dataset, 15))
+  assert_eq(6667, divide_with_ceil(large_dataset, 15))
   
-  // 加法交换律和结合律
-  assert_eq(add(a, b), add(b, a))  // 交换律
-  assert_eq(add(add(a, b), c), add(a, add(b, c)))  // 结合律
+  // 测试复合运算的复杂度
+  let small_result = multiply(divide_with_ceil(small_dataset, 5), 3)
+  let medium_result = multiply(divide_with_ceil(medium_dataset, 5), 3)
+  let large_result = multiply(divide_with_ceil(large_dataset, 5), 3)
   
-  // 乘法交换律和结合律
-  assert_eq(multiply(a, b), multiply(b, a))  // 交换律
-  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))  // 结合律
-  
-  // 分配律
-  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
-  
-  // 恒等式
-  assert_eq(a, add(a, 0))
-  assert_eq(a, multiply(a, 1))
-  assert_eq(0, multiply(a, 0))
+  assert_eq(6, small_result)
+  assert_eq(600, medium_result)
+  assert_eq(60000, large_result)
 }
 
-test "azimuth_complex_workflow_calculation" {
-  // 复杂工作流计算测试
-  // 模拟多步骤的业务计算流程
+test "function_chaining_operations" {
+  // 函数链式调用测试
+  // 测试多个函数的链式调用
+  let initial_value = 10
   
-  // 项目参数
-  let team_size = 8
-  let sprint_duration = 2  // 周
-  let story_points_per_person = 5
-  let total_story_points = 150
+  // 链式操作：(x + 5) * 2 -> ceil(/ 3) -> - 2
+  let step1 = add(initial_value, 5)
+  let step2 = multiply(step1, 2)
+  let step3 = divide_with_ceil(step2, 3)
+  let final_result = subtract(step3, 2)
   
-  // 计算团队每sprint容量
-  let weekly_capacity = multiply(team_size, story_points_per_person)
-  let sprint_capacity = multiply(weekly_capacity, sprint_duration)
-  
-  // 计算需要的sprint数量
-  let sprints_needed = divide_with_ceil(total_story_points, sprint_capacity)
-  
-  // 验证中间结果
-  assert_eq(40, weekly_capacity)   // 8 * 5 = 40
-  assert_eq(80, sprint_capacity)   // 40 * 2 = 80
-  assert_eq(2, sprints_needed)     // ceil(150/80) = 2
-  
-  // 计算实际完成能力
-  let actual_completion = multiply(sprints_needed, sprint_capacity)
-  assert_eq(160, actual_completion)
-  
-  // 计算缓冲时间
-  let buffer_capacity = subtract(actual_completion, total_story_points)
-  assert_eq(10, buffer_capacity)
+  assert_eq(15, step1)  // 10 + 5 = 15
+  assert_eq(30, step2)  // 15 * 2 = 30
+  assert_eq(10, step3)  // ceil(30/3) = 10
+  assert_eq(8, final_result)  // 10 - 2 = 8
 }
 
-test "azimuth_performance_stress" {
-  // 性能压力测试
-  // 测试系统在大量计算下的表现
+test "comprehensive_boundary_conditions" {
+  // 综合边界条件测试
+  // 全面测试各种边界条件和极值情况
+  // 零值测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 12345))
+  assert_eq(0, divide_with_ceil(0, 12345))
+  assert_eq(12345, add(12345, 0))
+  assert_eq(-12345, subtract(0, 12345))
   
-  // 连续运算链测试
-  let result_chain = subtract(
-    add(
-      multiply(100, 50),
-      divide_with_ceil(999, 10)
-    ),
-    multiply(5, 25)
-  )
-  assert_eq(4750, result_chain)  // (5000 + 100) - 125 = 4975
+  // 单位值测试
+  assert_eq(1, multiply(1, 1))
+  assert_eq(12345, multiply(12345, 1))
+  assert_eq(12345, divide_with_ceil(12345, 1))
+  assert_eq(1, divide_with_ceil(12345, 12345))
   
-  // 批量运算测试
-  let batch_sum = add(
-    add(add(add(1000, 2000), 3000), 4000),
-    5000
-  )
-  assert_eq(15000, batch_sum)
+  // 负数边界测试
+  assert_eq(-1, add(0, -1))
+  assert_eq(1, subtract(0, -1))
+  assert_eq(-12345, multiply(12345, -1))
+  assert_eq(-1, divide_with_ceil(-1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
   
-  // 嵌套除法测试
-  let nested_division = divide_with_ceil(
-    divide_with_ceil(10000, 33),
-    divide_with_ceil(5000, 100)
-  )
-  assert_eq(4, nested_division)  // ceil(ceil(10000/33)/ceil(5000/100)) = ceil(304/50) = 7
+  // 大数边界测试
+  let max_safe = 1000000
+  assert_eq(2000000, add(max_safe, max_safe))
+  assert_eq(1000000000000, multiply(max_safe, max_safe))
+  assert_eq(1, divide_with_ceil(max_safe, max_safe))
 }
