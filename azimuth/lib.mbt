@@ -16836,3 +16836,226 @@ test "standard_real_world_application_scenario" {
   // 验证座位充足性
   assert_true(available_seats >= participants)
 }
+
+// 新增的10个标准 MoonBit 测试用例
+test "data_validation_input_ranges" {
+  // 数据验证输入范围测试
+  // 测试极小值
+  assert_eq(0, add(0, 0))
+  assert_eq(1, add(0, 1))
+  assert_eq(-1, add(0, -1))
+  
+  // 测试极大值（在安全范围内）
+  let large_num = 100000
+  assert_eq(200000, add(large_num, large_num))
+  assert_eq(10000000000, multiply(large_num, large_num))
+  
+  // 测试负数极值
+  assert_eq(-200000, add(-large_num, -large_num))
+  assert_eq(10000000000, multiply(-large_num, -large_num))
+}
+
+test "performance_efficiency_calculations" {
+  // 性能效率计算测试
+  // 模拟算法复杂度计算
+  let n = 1000
+  let log_n_approx = divide_with_ceil(n, 100)  // 简化的对数计算
+  let n_log_n = multiply(n, log_n_approx)
+  
+  assert_eq(10, log_n_approx)
+  assert_eq(10000, n_log_n)
+  
+  // 测试空间复杂度计算
+  let array_size = 256
+  let element_size = 8
+  let total_memory = multiply(array_size, element_size)
+  let memory_kb = divide_with_ceil(total_memory, 1024)
+  
+  assert_eq(2048, total_memory)
+  assert_eq(2, memory_kb)
+}
+
+test "boundary_condition_comprehensive" {
+  // 边界条件综合测试
+  // 除法的各种边界情况
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(-1, divide_with_ceil(-1, 1))
+  assert_eq(1, divide_with_ceil(1, -1))
+  assert_eq(-1, divide_with_ceil(-1, -1))
+  
+  // 零值边界测试
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, -1))
+  assert_eq(0, divide_with_ceil(0, 1000))
+  assert_eq(0, divide_with_ceil(0, -1000))
+  
+  // 乘法零值测试
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(0, 1000000))
+  assert_eq(0, multiply(1000000, 0))
+}
+
+test "real_world_ecommerce_scenario" {
+  // 真实世界电商场景测试
+  let order_items = 47
+  let items_per_box = 12
+  let cost_per_box = 25
+  let shipping_cost_per_box = 8
+  
+  // 计算需要的箱子数量
+  let boxes_needed = divide_with_ceil(order_items, items_per_box)
+  assert_eq(4, boxes_needed)
+  
+  // 计算总成本
+  let box_cost = multiply(boxes_needed, cost_per_box)
+  let shipping_cost = multiply(boxes_needed, shipping_cost_per_box)
+  let total_cost = add(box_cost, shipping_cost)
+  
+  assert_eq(100, box_cost)
+  assert_eq(32, shipping_cost)
+  assert_eq(132, total_cost)
+  
+  // 计算每个物品的平均成本
+  let avg_cost_per_item = divide_with_ceil(total_cost, order_items)
+  assert_eq(3, avg_cost_per_item)
+}
+
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  // 测试各种除零情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(1, 0))
+  assert_eq(0, divide_with_ceil(-1, 0))
+  assert_eq(0, divide_with_ceil(1000000, 0))
+  assert_eq(0, divide_with_ceil(-1000000, 0))
+  
+  // 测试极端数值组合
+  let max_safe = 1000000
+  let min_safe = -1000000
+  
+  assert_eq(0, multiply(max_safe, 0))
+  assert_eq(0, multiply(min_safe, 0))
+  assert_eq(0, multiply(0, max_safe))
+  assert_eq(0, multiply(0, min_safe))
+}
+
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟测试
+  // 模拟二分查找的复杂度
+  let array_size = 1024
+  let steps = divide_with_ceil(array_size, 2)
+  let binary_search_steps = divide_with_ceil(steps, 2)
+  
+  assert_eq(512, steps)
+  assert_eq(256, binary_search_steps)
+  
+  // 模拟排序算法的比较次数
+  let elements = 100
+  let comparisons = multiply(elements, subtract(elements, 1))
+  let half_comparisons = divide_with_ceil(comparisons, 2)
+  
+  assert_eq(9900, comparisons)
+  assert_eq(4950, half_comparisons)
+}
+
+test "statistical_calculations" {
+  // 统计计算测试
+  // 计算平均值
+  let values = [10, 20, 30, 40, 50]
+  let sum = add(add(add(add(values[0], values[1]), values[2]), values[3]), values[4])
+  let count = 5
+  let average = divide_with_ceil(sum, count)
+  
+  assert_eq(150, sum)
+  assert_eq(30, average)
+  
+  // 计算方差（简化版）
+  let mean = average
+  let diff1 = subtract(values[0], mean)
+  let diff2 = subtract(values[1], mean)
+  let squared_diffs = add(multiply(diff1, diff1), multiply(diff2, diff2))
+  let variance = divide_with_ceil(squared_diffs, count)
+  
+  assert_eq(-20, diff1)
+  assert_eq(-10, diff2)
+  assert_eq(500, variance)
+}
+
+test "data_structure_operations" {
+  // 数据结构操作测试
+  // 模拟栈操作
+  let stack_capacity = 10
+  let current_size = 7
+  let push_operations = 5
+  let final_size = add(current_size, push_operations)
+  let overflow = divide_with_ceil(final_size, stack_capacity)
+  
+  assert_eq(12, final_size)
+  assert_eq(2, overflow)
+  
+  // 模拟队列操作
+  let queue_size = 15
+  let dequeue_rate = 3
+  let enqueue_rate = 4
+  let net_change = subtract(enqueue_rate, dequeue_rate)
+  let new_size = add(queue_size, net_change)
+  
+  assert_eq(1, net_change)
+  assert_eq(16, new_size)
+}
+
+test "geometric_calculations" {
+  // 几何计算测试
+  // 计算矩形面积和周长
+  let length = 12
+  let width = 8
+  let area = multiply(length, width)
+  let perimeter = multiply(2, add(length, width))
+  
+  assert_eq(96, area)
+  assert_eq(40, perimeter)
+  
+  // 计算需要的瓷砖数量（每块瓷砖覆盖1平方单位）
+  let tiles_per_box = 10
+  let tiles_needed = area
+  let boxes_needed = divide_with_ceil(tiles_needed, tiles_per_box)
+  
+  assert_eq(96, tiles_needed)
+  assert_eq(10, boxes_needed)
+  
+  // 计算剩余瓷砖
+  let total_tiles = multiply(boxes_needed, tiles_per_box)
+  let remaining_tiles = subtract(total_tiles, tiles_needed)
+  
+  assert_eq(100, total_tiles)
+  assert_eq(4, remaining_tiles)
+}
+
+test "financial_interest_calculations" {
+  // 金融利息计算测试
+  let principal = 10000
+  let annual_rate = 5  // 5%
+  let years = 3
+  let simple_interest = multiply(principal, multiply(annual_rate, years))
+  let total_with_interest = add(principal, divide_with_ceil(simple_interest, 100))
+  
+  assert_eq(15000, simple_interest)
+  assert_eq(11500, total_with_interest)
+  
+  // 计算复利（简化版）
+  let compound_total = principal
+  let year1 = add(compound_total, divide_with_ceil(multiply(compound_total, annual_rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, annual_rate), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, annual_rate), 100))
+  
+  assert_eq(10500, year1)
+  assert_eq(11025, year2)
+  assert_eq(11576, year3)
+  
+  // 计算月供（简化版）
+  let total_months = multiply(years, 12)
+  let monthly_payment = divide_with_ceil(year3, total_months)
+  
+  assert_eq(36, total_months)
+  assert_eq(322, monthly_payment)
+}
