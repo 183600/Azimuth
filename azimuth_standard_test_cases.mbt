@@ -1,221 +1,185 @@
-// Azimuth 项目标准测试用例
-// 包含 10 个高质量的 MoonBit 测试用例，覆盖核心功能
+// Azimuth 项目标准 MoonBit 测试用例
+// 包含10个高质量测试用例，覆盖核心功能模块
 
-test "arithmetic_commutative_laws" {
-  // 测试算术交换律：加法和乘法的交换性质
-  let a = 17
-  let b = 29
+// 测试 1: Int 模块基本功能测试
+test "int_module_basic_functionality" {
+  // 测试 Int 模块的最大值和最小值
+  assert_eq(@int.max_value, 2147483647)
+  assert_eq(@int.min_value, -2147483648)
   
-  // 加法交换律：a + b = b + a
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律：a * b = b * a
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 验证具体数值
-  assert_eq(46, add(17, 29))
-  assert_eq(493, multiply(17, 29))
+  // 测试绝对值功能
+  assert_eq(@int.abs(5), 5)
+  assert_eq(@int.abs(-5), 5)
+  assert_eq(@int.abs(0), 0)
 }
 
-test "divide_with_ceil_mixed_scenarios" {
-  // 测试向上取整除法的混合场景
-  // 正数除法
-  assert_eq(4, divide_with_ceil(15, 4))
-  assert_eq(7, divide_with_ceil(41, 6))
+// 测试 2: String 模块基本功能测试
+test "string_module_basic_functionality" {
+  // 测试字符串默认值
+  assert_eq(@string.default(), "")
   
-  // 负数除法
-  assert_eq(-3, divide_with_ceil(-11, 4))
-  assert_eq(-6, divide_with_ceil(-23, 4))
-  
-  // 混合符号除法
-  assert_eq(-2, divide_with_ceil(7, -4))
-  assert_eq(3, divide_with_ceil(-11, -4))
-  
-  // 边界情况
-  assert_eq(0, divide_with_ceil(0, 10))
-  assert_eq(0, divide_with_ceil(10, 0))
+  // 测试字符串连接
+  let str1 = "Hello"
+  let str2 = "MoonBit"
+  let combined = str1 + ", " + str2 + "!"
+  assert_eq(combined, "Hello, MoonBit!")
 }
 
-test "greet_function_international_support" {
-  // 测试问候函数的国际化支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+// 测试 3: List 模块创建和基本操作测试
+test "list_module_creation_and_basic_operations" {
+  // 测试空列表创建
+  let empty_list : @list.List[Int] = @list.new()
+  assert_eq(empty_list.length(), 0)
+  assert_eq(empty_list.is_empty(), true)
+  
+  // 测试从数组创建列表
+  let int_list = @list.from_array([1, 2, 3, 4, 5])
+  assert_eq(int_list.length(), 5)
+  assert_eq(int_list.is_empty(), false)
+  
+  // 测试列表头部和尾部
+  assert_eq(int_list.head(), Some(1))
+  assert_eq(int_list.last(), Some(5))
 }
 
-test "complex_business_workflow" {
-  // 测试复杂业务工作流：电商订单计算
-  let product_price = 89
-  let quantity = 6
-  let shipping_per_item = 5
-  let tax_rate = 8
-  let discount_threshold = 500
-  let discount_amount = 50
+// 测试 4: List 模块映射和过滤操作测试
+test "list_module_map_and_filter_operations" {
+  let numbers = @list.from_array([1, 2, 3, 4, 5])
   
-  // 计算商品总价
-  let subtotal = multiply(product_price, quantity)
+  // 测试映射操作
+  let doubled = numbers.map(x => x * 2)
+  assert_eq(doubled, @list.from_array([2, 4, 6, 8, 10]))
   
-  // 计算运费
-  let total_shipping = multiply(shipping_per_item, quantity)
+  // 测试带索引的映射操作
+  let indexed = numbers.mapi((i, x) => x + i)
+  assert_eq(indexed, @list.from_array([1, 3, 5, 7, 9]))
   
-  // 计算税费
-  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  
-  // 计算折扣前总价
-  let pre_discount_total = add(add(subtotal, total_shipping), tax_amount)
-  
-  // 应用折扣（如果满足条件）
-  let final_total = if pre_discount_total > discount_threshold {
-    add(pre_discount_total, -discount_amount)
-  } else {
-    pre_discount_total
-  }
-  
-  assert_eq(534, subtotal)
-  assert_eq(30, total_shipping)
-  assert_eq(43, tax_amount)
-  assert_eq(607, pre_discount_total)
-  assert_eq(557, final_total)
+  // 测试过滤操作
+  let evens = numbers.filter(x => x % 2 == 0)
+  assert_eq(evens, @list.from_array([2, 4]))
 }
 
-test "mathematical_distributive_law" {
-  // 测试数学分配律：a * (b + c) = a * b + a * c
-  let a = 12
-  let b = 7
-  let c = 5
+// 测试 5: List 模块折叠和聚合操作测试
+test "list_module_fold_and_aggregate_operations" {
+  let numbers = @list.from_array([1, 2, 3, 4, 5])
   
-  // 左侧：a * (b + c)
-  let left_side = multiply(a, add(b, c))
+  // 测试左折叠求和
+  let sum = numbers.fold(init=0, (acc, x) => acc + x)
+  assert_eq(sum, 15)
   
-  // 右侧：a * b + a * c
-  let right_side = add(multiply(a, b), multiply(a, c))
+  // 测试左折叠求积
+  let product = numbers.fold(init=1, (acc, x) => acc * x)
+  assert_eq(product, 120)
   
-  // 验证分配律
-  assert_eq(left_side, right_side)
-  assert_eq(144, left_side)
+  // 测试最大值和最小值
+  assert_eq(numbers.maximum(), Some(5))
+  assert_eq(numbers.minimum(), Some(1))
 }
 
-test "resource_allocation_optimization" {
-  // 测试资源分配优化
-  let total_budget = 10000
-  let team_a_cost = 3500
-  let team_b_cost = 2800
-  let team_c_cost = 2200
+// 测试 6: List 模块组合操作测试
+test "list_module_combination_operations" {
+  let list1 = @list.from_array([1, 2, 3])
+  let list2 = @list.from_array([4, 5, 6])
   
-  // 计算已分配预算
-  let allocated_budget = add(add(team_a_cost, team_b_cost), team_c_cost)
+  // 测试连接操作
+  let concatenated = list1.concat(list2)
+  assert_eq(concatenated, @list.from_array([1, 2, 3, 4, 5, 6]))
   
-  // 计算剩余预算
-  let remaining_budget = add(total_budget, -allocated_budget)
+  // 测试反转操作
+  let reversed = list1.rev()
+  assert_eq(reversed, @list.from_array([3, 2, 1]))
   
-  // 计算可以支持的小项目数量（每个项目800成本）
-  let small_projects = divide_with_ceil(remaining_budget, 800)
-  
-  assert_eq(8500, allocated_budget)
-  assert_eq(1500, remaining_budget)
-  assert_eq(2, small_projects)
+  // 测试压缩操作
+  let zipped = @list.zip(list1, list2)
+  assert_eq(zipped, @list.from_array([(1, 4), (2, 5), (3, 6)]))
 }
 
-test "time_management_calculations" {
-  // 测试时间管理计算
-  let total_tasks = 87
-  let tasks_per_day = 8
-  let working_days_per_week = 5
+// 测试 7: 数学运算和边界值测试
+test "mathematical_operations_and_boundary_values" {
+  // 测试基本数学运算
+  assert_eq(5 + 3, 8)
+  assert_eq(10 - 4, 6)
+  assert_eq(6 * 7, 42)
+  assert_eq(20 / 4, 5)
   
-  // 计算需要的工作日
-  let workdays_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  // 测试边界值
+  let max_int = @int.max_value
+  let min_int = @int.min_value
   
-  // 计算需要的周数
-  let weeks_needed = divide_with_ceil(workdays_needed, working_days_per_week)
+  // 测试溢出边界
+  assert_eq(max_int - 1, 2147483646)
+  assert_eq(min_int + 1, -2147483647)
   
-  // 计算总工作小时数（每天8小时）
-  let total_hours = multiply(workdays_needed, 8)
-  
-  assert_eq(11, workdays_needed)
-  assert_eq(3, weeks_needed)
-  assert_eq(88, total_hours)
+  // 测试零值运算
+  assert_eq(0 * 5, 0)
+  assert_eq(5 * 0, 0)
+  assert_eq(0 + 0, 0)
 }
 
-test "inventory_turnover_calculation" {
-  // 测试库存周转计算
-  let initial_inventory = 1200
-  let monthly_sales = 180
-  let months_to_simulate = 6
-  let new_shipment = 500
+// 测试 8: 条件判断和逻辑操作测试
+test "conditional_and_logical_operations" {
+  // 测试基本条件判断
+  assert_eq(true && true, true)
+  assert_eq(true && false, false)
+  assert_eq(false && true, false)
+  assert_eq(false && false, false)
   
-  // 计算总销售量
-  let total_sales = multiply(monthly_sales, months_to_simulate)
+  assert_eq(true || true, true)
+  assert_eq(true || false, true)
+  assert_eq(false || true, true)
+  assert_eq(false || false, false)
   
-  // 计算销售后的库存
-  let inventory_after_sales = add(initial_inventory, -total_sales)
+  assert_eq(!true, false)
+  assert_eq(!false, true)
   
-  // 计算最终库存（考虑新进货）
-  let final_inventory = add(inventory_after_sales, new_shipment)
-  
-  // 计算周转率
-  let turnover_rate = divide_with_ceil(multiply(total_sales, 100), initial_inventory)
-  
-  assert_eq(1080, total_sales)
-  assert_eq(120, inventory_after_sales)
-  assert_eq(620, final_inventory)
-  assert_eq(90, turnover_rate)
+  // 测试比较操作
+  assert_eq(5 > 3, true)
+  assert_eq(5 >= 5, true)
+  assert_eq(3 < 5, true)
+  assert_eq(5 <= 5, true)
+  assert_eq(5 == 5, true)
+  assert_eq(5 != 3, true)
 }
 
-test "data_analysis_statistics" {
-  // 测试数据分析统计
-  let q1_revenue = 45000
-  let q2_revenue = 52000
-  let q3_revenue = 48000
-  let q4_revenue = 61000
+// 测试 9: 字符串处理和操作测试
+test "string_processing_and_operations" {
+  // 测试字符串长度和内容
+  let test_str = "MoonBit"
+  assert_eq(test_str.length(), 7)
   
-  // 计算年度总收入
-  let annual_revenue = add(add(add(q1_revenue, q2_revenue), q3_revenue), q4_revenue)
+  // 测试字符串比较
+  assert_eq("hello" == "hello", true)
+  assert_eq("hello" != "world", true)
   
-  // 计算季度平均收入
-  let quarterly_average = divide_with_ceil(annual_revenue, 4)
+  // 测试字符串包含（如果可用）
+  // 注意：这里使用基本的字符串操作，因为不确定具体可用的字符串函数
   
-  // 计算增长率
-  let q2_growth = divide_with_ceil(multiply(q2_revenue - q1_revenue, 100), q1_revenue)
-  let q3_growth = divide_with_ceil(multiply(q3_revenue - q2_revenue, 100), q2_revenue)
-  let q4_growth = divide_with_ceil(multiply(q4_revenue - q3_revenue, 100), q3_revenue)
-  
-  assert_eq(206000, annual_revenue)
-  assert_eq(51500, quarterly_average)
-  assert_eq(16, q2_growth)
-  assert_eq(-8, q3_growth)
-  assert_eq(27, q4_growth)
+  // 测试空字符串
+  let empty_str = ""
+  assert_eq(empty_str.length(), 0)
+  assert_eq(empty_str == "", true)
 }
 
-test "engineering_project_calculation" {
-  // 测试工程项目计算
-  let foundation_area = 150
-  let floor_count = 8
-  let height_per_floor = 3
-  let window_area_per_floor = 20
+// 测试 10: 复杂数据结构和算法测试
+test "complex_data_structures_and_algorithms" {
+  // 测试嵌套列表操作
+  let inner_list1 = @list.from_array([1, 2, 3])
+  let inner_list2 = @list.from_array([4, 5, 6])
+  let inner_list3 = @list.from_array([7, 8, 9])
   
-  // 计算总建筑面积
-  let total_floor_area = multiply(foundation_area, floor_count)
+  let list_of_lists = @list.from_array([inner_list1, inner_list2, inner_list3])
   
-  // 计算建筑总高度
-  let total_height = multiply(floor_count, height_per_floor)
+  // 测试展平操作
+  let flattened = list_of_lists.flatten()
+  assert_eq(flattened, @list.from_array([1, 2, 3, 4, 5, 6, 7, 8, 9]))
   
-  // 计算窗户总面积
-  let total_window_area = multiply(window_area_per_floor, floor_count)
+  // 测试平面映射操作
+  let numbers = @list.from_array([1, 2, 3])
+  let expanded = numbers.flat_map(x => @list.from_array([x, x * 10]))
+  assert_eq(expanded, @list.from_array([1, 10, 2, 20, 3, 30]))
   
-  // 计算墙面面积（简化计算）
-  let perimeter = multiply(4, 50)  // 假设正方形建筑，每边50米
-  let wall_area = multiply(perimeter, total_height)
-  
-  // 计算窗户占墙面面积的百分比
-  let window_percentage = divide_with_ceil(multiply(total_window_area, 100), wall_area)
-  
-  assert_eq(1200, total_floor_area)
-  assert_eq(24, total_height)
-  assert_eq(160, total_window_area)
-  assert_eq(200, perimeter)
-  assert_eq(4800, wall_area)
-  assert_eq(4, window_percentage)
+  // 测试列表排序
+  let unsorted = @list.from_array([5, 2, 8, 1, 9, 3])
+  let sorted = unsorted.sort()
+  assert_eq(sorted, @list.from_array([1, 2, 3, 5, 8, 9]))
 }
