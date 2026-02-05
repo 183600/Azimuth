@@ -1,130 +1,76 @@
-// Copyright 2026 International Digital Economy Academy
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Azimuth 项目标准测试用例
+// 包含 8 个高质量测试用例，使用标准 MoonBit 测试语法
 
-///|
-test "option basic operations" {
-  let some_value : Int? = Some(42)
-  let none_value : Int? = None
-  
-  assert_eq(some_value.is_some(), true)
-  assert_eq(some_value.is_none(), false)
-  assert_eq(none_value.is_some(), false)
-  assert_eq(none_value.is_none(), true)
+test "basic_addition_functionality" {
+  // 基本加法功能测试
+  assert_eq(5, @azimuth.add(2, 3))
+  assert_eq(0, @azimuth.add(0, 0))
+  assert_eq(-1, @azimuth.add(-3, 2))
+  assert_eq(100, @azimuth.add(50, 50))
 }
 
-///|
-test "option map transformation" {
-  let some_string : String? = Some("hello")
-  let none_string : String? = None
-  
-  let upper_some = some_string.map(s => s.to_upper())
-  let upper_none = none_string.map(s => s.to_upper())
-  
-  assert_eq(upper_some, Some("HELLO"))
-  assert_eq(upper_none, None)
+test "basic_multiplication_functionality" {
+  // 基本乘法功能测试
+  assert_eq(6, @azimuth.multiply(2, 3))
+  assert_eq(0, @azimuth.multiply(5, 0))
+  assert_eq(-6, @azimuth.multiply(-2, 3))
+  assert_eq(15, @azimuth.multiply(-3, -5))
 }
 
-///|
-test "option filter predicate" {
-  let numbers = [Some(1), Some(2), None, Some(4), Some(5)]
-  let filtered = numbers.map(opt => opt.filter(n => n % 2 == 0))
-  
-  assert_eq(filtered[0], None)
-  assert_eq(filtered[1], Some(2))
-  assert_eq(filtered[2], None)
-  assert_eq(filtered[3], Some(4))
-  assert_eq(filtered[4], None)
+test "divide_with_ceil_positive_numbers" {
+  // 向上取整除法正数测试
+  assert_eq(4, @azimuth.divide_with_ceil(10, 3))
+  assert_eq(3, @azimuth.divide_with_ceil(9, 3))
+  assert_eq(1, @azimuth.divide_with_ceil(1, 5))
+  assert_eq(0, @azimuth.divide_with_ceil(5, 0))
 }
 
-///|
-test "result basic operations" {
-  let ok_value : Result[Int, String] = Ok(42)
-  let err_value : Result[Int, String] = Err("error")
-  
-  assert_eq(ok_value.is_ok(), true)
-  assert_eq(ok_value.is_err(), false)
-  assert_eq(err_value.is_ok(), false)
-  assert_eq(err_value.is_err(), true)
+test "divide_with_ceil_negative_numbers" {
+  // 向上取整除法负数测试
+  assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
+  assert_eq(-4, @azimuth.divide_with_ceil(10, -3))
+  assert_eq(4, @azimuth.divide_with_ceil(-10, -3))
+  assert_eq(-1, @azimuth.divide_with_ceil(-1, 2))
 }
 
-///|
-test "result map transformation" {
-  let ok_string : Result[String, String] = Ok("hello")
-  let err_string : Result[String, String] = Err("error")
-  
-  let length_ok = ok_string.map(s => s.length())
-  let length_err = err_string.map(s => s.length())
-  
-  assert_eq(length_ok, Ok(5))
-  assert_eq(length_err, Err("error"))
+test "greet_function_standard_cases" {
+  // 问候函数标准测试
+  assert_eq_string("Hello, World!", @azimuth.greet("World"))
+  assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+  assert_eq_string("Hello, !", @azimuth.greet(""))
+  assert_eq_string("Hello, 123!", @azimuth.greet("123"))
 }
 
-///|
-test "result bind chaining" {
-  let safe_divide = (x : Int) => if x == 0 { Err("division by zero") } else { Ok(100 / x) }
-  
-  let result1 = Ok(4).bind(safe_divide)
-  let result2 = Ok(0).bind(safe_divide)
-  let result3 : Result[Int, String] = Err("initial error").bind(safe_divide)
-  
-  assert_eq(result1, Ok(25))
-  assert_eq(result2, Err("division by zero"))
-  assert_eq(result3, Err("initial error"))
+test "subtract_function_basic_cases" {
+  // 减法函数基本测试
+  assert_eq(2, @azimuth.subtract(5, 3))
+  assert_eq(-2, @azimuth.subtract(3, 5))
+  assert_eq(0, @azimuth.subtract(5, 5))
+  assert_eq(10, @azimuth.subtract(0, -10))
 }
 
-///|
-test "result unwrap operations" {
-  let ok_value : Result[Int, String] = Ok(42)
-  let err_value : Result[Int, String] = Err("error")
+test "mathematical_commutative_properties" {
+  // 数学交换律性质测试
+  let a = 7
+  let b = 13
   
-  assert_eq(ok_value.unwrap_or(0), 42)
-  assert_eq(err_value.unwrap_or(0), 0)
-  assert_eq(ok_value.unwrap_or_else(() => 100), 42)
-  assert_eq(err_value.unwrap_or_else(() => 100), 100)
+  // 加法交换律
+  assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  
+  // 乘法交换律
+  assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
 }
 
-///|
-test "result to_option conversion" {
-  let ok_value : Result[Int, String] = Ok(42)
-  let err_value : Result[Int, String] = Err("error")
+test "business_packaging_scenario" {
+  // 业务包装场景测试
+  let total_items = 25
+  let items_per_package = 6
+  let packages_needed = @azimuth.divide_with_ceil(total_items, items_per_package)
   
-  assert_eq(ok_value.to_option(), Some(42))
-  assert_eq(err_value.to_option(), None)
-}
-
-///|
-test "combined option and result operations" {
-  let parse_int = (s : String) => {
-    match s.to_int() {
-      Some(n) => Ok(n)
-      None => Err("invalid integer")
-    }
-  }
+  assert_eq(5, packages_needed)
   
-  let result1 = parse_int("42")
-  let result2 = parse_int("invalid")
-  
-  assert_eq(result1.map(n => n * 2), Ok(84))
-  assert_eq(result2.map(n => n * 2), Err("invalid integer"))
-}
-
-///|
-test "nested option operations" {
-  let nested_options : Array[Int?> = [Some(1), None, Some(3)]
-  let flattened = nested_options.filter_map(opt => opt)
-  
-  assert_eq(flattened.length(), 2)
-  assert_eq(flattened[0], 1)
-  assert_eq(flattened[1], 3)
+  // 验证总容量
+  let total_capacity = @azimuth.multiply(packages_needed, items_per_package)
+  let remaining_space = @azimuth.subtract(total_capacity, total_items)
+  assert_eq(5, remaining_space)
 }
