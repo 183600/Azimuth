@@ -1,119 +1,165 @@
 // Azimuth 增强标准测试用例
-// 包含10个高质量的MoonBit标准测试用例
+// 使用标准 MoonBit 测试语法编写的高质量测试用例
 
-test "arithmetics_addition_comprehensive" {
-  // 综合加法测试
-  @azimuth.assert_eq(10, @azimuth.add(3, 7))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(-5, @azimuth.add(-8, 3))
-  @azimuth.assert_eq(1000, @azimuth.add(500, 500))
-  @azimuth.assert_eq(-1000, @azimuth.add(-500, -500))
+test "azimuth_core_addition_precision" {
+  // 核心加法精度测试
+  assert_eq(0, add(0, 0))
+  assert_eq(1, add(1, 0))
+  assert_eq(-1, add(-1, 0))
+  assert_eq(1000, add(500, 500))
+  assert_eq(-1000, add(-500, -500))
+  assert_eq(0, add(500, -500))
 }
 
-test "arithmetics_multiplication_comprehensive" {
-  // 综合乘法测试
-  @azimuth.assert_eq(21, @azimuth.multiply(3, 7))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
-  @azimuth.assert_eq(-24, @azimuth.multiply(-3, 8))
-  @azimuth.assert_eq(24, @azimuth.multiply(-3, -8))
-  @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))
+test "azimuth_core_multiplication_properties" {
+  // 核心乘法性质测试
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(0, 100))
+  assert_eq(0, multiply(100, 0))
+  assert_eq(1, multiply(1, 1))
+  assert_eq(-1, multiply(-1, 1))
+  assert_eq(1, multiply(-1, -1))
+  assert_eq(10000, multiply(100, 100))
 }
 
-test "divide_with_ceil_edge_cases" {
-  // 向上取整除法边界情况测试
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 10))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
+test "azimuth_divide_ceil_comprehensive" {
+  // 向上取整除法综合测试
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(2, divide_with_ceil(5, 3))
+  assert_eq(3, divide_with_ceil(10, 4))
+  assert_eq(-1, divide_with_ceil(-5, 5))
+  assert_eq(-2, divide_with_ceil(5, -3))
+  assert_eq(2, divide_with_ceil(-5, -3))
 }
 
-test "divide_with_ceil_negative_numbers" {
-  // 向上取整除法负数测试
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
-  @azimuth.assert_eq(-4, @azimuth.divide_with_ceil(10, -3))
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(-10, -3))
-  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-1, 2))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-1, -2))
+test "azimuth_greet_function_unicode" {
+  // 问候函数 Unicode 测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, 中文!", greet("中文"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, éspanol!", greet("éspanol"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
 }
 
-test "greet_function_various_inputs" {
-  // 问候函数各种输入测试
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
-  @azimuth.assert_eq_string("Hello, 中文!", @azimuth.greet("中文"))
+test "azimuth_subtract_function_edge_cases" {
+  // 减法函数边界情况测试
+  assert_eq(0, subtract(0, 0))
+  assert_eq(5, subtract(5, 0))
+  assert_eq(-5, subtract(0, 5))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(10, subtract(5, -5))
+  assert_eq(-10, subtract(-5, 5))
+  assert_eq(0, subtract(-5, -5))
 }
 
-test "subtract_function_comprehensive" {
-  // 综合减法测试
-  @azimuth.assert_eq(4, @azimuth.subtract(10, 6))
-  @azimuth.assert_eq(-4, @azimuth.subtract(6, 10))
-  @azimuth.assert_eq(0, @azimuth.subtract(15, 15))
-  @azimuth.assert_eq(20, @azimuth.subtract(10, -10))
-  @azimuth.assert_eq(-20, @azimuth.subtract(-10, 10))
-}
-
-test "mathematical_properties_validation" {
-  // 数学性质验证测试
-  let a = 12
-  let b = 8
+test "azimuth_mathematical_identities" {
+  // 数学恒等式验证测试
+  let x = 42
+  let y = 17
   
-  // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  // 加法恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(x, add(0, x))
   
-  // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
+  // 乘法恒等式
+  assert_eq(x, multiply(x, 1))
+  assert_eq(x, multiply(1, x))
+  assert_eq(0, multiply(x, 0))
   
-  // 验证具体数值
-  @azimuth.assert_eq(20, @azimuth.add(12, 8))
-  @azimuth.assert_eq(96, @azimuth.multiply(12, 8))
+  // 减法恒等式
+  assert_eq(0, subtract(x, x))
+  assert_eq(x, subtract(x, 0))
+  
+  // 交换律
+  assert_eq(add(x, y), add(y, x))
+  assert_eq(multiply(x, y), multiply(y, x))
 }
 
-test "business_packaging_scenario" {
-  // 业务包装场景测试
-  let total_items = 35
-  let items_per_package = 8
-  let packages_needed = @azimuth.divide_with_ceil(total_items, items_per_package)
+test "azimuth_business_packaging_optimization" {
+  // 业务包装优化测试
+  let total_items = 157
+  let package_capacity = 25
+  let packages_needed = divide_with_ceil(total_items, package_capacity)
   
-  @azimuth.assert_eq(5, packages_needed)
+  assert_eq(7, packages_needed)
   
   // 验证总容量
-  let total_capacity = @azimuth.multiply(packages_needed, items_per_package)
-  @azimuth.assert_eq(40, total_capacity)
+  let total_capacity = multiply(packages_needed, package_capacity)
+  assert_eq(175, total_capacity)
   
   // 验证剩余空间
-  let remaining_space = @azimuth.subtract(total_capacity, total_items)
-  @azimuth.assert_eq(5, remaining_space)
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(18, remaining_space)
+  
+  // 验证空间利用率
+  assert_true(total_capacity >= total_items)
 }
 
-test "complex_workflow_calculation" {
+test "azimuth_complex_workflow_calculation" {
   // 复杂工作流计算测试
-  // 场景：项目资源计算
-  let team_members = 6
-  let tasks_per_member = 8
-  let total_tasks = @azimuth.multiply(team_members, tasks_per_member)
+  // 场景：项目资源分配
+  let team_members = 8
+  let tasks_per_member = 6
+  let total_tasks = multiply(team_members, tasks_per_member)
   
-  let sprint_capacity = 15
-  let sprints_needed = @azimuth.divide_with_ceil(total_tasks, sprint_capacity)
+  let sprint_duration = 2
+  let sprints_needed = divide_with_ceil(total_tasks, multiply(sprint_duration, 10))
   
-  @azimuth.assert_eq(48, total_tasks)  // 6 * 8 = 48
-  @azimuth.assert_eq(4, sprints_needed)  // ceil(48/15) = 4
+  assert_eq(48, total_tasks)  // 8 * 6 = 48
+  assert_eq(3, sprints_needed)  // ceil(48/20) = 3
+  
+  // 验证总工作量分配
+  let total_capacity = multiply(sprints_needed, multiply(sprint_duration, 10))
+  assert_eq(60, total_capacity)
+  
+  // 验证剩余容量
+  let remaining_capacity = subtract(total_capacity, total_tasks)
+  assert_eq(12, remaining_capacity)
 }
 
-test "edge_cases_and_boundary_values" {
-  // 边界情况和极值测试
-  // 除法边界情况
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(5, 5))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-5, -5))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
+test "azimuth_performance_benchmark_operations" {
+  // 性能基准操作测试
+  // 大数运算验证
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(0, add(1000000, -1000000))
+  assert_eq(1000000, multiply(1000, 1000))
   
-  // 大数运算
-  @azimuth.assert_eq(2000000, @azimuth.add(1000000, 1000000))
-  @azimuth.assert_eq(100000000, @azimuth.multiply(10000, 10000))
+  // 精度验证
+  assert_eq(1000001, divide_with_ceil(1000001, 1))
+  assert_eq(500001, divide_with_ceil(1000000, 2))
+  assert_eq(334, divide_with_ceil(1000, 3))
   
-  // 特殊问候情况
-  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("  "))
-  @azimuth.assert_eq_string("Hello, special@chars!", @azimuth.greet("special@chars"))
+  // 边界值验证
+  assert_eq(1, divide_with_ceil(999999, 999999))
+  assert_eq(2, divide_with_ceil(1000000, 999999))
+}
+
+test "azimuth_error_handling_resilience" {
+  // 错误处理恢复能力测试
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(1, 0))
+  assert_eq(0, divide_with_ceil(-1, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(999999, 0))
+  assert_eq(0, divide_with_ceil(-999999, 0))
+  
+  // 极值运算验证
+  let max_safe = 1000000
+  let min_safe = -1000000
+  
+  assert_eq(max_safe, add(max_safe, 0))
+  assert_eq(min_safe, add(min_safe, 0))
+  assert_eq(0, multiply(max_safe, 0))
+  assert_eq(0, multiply(min_safe, 0))
+  assert_eq(max_safe, multiply(max_safe, 1))
+  assert_eq(min_safe, multiply(min_safe, 1))
+  
+  // 字符串边界处理
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, x!", greet("x"))
+  assert_eq_string("Hello, very long string!", greet("very long string"))
 }
