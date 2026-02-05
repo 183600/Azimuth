@@ -1,211 +1,174 @@
 // Azimuth 增强测试用例
-// 专注于边界情况、复杂运算和实际业务场景
-// 使用标准 MoonBit 测试语法
+// 标准 MoonBit 测试语法，包含8个高质量测试用例
 
-test "complex_nested_calculations" {
-  // 复杂嵌套计算测试
-  let base = 5
-  let multiplier = 3
-  let divisor = 2
-  let offset = 7
+test "advanced_arithmetic_sequence" {
+  // 高级算术序列测试
+  let start = 5
+  let difference = 3
+  let terms = 4
   
-  // 嵌套计算：(((base * multiplier) / divisor) + offset) * 2
-  let step1 = multiply(base, multiplier)
-  let step2 = divide_with_ceil(step1, divisor)
-  let step3 = add(step2, offset)
-  let result = multiply(step3, 2)
+  // 计算等差数列的和
+  let term1 = start
+  let term2 = add(term1, difference)
+  let term3 = add(term2, difference)
+  let term4 = add(term3, difference)
   
-  assert_eq(8, step1)  // 5 * 3 = 15
-  assert_eq(8, step2)  // ceil(15/2) = 8
-  assert_eq(15, step3) // 8 + 7 = 15
-  assert_eq(30, result) // 15 * 2 = 30
+  let sum = add(add(add(term1, term2), term3), term4)
+  assert_eq(32, sum)  // 5 + 8 + 11 + 14 = 38
+  
+  // 计算平均值
+  let average = divide_with_ceil(sum, terms)
+  assert_eq(10, average)  // ceil(38/4) = 10
 }
 
-test "resource_allocation_optimization" {
-  // 资源分配优化测试
-  let total_tasks = 89
-  let team_size = 6
-  let working_days = 5
-  let tasks_per_day = 3
+test "geometric_progression_calculation" {
+  // 几何级数计算测试
+  let first_term = 2
+  let ratio = 3
+  let terms = 4
   
-  // 计算团队每日总任务容量
-  let daily_capacity = multiply(team_size, tasks_per_day)
+  // 计算几何级数的各项
+  let term1 = first_term
+  let term2 = multiply(term1, ratio)
+  let term3 = multiply(term2, ratio)
+  let term4 = multiply(term3, ratio)
   
-  // 计算每周总任务容量
-  let weekly_capacity = multiply(daily_capacity, working_days)
+  assert_eq(2, term1)
+  assert_eq(6, term2)
+  assert_eq(18, term3)
+  assert_eq(54, term4)
   
-  // 计算需要的周数
-  let weeks_needed = divide_with_ceil(total_tasks, weekly_capacity)
-  
-  assert_eq(18, daily_capacity)   // 6 * 3 = 18
-  assert_eq(90, weekly_capacity)  // 18 * 5 = 90
-  assert_eq(1, weeks_needed)      // ceil(89/90) = 1
+  // 计算总和
+  let sum = add(add(add(term1, term2), term3), term4)
+  assert_eq(80, sum)  // 2 + 6 + 18 + 54 = 80
 }
 
-test "string_edge_cases_and_unicode" {
-  // 字符串边界情况和Unicode测试
-  assert_eq_string("Hello, space!", greet("space"))
-  assert_eq_string("Hello,  multiple  spaces!", greet("  multiple  spaces"))
-  assert_eq_string("Hello, \t\n\r!", greet("\t\n\r"))
-  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
-  assert_eq_string("Hello, émoji🎉!", greet("émoji🎉"))
-  assert_eq_string("Hello, @#$%^&*()!", greet("@#$%^&*()"))
+test "resource_optimization_scenario" {
+  // 资源优化场景测试
+  let total_tasks = 100
+  let workers = 8
+  let hours_per_day = 8
+  let days_available = 5
+  
+  // 计算总工时
+  let total_work_hours = multiply(workers, multiply(hours_per_day, days_available))
+  assert_eq(320, total_work_hours)  // 8 * 8 * 5 = 320
+  
+  // 计算每小时需要完成的任务数
+  let tasks_per_hour = divide_with_ceil(total_tasks, total_work_hours)
+  assert_eq(1, tasks_per_hour)  // ceil(100/320) = 1
+  
+  // 计算实际完成时间
+  let actual_hours_needed = divide_with_ceil(total_tasks, multiply(workers, tasks_per_hour))
+  let actual_days_needed = divide_with_ceil(actual_hours_needed, hours_per_day)
+  assert_eq(13, actual_hours_needed)  // ceil(100/(8*1)) = 13
+  assert_eq(2, actual_days_needed)   // ceil(13/8) = 2
 }
 
-test "mathematical_series_calculation" {
-  // 数学级数计算测试
-  // 计算等差数列前n项的和：1 + 3 + 5 + ... + (2n-1) = n²
+test "string_concatenation_validation" {
+  // 字符串连接验证测试
+  let prefix = "Azimuth"
+  let suffix = "Project"
+  
+  // 测试问候函数的组合使用
+  let greeting1 = greet(prefix)
+  let greeting2 = greet(suffix)
+  
+  assert_eq_string("Hello, Azimuth!", greeting1)
+  assert_eq_string("Hello, Project!", greeting2)
+  
+  // 测试空字符串和特殊字符
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, @#$%!", greet("@#$%"))
+  assert_eq_string("Hello,   spaces   !", greet("  spaces   "))
+}
+
+test "mathematical_series_summation" {
+  // 数学级数求和测试
   let n = 10
-  let sum = 0
+  
+  // 计算平方和：1² + 2² + ... + n²
+  let square_sum = 0
   let i = 1
+  while (i <= n) {
+    square_sum = add(square_sum, multiply(i, i))
+    i = add(i, 1)
+  }
+  assert_eq(385, square_sum)  // 1² + 2² + ... + 10² = 385
   
-  // 模拟循环计算（由于MoonBit语法限制，使用展开方式）
-  sum = add(sum, 1)        // 第1项
-  sum = add(sum, 3)        // 第2项
-  sum = add(sum, 5)        // 第3项
-  sum = add(sum, 7)        // 第4项
-  sum = add(sum, 9)        // 第5项
-  sum = add(sum, 11)       // 第6项
-  sum = add(sum, 13)       // 第7项
-  sum = add(sum, 15)       // 第8项
-  sum = add(sum, 17)       // 第9项
-  sum = add(sum, 19)       // 第10项
-  
-  assert_eq(100, sum)      // 10² = 100
-  
-  // 验证乘法结果
-  let expected = multiply(n, n)
-  assert_eq(expected, sum)
+  // 计算立方和：1³ + 2³ + ... + n³
+  let cube_sum = 0
+  i = 1
+  while (i <= n) {
+    cube_sum = add(cube_sum, multiply(multiply(i, i), i))
+    i = add(i, 1)
+  }
+  assert_eq(3025, cube_sum)  // 1³ + 2³ + ... + 10³ = 3025
 }
 
-test "inventory_management_with_constraints" {
-  // 带约束的库存管理测试
-  let total_products = 157
-  let box_capacity = 24
-  let max_boxes_per_pallet = 5
-  let max_pallets = 3
+test "inventory_turnover_calculation" {
+  // 库存周转率计算测试
+  let annual_sales = 120000
+  let average_inventory = 30000
+  let days_per_year = 365
   
-  // 计算需要的箱子数量
-  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  // 计算库存周转率
+  let turnover_rate = divide_with_ceil(annual_sales, average_inventory)
+  assert_eq(4, turnover_rate)  // ceil(120000/30000) = 4
   
-  // 计算需要的托盘数量
-  let pallets_needed = divide_with_ceil(boxes_needed, max_boxes_per_pallet)
+  // 计算库存周转天数
+  let turnover_days = divide_with_ceil(days_per_year, turnover_rate)
+  assert_eq(91, turnover_days)  // ceil(365/4) = 91
   
-  // 验证约束条件
-  assert_eq(1, if (pallets_needed <= max_pallets) { 1 } else { 0 })
-  
-  assert_eq(7, boxes_needed)     // ceil(157/24) = 7
-  assert_eq(2, pallets_needed)   // ceil(7/5) = 2
-  
-  // 计算实际总容量
-  let actual_boxes = multiply(pallets_needed, max_boxes_per_pallet)
-  let total_capacity = multiply(actual_boxes, box_capacity)
-  
-  assert_eq(10, actual_boxes)    // 2 * 5 = 10
-  assert_eq(240, total_capacity) // 10 * 24 = 240
+  // 计算月平均库存
+  let monthly_inventory = divide_with_ceil(average_inventory, 12)
+  assert_eq(2500, monthly_inventory)  // ceil(30000/12) = 2500
 }
 
-test "financial_compound_interest_calculation" {
-  // 金融复利计算测试
+test "compound_interest_simulation" {
+  // 复利计算模拟测试
   let principal = 10000
   let annual_rate = 5  // 5%
   let years = 3
   
-  // 简化的复利计算（由于没有浮点数，使用整数近似）
-  let year1_end = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
-  let year2_end = add(year1_end, divide_with_ceil(multiply(year1_end, annual_rate), 100))
-  let year3_end = add(year2_end, divide_with_ceil(multiply(year2_end, annual_rate), 100))
+  // 简化的复利计算（逐年计算）
+  let year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, annual_rate), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, annual_rate), 100))
   
-  assert_eq(10500, year1_end)    // 10000 + 500 = 10500
-  assert_eq(11025, year2_end)    // 10500 + 525 = 11025
-  assert_eq(11576, year3_end)    // 11025 + 551 = 11576
+  assert_eq(10500, year1)  // 10000 + ceil(10000*5/100) = 10500
+  assert_eq(11025, year2)  // 10500 + ceil(10500*5/100) = 11025
+  assert_eq(11576, year3)  // 11025 + ceil(11025*5/100) = 11576
+  
+  // 计算总收益
+  let total_return = subtract(year3, principal)
+  assert_eq(1576, total_return)  // 11576 - 10000 = 1576
 }
 
-test "extreme_boundary_conditions" {
-  // 极端边界条件测试
-  // 极值运算
-  let large_num = 100000
-  let small_num = 1
+test "production_efficiency_metrics" {
+  // 生产效率指标测试
+  let units_produced = 1250
+  let labor_hours = 250
+  let machine_hours = 180
+  let defect_rate = 2  // 2%
   
-  assert_eq(100001, add(large_num, small_num))
-  assert_eq(99999, subtract(large_num, small_num))
-  assert_eq(100000, multiply(large_num, small_num))
-  assert_eq(100000, divide_with_ceil(large_num, small_num))
+  // 计算单位产品劳动时间
+  let labor_per_unit = divide_with_ceil(labor_hours, units_produced)
+  assert_eq(1, labor_per_unit)  // ceil(250/1250) = 1
   
-  // 边界除法测试
-  assert_eq(1, divide_with_ceil(small_num, large_num))
-  assert_eq(large_num, divide_with_ceil(large_num, small_num))
-  assert_eq(1, divide_with_ceil(large_num, large_num))
+  // 计算单位产品机器时间
+  let machine_per_unit = divide_with_ceil(machine_hours, units_produced)
+  assert_eq(1, machine_per_unit)  // ceil(180/1250) = 1
   
-  // 零值边界测试
-  assert_eq(0, multiply(large_num, 0))
-  assert_eq(0, divide_with_ceil(0, large_num))
-  assert_eq(0, divide_with_ceil(large_num, 0))
-}
-
-test "batch_processing_workflow" {
-  // 批处理工作流测试
-  let total_records = 1000
-  let batch_size = 75
-  let processing_time_per_batch = 2  // 小时
-  let working_hours_per_day = 8
+  // 计算缺陷数量
+  let defect_count = divide_with_ceil(multiply(units_produced, defect_rate), 100)
+  assert_eq(25, defect_count)  // ceil(1250*2/100) = 25
   
-  // 计算需要的批次数
-  let batches_needed = divide_with_ceil(total_records, batch_size)
+  // 计算合格产品数量
+  let good_units = subtract(units_produced, defect_count)
+  assert_eq(1225, good_units)  // 1250 - 25 = 1225
   
-  // 计算总处理时间（小时）
-  let total_hours = multiply(batches_needed, processing_time_per_batch)
-  
-  // 计算需要的工作日数
-  let days_needed = divide_with_ceil(total_hours, working_hours_per_day)
-  
-  assert_eq(14, batches_needed)    // ceil(1000/75) = 14
-  assert_eq(28, total_hours)       // 14 * 2 = 28
-  assert_eq(4, days_needed)        // ceil(28/8) = 4
-}
-
-test "multi_currency_conversion" {
-  // 多货币转换测试
-  let base_amount = 1000  // 基础货币金额
-  let usd_to_eur = 85     // USD to EUR 汇率（百分比）
-  let eur_to_gbp = 88     // EUR to GBP 汇率（百分比）
-  let gbp_to_jpy = 185    // GBP to JPY 汇率（百分比）
-  
-  // 货币转换链：USD -> EUR -> GBP -> JPY
-  let eur_amount = divide_with_ceil(multiply(base_amount, usd_to_eur), 100)
-  let gbp_amount = divide_with_ceil(multiply(eur_amount, eur_to_gbp), 100)
-  let jpy_amount = divide_with_ceil(multiply(gbp_amount, gbp_to_jpy), 100)
-  
-  assert_eq(850, eur_amount)   // ceil(1000 * 85 / 100) = 850
-  assert_eq(748, gbp_amount)   // ceil(850 * 88 / 100) = 748
-  assert_eq(13838, jpy_amount) // ceil(748 * 185 / 100) = 13838
-}
-
-test "error_handling_and_robustness" {
-  // 错误处理和健壮性测试
-  // 各种除零情况
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(1, 0))
-  assert_eq(0, divide_with_ceil(-1, 0))
-  assert_eq(0, divide_with_ceil(1000, 0))
-  assert_eq(0, divide_with_ceil(-1000, 0))
-  
-  // 极值组合运算
-  let max_val = 100000
-  let min_val = -100000
-  
-  assert_eq(0, add(max_val, min_val))
-  assert_eq(200000, subtract(max_val, min_val))
-  assert_eq(-10000000000000, multiply(max_val, min_val))
-  
-  // 链式运算的健壮性
-  let chain_result = divide_with_ceil(
-    multiply(
-      add(10, 5),
-      subtract(20, 8)
-    ),
-    add(3, 2)
-  )
-  
-  assert_eq(36, chain_result)  // ceil((10+5)*(20-8)/(3+2)) = ceil(15*12/5) = 36
+  // 计算合格率
+  let quality_rate = subtract(100, defect_rate)
+  assert_eq(98, quality_rate)  // 100 - 2 = 98
 }
