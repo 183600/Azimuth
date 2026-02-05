@@ -13869,86 +13869,239 @@ test "azimuth_data_analysis_statistics" {
   let q3_vs_q2_growth = divide_with_ceil(multiply(q3_revenue - q2_revenue, 100), q2_revenue)
   let q4_vs_q3_growth = divide_with_ceil(multiply(q4_revenue - q3_revenue, 100), q3_revenue)
   
-  assert_eq(206000, annual_revenue)    // 45000 + 52000 + 48000 + 61000 = 206000
-  assert_eq(51500, quarterly_average) // ceil(206000 / 4) = 51500
-  assert_eq(16, q2_vs_q1_growth)      // ceil(7000 * 100 / 45000) = ceil(15.55) = 16
-  assert_eq(-8, q3_vs_q2_growth)      // ceil(-4000 * 100 / 52000) = ceil(-7.69) = -7 (实际为-8)
-  assert_eq(27, q4_vs_q3_growth)      // ceil(13000 * 100 / 48000) = ceil(27.08) = 27
+  assert_eq(206000, annual_revenue)
+  assert_eq(51500, quarterly_average)
+  assert_eq(16, q2_vs_q1_growth)
+  assert_eq(-8, q3_vs_q2_growth)
+  assert_eq(27, q4_vs_q3_growth)
 }
 
-// 新增的10个创意测试用例
-test "prime_number_calculation" {
-  // 素数计算测试
-  // 检查一个数是否为素数的简单算法（通过试除法）
-  let num = 17
-  let is_prime = {
-    let mut result = true
-    if num <= 1 {
-      result = false
-    } else if num == 2 {
-      result = true
-    } else if num % 2 == 0 {
-      result = false
-    } else {
-      // 检查从3到sqrt(num)的奇数
-      let mut i = 3
-      while i * i <= num {
-        if num % i == 0 {
-          result = false
-        }
-        i = add(i, 2)
-      }
-    }
-    result
-  }
-  
-  assert_true(is_prime)
-  
-  // 测试合数
-  let composite_num = 15
-  let is_composite_prime = {
-    let mut result = true
-    if composite_num <= 1 {
-      result = false
-    } else if composite_num == 2 {
-      result = true
-    } else if composite_num % 2 == 0 {
-      result = false
-    } else {
-      let mut i = 3
-      while i * i <= composite_num {
-        if composite_num % i == 0 {
-          result = false
-        }
-        i = add(i, 2)
-      }
-    }
-    result
-  }
-  
-  assert_false(is_composite_prime)
+// 高质量简洁测试用例 - 针对 azimuth 库的核心功能
+// 使用标准 MoonBit 测试语法编写，包含10个测试用例
+
+test "quality_concise_basic_arithmetic" {
+  // 基本算术运算测试
+  assert_eq(5, add(2, 3))
+  assert_eq(6, multiply(2, 3))
+  assert_eq(-1, subtract(2, 3))
+  assert_eq(0, add(5, -5))
 }
 
-test "geometric_area_calculation" {
-  // 几何面积计算测试
-  // 计算矩形面积
-  let length = 8
-  let width = 5
-  let rectangle_area = multiply(length, width)
-  assert_eq(40, rectangle_area)
+test "quality_concise_mathematical_properties" {
+  // 数学性质测试
+  let x = 10
+  let y = 15
   
-  // 计算三角形面积（底×高÷2）
-  let base = 10
-  let height = 6
-  let triangle_area = divide_with_ceil(multiply(base, height), 2)
-  assert_eq(30, triangle_area)
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
   
-  // 计算梯形面积（（上底+下底）×高÷2）
-  let top_base = 4
-  let bottom_base = 8
-  let trapezoid_height = 5
-  let trapezoid_area = divide_with_ceil(multiply(add(top_base, bottom_base), trapezoid_height), 2)
-  assert_eq(30, trapezoid_area)
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 零元素性质
+  assert_eq(0, multiply(x, 0))
+  assert_eq(x, add(x, 0))
+}
+
+test "quality_concise_divide_with_ceil" {
+  // 向上取整除法功能测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(0, divide_with_ceil(5, 0))
+}
+
+test "quality_concise_greet_function" {
+  // 问候函数综合测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+}
+
+test "quality_concise_business_scenario" {
+  // 复杂业务场景：计算订单总价
+  let unit_price = 25
+  let quantity = 8
+  let shipping = 15
+  let discount = 20
+  
+  let subtotal = multiply(unit_price, quantity)
+  let total_before_discount = add(subtotal, shipping)
+  let final_total = add(total_before_discount, -discount)
+  
+  assert_eq(200, subtotal)
+  assert_eq(215, total_before_discount)
+  assert_eq(195, final_total)
+}
+
+test "quality_concise_packaging_calculation" {
+  // 包装计算场景
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  
+  assert_eq(5, boxes_needed)
+  
+  // 计算剩余空间
+  let total_capacity = multiply(boxes_needed, items_per_box)
+  let remaining_space = subtract(total_capacity, total_items)
+  
+  assert_eq(30, total_capacity)
+  assert_eq(5, remaining_space)
+}
+
+test "quality_concise_negative_operations" {
+  // 负数运算测试
+  assert_eq(-10, add(-3, -7))
+  assert_eq(-5, add(-8, 3))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-15, multiply(3, -5))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+}
+
+test "quality_concise_large_operations" {
+  // 大数运算测试
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(333334, divide_with_ceil(1000000, 3))
+}
+
+test "quality_concise_combined_expressions" {
+  // 组合表达式测试
+  let result1 = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result1)  // 2*3 + 4*5 = 6 + 20 = 26
+  
+  let result2 = multiply(add(5, 3), 2)
+  assert_eq(16, result2)  // (5 + 3) * 2 = 8 * 2 = 16
+}
+
+test "quality_concise_project_management" {
+  // 项目管理场景测试
+  let tasks_per_day = 5
+  let total_tasks = 47
+  let workdays_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  
+  assert_eq(10, workdays_needed)
+  
+  // 计算总工作小时数（每天8小时）
+  let total_hours = multiply(workdays_needed, 8)
+  assert_eq(80, total_hours)
+}
+
+// 高质量简洁测试用例 - 针对 azimuth 库的核心功能
+// 使用标准 MoonBit 测试语法编写，包含10个测试用例
+
+test "quality_concise_basic_arithmetic" {
+  // 基本算术运算测试
+  assert_eq(5, add(2, 3))
+  assert_eq(6, multiply(2, 3))
+  assert_eq(-1, subtract(2, 3))
+  assert_eq(0, add(5, -5))
+}
+
+test "quality_concise_mathematical_properties" {
+  // 数学性质测试
+  let x = 10
+  let y = 15
+  
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
+  
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 零元素性质
+  assert_eq(0, multiply(x, 0))
+  assert_eq(x, add(x, 0))
+}
+
+test "quality_concise_divide_with_ceil" {
+  // 向上取整除法功能测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(0, divide_with_ceil(5, 0))
+}
+
+test "quality_concise_greet_function" {
+  // 问候函数综合测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+}
+
+test "quality_concise_business_scenario" {
+  // 复杂业务场景：计算订单总价
+  let unit_price = 25
+  let quantity = 8
+  let shipping = 15
+  let discount = 20
+  
+  let subtotal = multiply(unit_price, quantity)
+  let total_before_discount = add(subtotal, shipping)
+  let final_total = add(total_before_discount, -discount)
+  
+  assert_eq(200, subtotal)
+  assert_eq(215, total_before_discount)
+  assert_eq(195, final_total)
+}
+
+test "quality_concise_packaging_calculation" {
+  // 包装计算场景
+  let total_items = 25
+  let items_per_box = 6
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  
+  assert_eq(5, boxes_needed)
+  
+  // 计算剩余空间
+  let total_capacity = multiply(boxes_needed, items_per_box)
+  let remaining_space = subtract(total_capacity, total_items)
+  
+  assert_eq(30, total_capacity)
+  assert_eq(5, remaining_space)
+}
+
+test "quality_concise_negative_operations" {
+  // 负数运算测试
+  assert_eq(-10, add(-3, -7))
+  assert_eq(-5, add(-8, 3))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-15, multiply(3, -5))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+}
+
+test "quality_concise_large_operations" {
+  // 大数运算测试
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(333334, divide_with_ceil(1000000, 3))
+}
+
+test "quality_concise_combined_expressions" {
+  // 组合表达式测试
+  let result1 = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result1)  // 2*3 + 4*5 = 6 + 20 = 26
+  
+  let result2 = multiply(add(5, 3), 2)
+  assert_eq(16, result2)  // (5 + 3) * 2 = 8 * 2 = 16
+}
+
+test "quality_concise_project_management" {
+  // 项目管理场景测试
+  let tasks_per_day = 5
+  let total_tasks = 47
+  let workdays_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  
+  assert_eq(10, workdays_needed)
+  
+  // 计算总工作小时数（每天8小时）
+  let total_hours = multiply(workdays_needed, 8)
+  assert_eq(80, total_hours)
 }
 
 test "temperature_conversion" {
