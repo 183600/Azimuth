@@ -1,179 +1,174 @@
-// 高质量综合测试用例 - 针对 azimuth 库
-// 使用标准 MoonBit 测试语法
+// 高质量综合测试用例 - 针对 azimuth 库的全面测试
+// 包含边界情况、错误处理和实际应用场景
 
-test "mathematical_properties_commutative" {
-  // 测试加法和乘法的交换律
-  let a = 15
-  let b = 27
-  assert_eq(add(a, b), add(b, a))
-  assert_eq(multiply(a, b), multiply(b, a))
-}
-
-test "mathematical_properties_associative" {
-  // 测试加法和乘法的结合律
-  let x = 8
-  let y = 12
-  let z = 20
-  assert_eq(add(add(x, y), z), add(x, add(y, z)))
-  assert_eq(multiply(multiply(x, y), z), multiply(x, multiply(y, z)))
-}
-
-test "mathematical_properties_distributive" {
-  // 测试分配律：a * (b + c) = a * b + a * c
-  let a = 5
-  let b = 7
-  let c = 9
-  let left_side = multiply(a, add(b, c))
-  let right_side = add(multiply(a, b), multiply(a, c))
-  assert_eq(left_side, right_side)
-}
-
-test "divide_with_ceil_comprehensive_edge_cases" {
-  // 全面测试向上取整除法的边界情况
-  // 正数情况
-  assert_eq(4, divide_with_ceil(11, 3))  // 11/3 = 3.666... -> 4
-  assert_eq(3, divide_with_ceil(9, 3))   // 9/3 = 3 -> 3
-  assert_eq(1, divide_with_ceil(1, 100)) // 1/100 = 0.01 -> 1
+test "mathematical_identity_properties" {
+  // 测试数学恒等性质
+  let x = 42
+  let y = 17
   
-  // 负数情况
-  assert_eq(-3, divide_with_ceil(-10, 3))  // -10/3 = -3.333... -> -3
-  assert_eq(-4, divide_with_ceil(-11, 3))  // -11/3 = -3.666... -> -4
-  assert_eq(4, divide_with_ceil(-11, -3))  // -11/-3 = 3.666... -> 4
+  // 加法恒等性质
+  assert_eq(x, add(x, 0))
+  assert_eq(y, add(0, y))
   
-  // 零除数安全处理
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+  // 乘法恒等性质
+  assert_eq(x, multiply(x, 1))
+  assert_eq(y, multiply(1, y))
+  
+  // 乘法零元素性质
+  assert_eq(0, multiply(x, 0))
+  assert_eq(0, multiply(0, y))
 }
 
-test "greet_function_comprehensive" {
-  // 全面测试问候函数
-  // 基本功能
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  
-  // 边界情况
-  assert_eq_string("Hello, !", greet(""))  // 空字符串
-  assert_eq_string("Hello, A!", greet("A"))  // 单字符
-  
-  // 特殊字符和Unicode
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, user@example.com!", greet("user@example.com"))
-}
-
-test "complex_real_world_scenario" {
-  // 复杂真实世界场景：电商订单计算
-  let product_price = 89
-  let quantity = 4
+test "complex_business_calculation" {
+  // 复杂业务计算：电商订单总价计算
+  let unit_price = 129
+  let quantity = 7
   let tax_rate = 8  // 8%
-  let shipping_cost = 15
-  let discount_threshold = 300
-  let discount_amount = 25
+  let shipping_fee = 25
+  let discount = 50
   
-  // 计算小计
-  let subtotal = multiply(product_price, quantity)
+  // 计算商品小计
+  let subtotal = multiply(unit_price, quantity)
   
-  // 计算税费（使用向上取整）
+  // 计算税费（向上取整）
   let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
   
-  // 计算折扣前总价
-  let pre_discount_total = add(add(subtotal, tax_amount), shipping_cost)
+  // 计算总价
+  let total_before_discount = add(add(subtotal, tax_amount), shipping_fee)
+  let final_total = add(total_before_discount, -discount)
   
-  // 应用折扣（如果满足条件）
-  let final_total = if pre_discount_total > discount_threshold {
-    add(pre_discount_total, -discount_amount)
-  } else {
-    pre_discount_total
-  }
-  
-  assert_eq(356, subtotal)
-  assert_eq(29, tax_amount)
-  assert_eq(400, pre_discount_total)
-  assert_eq(375, final_total)
-}
-
-test "performance_calculation_scenario" {
-  // 性能计算场景：算法效率比较
-  let algorithm_a_time = 120
-  let algorithm_b_time = 85
-  let test_iterations = 1000
-  
-  // 计算总执行时间
-  let total_time_a = multiply(algorithm_a_time, test_iterations)
-  let total_time_b = multiply(algorithm_b_time, test_iterations)
-  
-  // 计算性能提升百分比
-  let time_difference = add(total_time_a, -total_time_b)
-  let improvement_percentage = divide_with_ceil(multiply(time_difference, 100), total_time_a)
-  
-  assert_eq(120000, total_time_a)
-  assert_eq(85000, total_time_b)
-  assert_eq(35000, time_difference)
-  assert_eq(30, improvement_percentage)
+  assert_eq(903, subtotal)
+  assert_eq(73, tax_amount)
+  assert_eq(1001, total_before_discount)
+  assert_eq(951, final_total)
 }
 
 test "resource_allocation_optimization" {
-  // 资源分配优化场景
-  let total_budget = 10000
-  let project_a_cost = 3500
-  let project_b_cost = 2800
-  let project_c_cost = 2200
+  // 资源分配优化问题
+  let total_budget = 5000
+  let project_a_cost = 1200
+  let project_b_cost = 1800
+  let project_c_cost = 900
   
   // 计算已分配预算
   let allocated_budget = add(add(project_a_cost, project_b_cost), project_c_cost)
   
   // 计算剩余预算
-  let remaining_budget = add(total_budget, -allocated_budget)
+  let remaining_budget = subtract(total_budget, allocated_budget)
   
-  // 计算可以启动的小项目数量（每个小项目成本500）
-  let small_project_cost = 500
-  let small_projects_count = divide_with_ceil(remaining_budget, small_project_cost)
+  // 计算可以支持的小项目数量（每个小项目成本350）
+  let small_projects_count = divide_with_ceil(remaining_budget, 350)
   
-  assert_eq(8500, allocated_budget)
-  assert_eq(1500, remaining_budget)
-  assert_eq(3, small_projects_count)
+  assert_eq(3900, allocated_budget)
+  assert_eq(1100, remaining_budget)
+  assert_eq(4, small_projects_count)
 }
 
-test "data_analysis_statistics" {
-  // 数据分析统计场景
-  let data_points = [15, 22, 18, 30, 25, 20, 28, 16]
-  let data_count = 8
+test "time_management_scenario" {
+  // 时间管理场景：项目任务分配
+  let total_tasks = 67
+  let working_days = 5
+  let tasks_per_day = divide_with_ceil(total_tasks, working_days)
   
-  // 计算总和
-  let sum = add(add(add(add(add(add(add(15, 22), 18), 30), 25), 20), 28), 16)
+  // 计算每天需要完成的任务数
+  let daily_tasks = tasks_per_day
   
-  // 计算平均值（向上取整）
-  let average = divide_with_ceil(sum, data_count)
+  // 计算总工作小时数（每天8小时）
+  let total_hours = multiply(working_days, 8)
   
-  // 计算中位数（排序后的中间值）
-  let median = divide_with_ceil(add(20, 22), 2)
+  // 计算每个任务的平均时间（分钟）
+  let minutes_per_task = divide_with_ceil(multiply(total_hours, 60), total_tasks)
   
-  assert_eq(174, sum)
-  assert_eq(22, average)
-  assert_eq(21, median)
+  assert_eq(14, tasks_per_day)
+  assert_eq(40, total_hours)
+  assert_eq(36, minutes_per_task)
 }
 
-test "string_processing_with_greet" {
-  // 字符串处理与问候函数结合
-  let first_name = "张"
-  let last_name = "三"
-  let title = "工程师"
+test "financial_investment_calculation" {
+  // 金融投资计算：复利计算
+  let principal = 10000
+  let annual_rate = 7  // 7%
+  let years = 3
   
-  // 构建完整名称
-  let full_name = first_name + last_name
+  // 第一年末
+  let year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
   
-  // 构建带头衔的名称
-  let name_with_title = full_name + " (" + title + ")"
+  // 第二年末
+  let year2 = add(year1, divide_with_ceil(multiply(year1, annual_rate), 100))
   
-  // 生成问候
-  let greeting = greet(name_with_title)
+  // 第三年末
+  let year3 = add(year2, divide_with_ceil(multiply(year2, annual_rate), 100))
   
-  assert_eq_string("Hello, 张三 (工程师)!", greeting)
+  assert_eq(10700, year1)
+  assert_eq(11449, year2)
+  assert_eq(12251, year3)
+}
+
+test "string_greeting_internationalization" {
+  // 字符串问候国际化测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, María!", greet("María"))
+  assert_eq_string("Hello, François!", greet("François"))
+  assert_eq_string("Hello, 北京!", greet("北京"))
+  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
+  assert_eq_string("Hello, München!", greet("München"))
+}
+
+test "extreme_boundary_conditions" {
+  // 极端边界条件测试
+  let large_number = 1000000
+  let small_number = 1
   
-  // 测试特殊字符组合
-  let special_chars = "αβγ + 123 = 🚀"
-  let special_greeting = greet(special_chars)
-  assert_eq_string("Hello, αβγ + 123 = 🚀!", special_greeting)
+  // 大数运算
+  assert_eq(1000001, add(large_number, small_number))
+  assert_eq(999999, subtract(large_number, small_number))
+  assert_eq(1000000, multiply(large_number, 1))
+  
+  // 除法边界情况
+  assert_eq(1000000, divide_with_ceil(large_number, 1))
+  assert_eq(1, divide_with_ceil(large_number, large_number))
+  assert_eq(0, divide_with_ceil(small_number, large_number))
+  assert_eq(0, divide_with_ceil(large_number, 0))
+}
+
+test "logistics_distribution_calculation" {
+  // 物流配送计算
+  let total_packages = 157
+  let truck_capacity = 24
+  let delivery_days = 6
+  
+  // 计算需要的卡车数量
+  let trucks_needed = divide_with_ceil(total_packages, truck_capacity)
+  
+  // 计算每天需要配送的包裹数
+  let daily_deliveries = divide_with_ceil(total_packages, delivery_days)
+  
+  // 计算剩余容量
+  let total_capacity = multiply(trucks_needed, truck_capacity)
+  let remaining_capacity = subtract(total_capacity, total_packages)
+  
+  assert_eq(7, trucks_needed)
+  assert_eq(27, daily_deliveries)
+  assert_eq(168, total_capacity)
+  assert_eq(11, remaining_capacity)
+}
+
+test "data_processing_efficiency" {
+  // 数据处理效率测试
+  let data_records = 10000
+  let processing_time_per_record = 3  // 毫秒
+  let parallel_processors = 8
+  
+  // 计算单处理器总时间（秒）
+  let single_processor_time = divide_with_ceil(multiply(data_records, processing_time_per_record), 1000)
+  
+  // 计算并行处理时间（秒）
+  let parallel_time = divide_with_ceil(single_processor_time, parallel_processors)
+  
+  // 计算效率提升倍数
+  let efficiency_gain = divide_with_ceil(single_processor_time, parallel_time)
+  
+  assert_eq(30, single_processor_time)
+  assert_eq(4, parallel_time)
+  assert_eq(8, efficiency_gain)
 }

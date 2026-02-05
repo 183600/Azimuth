@@ -309,7 +309,8 @@
     "azimuth_high_quality_test_cases.mbt",
     "test/new_concise_tests.mbt",
     "standard_core_library_tests.mbt",
-    "azimuth_enhanced_standard_tests.mbt"
+    "azimuth_enhanced_standard_tests.mbt",
+    "high_quality_comprehensive_tests.mbt"
   ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
     "new_advanced_tests.mbt",
