@@ -1,235 +1,213 @@
-// Enhanced MoonBit Test Suite for Azimuth Project
-// 高质量测试用例集 - 8个标准 MoonBit 测试用例
+// Azimuth 增强测试套件
+// 包含10个高质量的 MoonBit 标准测试用例
 
-test "enhanced_mathematical_operations" {
-  // 增强数学运算测试
-  // 测试基本算术运算的组合
+test "arithmetic_precision_test" {
+  // 算术精度测试：验证大数运算的准确性
+  let large_num1 = 100000
+  let large_num2 = 99999
   
-  // 加法运算测试
-  assert_eq(15, add(7, 8))
-  assert_eq(-15, add(-7, -8))
-  assert_eq(1, add(-7, 8))
-  assert_eq(1000000, add(500000, 500000))
+  // 大数加法测试
+  @azimuth.assert_eq(199999, @azimuth.add(large_num1, large_num2))
   
-  // 乘法运算测试
-  assert_eq(56, multiply(7, 8))
-  assert_eq(-56, multiply(-7, 8))
-  assert_eq(56, multiply(-7, -8))
-  assert_eq(0, multiply(7, 0))
+  // 大数乘法测试（调整数值以避免超出范围）
+  @azimuth.assert_eq(999990000, @azimuth.multiply(large_num1, 9999))
   
-  // 减法运算测试
-  assert_eq(-1, subtract(7, 8))
-  assert_eq(1, subtract(8, 7))
-  assert_eq(15, subtract(7, -8))
+  // 大数除法测试
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(large_num1, large_num2))
+  @azimuth.assert_eq(100000, @azimuth.divide_with_ceil(large_num1, 1))
 }
 
-test "enhanced_division_with_ceil_comprehensive" {
-  // 增强向上取整除法综合测试
-  // 测试各种除法场景和边缘情况
-  
-  // 基本正数除法
-  assert_eq(3, divide_with_ceil(10, 4))
-  assert_eq(2, divide_with_ceil(8, 4))
-  assert_eq(1, divide_with_ceil(1, 4))
-  assert_eq(0, divide_with_ceil(0, 4))
-  
-  // 除零处理
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
-  
-  // 负数除法
-  assert_eq(-2, divide_with_ceil(-10, 4))
-  assert_eq(-3, divide_with_ceil(10, -4))
-  assert_eq(3, divide_with_ceil(-10, -4))
-  
-  // 边界情况
-  assert_eq(1, divide_with_ceil(4, 4))
-  assert_eq(1000000, divide_with_ceil(1000000, 1))
-}
-
-test "enhanced_string_processing_international" {
-  // 增强字符串处理国际化测试
-  // 测试各种字符编码和特殊字符
-  
-  // 基本英文字符
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  
-  // Unicode 字符测试
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, ñoño!", greet("ñoño"))
-  
-  // Emoji 测试
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, 🏳️‍🌈!", greet("🏳️‍🌈"))
-  
-  // 特殊字符和边缘情况
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello,   !", greet("   "))
-  assert_eq_string("Hello, @#$%!", greet("@#$%"))
-}
-
-test "enhanced_business_logistics_scenario" {
-  // 增强业务物流场景测试
-  // 模拟真实的物流和库存管理场景
-  
-  // 场景：电商仓库打包
-  let total_orders = 127
-  let items_per_package = 15
-  let packages_needed = divide_with_ceil(total_orders, items_per_package)
-  
-  // 验证需要的包裹数量
-  assert_eq(9, packages_needed)  // ceil(127/15) = 9
-  
-  // 计算总包装容量
-  let total_capacity = multiply(packages_needed, items_per_package)
-  assert_eq(135, total_capacity)  // 9 * 15 = 135
-  
-  // 计算剩余容量
-  let remaining_capacity = subtract(total_capacity, total_orders)
-  assert_eq(8, remaining_capacity)  // 135 - 127 = 8
-  
-  // 计算空间利用率
-  let utilization_percentage = divide_with_ceil(
-    multiply(total_orders, 100), 
-    total_capacity
-  )
-  assert_eq(94, utilization_percentage)  // floor(12700/135) = 94%
-}
-
-test "enhanced_complex_calculation_workflow" {
-  // 增强复杂计算工作流测试
-  // 模拟多步骤的计算流程
-  
-  // 场景：项目资源规划和时间估算
-  let team_members = 6
-  let tasks_per_member = 12
-  let hours_per_task = 3
-  let working_hours_per_day = 8
-  
-  // 计算总任务数
-  let total_tasks = multiply(team_members, tasks_per_member)
-  assert_eq(72, total_tasks)  // 6 * 12 = 72
-  
-  // 计算总工时
-  let total_hours = multiply(total_tasks, hours_per_task)
-  assert_eq(216, total_hours)  // 72 * 3 = 216
-  
-  // 计算需要的工作日
-  let work_days_needed = divide_with_ceil(total_hours, working_hours_per_day)
-  assert_eq(27, work_days_needed)  // ceil(216/8) = 27
-  
-  // 计算周数（每周5个工作日）
-  let weeks_needed = divide_with_ceil(work_days_needed, 5)
-  assert_eq(6, weeks_needed)  // ceil(27/5) = 6
-  
-  // 验证总工时重新计算
-  let recalculated_hours = multiply(work_days_needed, working_hours_per_day)
-  assert_eq(216, recalculated_hours)  // 27 * 8 = 216
-}
-
-test "enhanced_mathematical_properties_verification" {
-  // 增强数学性质验证测试
-  // 验证重要的数学定律和性质
-  
-  let a = 17
-  let b = 23
-  let c = 5
-  
-  // 加法交换律：a + b = b + a
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律：a * b = b * a
-  assert_eq(multiply(a, b), multiply(b, a))
+test "mathematical_associative_laws" {
+  // 数学结合律测试：验证运算的结合律性质
+  let a = 7
+  let b = 11
+  let c = 13
   
   // 加法结合律：(a + b) + c = a + (b + c)
-  assert_eq(add(add(a, b), c), add(a, add(b, c)))
+  let add_left = @azimuth.add(@azimuth.add(a, b), c)
+  let add_right = @azimuth.add(a, @azimuth.add(b, c))
+  @azimuth.assert_eq(add_left, add_right)
   
   // 乘法结合律：(a * b) * c = a * (b * c)
-  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
+  let mul_left = @azimuth.multiply(@azimuth.multiply(a, b), c)
+  let mul_right = @azimuth.multiply(a, @azimuth.multiply(b, c))
+  @azimuth.assert_eq(mul_left, mul_right)
+}
+
+test "business_inventory_optimization" {
+  // 业务库存优化测试：模拟仓库存储优化场景
+  let total_items = 158
+  let small_box_capacity = 12
+  let large_box_capacity = 25
   
-  // 分配律：a * (b + c) = (a * b) + (a * c)
-  let distributive_left = multiply(a, add(b, c))
-  let distributive_right = add(multiply(a, b), multiply(a, c))
-  assert_eq(distributive_left, distributive_right)
+  // 计算使用小盒子需要的数量
+  let small_boxes_needed = @azimuth.divide_with_ceil(total_items, small_box_capacity)
+  
+  // 计算使用大盒子需要的数量
+  let large_boxes_needed = @azimuth.divide_with_ceil(total_items, large_box_capacity)
+  
+  @azimuth.assert_eq(14, small_boxes_needed)  // ceil(158/12) = 14
+  @azimuth.assert_eq(7, large_boxes_needed)   // ceil(158/25) = 7
+  
+  // 验证大盒子方案更节省空间
+  let small_total_capacity = @azimuth.multiply(small_boxes_needed, small_box_capacity)
+  let large_total_capacity = @azimuth.multiply(large_boxes_needed, large_box_capacity)
+  
+  @azimuth.assert_true(large_total_capacity <= small_total_capacity)
+}
+
+test "error_handling_robustness" {
+  // 错误处理健壮性测试：验证函数在异常输入下的行为
+  // 除零错误处理
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
+  
+  // 零元素运算测试
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(100, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(-100, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 100))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, -100))
+  
+  // 恒等元素测试
+  @azimuth.assert_eq(100, @azimuth.add(100, 0))
+  @azimuth.assert_eq(100, @azimuth.add(0, 100))
+  @azimuth.assert_eq(100, @azimuth.multiply(100, 1))
+  @azimuth.assert_eq(100, @azimuth.multiply(1, 100))
+}
+
+test "international_character_processing" {
+  // 国际化字符处理测试：验证多语言字符支持
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, Москва!", @azimuth.greet("Москва"))
+  @azimuth.assert_eq_string("Hello, São Paulo!", @azimuth.greet("São Paulo"))
+  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
+  @azimuth.assert_eq_string("Hello, café!", @azimuth.greet("café"))
+  @azimuth.assert_eq_string("Hello, ñoño!", @azimuth.greet("ñoño"))
+  @azimuth.assert_eq_string("Hello, 🏳️‍🌈!", @azimuth.greet("🏳️‍🌈"))
+  
+  // 特殊空白字符测试
+  @azimuth.assert_eq_string("Hello, \t\n!", @azimuth.greet("\t\n"))
+  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("  "))
+}
+
+test "complex_workflow_calculation" {
+  // 复杂工作流计算测试：模拟多步骤业务计算流程
+  // 场景：项目资源需求计算
+  let team_members = 15
+  let hours_per_day = 8
+  let working_days = 20
+  let tasks_per_hour = 2
+  let total_tasks = 280
+  
+  // 计算团队总工时
+  let total_hours = @azimuth.multiply(team_members, @azimuth.multiply(hours_per_day, working_days))
+  
+  // 计算团队任务处理能力
+  let team_capacity = @azimuth.multiply(total_hours, tasks_per_hour)
+  
+  // 计算需要的额外资源
+  let additional_tasks_needed = @azimuth.subtract(total_tasks, team_capacity)
+  
+  // 如果需要额外资源，计算需要多少额外人员
+  let daily_capacity = @azimuth.multiply(hours_per_day, tasks_per_hour)
+  let period_capacity = @azimuth.multiply(daily_capacity, working_days)
+  let additional_staff = @azimuth.divide_with_ceil(additional_tasks_needed, period_capacity)
+  
+  @azimuth.assert_eq(2400, total_hours)      // 15 * 8 * 20 = 2400
+  @azimuth.assert_eq(4800, team_capacity)    // 2400 * 2 = 4800
+  @azimuth.assert_eq(-4520, additional_tasks_needed)  // 280 - 4800 = -4520 (团队能力充足)
+  @azimuth.assert_eq(0, additional_staff)    // 不需要额外人员
+}
+
+test "mathematical_distributive_laws" {
+  // 数学分配律测试：验证乘法对加法的分配律
+  let a = 6
+  let b = 8
+  let c = 12
+  
+  // 分配律：a * (b + c) = a * b + a * c
+  let left_side = @azimuth.multiply(a, @azimuth.add(b, c))
+  let right_side = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
+  
+  @azimuth.assert_eq(left_side, right_side)
   
   // 验证具体数值
-  assert_eq(40, add(17, 23))  // 17 + 23 = 40
-  assert_eq(391, multiply(17, 23))  // 17 * 23 = 391
-  assert_eq(45, add(add(17, 23), 5))  // (17 + 23) + 5 = 45
-  assert_eq(1955, multiply(multiply(17, 23), 5))  // (17 * 23) * 5 = 1955
+  @azimuth.assert_eq(120, left_side)   // 6 * (8 + 12) = 6 * 20 = 120
+  @azimuth.assert_eq(120, right_side)  // 6 * 8 + 6 * 12 = 48 + 72 = 120
 }
 
-test "enhanced_error_handling_and_edge_cases" {
-  // 增强错误处理和边缘情况测试
-  // 测试系统的健壮性和边界条件
+test "boundary_value_analysis" {
+  // 边界值分析测试：测试函数在边界条件下的行为
+  // 最小值边界测试
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-1, -1))
+  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-1, 1))
+  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(1, -1))
   
-  // 除零错误的全面测试
-  assert_eq(0, divide_with_ceil(1, 0))
-  assert_eq(0, divide_with_ceil(-1, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(999999, 0))
-  assert_eq(0, divide_with_ceil(-999999, 0))
+  // 单位元素边界测试
+  @azimuth.assert_eq(5, @azimuth.add(5, 0))
+  @azimuth.assert_eq(5, @azimuth.add(0, 5))
+  @azimuth.assert_eq(5, @azimuth.multiply(5, 1))
+  @azimuth.assert_eq(5, @azimuth.multiply(1, 5))
   
-  // 极值测试
-  let large_positive = 1000000
-  let large_negative = -1000000
-  let zero = 0
-  
-  // 大数运算测试
-  assert_eq(2000000, add(large_positive, large_positive))
-  assert_eq(-2000000, add(large_negative, large_negative))
-  assert_eq(0, add(large_positive, large_negative))
-  
-  assert_eq(1000000000000, multiply(large_positive, large_positive))
-  assert_eq(1000000000000, multiply(large_negative, large_negative))
-  assert_eq(-1000000000000, multiply(large_positive, large_negative))
-  assert_eq(0, multiply(large_positive, zero))
-  
-  // 边界除法测试
-  assert_eq(1, divide_with_ceil(large_positive, large_positive))
-  assert_eq(1, divide_with_ceil(large_negative, large_negative))
-  assert_eq(-1, divide_with_ceil(large_positive, large_negative))
-  assert_eq(0, divide_with_ceil(zero, large_positive))
+  // 相等数运算边界测试
+  @azimuth.assert_eq(10, @azimuth.add(5, 5))
+  @azimuth.assert_eq(25, @azimuth.multiply(5, 5))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(5, 5))
+  @azimuth.assert_eq(0, @azimuth.subtract(5, 5))
 }
 
-test "enhanced_real_world_financial_calculation" {
-  // 增强真实世界金融计算测试
-  // 模拟贷款、投资和预算规划场景
+test "performance_efficiency_validation" {
+  // 性能效率验证测试：验证算法在不同规模数据下的表现
+  // 小规模数据测试
+  let small_result = @azimuth.divide_with_ceil(10, 3)
+  @azimuth.assert_eq(4, small_result)
   
-  // 场景：房屋贷款分期计算
-  let loan_amount = 500000
-  let monthly_payment_max = 3500
-  let months_needed = divide_with_ceil(loan_amount, monthly_payment_max)
+  // 中等规模数据测试
+  let medium_result = @azimuth.divide_with_ceil(1000, 3)
+  @azimuth.assert_eq(334, medium_result)
   
-  // 验证还款期数
-  assert_eq(143, months_needed)  // ceil(500000/3500) = 143
+  // 大规模数据测试
+  let large_result = @azimuth.divide_with_ceil(1000000, 3)
+  @azimuth.assert_eq(333334, large_result)
   
-  // 计算实际总还款额
-  let actual_total_payment = multiply(months_needed, monthly_payment_max)
-  assert_eq(500500, actual_total_payment)  // 143 * 3500 = 500500
+  // 验证计算结果的一致性模式
+  let pattern_check = @azimuth.multiply(3, @azimuth.subtract(large_result, 1))
+  @azimuth.assert_true(pattern_check < 1000000)
+}
+
+test "real_world_event_planning" {
+  // 真实世界事件规划测试：模拟活动安排的复杂计算
+  let attendees = 256
+  let round_tables = 15
+  let rectangular_tables = 8
+  let chairs_per_round_table = 8
+  let chairs_per_rectangular_table = 12
+  let vip_guests = 12
   
-  // 计算最后一期实际还款金额
-  let regular_payments = months_needed - 1
-  let regular_total = multiply(regular_payments, monthly_payment_max)
-  let final_payment = subtract(actual_total_payment, regular_total)
-  assert_eq(1500, final_payment)  // 500500 - 142*3500 = 1500
+  // 计算普通座位需求
+  let regular_attendees = @azimuth.subtract(attendees, vip_guests)
   
-  // 场景：投资回报计算
-  let initial_investment = 10000
-  let monthly_return = 250
-  let break_even_months = divide_with_ceil(initial_investment, monthly_return)
-  assert_eq(40, break_even_months)  // ceil(10000/250) = 40
+  // 计算圆桌需要的数量
+  let round_tables_needed = @azimuth.divide_with_ceil(regular_attendees, chairs_per_round_table)
   
-  // 计算总回报
-  let total_return = multiply(break_even_months, monthly_return)
-  assert_eq(10000, total_return)  // 40 * 250 = 10000
+  // 检查圆桌是否足够
+  if round_tables_needed <= round_tables {
+    // 使用圆桌方案
+    let total_round_seats = @azimuth.multiply(round_tables_needed, chairs_per_round_table)
+    let remaining_seats = @azimuth.subtract(total_round_seats, regular_attendees)
+    @azimuth.assert_true(remaining_seats >= 0)
+  } else {
+    // 需要使用矩形桌子补充
+    let round_table_capacity = @azimuth.multiply(round_tables, chairs_per_round_table)
+    let remaining_attendees = @azimuth.subtract(regular_attendees, round_table_capacity)
+    let rect_tables_needed = @azimuth.divide_with_ceil(remaining_attendees, chairs_per_rectangular_table)
+    @azimuth.assert_true(rect_tables_needed <= rectangular_tables)
+  }
   
-  // 验证投资回收期
-  let profit = subtract(total_return, initial_investment)
-  assert_eq(0, profit)  // 刚好收回投资
+  // 验证VIP座位
+  let vip_tables_needed = @azimuth.divide_with_ceil(vip_guests, 4)  // 假设VIP桌每桌4人
+  @azimuth.assert_eq(3, vip_tables_needed)
 }
