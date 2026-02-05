@@ -16344,3 +16344,197 @@ test "azimuth_complex_workflow" {
   let remaining_budget = subtract(initial_budget, total_cost)
   assert_eq(5600, remaining_budget)  // 10000 - 4400 = 5600
 }
+
+// 新增的10个标准MoonBit测试用例
+test "algebraic_expressions" {
+  // 代数表达式测试
+  let x = 5
+  let y = 3
+  
+  // 计算 (x + y) * (x - y)
+  let sum = add(x, y)
+  let diff = subtract(x, y)
+  let result = multiply(sum, diff)
+  
+  assert_eq(16, result)  // (5 + 3) * (5 - 3) = 8 * 2 = 16
+}
+
+test "time_conversion_scenario" {
+  // 时间转换场景测试
+  let total_minutes = 150
+  let minutes_per_hour = 60
+  
+  // 计算小时数
+  let hours = divide_with_ceil(total_minutes, minutes_per_hour)
+  assert_eq(3, hours)  // ceil(150/60) = 3
+  
+  // 计算总分钟数（向上取整）
+  let calculated_minutes = multiply(hours, minutes_per_hour)
+  assert_eq(180, calculated_minutes)
+  
+  // 计算额外分钟数
+  let extra_minutes = subtract(calculated_minutes, total_minutes)
+  assert_eq(30, extra_minutes)
+}
+
+test "batch_processing_efficiency" {
+  // 批处理效率测试
+  let total_items = 1000
+  let batch_size = 75
+  
+  // 计算需要的批次数
+  let batches_needed = divide_with_ceil(total_items, batch_size)
+  assert_eq(14, batches_needed)  // ceil(1000/75) = 14
+  
+  // 计算总处理能力
+  let total_capacity = multiply(batches_needed, batch_size)
+  assert_eq(1050, total_capacity)
+  
+  // 计算剩余容量
+  let remaining_capacity = subtract(total_capacity, total_items)
+  assert_eq(50, remaining_capacity)
+  
+  // 计算利用率
+  let utilization = divide_with_ceil(multiply(total_items, 100), total_capacity)
+  assert_eq(95, utilization)  // floor(100000/1050) = 95%
+}
+
+test "resource_sharing_fairness" {
+  // 资源共享公平性测试
+  let total_resources = 47
+  let participants = 5
+  
+  // 计算每人应得资源（向上取整）
+  let resources_per_person = divide_with_ceil(total_resources, participants)
+  assert_eq(10, resources_per_person)  // ceil(47/5) = 10
+  
+  // 计算总分配资源
+  let total_allocated = multiply(resources_per_person, participants)
+  assert_eq(50, total_allocated)
+  
+  // 计算溢出资源
+  let overflow = subtract(total_allocated, total_resources)
+  assert_eq(3, overflow)
+}
+
+test "circular_reference_detection" {
+  // 循环引用检测测试
+  let a = 10
+  let b = 20
+  let c = 30
+  
+  // 创建循环计算
+  let step1 = add(a, b)  // 10 + 20 = 30
+  let step2 = multiply(step1, c)  // 30 * 30 = 900
+  let step3 = divide_with_ceil(step2, add(a, b))  // ceil(900/30) = 30
+  let step4 = subtract(step3, c)  // 30 - 30 = 0
+  
+  assert_eq(0, step4)
+  
+  // 验证循环一致性
+  assert_eq(c, step3)
+}
+
+test "error_boundary_conditions" {
+  // 错误边界条件测试
+  // 测试各种除零情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(1, 0))
+  assert_eq(0, divide_with_ceil(-1, 0))
+  assert_eq(0, divide_with_ceil(1000, 0))
+  assert_eq(0, divide_with_ceil(-1000, 0))
+  
+  // 测试极值运算
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(0, 1))
+  assert_eq(0, multiply(0, -1))
+  assert_eq(0, multiply(1, 0))
+  assert_eq(0, multiply(-1, 0))
+}
+
+test "multi_language_greeting_support" {
+  // 多语言问候支持测试
+  assert_eq_string("Hello, English!", greet("English"))
+  assert_eq_string("Hello, 中文!", greet("中文"))
+  assert_eq_string("Hello, 日本語!", greet("日本語"))
+  assert_eq_string("Hello, 한국어!", greet("한국어"))
+  assert_eq_string("Hello, Español!", greet("Español"))
+  assert_eq_string("Hello, Français!", greet("Français"))
+  assert_eq_string("Hello, Русский!", greet("Русский"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+}
+
+test "statistical_analysis_basic" {
+  // 基础统计分析测试
+  let values = [10, 20, 30, 40, 50]
+  let count = 5
+  
+  // 计算总和
+  let sum = add(add(add(add(values[0], values[1]), values[2]), values[3]), values[4])
+  assert_eq(150, sum)
+  
+  // 计算平均值（向下取整）
+  let average = divide_with_ceil(sum, count)
+  assert_eq(30, average)  // ceil(150/5) = 30
+  
+  // 计算中位数
+  let median = values[2]  // 已排序数组的中位数
+  assert_eq(30, median)
+  
+  // 验证平均值与中位数的关系
+  assert_eq(average, median)
+}
+
+test "inventory_optimization_problem" {
+  // 库存优化问题测试
+  let demand_forecast = 250
+  let production_capacity = 80
+  let setup_cost = 500
+  let holding_cost_per_unit = 2
+  
+  // 计算生产周期数
+  let production_cycles = divide_with_ceil(demand_forecast, production_capacity)
+  assert_eq(4, production_cycles)  // ceil(250/80) = 4
+  
+  // 计算总生产量
+  let total_production = multiply(production_cycles, production_capacity)
+  assert_eq(320, total_production)
+  
+  // 计算剩余库存
+  let excess_inventory = subtract(total_production, demand_forecast)
+  assert_eq(70, excess_inventory)
+  
+  // 计算总设置成本
+  let total_setup_cost = multiply(production_cycles, setup_cost)
+  assert_eq(2000, total_setup_cost)
+  
+  // 计算总持有成本
+  let total_holding_cost = multiply(excess_inventory, holding_cost_per_unit)
+  assert_eq(140, total_holding_cost)
+  
+  // 计算总成本
+  let total_cost = add(total_setup_cost, total_holding_cost)
+  assert_eq(2140, total_cost)
+}
+
+test "complex_number_theory" {
+  // 复杂数论测试
+  let num1 = 12
+  let num2 = 18
+  
+  // 计算最大公约数（使用欧几里得算法的简化版本）
+  let gcd_num1 = num1
+  let gcd_num2 = num2
+  
+  // 简化的GCD计算（仅适用于测试）
+  let common_divisor = 6
+  assert_eq(0, subtract(num1, multiply(common_divisor, 2)))  // 12 - 6*2 = 0
+  assert_eq(0, subtract(num2, multiply(common_divisor, 3)))  // 18 - 6*3 = 0
+  
+  // 计算最小公倍数
+  let lcm = divide_with_ceil(multiply(num1, num2), common_divisor)
+  assert_eq(36, lcm)  // (12*18)/6 = 36
+  
+  // 验证LCM性质
+  assert_eq(0, subtract(lcm, multiply(common_divisor, 6)))  // 36 - 6*6 = 0
+}
