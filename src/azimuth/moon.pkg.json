@@ -9,6 +9,7 @@
     "moonbitlang/core/test"
   ],
   "test": [
+    "concise_standard_tests.mbt",
     "standard_azimuth_core_tests.mbt",
     "enhanced_azimuth_core_tests.mbt",
     "azimuth_standard_quality_tests.mbt",
