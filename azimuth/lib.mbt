@@ -16538,3 +16538,165 @@ test "complex_number_theory" {
   // 验证LCM性质
   assert_eq(0, subtract(lcm, multiply(common_divisor, 6)))  // 36 - 6*6 = 0
 }
+
+// 新增的10个标准MoonBit测试用例
+test "add_function_boundary_values" {
+  // 测试加法函数的边界值
+  assert_eq(0, add(0, 0))
+  assert_eq(1, add(1, 0))
+  assert_eq(-1, add(-1, 0))
+  assert_eq(2147483647, add(2147483646, 1))
+  assert_eq(-2147483647, add(-2147483646, -1))
+}
+
+test "multiply_function_zero_properties" {
+  // 测试乘法函数的零性质
+  assert_eq(0, multiply(0, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, multiply(0, -10))
+  assert_eq(0, multiply(-100, 0))
+  assert_eq(0, multiply(2147483647, 0))
+}
+
+test "divide_with_ceil_precision_test" {
+  // 测试向上取整除法的精度
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(3, divide_with_ceil(8, 3))
+  assert_eq(100, divide_with_ceil(9999, 100))
+  assert_eq(1001, divide_with_ceil(1000001, 1000))
+}
+
+test "greet_function_unicode_support" {
+  // 测试问候函数的Unicode支持
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, αβγδε!", greet("αβγδε"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+}
+
+test "complex_arithmetic_expression" {
+  // 测试复杂算术表达式
+  let x = 10
+  let y = 20
+  let z = 5
+  
+  // 计算 (x + y) * z / 2
+  let result = divide_with_ceil(multiply(add(x, y), z), 2)
+  assert_eq(75, result)
+  
+  // 计算 x * y + z * x
+  let result2 = add(multiply(x, y), multiply(z, x))
+  assert_eq(250, result2)
+}
+
+test "negative_number_operations_comprehensive" {
+  // 全面测试负数运算
+  assert_eq(-10, add(-5, -5))
+  assert_eq(0, add(-5, 5))
+  assert_eq(5, add(-10, 15))
+  
+  assert_eq(25, multiply(-5, -5))
+  assert_eq(-25, multiply(-5, 5))
+  assert_eq(-25, multiply(5, -5))
+  
+  assert_eq(-2, divide_with_ceil(-5, 2))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(2, divide_with_ceil(-5, -3))
+}
+
+test "business_calculation_scenario" {
+  // 业务计算场景：订单总价计算
+  let unit_price = 89
+  let quantity = 4
+  let discount_threshold = 300
+  let discount_amount = 25
+  let shipping_cost = 15
+  
+  // 计算小计
+  let subtotal = multiply(unit_price, quantity)
+  
+  // 计算总价（含运费）
+  let total_before_discount = add(subtotal, shipping_cost)
+  
+  // 应用折扣（如果满足条件）
+  let final_total = if total_before_discount > discount_threshold {
+    add(total_before_discount, -discount_amount)
+  } else {
+    total_before_discount
+  }
+  
+  assert_eq(356, subtotal)
+  assert_eq(371, total_before_discount)
+  assert_eq(346, final_total)
+}
+
+test "resource_allocation_optimization" {
+  // 资源分配优化测试
+  let total_resources = 100
+  let projects = 3
+  let min_resources_per_project = divide_with_ceil(total_resources, projects)
+  
+  assert_eq(34, min_resources_per_project)
+  
+  // 验证分配结果
+  let allocated_total = multiply(min_resources_per_project, projects)
+  assert_eq(102, allocated_total)
+  
+  // 计算资源利用率
+  let utilization = divide_with_ceil(multiply(total_resources, 100), allocated_total)
+  assert_eq(98, utilization)
+}
+
+test "error_handling_robustness" {
+  // 错误处理健壮性测试
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 极值运算
+  let max_val = 2147483647
+  let min_val = -2147483647
+  
+  assert_eq(max_val, add(max_val, 0))
+  assert_eq(min_val, add(min_val, 0))
+  assert_eq(0, multiply(max_val, 0))
+  assert_eq(0, multiply(min_val, 0))
+}
+
+test "real_world_application_scenario" {
+  // 真实世界应用场景：活动安排
+  let participants = 87
+  let tables_available = 10
+  let chairs_per_table = 10
+  let budget_per_person = 25
+  let total_budget = 2500
+  
+  // 计算需要的桌子数量
+  let tables_needed = divide_with_ceil(participants, chairs_per_table)
+  assert_eq(9, tables_needed)
+  
+  // 验证桌子是否足够
+  assert_true(tables_needed <= tables_available)
+  
+  // 计算可用座位数
+  let available_seats = multiply(tables_needed, chairs_per_table)
+  assert_eq(90, available_seats)
+  
+  // 计算剩余座位
+  let remaining_seats = subtract(available_seats, participants)
+  assert_eq(3, remaining_seats)
+  
+  // 计算总成本
+  let total_cost = multiply(participants, budget_per_person)
+  assert_eq(2175, total_cost)
+  
+  // 验证预算充足
+  assert_true(total_cost <= total_budget)
+  
+  // 计算剩余预算
+  let remaining_budget = subtract(total_budget, total_cost)
+  assert_eq(325, remaining_budget)
+}
