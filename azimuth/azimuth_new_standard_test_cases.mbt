@@ -1,163 +1,119 @@
-// Azimuth 项目新增测试用例
+// Azimuth 项目新增标准测试用例
 // 使用标准 MoonBit 测试语法，包含10个高质量测试用例
 
-test "advanced_arithmetic_sequences" {
-  // 高级算术序列测试
-  // 斐波那契数列前几项的和
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = add(fib1, fib2)
-  let fib4 = add(fib2, fib3)
-  let fib5 = add(fib3, fib4)
-  
-  let fib_sum = add(add(add(add(fib1, fib2), fib3), fib4), fib5)
-  assert_eq(12, fib_sum)
+test "add_function_comprehensive" {
+  // 加法函数综合测试
+  assert_eq(10, add(7, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-8, 3))
+  assert_eq(1000, add(500, 500))
+  assert_eq(-100, add(-50, -50))
 }
 
-test "statistical_calculations" {
-  // 统计计算测试
-  let value1 = 10
-  let value2 = 15
-  let value3 = 20
-  let value4 = 25
-  let value5 = 30
-  let sum = add(add(add(add(value1, value2), value3), value4), value5)
-  let mean = divide_with_ceil(sum, 5)
-  
-  assert_eq(100, sum)
-  assert_eq(20, mean)
-  
-  // 计算方差（简化版本）
-  let diff1 = subtract(value1, mean)
-  let diff2 = subtract(value2, mean)
-  let squared_diff_sum = add(multiply(diff1, diff1), multiply(diff2, diff2))
-  assert_eq(200, squared_diff_sum)
+test "multiply_function_edge_cases" {
+  // 乘法函数边界情况测试
+  assert_eq(25, multiply(5, 5))
+  assert_eq(0, multiply(100, 0))
+  assert_eq(-30, multiply(-6, 5))
+  assert_eq(30, multiply(-6, -5))
+  assert_eq(10000, multiply(100, 100))
 }
 
-test "time_conversion_calculations" {
-  // 时间转换计算测试
-  let hours = 2
-  let minutes = 45
-  let seconds = 30
-  
-  // 转换为总秒数
-  let total_seconds = add(multiply(hours, 3600), add(multiply(minutes, 60), seconds))
-  assert_eq(9930, total_seconds)
-  
-  // 计算包含的完整分钟数
-  let full_minutes = divide_with_ceil(total_seconds, 60)
-  assert_eq(166, full_minutes)
+test "divide_with_ceil_precision" {
+  // 向上取整除法精度测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(0, divide_with_ceil(0, 10))
+  assert_eq(0, divide_with_ceil(15, 0))
 }
 
-test "geometric_progression" {
-  // 几何级数测试
-  let first_term = 2
-  let ratio = 3
-  
-  // 计算几何级数和：a + ar + ar² + ar³
-  let term1 = first_term
-  let term2 = multiply(first_term, ratio)
-  let term3 = multiply(term2, ratio)
-  let term4 = multiply(term3, ratio)
-  
-  let geometric_sum = add(add(add(term1, term2), term3), term4)
-  assert_eq(80, geometric_sum)
+test "divide_with_ceil_negative_numbers" {
+  // 向上取整除法负数测试
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(-4, divide_with_ceil(10, -3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+  assert_eq(-1, divide_with_ceil(-1, 2))
+  assert_eq(1, divide_with_ceil(-1, -2))
 }
 
-test "modular_arithmetic_simulation" {
-  // 模运算模拟测试（使用除法和乘法）
-  let dividend = 17
-  let divisor = 5
-  
-  // 计算商和余数
-  let quotient = divide_with_ceil(dividend, divisor)
-  let product = multiply(quotient, divisor)
-  let remainder = subtract(product, dividend)
-  
-  assert_eq(4, quotient)  // ceil(17/5) = 4
-  assert_eq(20, product)  // 4 * 5 = 20
-  assert_eq(3, remainder)  // 20 - 17 = 3
+test "greet_function_international" {
+  // 问候函数国际化测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
 
-test "temperature_conversion" {
-  // 温度转换测试（简化模拟）
-  let celsius = 25
-  let fahrenheit = add(multiply(divide_with_ceil(multiply(celsius, 9), 5), 1), 32)
-  
-  // 简化的摄氏度转华氏度：ceil(C*9/5) + 32
-  assert_eq(77, fahrenheit)
-  
-  // 反向转换验证
-  let back_to_celsius = divide_with_ceil(multiply(subtract(fahrenheit, 32), 5), 9)
-  assert_eq(25, back_to_celsius)
+test "subtract_function_comprehensive" {
+  // 减法函数综合测试
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(15, 15))
+  assert_eq(20, subtract(10, -10))
+  assert_eq(-20, subtract(-10, 10))
 }
 
-test "coordinate_geometry" {
-  // 坐标几何测试
-  let x1 = 1
-  let y1 = 2
-  let x2 = 4
-  let y2 = 6
+test "mathematical_properties_validation" {
+  // 数学性质验证测试
+  let a = 12
+  let b = 8
   
-  // 计算曼哈顿距离
-  let manhattan_distance = add(subtract(x2, x1), subtract(y2, y1))
-  assert_eq(7, manhattan_distance)
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
   
-  // 计算矩形面积
-  let width = subtract(x2, x1)
-  let height = subtract(y2, y1)
-  let area = multiply(width, height)
-  assert_eq(12, area)
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 验证具体数值
+  assert_eq(20, add(12, 8))
+  assert_eq(96, multiply(12, 8))
 }
 
-test "number_system_conversion" {
-  // 数字系统转换测试（二进制到十进制的模拟）
-  // 二进制 1011 = 1*2³ + 0*2² + 1*2¹ + 1*2⁰ = 8 + 0 + 2 + 1 = 11
-  let bit3 = 1
-  let bit2 = 0
-  let bit1 = 1
-  let bit0 = 1
+test "business_packaging_scenario" {
+  // 业务包装场景测试
+  let total_items = 35
+  let items_per_package = 8
+  let packages_needed = divide_with_ceil(total_items, items_per_package)
   
-  let term1 = multiply(bit3, multiply(2, multiply(2, 2)))  // 1 * 8
-  let term2 = multiply(bit2, multiply(2, 2))              // 0 * 4
-  let term3 = multiply(bit1, 2)                            // 1 * 2
-  let decimal_value = add(add(add(term1, term2), term3), bit0)  // 1
-  assert_eq(11, decimal_value)
+  assert_eq(5, packages_needed)
+  
+  // 验证总容量
+  let total_capacity = multiply(packages_needed, items_per_package)
+  assert_eq(40, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(5, remaining_space)
 }
 
-test "resource_scheduling" {
-  // 资源调度测试
-  let tasks = 23
-  let workers = 4
-  let hours_per_task = 3
+test "complex_workflow_calculation" {
+  // 复杂工作流计算测试
+  // 场景：项目资源计算
+  let team_members = 6
+  let tasks_per_member = 8
+  let total_tasks = multiply(team_members, tasks_per_member)
   
-  // 计算每个工人的任务数
-  let tasks_per_worker = divide_with_ceil(tasks, workers)
-  assert_eq(6, tasks_per_worker)
+  let sprint_capacity = 15
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
   
-  // 计算总工时
-  let total_hours = multiply(tasks, hours_per_task)
-  assert_eq(69, total_hours)
-  
-  // 计算需要的日数
-  let days_needed = divide_with_ceil(total_hours, multiply(workers, 8))  // 每天8小时
-  assert_eq(3, days_needed)
+  assert_eq(48, total_tasks)  // 6 * 8 = 48
+  assert_eq(4, sprints_needed)  // ceil(48/15) = 4
 }
 
-test "circular_calculation" {
-  // 循环计算测试
-  let initial_value = 5
+test "edge_cases_and_boundary_values" {
+  // 边界情况和极值测试
+  // 除法边界情况
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(1, divide_with_ceil(-5, -5))
+  assert_eq(0, divide_with_ceil(0, 5))
   
-  // 模拟循环：每次将值乘以2再加1
-  let step1 = add(multiply(initial_value, 2), 1)  // 5*2 + 1 = 11
-  let step2 = add(multiply(step1, 2), 1)          // 11*2 + 1 = 23
-  let step3 = add(multiply(step2, 2), 1)          // 23*2 + 1 = 47
-  let step4 = add(multiply(step3, 2), 1)          // 47*2 + 1 = 95
+  // 大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(100000000, multiply(10000, 10000))
   
-  let final_result = step4
-  assert_eq(95, final_result)
-  
-  // 验证循环的数学性质
-  let expected = add(multiply(initial_value, 16), 15)  // 5*16 + 15 = 95
-  assert_eq(expected, final_result)
+  // 特殊问候情况
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, special@chars!", greet("special@chars"))
 }
