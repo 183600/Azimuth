@@ -1,50 +1,58 @@
-// Azimuth 简单测试用例
-// 包含9个标准 MoonBit 测试用例
+// 标准 MoonBit 测试用例
+// 为 Azimuth 项目添加的简洁测试集
 
-test "simple_add" {
+test "basic_addition" {
+  // 基本加法测试
   assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
   assert_eq(-2, add(-5, 3))
 }
 
-test "simple_multiply" {
+test "basic_multiplication" {
+  // 基本乘法测试
   assert_eq(6, multiply(2, 3))
   assert_eq(0, multiply(5, 0))
   assert_eq(-6, multiply(-2, 3))
 }
 
-test "simple_divide_ceil" {
+test "divide_with_ceil_basic" {
+  // 向上取整除法基本测试
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
   assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "simple_divide_ceil_negative" {
+test "divide_with_ceil_negative" {
+  // 向上取整除法负数测试
   assert_eq(-3, divide_with_ceil(-10, 3))
   assert_eq(-4, divide_with_ceil(10, -3))
   assert_eq(4, divide_with_ceil(-10, -3))
 }
 
-test "simple_greet" {
+test "greet_function" {
+  // 问候函数测试
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
 }
 
-test "simple_subtract" {
+test "subtract_function" {
+  // 减法函数测试
   assert_eq(2, subtract(5, 3))
   assert_eq(-2, subtract(3, 5))
   assert_eq(0, subtract(5, 5))
 }
 
-test "simple_commutative" {
+test "mathematical_commutative" {
+  // 数学交换律测试
   let a = 7
   let b = 13
   assert_eq(add(a, b), add(b, a))
   assert_eq(multiply(a, b), multiply(b, a))
 }
 
-test "simple_packaging" {
+test "packaging_scenario" {
+  // 包装计算场景测试
   let items = 25
   let capacity = 6
   let packages = divide_with_ceil(items, capacity)
@@ -55,7 +63,8 @@ test "simple_packaging" {
   assert_eq(5, remaining)
 }
 
-test "simple_workflow" {
+test "complex_workflow" {
+  // 复杂工作流测试
   let team = 4
   let tasks_per_person = 8
   let total_tasks = multiply(team, tasks_per_person)
