@@ -1169,6 +1169,268 @@ test "financial_calculation_scenario" {
   assert_eq(101500, total_payment)
   
   // 验证最后一个月的实际支付金额
+  let final_payment = subtract(total_payment, multiply(subtract(months_needed, 1), monthly_payment))
+  assert_eq(1500, final_payment)
+}
+
+// 新增的10个标准MoonBit测试用例
+test "complex_nested_calculations" {
+  // 复杂嵌套计算测试
+  let base = 5
+  let multiplier = 3
+  let divisor = 2
+  let offset = 7
+  
+  // 嵌套计算：(base * multiplier) / divisor + offset
+  let nested_result = add(
+    divide_with_ceil(multiply(base, multiplier), divisor),
+    offset
+  )
+  assert_eq(15, nested_result)  // ceil(5*3/2) + 7 = 8 + 7 = 15
+  
+  // 更复杂的嵌套：((base + offset) * multiplier) / divisor
+  let complex_nested = divide_with_ceil(
+    multiply(add(base, offset), multiplier),
+    divisor
+  )
+  assert_eq(18, complex_nested)  // ceil((5+7)*3/2) = ceil(36/2) = 18
+}
+
+test "time_based_calculations" {
+  // 基于时间的计算测试：项目时间规划
+  let total_hours = 160
+  let work_days_per_week = 5
+  let hours_per_day = 8
+  let weeks_needed = divide_with_ceil(
+    total_hours,
+    multiply(work_days_per_week, hours_per_day)
+  )
+  assert_eq(4, weeks_needed)  // ceil(160/(5*8)) = ceil(160/40) = 4
+  
+  // 计算实际工作天数
+  let actual_work_days = multiply(weeks_needed, work_days_per_week)
+  assert_eq(20, actual_work_days)
+  
+  // 计算剩余时间
+  let remaining_hours = subtract(
+    multiply(actual_work_days, hours_per_day),
+    total_hours
+  )
+  assert_eq(0, remaining_hours)
+}
+
+test "resource_optimization_scenario" {
+  // 资源优化场景测试
+  let tasks = [23, 17, 31, 19, 29]  // 各任务所需工时
+  let workers = 3
+  let hours_per_day = 8
+  
+  // 计算总工时
+  let total_task_hours = add(add(add(add(tasks[0], tasks[1]), tasks[2]), tasks[3]), tasks[4])
+  assert_eq(119, total_task_hours)
+  
+  // 计算每天总工时
+  let daily_capacity = multiply(workers, hours_per_day)
+  assert_eq(24, daily_capacity)
+  
+  // 计算需要的天数
+  let days_needed = divide_with_ceil(total_task_hours, daily_capacity)
+  assert_eq(5, days_needed)  // ceil(119/24) = 5
+  
+  // 计算最后一天的工时
+  let last_day_hours = subtract(
+    total_task_hours,
+    multiply(subtract(days_needed, 1), daily_capacity)
+  )
+  assert_eq(23, last_day_hours)
+}
+
+test "inventory_batch_processing" {
+  // 库存批次处理测试
+  let inventory_items = 487
+  let batch_size = 50
+  let processing_time_per_batch = 2  // 小时
+  let work_hours_per_day = 8
+  
+  // 计算批次数
+  let batches_needed = divide_with_ceil(inventory_items, batch_size)
+  assert_eq(10, batches_needed)  // ceil(487/50) = 10
+  
+  // 计算总处理时间
+  let total_processing_time = multiply(batches_needed, processing_time_per_batch)
+  assert_eq(20, total_processing_time)
+  
+  // 计算需要的天数
+  let days_needed = divide_with_ceil(total_processing_time, work_hours_per_day)
+  assert_eq(3, days_needed)  // ceil(20/8) = 3
+  
+  // 计算最后一批的实际数量
+  let last_batch_size = subtract(
+    inventory_items,
+    multiply(subtract(batches_needed, 1), batch_size)
+  )
+  assert_eq(37, last_batch_size)
+}
+
+test "space_utilization_optimization" {
+  // 空间利用优化测试
+  let total_volume = 1250
+  let container_volume = 150
+  let containers_needed = divide_with_ceil(total_volume, container_volume)
+  assert_eq(9, containers_needed)  // ceil(1250/150) = 9
+  
+  // 计算总容量
+  let total_capacity = multiply(containers_needed, container_volume)
+  assert_eq(1350, total_capacity)
+  
+  // 计算空间利用率
+  let utilization_percentage = divide_with_ceil(
+    multiply(total_volume, 100),
+    total_capacity
+  )
+  assert_eq(93, utilization_percentage)  // floor(125000/1350) = 92%
+  
+  // 计算剩余空间
+  let remaining_space = subtract(total_capacity, total_volume)
+  assert_eq(100, remaining_space)
+}
+
+test "multi_stage_workflow" {
+  // 多阶段工作流测试
+  // 阶段1：数据收集
+  let data_points = 250
+  let collection_rate_per_hour = 15
+  let collection_hours = divide_with_ceil(data_points, collection_rate_per_hour)
+  assert_eq(17, collection_hours)  // ceil(250/15) = 17
+  
+  // 阶段2：数据处理
+  let processing_time_per_point = 3
+  let total_processing_time = multiply(data_points, processing_time_per_point)
+  assert_eq(750, total_processing_time)
+  
+  // 阶段3：质量检查
+  let sample_rate = 10  // 每10个数据点检查1个
+  let samples_to_check = divide_with_ceil(data_points, sample_rate)
+  assert_eq(25, samples_to_check)
+  
+  // 计算总时间
+  let total_time = add(collection_hours, add(
+    divide_with_ceil(total_processing_time, 60),  // 转换为小时
+    divide_with_ceil(multiply(samples_to_check, 5), 60)  // 每个样本5分钟
+  ))
+  assert_eq(42, total_time)  // 17 + ceil(750/60) + ceil(25*5/60) = 17 + 13 + 3 = 33
+}
+
+test "cost_optimization_analysis" {
+  // 成本优化分析测试
+  let product_cost = 45
+  let shipping_cost_per_item = 3
+  let packaging_cost_per_box = 12
+  let items_per_box = 6
+  let total_items = 35
+  
+  // 计算需要的箱子数
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  assert_eq(6, boxes_needed)  // ceil(35/6) = 6
+  
+  // 计算总产品成本
+  let total_product_cost = multiply(product_cost, total_items)
+  assert_eq(1575, total_product_cost)
+  
+  // 计算总运输成本
+  let total_shipping_cost = multiply(shipping_cost_per_item, total_items)
+  assert_eq(105, total_shipping_cost)
+  
+  // 计算总包装成本
+  let total_packaging_cost = multiply(packaging_cost_per_box, boxes_needed)
+  assert_eq(72, total_packaging_cost)
+  
+  // 计算总成本
+  let total_cost = add(add(total_product_cost, total_shipping_cost), total_packaging_cost)
+  assert_eq(1752, total_cost)
+  
+  // 计算每件商品的平均成本
+  let average_cost_per_item = divide_with_ceil(total_cost, total_items)
+  assert_eq(51, average_cost_per_item)  // ceil(1752/35) = 51
+}
+
+test "performance_benchmarking" {
+  // 性能基准测试
+  let base_operations = 1000
+  let optimization_factor = 3
+  let overhead_percentage = 15
+  
+  // 计算优化后的操作数
+  let optimized_operations = multiply(base_operations, optimization_factor)
+  assert_eq(3000, optimized_operations)
+  
+  // 计算开销
+  let overhead = divide_with_ceil(
+    multiply(optimized_operations, overhead_percentage),
+    100
+  )
+  assert_eq(450, overhead)  // ceil(3000*15/100) = ceil(45000/100) = 450
+  
+  // 计算实际有效操作数
+  let effective_operations = subtract(optimized_operations, overhead)
+  assert_eq(2550, effective_operations)
+  
+  // 计算性能提升比例
+  let performance_improvement = divide_with_ceil(
+    multiply(effective_operations, 100),
+    base_operations
+  )
+  assert_eq(255, performance_improvement)  // ceil(2550*100/1000) = ceil(255000/1000) = 255
+}
+
+test "error_boundary_conditions" {
+  // 错误边界条件测试
+  // 测试各种边界情况
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, -1))
+  assert_eq(0, divide_with_ceil(0, 1000))
+  assert_eq(0, divide_with_ceil(0, -1000))
+  
+  // 测试极值除法
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
+  assert_eq(-1, divide_with_ceil(1, -1))
+  assert_eq(-1, divide_with_ceil(-1, 1))
+  
+  // 测试大数运算
+  let large_num = 100000
+  assert_eq(200000, add(large_num, large_num))
+  assert_eq(10000000000, multiply(large_num, large_num))
+  assert_eq(1, divide_with_ceil(large_num, large_num))
+  assert_eq(2, divide_with_ceil(add(large_num, 1), large_num))
+  
+  // 测试零运算
+  assert_eq(0, multiply(0, large_num))
+  assert_eq(large_num, add(large_num, 0))
+  assert_eq(large_num, subtract(large_num, 0))
+}
+
+test "multi_language_greeting_support" {
+  // 多语言问候支持测试
+  // 测试各种语言的问候
+  assert_eq_string("Hello, English!", greet("English"))
+  assert_eq_string("Hello, 中文!", greet("中文"))
+  assert_eq_string("Hello, 日本語!", greet("日本語"))
+  assert_eq_string("Hello, 한국어!", greet("한국어"))
+  assert_eq_string("Hello, Español!", greet("Español"))
+  assert_eq_string("Hello, Français!", greet("Français"))
+  assert_eq_string("Hello, Deutsch!", greet("Deutsch"))
+  assert_eq_string("Hello, Русский!", greet("Русский"))
+  assert_eq_string("Hello, العربية!", greet("العربية"))
+  assert_eq_string("Hello, हिन्दी!", greet("हिन्दी"))
+  
+  // 测试特殊字符和符号
+  assert_eq_string("Hello, 🌍!", greet("🌍"))
+  assert_eq_string("Hello, @#$%^&*()!", greet("@#$%^&*()"))
+  assert_eq_string("Hello,   !", greet("   "))
+  assert_eq_string("Hello, \t\n!", greet("\t\n"))
+  assert_eq_string("Hello, 1234567890!", greet("1234567890"))
+}
   let final_payment = subtract(total_payment, multiply(months_needed - 1, monthly_payment))
   assert_eq(1500, final_payment)
 }
