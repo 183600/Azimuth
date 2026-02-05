@@ -1,0 +1,113 @@
+fn __test_62617369635f66756e6374696f6e616c6974795f74657374732e6d6274_0 () -> Unit raise Error {
+  let sum/39 : Int = 3
+  let diff/40 : Int = 2
+  let product/41 : Int = 12
+  let quotient/42 : Int = 5
+  let remainder/43 : Int = 1
+  let abs_neg/44 : Int = Int::abs(-5)
+  let abs_zero/45 : Int = Int::abs(0)
+  let abs_pos/46 : Int = Int::abs(7)
+  sum/39 + diff/40 + product/41 + quotient/42 + remainder/43
+  abs_neg/44 + abs_zero/45 + abs_pos/46
+  @make_value(())
+}
+
+fn __test_62617369635f66756e6374696f6e616c6974795f74657374732e6d6274_1 () -> Unit raise Error {
+  let and_true/33 : Bool = true
+  let and_false/34 : Bool = false
+  let or_true/35 : Bool = true
+  let or_false/36 : Bool = false
+  let not_true/37 : Bool = false
+  let not_false/38 : Bool = true
+  and_true/33 && and_false/34 && or_true/35 && or_false/36 && not_true/37 && not_false/38
+  @make_value(())
+}
+
+fn __test_62617369635f66756e6374696f6e616c6974795f74657374732e6d6274_2 () -> Unit raise Error {
+  let str1/28 : String = "hello"
+  let str2/29 : String = "world"
+  let combined/30 : String = @ccall add_string(@ccall add_string(str1/28, " "), str2/29)
+  let len1/31 : Int = @stringlength(str1/28)
+  let len_combined/32 : Int = @stringlength(combined/30)
+  len1/31 + len_combined/32
+  @make_value(())
+}
+
+fn __test_62617369635f66756e6374696f6e616c6974795f74657374732e6d6274_3 () -> Unit raise Error {
+  let numbers/18 : Array[Int] = Array[Int]::{
+    buf: FixedArray[UnsafeMaybeUninit[Int]]::[1, 2, 3, 4, 5],
+    len: 5
+  }
+  let strings/19 : Array[String] = Array[String]::{
+    buf: FixedArray[UnsafeMaybeUninit[String]]::["hello", "world", "moonbit"],
+    len: 3
+  }
+  let len_numbers/20 : Int = @fixedarray_length(numbers/18)
+  let len_strings/21 : Int = @fixedarray_length(strings/19)
+  let *bind/48 : Int = 0
+  let first_num/22 : Int = {
+    if *bind/48 < 0 || *bind/48 >= numbers/18.len { panic }
+    numbers/18.buf.[*bind/48]
+  }
+  let *bind/47 : Int = 2
+  let last_str/23 : String = {
+    if *bind/47 < 0 || *bind/47 >= strings/19.len { panic }
+    strings/19.buf.[*bind/47]
+  }
+  let doubled/25 : Array[Int] = Array::map(numbers/18, fn (x/24 : Int) -> Int { x/24 * 2 })
+  let evens/27 : Array[Int] = Array::filter(numbers/18, fn (x/26 : Int) -> Bool { x/26 % 2 == 0 })
+  len_numbers/20 + len_strings/21 + first_num/22 + @stringlength(last_str/23)
+  @fixedarray_length(doubled/25) + @fixedarray_length(evens/27)
+  @make_value(())
+}
+
+fn __test_62617369635f66756e6374696f6e616c6974795f74657374732e6d6274_4 () -> Unit raise Error {
+  let some_value/13 : Option[Int] = Some(42)
+  let none_value/14 : Option[Int] = None()
+  let is_some/15 : Bool = match some_value/13 {
+    Some => true
+    _ => false
+  }
+  let is_none/16 : Bool = match none_value/14 {
+    None => true
+    _ => false
+  }
+  let unwrapped/17 : Int = Option::unwrap(some_value/13)
+  is_some/15 && is_none/16
+  unwrapped/17
+  @make_value(())
+}
+
+fn __test_62617369635f66756e6374696f6e616c6974795f74657374732e6d6274_5 () -> Unit raise Error {
+  let ok_result/7 : Result[Int, String] = Ok(42)
+  let err_result/8 : Result[Int, String] = Err("error")
+  let is_ok/9 : Bool = match ok_result/7 {
+    Ok => true
+    _ => false
+  }
+  let is_err/10 : Bool = match err_result/8 {
+    Ok => false
+    _ => true
+  }
+  let unwrapped/12 : Int = match ok_result/7 {
+    Ok as *Ok/57 => {
+      let *value/58 : Int = *Ok/57.0
+      *value/58
+    }
+    _ => 0
+  }
+  is_ok/9 && is_err/10
+  unwrapped/12
+  @make_value(())
+}
+
+fn __test_62617369635f66756e6374696f6e616c6974795f74657374732e6d6274_6 () -> Unit raise Error {
+  let less_than/1 : Bool = true
+  let greater_than/2 : Bool = true
+  let less_equal/3 : Bool = true
+  let greater_equal/4 : Bool = true
+  let equal/5 : Bool = true
+  let not_equal/6 : Bool = true
+  less_than/1 && greater_than/2 && less_equal/3 && greater_equal/4 && equal/5 && not_equal/6
+  @make_value(())
+}

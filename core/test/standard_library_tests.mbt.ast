@@ -1,0 +1,206 @@
+((Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_7374616e646172645f6c6962726172795f74657374732e6d6274_0)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name hello)))
+    (Pexpr_constant "Hello, World!")
+    (Pexpr_let (Ppat_var ((binder_name empty))) (Pexpr_constant "")
+     (Pexpr_let (Ppat_var ((binder_name chinese)))
+      (Pexpr_constant "\E6\B5\8B\E8\AF\95\E4\B8\AD\E6\96\87")
+      (Pexpr_let (Ppat_var ((binder_name emoji)))
+       (Pexpr_constant "\F0\9F\9A\80 MoonBit")
+       (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name hello)))
+        (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name empty)))
+         (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name chinese)))
+          (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name emoji)))
+           (Pexpr_unit faked)))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_7374616e646172645f6c6962726172795f74657374732e6d6274_1)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name first))) (Pexpr_constant Hello)
+    (Pexpr_let (Ppat_var ((binder_name second))) (Pexpr_constant World)
+     (Pexpr_let (Ppat_var ((binder_name combined)))
+      (Pexpr_infix ((var_name +))
+       (Pexpr_infix ((var_name +))
+        (Pexpr_infix ((var_name +)) (Pexpr_ident ((var_name first)))
+         (Pexpr_constant ", "))
+        (Pexpr_ident ((var_name second))))
+       (Pexpr_constant !))
+      (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name combined)))
+       (Pexpr_unit faked)))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_7374616e646172645f6c6962726172795f74657374732e6d6274_2)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name space))) (Pexpr_constant " ")
+    (Pexpr_let (Ppat_var ((binder_name newline))) (Pexpr_constant "\5Cn")
+     (Pexpr_let (Ppat_var ((binder_name tab))) (Pexpr_constant "\5Ct")
+      (Pexpr_let (Ppat_var ((binder_name quotes)))
+       (Pexpr_constant "\5C\22quotes\5C\22")
+       (Pexpr_let (Ppat_var ((binder_name apostrophe)))
+        (Pexpr_constant 'apostrophe')
+        (Pexpr_let (Ppat_var ((binder_name backslash)))
+         (Pexpr_constant "\5C\5Cbackslash\5C\5C")
+         (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name space)))
+          (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name newline)))
+           (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name tab)))
+            (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name quotes)))
+             (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name apostrophe)))
+              (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name backslash)))
+               (Pexpr_unit faked)))))))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_7374616e646172645f6c6962726172795f74657374732e6d6274_3)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name str1))) (Pexpr_constant Hello)
+    (Pexpr_let (Ppat_var ((binder_name str2))) (Pexpr_constant World)
+     (Pexpr_let (Ppat_var ((binder_name str3))) (Pexpr_constant Hello)
+      (Pexpr_let (Ppat_var ((binder_name str4))) (Pexpr_constant "")
+       (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name str1)))
+        (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name str2)))
+         (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name str3)))
+          (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name str4)))
+           (Pexpr_unit faked)))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_7374616e646172645f6c6962726172795f74657374732e6d6274_4)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name prefix))) (Pexpr_constant MoonBit)
+    (Pexpr_let (Ppat_var ((binder_name suffix)))
+     (Pexpr_constant "Standard Library")
+     (Pexpr_let (Ppat_var ((binder_name full_name)))
+      (Pexpr_infix ((var_name +))
+       (Pexpr_infix ((var_name +)) (Pexpr_ident ((var_name prefix)))
+        (Pexpr_constant " "))
+       (Pexpr_ident ((var_name suffix))))
+      (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name full_name)))
+       (Pexpr_unit faked)))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_7374616e646172645f6c6962726172795f74657374732e6d6274_5)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name latin))) (Pexpr_constant "caf\C3\A9")
+    (Pexpr_let (Ppat_var ((binder_name russian)))
+     (Pexpr_constant "\D0\9C\D0\BE\D1\81\D0\BA\D0\B2\D0\B0")
+     (Pexpr_let (Ppat_var ((binder_name arabic)))
+      (Pexpr_constant "\D9\85\D8\B1\D8\AD\D8\A8\D8\A7")
+      (Pexpr_let (Ppat_var ((binder_name emoji_only)))
+       (Pexpr_constant "\F0\9F\9A\80\F0\9F\8C\9F\F0\9F\92\8E")
+       (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name latin)))
+        (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name russian)))
+         (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name arabic)))
+          (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name emoji_only)))
+           (Pexpr_unit faked)))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_7374616e646172645f6c6962726172795f74657374732e6d6274_6)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name single_char))) (Pexpr_constant a)
+    (Pexpr_let (Ppat_var ((binder_name single_space))) (Pexpr_constant " ")
+     (Pexpr_let (Ppat_var ((binder_name single_newline)))
+      (Pexpr_constant "\5Cn")
+      (Pexpr_let (Ppat_var ((binder_name long_string)))
+       (Pexpr_constant
+        "This is a very long string that contains many words and characters")
+       (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name single_char)))
+        (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name single_space)))
+         (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name single_newline)))
+          (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name long_string)))
+           (Pexpr_unit faked)))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_7374616e646172645f6c6962726172795f74657374732e6d6274_7)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name name))) (Pexpr_constant Developer)
+    (Pexpr_let (Ppat_var ((binder_name place))) (Pexpr_constant MoonBit)
+     (Pexpr_let (Ppat_var ((binder_name greeting)))
+      (Pexpr_infix ((var_name +))
+       (Pexpr_infix ((var_name +))
+        (Pexpr_infix ((var_name +))
+         (Pexpr_infix ((var_name +)) (Pexpr_constant "Hello, ")
+          (Pexpr_ident ((var_name name))))
+         (Pexpr_constant "! Welcome to "))
+        (Pexpr_ident ((var_name place))))
+       (Pexpr_constant .))
+      (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name greeting)))
+       (Pexpr_unit faked)))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_7374616e646172645f6c6962726172795f74657374732e6d6274_8)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name email)))
+    (Pexpr_constant user@example.com)
+    (Pexpr_let (Ppat_var ((binder_name phone))) (Pexpr_constant 123-456-7890)
+     (Pexpr_let (Ppat_var ((binder_name url)))
+      (Pexpr_constant https://moonbitlang.com)
+      (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name email)))
+       (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name phone)))
+        (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name url)))
+         (Pexpr_unit faked)))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name
+      __test_7374616e646172645f6c6962726172795f74657374732e6d6274_9)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name base))) (Pexpr_constant test)
+    (Pexpr_let (Ppat_var ((binder_name repeated)))
+     (Pexpr_infix ((var_name +))
+      (Pexpr_infix ((var_name +))
+       (Pexpr_infix ((var_name +))
+        (Pexpr_infix ((var_name +)) (Pexpr_ident ((var_name base)))
+         (Pexpr_ident ((var_name base))))
+        (Pexpr_ident ((var_name base))))
+       (Pexpr_ident ((var_name base))))
+      (Pexpr_ident ((var_name base))))
+     (Pexpr_let (Ppat_any) (Pexpr_ident ((var_name repeated)))
+      (Pexpr_unit faked)))))))

@@ -1,0 +1,213 @@
+((Ctop_fn
+  ((binder __test_7374616e646172645f6c6962726172795f74657374732e6d6274_0)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let hello/0 "Hello, World!"
+       (Cexpr_let empty/1 ""
+        (Cexpr_let chinese/2 "\E6\B5\8B\E8\AF\95\E4\B8\AD\E6\96\87"
+         (Cexpr_let emoji/3 "\F0\9F\9A\80 MoonBit"
+          (Cexpr_sequence
+           ((Cexpr_var hello/0 String ()) (Cexpr_var empty/1 String ())
+            (Cexpr_var chinese/2 String ()) (Cexpr_var emoji/3 String ()))
+           (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+            (Cexpr_unit))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_7374616e646172645f6c6962726172795f74657374732e6d6274_1)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let first/0 Hello
+       (Cexpr_let second/1 World
+        (Cexpr_let combined/2
+         (Cexpr_prim @add_string
+          (Cexpr_prim @add_string
+           (Cexpr_prim @add_string (Cexpr_var first/0 String ()) ", ")
+           (Cexpr_var second/1 String ()))
+          !)
+         (Cexpr_sequence ((Cexpr_var combined/2 String ()))
+          (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+           (Cexpr_unit))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_7374616e646172645f6c6962726172795f74657374732e6d6274_2)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let space/0 " "
+       (Cexpr_let newline/1 "\0A"
+        (Cexpr_let tab/2 "\09"
+         (Cexpr_let quotes/3 "quotes"
+          (Cexpr_let apostrophe/4 'apostrophe'
+           (Cexpr_let backslash/5 "\5Cbackslash\5C"
+            (Cexpr_sequence
+             ((Cexpr_var space/0 String ()) (Cexpr_var newline/1 String ())
+              (Cexpr_var tab/2 String ()) (Cexpr_var quotes/3 String ())
+              (Cexpr_var apostrophe/4 String ())
+              (Cexpr_var backslash/5 String ()))
+             (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+              (Cexpr_unit))
+             (T_error_value_result Unit (T_constr Error () (generic_ false))))
+            (T_error_value_result Unit (T_constr Error () (generic_ false))))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_7374616e646172645f6c6962726172795f74657374732e6d6274_3)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let str1/0 Hello
+       (Cexpr_let str2/1 World
+        (Cexpr_let str3/2 Hello
+         (Cexpr_let str4/3 ""
+          (Cexpr_sequence
+           ((Cexpr_var str1/0 String ()) (Cexpr_var str2/1 String ())
+            (Cexpr_var str3/2 String ()) (Cexpr_var str4/3 String ()))
+           (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+            (Cexpr_unit))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_7374616e646172645f6c6962726172795f74657374732e6d6274_4)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let prefix/0 MoonBit
+       (Cexpr_let suffix/1 "Standard Library"
+        (Cexpr_let full_name/2
+         (Cexpr_prim @add_string
+          (Cexpr_prim @add_string (Cexpr_var prefix/0 String ()) " ")
+          (Cexpr_var suffix/1 String ()))
+         (Cexpr_sequence ((Cexpr_var full_name/2 String ()))
+          (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+           (Cexpr_unit))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_7374616e646172645f6c6962726172795f74657374732e6d6274_5)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let latin/0 "caf\C3\A9"
+       (Cexpr_let russian/1 "\D0\9C\D0\BE\D1\81\D0\BA\D0\B2\D0\B0"
+        (Cexpr_let arabic/2 "\D9\85\D8\B1\D8\AD\D8\A8\D8\A7"
+         (Cexpr_let emoji_only/3 "\F0\9F\9A\80\F0\9F\8C\9F\F0\9F\92\8E"
+          (Cexpr_sequence
+           ((Cexpr_var latin/0 String ()) (Cexpr_var russian/1 String ())
+            (Cexpr_var arabic/2 String ())
+            (Cexpr_var emoji_only/3 String ()))
+           (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+            (Cexpr_unit))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_7374616e646172645f6c6962726172795f74657374732e6d6274_6)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let single_char/0 a
+       (Cexpr_let single_space/1 " "
+        (Cexpr_let single_newline/2 "\0A"
+         (Cexpr_let long_string/3
+          "This is a very long string that contains many words and characters"
+          (Cexpr_sequence
+           ((Cexpr_var single_char/0 String ())
+            (Cexpr_var single_space/1 String ())
+            (Cexpr_var single_newline/2 String ())
+            (Cexpr_var long_string/3 String ()))
+           (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+            (Cexpr_unit))
+           (T_error_value_result Unit (T_constr Error () (generic_ false))))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_7374616e646172645f6c6962726172795f74657374732e6d6274_7)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let name/0 Developer
+       (Cexpr_let place/1 MoonBit
+        (Cexpr_let greeting/2
+         (Cexpr_prim @add_string
+          (Cexpr_prim @add_string
+           (Cexpr_prim @add_string
+            (Cexpr_prim @add_string "Hello, " (Cexpr_var name/0 String ()))
+            "! Welcome to ")
+           (Cexpr_var place/1 String ()))
+          .)
+         (Cexpr_sequence ((Cexpr_var greeting/2 String ()))
+          (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+           (Cexpr_unit))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_7374616e646172645f6c6962726172795f74657374732e6d6274_8)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let email/0 user@example.com
+       (Cexpr_let phone/1 123-456-7890
+        (Cexpr_let url/2 https://moonbitlang.com
+         (Cexpr_sequence
+          ((Cexpr_var email/0 String ()) (Cexpr_var phone/1 String ())
+           (Cexpr_var url/2 String ()))
+          (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+           (Cexpr_unit))
+          (T_error_value_result Unit (T_constr Error () (generic_ false))))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder __test_7374616e646172645f6c6962726172795f74657374732e6d6274_9)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let base/0 test
+       (Cexpr_let repeated/1
+        (Cexpr_prim @add_string
+         (Cexpr_prim @add_string
+          (Cexpr_prim @add_string
+           (Cexpr_prim @add_string (Cexpr_var base/0 String ())
+            (Cexpr_var base/0 String ()))
+           (Cexpr_var base/0 String ()))
+          (Cexpr_var base/0 String ()))
+         (Cexpr_var base/0 String ()))
+        (Cexpr_sequence ((Cexpr_var repeated/1 String ()))
+         (Cexpr_prim (Pmake_value_or_error (tag (Constr_tag_regular Ok)))
+          (Cexpr_unit))
+         (T_error_value_result Unit (T_constr Error () (generic_ false))))
+        (T_error_value_result Unit (T_constr Error () (generic_ false))))
+       (T_error_value_result Unit (T_constr Error () (generic_ false)))))))
+   (ty_params_ ()) (is_pub_ false))))

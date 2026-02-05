@@ -1,0 +1,116 @@
+fn __test_7374616e646172645f6c6962726172795f74657374732e6d6274_0 () -> Unit raise Error {
+  let hello/33 : String = "Hello, World!"
+  let empty/34 : String = ""
+  let chinese/35 : String = "测试中文"
+  let emoji/36 : String = "🚀 MoonBit"
+  hello/33
+  empty/34
+  chinese/35
+  emoji/36
+  @make_value(())
+}
+
+fn __test_7374616e646172645f6c6962726172795f74657374732e6d6274_1 () -> Unit raise Error {
+  let first/30 : String = "Hello"
+  let second/31 : String = "World"
+  let combined/32 : String = @ccall add_string(
+    @ccall add_string(@ccall add_string(first/30, ", "), second/31),
+    "!"
+  )
+  combined/32
+  @make_value(())
+}
+
+fn __test_7374616e646172645f6c6962726172795f74657374732e6d6274_2 () -> Unit raise Error {
+  let space/24 : String = " "
+  let newline/25 : String = "\n"
+  let tab/26 : String = "\t"
+  let quotes/27 : String = "\"quotes\""
+  let apostrophe/28 : String = "'apostrophe'"
+  let backslash/29 : String = "\\backslash\\"
+  space/24
+  newline/25
+  tab/26
+  quotes/27
+  apostrophe/28
+  backslash/29
+  @make_value(())
+}
+
+fn __test_7374616e646172645f6c6962726172795f74657374732e6d6274_3 () -> Unit raise Error {
+  let str1/20 : String = "Hello"
+  let str2/21 : String = "World"
+  let str3/22 : String = "Hello"
+  let str4/23 : String = ""
+  str1/20
+  str2/21
+  str3/22
+  str4/23
+  @make_value(())
+}
+
+fn __test_7374616e646172645f6c6962726172795f74657374732e6d6274_4 () -> Unit raise Error {
+  let prefix/17 : String = "MoonBit"
+  let suffix/18 : String = "Standard Library"
+  let full_name/19 : String = @ccall add_string(@ccall add_string(prefix/17, " "), suffix/18)
+  full_name/19
+  @make_value(())
+}
+
+fn __test_7374616e646172645f6c6962726172795f74657374732e6d6274_5 () -> Unit raise Error {
+  let latin/13 : String = "café"
+  let russian/14 : String = "Москва"
+  let arabic/15 : String = "مرحبا"
+  let emoji_only/16 : String = "🚀🌟💎"
+  latin/13
+  russian/14
+  arabic/15
+  emoji_only/16
+  @make_value(())
+}
+
+fn __test_7374616e646172645f6c6962726172795f74657374732e6d6274_6 () -> Unit raise Error {
+  let single_char/9 : String = "a"
+  let single_space/10 : String = " "
+  let single_newline/11 : String = "\n"
+  let long_string/12 : String = "This is a very long string that contains many words and characters"
+  single_char/9
+  single_space/10
+  single_newline/11
+  long_string/12
+  @make_value(())
+}
+
+fn __test_7374616e646172645f6c6962726172795f74657374732e6d6274_7 () -> Unit raise Error {
+  let name/6 : String = "Developer"
+  let place/7 : String = "MoonBit"
+  let greeting/8 : String = @ccall add_string(
+    @ccall add_string(
+      @ccall add_string(@ccall add_string("Hello, ", name/6), "! Welcome to "),
+      place/7
+    ),
+    "."
+  )
+  greeting/8
+  @make_value(())
+}
+
+fn __test_7374616e646172645f6c6962726172795f74657374732e6d6274_8 () -> Unit raise Error {
+  let email/3 : String = "user@example.com"
+  let phone/4 : String = "123-456-7890"
+  let url/5 : String = "https://moonbitlang.com"
+  email/3
+  phone/4
+  url/5
+  @make_value(())
+}
+
+fn __test_7374616e646172645f6c6962726172795f74657374732e6d6274_9 () -> Unit raise Error {
+  let base/1 : String = "test"
+  let repeated/2 : String = @ccall add_string(
+    @ccall add_string(@ccall add_string(@ccall add_string(base/1, base/1), base/1), base/1),
+    base/1
+  )
+  repeated/2
+  @make_value(())
+}

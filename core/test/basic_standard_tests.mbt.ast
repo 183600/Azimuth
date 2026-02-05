@@ -1,0 +1,374 @@
+((Ptop_using ((label_name builtin))
+  ((((binder ((binder_name inspect))) (target ())) Using_value)) Vis_default)
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_62617369635f7374616e646172645f74657374732e6d6274_0)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_sequence
+    ((Pexpr_apply (Pexpr_ident ((var_name inspect)))
+      ((Pexpr_infix ((var_name +)) (Pexpr_constant 1) (Pexpr_constant 2))
+       ((Pexpr_constant 3) (Labelled (label ((label_name content)))))))
+     (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+      ((Pexpr_infix ((var_name -)) (Pexpr_constant 10) (Pexpr_constant 3))
+       ((Pexpr_constant 7) (Labelled (label ((label_name content)))))))
+     (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+      ((Pexpr_infix ((var_name *)) (Pexpr_constant 4) (Pexpr_constant 5))
+       ((Pexpr_constant 20) (Labelled (label ((label_name content)))))))
+     (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+      ((Pexpr_infix ((var_name /)) (Pexpr_constant 15) (Pexpr_constant 3))
+       ((Pexpr_constant 5) (Labelled (label ((label_name content))))))))
+    (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+     ((Pexpr_infix ((var_name %)) (Pexpr_constant 17) (Pexpr_constant 5))
+      ((Pexpr_constant 2) (Labelled (label ((label_name content))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_62617369635f7374616e646172645f74657374732e6d6274_1)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name hello))) (Pexpr_constant Hello)
+    (Pexpr_let (Ppat_var ((binder_name world))) (Pexpr_constant World)
+     (Pexpr_let (Ppat_var ((binder_name combined)))
+      (Pexpr_infix ((var_name +))
+       (Pexpr_infix ((var_name +)) (Pexpr_ident ((var_name hello)))
+        (Pexpr_constant " "))
+       (Pexpr_ident ((var_name world))))
+      (Pexpr_sequence
+       ((Pexpr_apply (Pexpr_ident ((var_name inspect)))
+         ((Pexpr_ident ((var_name combined)))
+          ((Pexpr_constant "\5C\22Hello World\5C\22")
+           (Labelled (label ((label_name content)))))))
+        (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+         ((Pexpr_dot_apply (Pexpr_ident ((var_name combined)))
+           ((label_name length)) ())
+          ((Pexpr_constant 11) (Labelled (label ((label_name content)))))))
+        (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+         ((Pexpr_infix ((var_name ==)) (Pexpr_ident ((var_name hello)))
+           (Pexpr_constant Hello))
+          ((Pexpr_constant true) (Labelled (label ((label_name content))))))))
+       (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+        ((Pexpr_infix ((var_name !=)) (Pexpr_ident ((var_name hello)))
+          (Pexpr_ident ((var_name world))))
+         ((Pexpr_constant true) (Labelled (label ((label_name content)))))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_62617369635f7374616e646172645f74657374732e6d6274_2)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name numbers)))
+    (Pexpr_array
+     ((Pexpr_constant 1) (Pexpr_constant 2) (Pexpr_constant 3)
+      (Pexpr_constant 4) (Pexpr_constant 5)))
+    (Pexpr_sequence
+     ((Pexpr_apply (Pexpr_ident ((var_name inspect)))
+       ((Pexpr_dot_apply (Pexpr_ident ((var_name numbers)))
+         ((label_name length)) ())
+        ((Pexpr_constant 5) (Labelled (label ((label_name content)))))))
+      (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+       ((Pexpr_dot_apply (Pexpr_ident ((var_name numbers)))
+         ((label_name op_get)) ((Pexpr_constant 0)))
+        ((Pexpr_constant 1) (Labelled (label ((label_name content)))))))
+      (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+       ((Pexpr_dot_apply (Pexpr_ident ((var_name numbers)))
+         ((label_name op_get)) ((Pexpr_constant 4)))
+        ((Pexpr_constant 5) (Labelled (label ((label_name content))))))))
+     (Pexpr_let (Ppat_var ((binder_name sum)))
+      (Pexpr_infix ((var_name +))
+       (Pexpr_infix ((var_name +))
+        (Pexpr_infix ((var_name +))
+         (Pexpr_infix ((var_name +))
+          (Pexpr_dot_apply (Pexpr_ident ((var_name numbers)))
+           ((label_name op_get)) ((Pexpr_constant 0)))
+          (Pexpr_dot_apply (Pexpr_ident ((var_name numbers)))
+           ((label_name op_get)) ((Pexpr_constant 1))))
+         (Pexpr_dot_apply (Pexpr_ident ((var_name numbers)))
+          ((label_name op_get)) ((Pexpr_constant 2))))
+        (Pexpr_dot_apply (Pexpr_ident ((var_name numbers)))
+         ((label_name op_get)) ((Pexpr_constant 3))))
+       (Pexpr_dot_apply (Pexpr_ident ((var_name numbers)))
+        ((label_name op_get)) ((Pexpr_constant 4))))
+      (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+       ((Pexpr_ident ((var_name sum)))
+        ((Pexpr_constant 15) (Labelled (label ((label_name content))))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_62617369635f7374616e646172645f74657374732e6d6274_3)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_sequence
+    ((Pexpr_apply (Pexpr_ident ((var_name inspect)))
+      ((Pexpr_infix ((var_name &&)) (Pexpr_constant true)
+        (Pexpr_constant false))
+       ((Pexpr_constant false) (Labelled (label ((label_name content)))))))
+     (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+      ((Pexpr_infix ((var_name ||)) (Pexpr_constant true)
+        (Pexpr_constant false))
+       ((Pexpr_constant true) (Labelled (label ((label_name content)))))))
+     (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+      ((Pexpr_unary ((var_name !)) (Pexpr_constant true))
+       ((Pexpr_constant false) (Labelled (label ((label_name content)))))))
+     (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+      ((Pexpr_unary ((var_name !)) (Pexpr_constant false))
+       ((Pexpr_constant true) (Labelled (label ((label_name content)))))))
+     (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+      ((Pexpr_infix ((var_name ==)) (Pexpr_constant true)
+        (Pexpr_constant true))
+       ((Pexpr_constant true) (Labelled (label ((label_name content))))))))
+    (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+     ((Pexpr_infix ((var_name !=)) (Pexpr_constant true)
+       (Pexpr_constant false))
+      ((Pexpr_constant true) (Labelled (label ((label_name content))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_62617369635f7374616e646172645f74657374732e6d6274_4)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let
+    (Ppat_constraint (Ppat_var ((binder_name some_value)))
+     (Ptype_option (Ptype_name ((lid Int)) ())))
+    (Pexpr_apply
+     (Pexpr_constr ((constr_name ((name Some))) (extra_info No_extra_info)))
+     ((Pexpr_constant 42)))
+    (Pexpr_let
+     (Ppat_constraint (Ppat_var ((binder_name none_value)))
+      (Ptype_option (Ptype_name ((lid Int)) ())))
+     (Pexpr_constr ((constr_name ((name None))) (extra_info No_extra_info)))
+     (Pexpr_let (Ppat_var ((binder_name result)))
+      (Pexpr_match (Pexpr_ident ((var_name some_value)))
+       (((Ppat_constr
+          ((constr_name ((name Some))) (extra_info No_extra_info))
+          (((Ppat_var ((binder_name x))))))
+         (Pexpr_ident ((var_name x))))
+        ((Ppat_constr
+          ((constr_name ((name None))) (extra_info No_extra_info)) ())
+         (Pexpr_constant 0))))
+      (Pexpr_sequence
+       ((Pexpr_apply (Pexpr_ident ((var_name inspect)))
+         ((Pexpr_ident ((var_name result)))
+          ((Pexpr_constant 42) (Labelled (label ((label_name content))))))))
+       (Pexpr_let (Ppat_var ((binder_name default_result)))
+        (Pexpr_match (Pexpr_ident ((var_name none_value)))
+         (((Ppat_constr
+            ((constr_name ((name Some))) (extra_info No_extra_info))
+            (((Ppat_var ((binder_name x))))))
+           (Pexpr_ident ((var_name x))))
+          ((Ppat_constr
+            ((constr_name ((name None))) (extra_info No_extra_info)) ())
+           (Pexpr_constant 0))))
+        (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+         ((Pexpr_ident ((var_name default_result)))
+          ((Pexpr_constant 0) (Labelled (label ((label_name content))))))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_62617369635f7374616e646172645f74657374732e6d6274_5)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let
+    (Ppat_constraint (Ppat_var ((binder_name success)))
+     (Ptype_name ((lid Result))
+      ((Ptype_name ((lid Int)) ()) (Ptype_name ((lid String)) ()))))
+    (Pexpr_apply
+     (Pexpr_constr ((constr_name ((name Ok))) (extra_info No_extra_info)))
+     ((Pexpr_constant 42)))
+    (Pexpr_let
+     (Ppat_constraint (Ppat_var ((binder_name failure)))
+      (Ptype_name ((lid Result))
+       ((Ptype_name ((lid Int)) ()) (Ptype_name ((lid String)) ()))))
+     (Pexpr_apply
+      (Pexpr_constr ((constr_name ((name Err))) (extra_info No_extra_info)))
+      ((Pexpr_constant error)))
+     (Pexpr_let (Ppat_var ((binder_name success_value)))
+      (Pexpr_match (Pexpr_ident ((var_name success)))
+       (((Ppat_constr ((constr_name ((name Ok))) (extra_info No_extra_info))
+          (((Ppat_var ((binder_name x))))))
+         (Pexpr_ident ((var_name x))))
+        ((Ppat_constr ((constr_name ((name Err))) (extra_info No_extra_info))
+          (((Ppat_any))))
+         (Pexpr_constant 0))))
+      (Pexpr_sequence
+       ((Pexpr_apply (Pexpr_ident ((var_name inspect)))
+         ((Pexpr_ident ((var_name success_value)))
+          ((Pexpr_constant 42) (Labelled (label ((label_name content))))))))
+       (Pexpr_let (Ppat_var ((binder_name failure_value)))
+        (Pexpr_match (Pexpr_ident ((var_name failure)))
+         (((Ppat_constr
+            ((constr_name ((name Ok))) (extra_info No_extra_info))
+            (((Ppat_var ((binder_name x))))))
+           (Pexpr_ident ((var_name x))))
+          ((Ppat_constr
+            ((constr_name ((name Err))) (extra_info No_extra_info))
+            (((Ppat_any))))
+           (Pexpr_constant 0))))
+        (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+         ((Pexpr_ident ((var_name failure_value)))
+          ((Pexpr_constant 0) (Labelled (label ((label_name content))))))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_62617369635f7374616e646172645f74657374732e6d6274_6)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name char_a))) (Pexpr_constant A)
+    (Pexpr_let (Ppat_var ((binder_name char_str)))
+     (Pexpr_dot_apply (Pexpr_ident ((var_name char_a)))
+      ((label_name to_string)) ())
+     (Pexpr_sequence
+      ((Pexpr_apply (Pexpr_ident ((var_name inspect)))
+        ((Pexpr_ident ((var_name char_str)))
+         ((Pexpr_constant "\5C\22A\5C\22")
+          (Labelled (label ((label_name content)))))))
+       (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+        ((Pexpr_infix ((var_name >)) (Pexpr_constant a) (Pexpr_constant A))
+         ((Pexpr_constant true) (Labelled (label ((label_name content))))))))
+      (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+       ((Pexpr_infix ((var_name <)) (Pexpr_constant A) (Pexpr_constant B))
+        ((Pexpr_constant true) (Labelled (label ((label_name content))))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_62617369635f7374616e646172645f74657374732e6d6274_7)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name int_val))) (Pexpr_constant 123)
+    (Pexpr_sequence
+     ((Pexpr_apply (Pexpr_ident ((var_name inspect)))
+       ((Pexpr_dot_apply (Pexpr_ident ((var_name int_val)))
+         ((label_name to_string)) ())
+        ((Pexpr_constant "\5C\22123\5C\22")
+         (Labelled (label ((label_name content))))))))
+     (Pexpr_let (Ppat_var ((binder_name doubled)))
+      (Pexpr_infix ((var_name *)) (Pexpr_ident ((var_name int_val)))
+       (Pexpr_constant 2))
+      (Pexpr_sequence
+       ((Pexpr_apply (Pexpr_ident ((var_name inspect)))
+         ((Pexpr_ident ((var_name doubled)))
+          ((Pexpr_constant 246) (Labelled (label ((label_name content))))))))
+       (Pexpr_let (Ppat_var ((binder_name halved)))
+        (Pexpr_infix ((var_name /)) (Pexpr_ident ((var_name int_val)))
+         (Pexpr_constant 2))
+        (Pexpr_sequence
+         ((Pexpr_apply (Pexpr_ident ((var_name inspect)))
+           ((Pexpr_ident ((var_name halved)))
+            ((Pexpr_constant 61) (Labelled (label ((label_name content)))))))
+          (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+           ((Pexpr_dot_apply (Pexpr_constant true) ((label_name to_string))
+             ())
+            ((Pexpr_constant "\5C\22true\5C\22")
+             (Labelled (label ((label_name content))))))))
+         (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+          ((Pexpr_dot_apply (Pexpr_constant false) ((label_name to_string))
+            ())
+           ((Pexpr_constant "\5C\22false\5C\22")
+            (Labelled (label ((label_name content)))))))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_62617369635f7374616e646172645f74657374732e6d6274_8)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let
+    (Ppat_constraint (Ppat_var ((binder_name some_int)))
+     (Ptype_option (Ptype_name ((lid Int)) ())))
+    (Pexpr_apply
+     (Pexpr_constr ((constr_name ((name Some))) (extra_info No_extra_info)))
+     ((Pexpr_constant 123)))
+    (Pexpr_let
+     (Ppat_constraint (Ppat_var ((binder_name some_str)))
+      (Ptype_option (Ptype_name ((lid String)) ())))
+     (Pexpr_apply
+      (Pexpr_constr ((constr_name ((name Some))) (extra_info No_extra_info)))
+      ((Pexpr_constant hello)))
+     (Pexpr_let (Ppat_var ((binder_name result)))
+      (Pexpr_match
+       (Pexpr_tuple
+        ((Pexpr_ident ((var_name some_int)))
+         (Pexpr_ident ((var_name some_str)))))
+       (((Ppat_tuple
+          ((Ppat_constr
+            ((constr_name ((name Some))) (extra_info No_extra_info))
+            (((Ppat_var ((binder_name x))))))
+           (Ppat_constr
+            ((constr_name ((name Some))) (extra_info No_extra_info))
+            (((Ppat_var ((binder_name y))))))))
+         (Pexpr_infix ((var_name +)) (Pexpr_ident ((var_name x)))
+          (Pexpr_dot_apply (Pexpr_ident ((var_name y))) ((label_name length))
+           ())))
+        ((Ppat_tuple
+          ((Ppat_constr
+            ((constr_name ((name Some))) (extra_info No_extra_info))
+            (((Ppat_var ((binder_name x))))))
+           (Ppat_constr
+            ((constr_name ((name None))) (extra_info No_extra_info)) ())))
+         (Pexpr_ident ((var_name x))))
+        ((Ppat_tuple
+          ((Ppat_constr
+            ((constr_name ((name None))) (extra_info No_extra_info)) ())
+           (Ppat_constr
+            ((constr_name ((name Some))) (extra_info No_extra_info))
+            (((Ppat_var ((binder_name y))))))))
+         (Pexpr_dot_apply (Pexpr_ident ((var_name y))) ((label_name length))
+          ()))
+        ((Ppat_tuple
+          ((Ppat_constr
+            ((constr_name ((name None))) (extra_info No_extra_info)) ())
+           (Ppat_constr
+            ((constr_name ((name None))) (extra_info No_extra_info)) ())))
+         (Pexpr_constant 0))))
+      (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+       ((Pexpr_ident ((var_name result)))
+        ((Pexpr_constant 128) (Labelled (label ((label_name content))))))))))))
+ (Ptop_funcdef
+  ((name
+    ((binder_name __test_62617369635f7374616e646172645f74657374732e6d6274_9)))
+   (decl_params (())) (quantifiers ())
+   (return_type ((Ptype_name ((lid Unit)) ())))
+   (error_type (Error_typ (Ptype_name ((lid Error)) ()))) (vis Vis_default)
+   (is_test_ true))
+  (Decl_body
+   (Pexpr_let (Ppat_var ((binder_name empty_string))) (Pexpr_constant "")
+    (Pexpr_sequence
+     ((Pexpr_apply (Pexpr_ident ((var_name inspect)))
+       ((Pexpr_dot_apply (Pexpr_ident ((var_name empty_string)))
+         ((label_name length)) ())
+        ((Pexpr_constant 0) (Labelled (label ((label_name content))))))))
+     (Pexpr_let (Ppat_var ((binder_name max_int)))
+      (Pexpr_constant 2147483647)
+      (Pexpr_let (Ppat_var ((binder_name min_int)))
+       (Pexpr_constant -2147483648)
+       (Pexpr_sequence
+        ((Pexpr_apply (Pexpr_ident ((var_name inspect)))
+          ((Pexpr_infix ((var_name >)) (Pexpr_ident ((var_name max_int)))
+            (Pexpr_constant 0))
+           ((Pexpr_constant true) (Labelled (label ((label_name content)))))))
+         (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+          ((Pexpr_infix ((var_name <)) (Pexpr_ident ((var_name min_int)))
+            (Pexpr_constant 0))
+           ((Pexpr_constant true) (Labelled (label ((label_name content))))))))
+        (Pexpr_apply (Pexpr_ident ((var_name inspect)))
+         ((Pexpr_infix ((var_name +)) (Pexpr_ident ((var_name max_int)))
+           (Pexpr_ident ((var_name min_int))))
+          ((Pexpr_constant -1) (Labelled (label ((label_name content)))))))))))))))

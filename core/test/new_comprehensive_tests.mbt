@@ -38,7 +38,7 @@ test "string_operations_comprehensive" {
   
   inspect(empty.length(), content="0")
   inspect(text.length(), content="7")
-  inspect(combined, content="\"MoonBit Standard Library\"")
+  inspect(combined, content=""MoonBit Standard Library"")
   inspect(combined.length(), content="21")
   
   // 测试字符串比较
@@ -119,7 +119,7 @@ test "result_type_error_handling" {
     Ok(_) => "No error"
     Err(msg) => "Error: " + msg
   }
-  inspect(error_msg, content="\"Error: Invalid input\"")
+  inspect(error_msg, content=""Error: Invalid input"")
 }
 
 test "character_type_operations" {
@@ -130,9 +130,9 @@ test "character_type_operations" {
   let space = ' '
   
   // 字符转换和比较
-  inspect(lower_a.to_string(), content="\"a\"")
-  inspect(upper_A.to_string(), content="\"A\"")
-  inspect(digit_9.to_string(), content="\"9\"")
+  inspect(lower_a.to_string(), content="'a'")
+  inspect(upper_A.to_string(), content="'A'")
+  inspect(digit_9.to_string(), content="'9'")
   
   // 字符顺序比较
   inspect(lower_a > upper_A, content="true")
@@ -174,9 +174,9 @@ test "numeric_type_conversions" {
   let zero = 0
   
   // 整数转字符串
-  inspect(int_val.to_string(), content="\"123\"")
-  inspect(neg_int.to_string(), content="\"-456\"")
-  inspect(zero.to_string(), content="\"0\"")
+  inspect(int_val.to_string(), content=""123"")
+  inspect(neg_int.to_string(), content=""-456"")
+  inspect(zero.to_string(), content=""0"")
   
   // 字符串转整数（如果支持）
   let string_num = "789"
@@ -218,7 +218,7 @@ test "pattern_matching_complexity" {
       (false, false) => "Unknown error: " + code.to_string()
     }
   }
-  inspect(error_chain, content="\"Client error: 404\"")
+  inspect(error_chain, content=""Client error: 404"")
 }
 
 test "edge_cases_and_special_values" {
@@ -247,8 +247,8 @@ test "edge_cases_and_special_values" {
   inspect(single_element[0], content="42")
   
   // 布尔边界情况
-  inspect(true.to_string(), content="\"true\"")
-  inspect(false.to_string(), content="\"false\"")
+  inspect(true.to_string(), content=""true"")
+  inspect(false.to_string(), content=""false"")
   inspect((true == false), content="false")
   inspect((true != false), content="true")
 }

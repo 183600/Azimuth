@@ -1,0 +1,1990 @@
+((Ctop_fn
+  ((binder
+    __test_7374616e646172645f6d6f6f6e6269745f746573745f63617365732e6d6274_0)
+   (func
+    ((params ())
+     (body
+      (Cexpr_sequence
+       ((Cexpr_handle_error
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as 15 Show Int) 15
+           @:standard_moonbit_test_cases.mbt:23:3-23:32
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:23:11-23:17)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:23:27-23:31)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (Return_err Unit) Unit)
+        (Cexpr_handle_error
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as 5 Show Int) 5
+           @:standard_moonbit_test_cases.mbt:24:3-24:31
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:24:11-24:17)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:24:27-24:30)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (Return_err Unit) Unit)
+        (Cexpr_handle_error
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as 50 Show Int) 50
+           @:standard_moonbit_test_cases.mbt:25:3-25:32
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:25:11-25:17)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:25:27-25:31)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (Return_err Unit) Unit)
+        (Cexpr_handle_error
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as 3 Show Int) 3
+           @:standard_moonbit_test_cases.mbt:26:3-26:31
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:26:11-26:17)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:26:27-26:30)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (Return_err Unit) Unit))
+       (Cexpr_apply $builtin.inspect.inner
+        ((Cexpr_as 1 Show Int) 1 @:standard_moonbit_test_cases.mbt:27:3-27:31
+         (Cexpr_record
+          (((label ((label_name buf))) (pos 0) (is_mut true)
+            (expr
+             (Cexpr_array
+              ((Cexpr_constr (Constr_tag_regular Some)
+                (@:standard_moonbit_test_cases.mbt:27:11-27:17)
+                (Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (Cexpr_constr (Constr_tag_regular Some)
+                (@:standard_moonbit_test_cases.mbt:27:27-27:30)
+                (Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (Cexpr_constr (Constr_tag_regular None) ()
+                (Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (Cexpr_constr (Constr_tag_regular None) ()
+                (Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false))))
+              (FixedArray
+               (T_constr UnsafeMaybeUninit
+                ((Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (generic_ false))
+               (generic_ false)))))
+           ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+          (T_constr Array
+           ((Option (T_constr SourceLoc () (generic_ false))
+             (generic_ false)))
+           (generic_ false))))
+        (Normal
+         (((T_trait Show) (Option String (generic_ true))
+           (T_constr SourceLoc () (generic_ false))
+           (T_constr ArgsLoc () (generic_ false)))
+          -> Unit ! (T_suberror InspectError) (generic_ false)))
+        (T_error_value_result Unit (T_suberror InspectError)) ())
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f6d6f6f6e6269745f746573745f63617365732e6d6274_1)
+   (func
+    ((params ())
+     (body
+      (Cexpr_sequence
+       ((Cexpr_handle_error
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as true Show Bool) true
+           @:standard_moonbit_test_cases.mbt:33:3-33:34
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:33:11-33:17)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:33:27-33:33)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (Return_err Unit) Unit)
+        (Cexpr_handle_error
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as false Show Bool) false
+           @:standard_moonbit_test_cases.mbt:34:3-34:35
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:34:11-34:17)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:34:27-34:34)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (Return_err Unit) Unit)
+        (Cexpr_handle_error
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as true Show Bool) true
+           @:standard_moonbit_test_cases.mbt:35:3-35:36
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:35:11-35:19)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:35:29-35:35)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (Return_err Unit) Unit)
+        (Cexpr_handle_error
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as false Show Bool) false
+           @:standard_moonbit_test_cases.mbt:36:3-36:36
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:36:11-36:18)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:36:28-36:35)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (Return_err Unit) Unit)
+        (Cexpr_handle_error
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as true Show Bool) true
+           @:standard_moonbit_test_cases.mbt:37:3-37:36
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:37:11-37:19)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:37:29-37:35)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (Return_err Unit) Unit))
+       (Cexpr_apply $builtin.inspect.inner
+        ((Cexpr_as true Show Bool) true
+         @:standard_moonbit_test_cases.mbt:38:3-38:35
+         (Cexpr_record
+          (((label ((label_name buf))) (pos 0) (is_mut true)
+            (expr
+             (Cexpr_array
+              ((Cexpr_constr (Constr_tag_regular Some)
+                (@:standard_moonbit_test_cases.mbt:38:11-38:18)
+                (Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (Cexpr_constr (Constr_tag_regular Some)
+                (@:standard_moonbit_test_cases.mbt:38:28-38:34)
+                (Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (Cexpr_constr (Constr_tag_regular None) ()
+                (Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (Cexpr_constr (Constr_tag_regular None) ()
+                (Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false))))
+              (FixedArray
+               (T_constr UnsafeMaybeUninit
+                ((Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (generic_ false))
+               (generic_ false)))))
+           ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+          (T_constr Array
+           ((Option (T_constr SourceLoc () (generic_ false))
+             (generic_ false)))
+           (generic_ false))))
+        (Normal
+         (((T_trait Show) (Option String (generic_ true))
+           (T_constr SourceLoc () (generic_ false))
+           (T_constr ArgsLoc () (generic_ false)))
+          -> Unit ! (T_suberror InspectError) (generic_ false)))
+        (T_error_value_result Unit (T_suberror InspectError)) ())
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f6d6f6f6e6269745f746573745f63617365732e6d6274_2)
+   (func
+    ((params ())
+     (body
+      (Cexpr_sequence
+       ((Cexpr_handle_error
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as true Show Bool) true
+           @:standard_moonbit_test_cases.mbt:44:3-44:40
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:44:11-44:23)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:44:33-44:39)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (Return_err Unit) Unit)
+        (Cexpr_handle_error
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as false Show Bool) false
+           @:standard_moonbit_test_cases.mbt:45:3-45:42
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:45:11-45:24)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:45:34-45:41)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (Return_err Unit) Unit)
+        (Cexpr_handle_error
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as true Show Bool) true
+           @:standard_moonbit_test_cases.mbt:46:3-46:41
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:46:11-46:24)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:46:34-46:40)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (Return_err Unit) Unit)
+        (Cexpr_handle_error
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as false Show Bool) false
+           @:standard_moonbit_test_cases.mbt:47:3-47:43
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:47:11-47:25)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:47:35-47:42)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (Return_err Unit) Unit)
+        (Cexpr_handle_error
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as true Show Bool) true
+           @:standard_moonbit_test_cases.mbt:48:3-48:34
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:48:11-48:17)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:48:27-48:33)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (Return_err Unit) Unit))
+       (Cexpr_apply $builtin.inspect.inner
+        ((Cexpr_as false Show Bool) false
+         @:standard_moonbit_test_cases.mbt:49:3-49:34
+         (Cexpr_record
+          (((label ((label_name buf))) (pos 0) (is_mut true)
+            (expr
+             (Cexpr_array
+              ((Cexpr_constr (Constr_tag_regular Some)
+                (@:standard_moonbit_test_cases.mbt:49:11-49:16)
+                (Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (Cexpr_constr (Constr_tag_regular Some)
+                (@:standard_moonbit_test_cases.mbt:49:26-49:33)
+                (Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (Cexpr_constr (Constr_tag_regular None) ()
+                (Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (Cexpr_constr (Constr_tag_regular None) ()
+                (Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false))))
+              (FixedArray
+               (T_constr UnsafeMaybeUninit
+                ((Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (generic_ false))
+               (generic_ false)))))
+           ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+          (T_constr Array
+           ((Option (T_constr SourceLoc () (generic_ false))
+             (generic_ false)))
+           (generic_ false))))
+        (Normal
+         (((T_trait Show) (Option String (generic_ true))
+           (T_constr SourceLoc () (generic_ false))
+           (T_constr ArgsLoc () (generic_ false)))
+          -> Unit ! (T_suberror InspectError) (generic_ false)))
+        (T_error_value_result Unit (T_suberror InspectError)) ())
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f6d6f6f6e6269745f746573745f63617365732e6d6274_3)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let empty/0 ""
+       (Cexpr_let hello/1 Hello
+        (Cexpr_let world/2 World
+         (Cexpr_let greeting/3
+          (Cexpr_prim @add_string
+           (Cexpr_prim @add_string
+            (Cexpr_prim @add_string (Cexpr_var hello/1 String ()) ", ")
+            (Cexpr_var world/2 String ()))
+           !)
+          (Cexpr_sequence
+           ((Cexpr_handle_error
+             (Cexpr_apply $builtin.inspect.inner
+              ((Cexpr_as
+                (Cexpr_prim Pstringlength (Cexpr_var empty/0 String ())) Show
+                Int)
+               0 @:standard_moonbit_test_cases.mbt:60:3-60:39
+               (Cexpr_record
+                (((label ((label_name buf))) (pos 0) (is_mut true)
+                  (expr
+                   (Cexpr_array
+                    ((Cexpr_constr (Constr_tag_regular Some)
+                      (@:standard_moonbit_test_cases.mbt:60:11-60:25)
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular Some)
+                      (@:standard_moonbit_test_cases.mbt:60:35-60:38)
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular None) ()
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular None) ()
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false))))
+                    (FixedArray
+                     (T_constr UnsafeMaybeUninit
+                      ((Option (T_constr SourceLoc () (generic_ false))
+                        (generic_ false)))
+                      (generic_ false))
+                     (generic_ false)))))
+                 ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+                (T_constr Array
+                 ((Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (generic_ false))))
+              (Normal
+               (((T_trait Show) (Option String (generic_ true))
+                 (T_constr SourceLoc () (generic_ false))
+                 (T_constr ArgsLoc () (generic_ false)))
+                -> Unit ! (T_suberror InspectError) (generic_ false)))
+              (T_error_value_result Unit (T_suberror InspectError)) ())
+             (Return_err Unit) Unit)
+            (Cexpr_handle_error
+             (Cexpr_apply $builtin.inspect.inner
+              ((Cexpr_as
+                (Cexpr_prim Pstringlength (Cexpr_var hello/1 String ())) Show
+                Int)
+               5 @:standard_moonbit_test_cases.mbt:61:3-61:39
+               (Cexpr_record
+                (((label ((label_name buf))) (pos 0) (is_mut true)
+                  (expr
+                   (Cexpr_array
+                    ((Cexpr_constr (Constr_tag_regular Some)
+                      (@:standard_moonbit_test_cases.mbt:61:11-61:25)
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular Some)
+                      (@:standard_moonbit_test_cases.mbt:61:35-61:38)
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular None) ()
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular None) ()
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false))))
+                    (FixedArray
+                     (T_constr UnsafeMaybeUninit
+                      ((Option (T_constr SourceLoc () (generic_ false))
+                        (generic_ false)))
+                      (generic_ false))
+                     (generic_ false)))))
+                 ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+                (T_constr Array
+                 ((Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (generic_ false))))
+              (Normal
+               (((T_trait Show) (Option String (generic_ true))
+                 (T_constr SourceLoc () (generic_ false))
+                 (T_constr ArgsLoc () (generic_ false)))
+                -> Unit ! (T_suberror InspectError) (generic_ false)))
+              (T_error_value_result Unit (T_suberror InspectError)) ())
+             (Return_err Unit) Unit)
+            (Cexpr_handle_error
+             (Cexpr_apply $builtin.inspect.inner
+              ((Cexpr_as (Cexpr_var greeting/3 String ()) Show String)
+               "Hello, World!" @:standard_moonbit_test_cases.mbt:62:3-62:45
+               (Cexpr_record
+                (((label ((label_name buf))) (pos 0) (is_mut true)
+                  (expr
+                   (Cexpr_array
+                    ((Cexpr_constr (Constr_tag_regular Some)
+                      (@:standard_moonbit_test_cases.mbt:62:11-62:19)
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular Some)
+                      (@:standard_moonbit_test_cases.mbt:62:29-62:44)
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular None) ()
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular None) ()
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false))))
+                    (FixedArray
+                     (T_constr UnsafeMaybeUninit
+                      ((Option (T_constr SourceLoc () (generic_ false))
+                        (generic_ false)))
+                      (generic_ false))
+                     (generic_ false)))))
+                 ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+                (T_constr Array
+                 ((Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (generic_ false))))
+              (Normal
+               (((T_trait Show) (Option String (generic_ true))
+                 (T_constr SourceLoc () (generic_ false))
+                 (T_constr ArgsLoc () (generic_ false)))
+                -> Unit ! (T_suberror InspectError) (generic_ false)))
+              (T_error_value_result Unit (T_suberror InspectError)) ())
+             (Return_err Unit) Unit))
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as
+              (Cexpr_prim (Pcomparison I32 Gt)
+               (Cexpr_prim Pstringlength (Cexpr_var greeting/3 String ()))
+               (Cexpr_prim Pstringlength (Cexpr_var hello/1 String ())))
+              Show Bool)
+             true @:standard_moonbit_test_cases.mbt:63:3-63:62
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:63:11-63:45)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:63:55-63:61)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (T_error_value_result Unit (T_suberror InspectError)))
+          (T_error_value_result Unit (T_suberror InspectError)))
+         (T_error_value_result Unit (T_suberror InspectError)))
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f6d6f6f6e6269745f746573745f63617365732e6d6274_4)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let text/0 MoonBit
+       (Cexpr_sequence
+        ((Cexpr_handle_error
+          (Cexpr_apply $builtin.inspect.inner
+           ((Cexpr_as
+             (Cexpr_prim (Pgetstringitem (kind Bounds_check))
+              (Cexpr_var text/0 String ()) 0)
+             Show UInt16)
+            'M' @:standard_moonbit_test_cases.mbt:70:3-70:34
+            (Cexpr_record
+             (((label ((label_name buf))) (pos 0) (is_mut true)
+               (expr
+                (Cexpr_array
+                 ((Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_moonbit_test_cases.mbt:70:11-70:18)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_moonbit_test_cases.mbt:70:28-70:33)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false))))
+                 (FixedArray
+                  (T_constr UnsafeMaybeUninit
+                   ((Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (generic_ false))
+                  (generic_ false)))))
+              ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+             (T_constr Array
+              ((Option (T_constr SourceLoc () (generic_ false))
+                (generic_ false)))
+              (generic_ false))))
+           (Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           (T_error_value_result Unit (T_suberror InspectError)) ())
+          (Return_err Unit) Unit)
+         (Cexpr_handle_error
+          (Cexpr_apply $builtin.inspect.inner
+           ((Cexpr_as
+             (Cexpr_prim (Pgetstringitem (kind Bounds_check))
+              (Cexpr_var text/0 String ()) 4)
+             Show UInt16)
+            'B' @:standard_moonbit_test_cases.mbt:71:3-71:34
+            (Cexpr_record
+             (((label ((label_name buf))) (pos 0) (is_mut true)
+               (expr
+                (Cexpr_array
+                 ((Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_moonbit_test_cases.mbt:71:11-71:18)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_moonbit_test_cases.mbt:71:28-71:33)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false))))
+                 (FixedArray
+                  (T_constr UnsafeMaybeUninit
+                   ((Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (generic_ false))
+                  (generic_ false)))))
+              ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+             (T_constr Array
+              ((Option (T_constr SourceLoc () (generic_ false))
+                (generic_ false)))
+              (generic_ false))))
+           (Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           (T_error_value_result Unit (T_suberror InspectError)) ())
+          (Return_err Unit) Unit)
+         (Cexpr_handle_error
+          (Cexpr_apply $builtin.inspect.inner
+           ((Cexpr_as
+             (Cexpr_apply String::contains
+              ((Cexpr_var text/0 String ())
+               (Cexpr_let *bind/1 Bit
+                (Cexpr_record
+                 (((label ((label_name str))) (pos 0) (is_mut false)
+                   (expr (Cexpr_var *bind/1 String ())))
+                  ((label ((label_name start))) (pos 1) (is_mut false)
+                   (expr 0))
+                  ((label ((label_name end))) (pos 2) (is_mut false)
+                   (expr
+                    (Cexpr_prim Pstringlength (Cexpr_var *bind/1 String ())))))
+                 (T_constr StringView () (generic_ false)) true)
+                (T_constr StringView () (generic_ false))))
+              (Normal
+               ((String (T_constr StringView () (generic_ false))) -> Bool
+                (generic_ false)))
+              Bool ())
+             Show Bool)
+            true @:standard_moonbit_test_cases.mbt:72:3-72:48
+            (Cexpr_record
+             (((label ((label_name buf))) (pos 0) (is_mut true)
+               (expr
+                (Cexpr_array
+                 ((Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_moonbit_test_cases.mbt:72:11-72:31)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_moonbit_test_cases.mbt:72:41-72:47)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false))))
+                 (FixedArray
+                  (T_constr UnsafeMaybeUninit
+                   ((Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (generic_ false))
+                  (generic_ false)))))
+              ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+             (T_constr Array
+              ((Option (T_constr SourceLoc () (generic_ false))
+                (generic_ false)))
+              (generic_ false))))
+           (Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           (T_error_value_result Unit (T_suberror InspectError)) ())
+          (Return_err Unit) Unit))
+        (Cexpr_apply $builtin.inspect.inner
+         ((Cexpr_as
+           (Cexpr_apply String::contains
+            ((Cexpr_var text/0 String ())
+             (Cexpr_let *bind/2 Byte
+              (Cexpr_record
+               (((label ((label_name str))) (pos 0) (is_mut false)
+                 (expr (Cexpr_var *bind/2 String ())))
+                ((label ((label_name start))) (pos 1) (is_mut false)
+                 (expr 0))
+                ((label ((label_name end))) (pos 2) (is_mut false)
+                 (expr
+                  (Cexpr_prim Pstringlength (Cexpr_var *bind/2 String ())))))
+               (T_constr StringView () (generic_ false)) true)
+              (T_constr StringView () (generic_ false))))
+            (Normal
+             ((String (T_constr StringView () (generic_ false))) -> Bool
+              (generic_ false)))
+            Bool ())
+           Show Bool)
+          false @:standard_moonbit_test_cases.mbt:73:3-73:50
+          (Cexpr_record
+           (((label ((label_name buf))) (pos 0) (is_mut true)
+             (expr
+              (Cexpr_array
+               ((Cexpr_constr (Constr_tag_regular Some)
+                 (@:standard_moonbit_test_cases.mbt:73:11-73:32)
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular Some)
+                 (@:standard_moonbit_test_cases.mbt:73:42-73:49)
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular None) ()
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular None) ()
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false))))
+               (FixedArray
+                (T_constr UnsafeMaybeUninit
+                 ((Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (generic_ false))
+                (generic_ false)))))
+            ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+           (T_constr Array
+            ((Option (T_constr SourceLoc () (generic_ false))
+              (generic_ false)))
+            (generic_ false))))
+         (Normal
+          (((T_trait Show) (Option String (generic_ true))
+            (T_constr SourceLoc () (generic_ false))
+            (T_constr ArgsLoc () (generic_ false)))
+           -> Unit ! (T_suberror InspectError) (generic_ false)))
+         (T_error_value_result Unit (T_suberror InspectError)) ())
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f6d6f6f6e6269745f746573745f63617365732e6d6274_5)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let numbers/0
+       (Cexpr_record
+        (((label ((label_name buf))) (pos 0) (is_mut true)
+          (expr
+           (Cexpr_array (1 2 3 4 5)
+            (FixedArray (T_constr UnsafeMaybeUninit (Int) (generic_ false))
+             (generic_ false)))))
+         ((label ((label_name len))) (pos 1) (is_mut true) (expr 5)))
+        (T_constr Array (Int) (generic_ false)))
+       (Cexpr_sequence
+        ((Cexpr_handle_error
+          (Cexpr_apply $builtin.inspect.inner
+           ((Cexpr_as
+             (Cexpr_prim Pfixedarray_length
+              (Cexpr_var numbers/0 (T_constr Array (Int) (generic_ false))
+               ()))
+             Show Int)
+            5 @:standard_moonbit_test_cases.mbt:80:3-80:41
+            (Cexpr_record
+             (((label ((label_name buf))) (pos 0) (is_mut true)
+               (expr
+                (Cexpr_array
+                 ((Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_moonbit_test_cases.mbt:80:11-80:27)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_moonbit_test_cases.mbt:80:37-80:40)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false))))
+                 (FixedArray
+                  (T_constr UnsafeMaybeUninit
+                   ((Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (generic_ false))
+                  (generic_ false)))))
+              ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+             (T_constr Array
+              ((Option (T_constr SourceLoc () (generic_ false))
+                (generic_ false)))
+              (generic_ false))))
+           (Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           (T_error_value_result Unit (T_suberror InspectError)) ())
+          (Return_err Unit) Unit)
+         (Cexpr_handle_error
+          (Cexpr_apply $builtin.inspect.inner
+           ((Cexpr_as
+             (Cexpr_let *bind/1 0
+              (Cexpr_sequence
+               ((Cexpr_if
+                 (Cexpr_or
+                  (Cexpr_prim (Pcomparison I32 Lt) (Cexpr_var *bind/1 Int ())
+                   0)
+                  (Cexpr_prim (Pcomparison I32 Ge) (Cexpr_var *bind/1 Int ())
+                   (Cexpr_field
+                    (Cexpr_var numbers/0
+                     (T_constr Array (Int) (generic_ false)) ())
+                    (Label ((label_name len))) 1 Int)))
+                 (Cexpr_prim Ppanic) () Unit))
+               (Cexpr_prim (Pfixedarray_get_item (kind Bounds_verified))
+                (Cexpr_field
+                 (Cexpr_var numbers/0 (T_constr Array (Int) (generic_ false))
+                  ())
+                 (Label ((label_name buf))) 0
+                 (FixedArray
+                  (T_constr UnsafeMaybeUninit (Int) (generic_ false))
+                  (generic_ false)))
+                (Cexpr_var *bind/1 Int ()))
+               Int)
+              Int)
+             Show Int)
+            1 @:standard_moonbit_test_cases.mbt:81:3-81:35
+            (Cexpr_record
+             (((label ((label_name buf))) (pos 0) (is_mut true)
+               (expr
+                (Cexpr_array
+                 ((Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_moonbit_test_cases.mbt:81:11-81:21)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_moonbit_test_cases.mbt:81:31-81:34)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false))))
+                 (FixedArray
+                  (T_constr UnsafeMaybeUninit
+                   ((Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (generic_ false))
+                  (generic_ false)))))
+              ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+             (T_constr Array
+              ((Option (T_constr SourceLoc () (generic_ false))
+                (generic_ false)))
+              (generic_ false))))
+           (Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           (T_error_value_result Unit (T_suberror InspectError)) ())
+          (Return_err Unit) Unit)
+         (Cexpr_handle_error
+          (Cexpr_apply $builtin.inspect.inner
+           ((Cexpr_as
+             (Cexpr_let *bind/2 4
+              (Cexpr_sequence
+               ((Cexpr_if
+                 (Cexpr_or
+                  (Cexpr_prim (Pcomparison I32 Lt) (Cexpr_var *bind/2 Int ())
+                   0)
+                  (Cexpr_prim (Pcomparison I32 Ge) (Cexpr_var *bind/2 Int ())
+                   (Cexpr_field
+                    (Cexpr_var numbers/0
+                     (T_constr Array (Int) (generic_ false)) ())
+                    (Label ((label_name len))) 1 Int)))
+                 (Cexpr_prim Ppanic) () Unit))
+               (Cexpr_prim (Pfixedarray_get_item (kind Bounds_verified))
+                (Cexpr_field
+                 (Cexpr_var numbers/0 (T_constr Array (Int) (generic_ false))
+                  ())
+                 (Label ((label_name buf))) 0
+                 (FixedArray
+                  (T_constr UnsafeMaybeUninit (Int) (generic_ false))
+                  (generic_ false)))
+                (Cexpr_var *bind/2 Int ()))
+               Int)
+              Int)
+             Show Int)
+            5 @:standard_moonbit_test_cases.mbt:82:3-82:35
+            (Cexpr_record
+             (((label ((label_name buf))) (pos 0) (is_mut true)
+               (expr
+                (Cexpr_array
+                 ((Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_moonbit_test_cases.mbt:82:11-82:21)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular Some)
+                   (@:standard_moonbit_test_cases.mbt:82:31-82:34)
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (Cexpr_constr (Constr_tag_regular None) ()
+                   (Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false))))
+                 (FixedArray
+                  (T_constr UnsafeMaybeUninit
+                   ((Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (generic_ false))
+                  (generic_ false)))))
+              ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+             (T_constr Array
+              ((Option (T_constr SourceLoc () (generic_ false))
+                (generic_ false)))
+              (generic_ false))))
+           (Normal
+            (((T_trait Show) (Option String (generic_ true))
+              (T_constr SourceLoc () (generic_ false))
+              (T_constr ArgsLoc () (generic_ false)))
+             -> Unit ! (T_suberror InspectError) (generic_ false)))
+           (T_error_value_result Unit (T_suberror InspectError)) ())
+          (Return_err Unit) Unit))
+        (Cexpr_apply $builtin.inspect.inner
+         ((Cexpr_as
+           (Cexpr_prim (Pcomparison I32 Gt)
+            (Cexpr_prim Pfixedarray_length
+             (Cexpr_var numbers/0 (T_constr Array (Int) (generic_ false)) ()))
+            0)
+           Show Bool)
+          true @:standard_moonbit_test_cases.mbt:83:3-83:48
+          (Cexpr_record
+           (((label ((label_name buf))) (pos 0) (is_mut true)
+             (expr
+              (Cexpr_array
+               ((Cexpr_constr (Constr_tag_regular Some)
+                 (@:standard_moonbit_test_cases.mbt:83:11-83:31)
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular Some)
+                 (@:standard_moonbit_test_cases.mbt:83:41-83:47)
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular None) ()
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false)))
+                (Cexpr_constr (Constr_tag_regular None) ()
+                 (Option (T_constr SourceLoc () (generic_ false))
+                  (generic_ false))))
+               (FixedArray
+                (T_constr UnsafeMaybeUninit
+                 ((Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (generic_ false))
+                (generic_ false)))))
+            ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+           (T_constr Array
+            ((Option (T_constr SourceLoc () (generic_ false))
+              (generic_ false)))
+            (generic_ false))))
+         (Normal
+          (((T_trait Show) (Option String (generic_ true))
+            (T_constr SourceLoc () (generic_ false))
+            (T_constr ArgsLoc () (generic_ false)))
+           -> Unit ! (T_suberror InspectError) (generic_ false)))
+         (T_error_value_result Unit (T_suberror InspectError)) ())
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f6d6f6f6e6269745f746573745f63617365732e6d6274_6)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let some_value/0
+       (Cexpr_constr (Constr_tag_regular Some) (42)
+        (Option Int (generic_ false)))
+       (Cexpr_let none_value/1
+        (Cexpr_constr (Constr_tag_regular None) ()
+         (Option Int (generic_ false)))
+        (Cexpr_let result1/2
+         (Cexpr_switch_constr
+          (Cexpr_var some_value/0 (Option Int (generic_ false)) ())
+          (((Constr_tag_regular Some) (*Some/3)
+            (Cexpr_let *v/4
+             (Cexpr_prim
+              (Penum_field (index 0) (tag (Constr_tag_regular Some)))
+              (Cexpr_var *Some/3
+               (T_constr Option.Some (Int) (generic_ false)) ()))
+             (Cexpr_var *v/4 Int ()) Int)))
+          (0) Int)
+         (Cexpr_let result2/5
+          (Cexpr_switch_constr
+           (Cexpr_var none_value/1 (Option Int (generic_ false)) ())
+           (((Constr_tag_regular Some) (*Some/6)
+             (Cexpr_let *v/7
+              (Cexpr_prim
+               (Penum_field (index 0) (tag (Constr_tag_regular Some)))
+               (Cexpr_var *Some/6
+                (T_constr Option.Some (Int) (generic_ false)) ()))
+              (Cexpr_var *v/7 Int ()) Int)))
+           (0) Int)
+          (Cexpr_sequence
+           ((Cexpr_handle_error
+             (Cexpr_apply $builtin.inspect.inner
+              ((Cexpr_as (Cexpr_var result1/2 Int ()) Show Int) 42
+               @:standard_moonbit_test_cases.mbt:102:3-102:33
+               (Cexpr_record
+                (((label ((label_name buf))) (pos 0) (is_mut true)
+                  (expr
+                   (Cexpr_array
+                    ((Cexpr_constr (Constr_tag_regular Some)
+                      (@:standard_moonbit_test_cases.mbt:102:11-102:18)
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular Some)
+                      (@:standard_moonbit_test_cases.mbt:102:28-102:32)
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular None) ()
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular None) ()
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false))))
+                    (FixedArray
+                     (T_constr UnsafeMaybeUninit
+                      ((Option (T_constr SourceLoc () (generic_ false))
+                        (generic_ false)))
+                      (generic_ false))
+                     (generic_ false)))))
+                 ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+                (T_constr Array
+                 ((Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (generic_ false))))
+              (Normal
+               (((T_trait Show) (Option String (generic_ true))
+                 (T_constr SourceLoc () (generic_ false))
+                 (T_constr ArgsLoc () (generic_ false)))
+                -> Unit ! (T_suberror InspectError) (generic_ false)))
+              (T_error_value_result Unit (T_suberror InspectError)) ())
+             (Return_err Unit) Unit))
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as (Cexpr_var result2/5 Int ()) Show Int) 0
+             @:standard_moonbit_test_cases.mbt:103:3-103:32
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:103:11-103:18)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:103:28-103:31)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (T_error_value_result Unit (T_suberror InspectError)))
+          (T_error_value_result Unit (T_suberror InspectError)))
+         (T_error_value_result Unit (T_suberror InspectError)))
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f6d6f6f6e6269745f746573745f63617365732e6d6274_7)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let success/0
+       (Cexpr_constr (Constr_tag_regular Ok) (success)
+        (Result String String (generic_ false)))
+       (Cexpr_let failure/1
+        (Cexpr_constr (Constr_tag_regular Err) (error)
+         (Result String String (generic_ false)))
+        (Cexpr_let result1/2
+         (Cexpr_switch_constr
+          (Cexpr_var success/0 (Result String String (generic_ false)) ())
+          (((Constr_tag_regular Ok) (*Ok/3)
+            (Cexpr_let *v/4
+             (Cexpr_prim
+              (Penum_field (index 0) (tag (Constr_tag_regular Ok)))
+              (Cexpr_var *Ok/3
+               (T_constr Result.Ok (String String) (generic_ false)) ()))
+             (Cexpr_var *v/4 String ()) String)))
+          (failed) String)
+         (Cexpr_let result2/5
+          (Cexpr_switch_constr
+           (Cexpr_var failure/1 (Result String String (generic_ false)) ())
+           (((Constr_tag_regular Ok) (*Ok/6)
+             (Cexpr_let *v/7
+              (Cexpr_prim
+               (Penum_field (index 0) (tag (Constr_tag_regular Ok)))
+               (Cexpr_var *Ok/6
+                (T_constr Result.Ok (String String) (generic_ false)) ()))
+              (Cexpr_var *v/7 String ()) String))
+            ((Constr_tag_regular Err) (*Err/8)
+             (Cexpr_let *e/9
+              (Cexpr_prim
+               (Penum_field (index 0) (tag (Constr_tag_regular Err)))
+               (Cexpr_var *Err/8
+                (T_constr Result.Err (String String) (generic_ false)) ()))
+              (Cexpr_var *e/9 String ()) String)))
+           () String)
+          (Cexpr_sequence
+           ((Cexpr_handle_error
+             (Cexpr_apply $builtin.inspect.inner
+              ((Cexpr_as (Cexpr_var result1/2 String ()) Show String) success
+               @:standard_moonbit_test_cases.mbt:122:3-122:38
+               (Cexpr_record
+                (((label ((label_name buf))) (pos 0) (is_mut true)
+                  (expr
+                   (Cexpr_array
+                    ((Cexpr_constr (Constr_tag_regular Some)
+                      (@:standard_moonbit_test_cases.mbt:122:11-122:18)
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular Some)
+                      (@:standard_moonbit_test_cases.mbt:122:28-122:37)
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular None) ()
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false)))
+                     (Cexpr_constr (Constr_tag_regular None) ()
+                      (Option (T_constr SourceLoc () (generic_ false))
+                       (generic_ false))))
+                    (FixedArray
+                     (T_constr UnsafeMaybeUninit
+                      ((Option (T_constr SourceLoc () (generic_ false))
+                        (generic_ false)))
+                      (generic_ false))
+                     (generic_ false)))))
+                 ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+                (T_constr Array
+                 ((Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (generic_ false))))
+              (Normal
+               (((T_trait Show) (Option String (generic_ true))
+                 (T_constr SourceLoc () (generic_ false))
+                 (T_constr ArgsLoc () (generic_ false)))
+                -> Unit ! (T_suberror InspectError) (generic_ false)))
+              (T_error_value_result Unit (T_suberror InspectError)) ())
+             (Return_err Unit) Unit))
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as (Cexpr_var result2/5 String ()) Show String) error
+             @:standard_moonbit_test_cases.mbt:123:3-123:36
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:123:11-123:18)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:123:28-123:35)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (T_error_value_result Unit (T_suberror InspectError)))
+          (T_error_value_result Unit (T_suberror InspectError)))
+         (T_error_value_result Unit (T_suberror InspectError)))
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f6d6f6f6e6269745f746573745f63617365732e6d6274_8)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let pair/0
+       (Cexpr_tuple (10 hello) (Tproduct (Int String) (generic_ false)))
+       (Cexpr_let triple/1
+        (Cexpr_tuple (true 42 world)
+         (Tproduct (Bool Int String) (generic_ false)))
+        (Cexpr_sequence
+         ((Cexpr_handle_error
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as
+              (Cexpr_field
+               (Cexpr_var pair/0 (Tproduct (Int String) (generic_ false)) ())
+               (Index (tuple_index 0)) 0 Int)
+              Show Int)
+             10 @:standard_moonbit_test_cases.mbt:132:3-132:32
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:132:11-132:17)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:132:27-132:31)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (Return_err Unit) Unit)
+          (Cexpr_handle_error
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as
+              (Cexpr_field
+               (Cexpr_var pair/0 (Tproduct (Int String) (generic_ false)) ())
+               (Index (tuple_index 1)) 1 String)
+              Show String)
+             hello @:standard_moonbit_test_cases.mbt:133:3-133:35
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:133:11-133:17)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:133:27-133:34)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (Return_err Unit) Unit)
+          (Cexpr_handle_error
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as
+              (Cexpr_field
+               (Cexpr_var triple/1
+                (Tproduct (Bool Int String) (generic_ false)) ())
+               (Index (tuple_index 0)) 0 Bool)
+              Show Bool)
+             true @:standard_moonbit_test_cases.mbt:134:3-134:36
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:134:11-134:19)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:134:29-134:35)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (Return_err Unit) Unit)
+          (Cexpr_handle_error
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as
+              (Cexpr_field
+               (Cexpr_var triple/1
+                (Tproduct (Bool Int String) (generic_ false)) ())
+               (Index (tuple_index 1)) 1 Int)
+              Show Int)
+             42 @:standard_moonbit_test_cases.mbt:135:3-135:34
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:135:11-135:19)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:135:29-135:33)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (Return_err Unit) Unit))
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as
+            (Cexpr_field
+             (Cexpr_var triple/1
+              (Tproduct (Bool Int String) (generic_ false)) ())
+             (Index (tuple_index 2)) 2 String)
+            Show String)
+           world @:standard_moonbit_test_cases.mbt:136:3-136:37
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:136:11-136:19)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:136:29-136:36)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (T_error_value_result Unit (T_suberror InspectError)))
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false)))
+ (Ctop_fn
+  ((binder
+    __test_7374616e646172645f6d6f6f6e6269745f746573745f63617365732e6d6274_9)
+   (func
+    ((params ())
+     (body
+      (Cexpr_let max_int/0 2147483647
+       (Cexpr_let min_int/1 -2147483648
+        (Cexpr_sequence
+         ((Cexpr_handle_error
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as (Cexpr_var max_int/0 Int ()) Show Int) 2147483647
+             @:standard_moonbit_test_cases.mbt:145:3-145:41
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:145:11-145:18)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:145:28-145:40)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (Return_err Unit) Unit)
+          (Cexpr_handle_error
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as (Cexpr_var min_int/1 Int ()) Show Int) -2147483648
+             @:standard_moonbit_test_cases.mbt:146:3-146:42
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:146:11-146:18)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:146:28-146:41)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (Return_err Unit) Unit)
+          (Cexpr_handle_error
+           (Cexpr_apply $builtin.inspect.inner
+            ((Cexpr_as
+              (Cexpr_prim (Parith I32 Add) (Cexpr_var max_int/0 Int ()) 1)
+              Show Int)
+             -2147483648 @:standard_moonbit_test_cases.mbt:149:3-149:46
+             (Cexpr_record
+              (((label ((label_name buf))) (pos 0) (is_mut true)
+                (expr
+                 (Cexpr_array
+                  ((Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:149:11-149:22)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular Some)
+                    (@:standard_moonbit_test_cases.mbt:149:32-149:45)
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false)))
+                   (Cexpr_constr (Constr_tag_regular None) ()
+                    (Option (T_constr SourceLoc () (generic_ false))
+                     (generic_ false))))
+                  (FixedArray
+                   (T_constr UnsafeMaybeUninit
+                    ((Option (T_constr SourceLoc () (generic_ false))
+                      (generic_ false)))
+                    (generic_ false))
+                   (generic_ false)))))
+               ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+              (T_constr Array
+               ((Option (T_constr SourceLoc () (generic_ false))
+                 (generic_ false)))
+               (generic_ false))))
+            (Normal
+             (((T_trait Show) (Option String (generic_ true))
+               (T_constr SourceLoc () (generic_ false))
+               (T_constr ArgsLoc () (generic_ false)))
+              -> Unit ! (T_suberror InspectError) (generic_ false)))
+            (T_error_value_result Unit (T_suberror InspectError)) ())
+           (Return_err Unit) Unit))
+         (Cexpr_apply $builtin.inspect.inner
+          ((Cexpr_as
+            (Cexpr_prim (Parith I32 Sub) (Cexpr_var min_int/1 Int ()) 1) Show
+            Int)
+           2147483647 @:standard_moonbit_test_cases.mbt:150:3-150:45
+           (Cexpr_record
+            (((label ((label_name buf))) (pos 0) (is_mut true)
+              (expr
+               (Cexpr_array
+                ((Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:150:11-150:22)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular Some)
+                  (@:standard_moonbit_test_cases.mbt:150:32-150:44)
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false)))
+                 (Cexpr_constr (Constr_tag_regular None) ()
+                  (Option (T_constr SourceLoc () (generic_ false))
+                   (generic_ false))))
+                (FixedArray
+                 (T_constr UnsafeMaybeUninit
+                  ((Option (T_constr SourceLoc () (generic_ false))
+                    (generic_ false)))
+                  (generic_ false))
+                 (generic_ false)))))
+             ((label ((label_name len))) (pos 1) (is_mut true) (expr 4)))
+            (T_constr Array
+             ((Option (T_constr SourceLoc () (generic_ false))
+               (generic_ false)))
+             (generic_ false))))
+          (Normal
+           (((T_trait Show) (Option String (generic_ true))
+             (T_constr SourceLoc () (generic_ false))
+             (T_constr ArgsLoc () (generic_ false)))
+            -> Unit ! (T_suberror InspectError) (generic_ false)))
+          (T_error_value_result Unit (T_suberror InspectError)) ())
+         (T_error_value_result Unit (T_suberror InspectError)))
+        (T_error_value_result Unit (T_suberror InspectError)))
+       (T_error_value_result Unit (T_suberror InspectError))))))
+   (ty_params_ ()) (is_pub_ false))))
