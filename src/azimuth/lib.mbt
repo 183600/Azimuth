@@ -14960,3 +14960,294 @@ test "azimuth_standard_edge_cases" {
   assert_eq_string("Hello,   !", greet("  "))
   assert_eq_string("Hello, special@chars!", greet("special@chars"))
 }
+
+// 新增的10个 MoonBit 测试用例
+
+test "data_validation_input_ranges" {
+  // 数据验证和输入范围测试
+  // 测试有效范围的输入
+  let valid_min = 1
+  let valid_max = 1000
+  let test_value = 500
+  
+  // 验证输入在有效范围内
+  let is_in_range = (test_value >= valid_min) && (test_value <= valid_max)
+  let range_size = add(valid_max, -valid_min)
+  let midpoint = divide_with_ceil(add(valid_min, valid_max), 2)
+  
+  assert_eq(999, range_size)
+  assert_eq(501, midpoint)
+  let _ = is_in_range  // 使用布尔值避免未使用警告
+}
+
+test "complex_ecommerce_calculation" {
+  // 复杂电商计算场景
+  let product_price = 299
+  let quantity = 3
+  let member_discount = 15  // 15%
+  let tax_rate = 8          // 8%
+  let shipping_base = 20
+  let shipping_per_item = 5
+  
+  // 计算商品总价
+  let subtotal = multiply(product_price, quantity)
+  
+  // 计算会员折扣
+  let discount_amount = divide_with_ceil(multiply(subtotal, member_discount), 100)
+  let after_discount = add(subtotal, -discount_amount)
+  
+  // 计算运费
+  let total_shipping = add(shipping_base, multiply(shipping_per_item, quantity))
+  
+  // 计算税费
+  let tax_amount = divide_with_ceil(multiply(after_discount, tax_rate), 100)
+  
+  // 计算最终总价
+  let final_total = add(add(after_discount, total_shipping), tax_amount)
+  
+  assert_eq(897, subtotal)
+  assert_eq(135, discount_amount)
+  assert_eq(762, after_discount)
+  assert_eq(35, total_shipping)
+  assert_eq(61, tax_amount)
+  assert_eq(858, final_total)
+}
+
+test "algorithm_linear_search_simulation" {
+  // 模拟线性搜索算法的性能分析
+  let array_size = 100
+  let target_position = 67
+  let comparisons_per_element = 1
+  
+  // 计算最坏情况下的比较次数
+  let worst_case_comparisons = multiply(array_size, comparisons_per_element)
+  
+  // 计算平均情况下的比较次数
+  let average_comparisons = divide_with_ceil(array_size, 2)
+  
+  // 计算找到目标所需的比较次数
+  let actual_comparisons = multiply(target_position, comparisons_per_element)
+  
+  // 计算搜索效率
+  let efficiency_percentage = divide_with_ceil(multiply(average_comparisons, 100), worst_case_comparisons)
+  
+  assert_eq(100, worst_case_comparisons)
+  assert_eq(50, average_comparisons)
+  assert_eq(67, actual_comparisons)
+  assert_eq(50, efficiency_percentage)
+}
+
+test "financial_compound_interest" {
+  // 金融复利计算场景
+  let principal = 10000
+  let annual_rate = 6  // 6%
+  let years = 5
+  let compound_frequency = 12  // 月复利
+  
+  // 简化的复利计算（每年计算一次）
+  let amount_year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
+  let amount_year2 = add(amount_year1, divide_with_ceil(multiply(amount_year1, annual_rate), 100))
+  let amount_year3 = add(amount_year2, divide_with_ceil(multiply(amount_year2, annual_rate), 100))
+  let amount_year4 = add(amount_year3, divide_with_ceil(multiply(amount_year3, annual_rate), 100))
+  let amount_year5 = add(amount_year4, divide_with_ceil(multiply(amount_year4, annual_rate), 100))
+  
+  // 计算总收益
+  let total_interest = add(amount_year5, -principal)
+  
+  assert_eq(10600, amount_year1)
+  assert_eq(11236, amount_year2)
+  assert_eq(11910, amount_year3)
+  assert_eq(12624, amount_year4)
+  assert_eq(13421, amount_year5)
+  assert_eq(3421, total_interest)
+}
+
+test "resource_optimization_problem" {
+  // 资源优化问题：背包问题简化版
+  let item1_value = 60
+  let item1_weight = 10
+  let item2_value = 100
+  let item2_weight = 20
+  let item3_value = 120
+  let item3_weight = 30
+  let max_capacity = 50
+  
+  // 计算所有可能的组合
+  let combo1_value = item1_value
+  let combo1_weight = item1_weight
+  
+  let combo2_value = item2_value
+  let combo2_weight = item2_weight
+  
+  let combo3_value = item3_value
+  let combo3_weight = item3_weight
+  
+  let combo12_value = add(item1_value, item2_value)
+  let combo12_weight = add(item1_weight, item2_weight)
+  
+  let combo13_value = add(item1_value, item3_value)
+  let combo13_weight = add(item1_weight, item3_weight)
+  
+  let combo23_value = add(item2_value, item3_value)
+  let combo23_weight = add(item2_weight, item3_weight)
+  
+  let combo123_value = add(add(item1_value, item2_value), item3_value)
+  let combo123_weight = add(add(item1_weight, item2_weight), item3_weight)
+  
+  // 找出最优解（在容量限制内价值最大）
+  let best_value = combo23_value  // 100 + 120 = 220, weight = 50
+  let best_weight = combo23_weight
+  
+  assert_eq(160, combo1_value)
+  assert_eq(220, combo23_value)
+  assert_eq(50, best_weight)
+  assert_eq(220, best_value)
+}
+
+test "network_latency_calculation" {
+  // 网络延迟计算场景
+  let distance_km = 1000
+  let speed_of_light_km_per_ms = 300  // 光速在光纤中的简化速度
+  let processing_delay_ms = 5
+  let queue_delay_ms = 2
+  let hops = 3
+  
+  // 计算传播延迟
+  let propagation_delay = divide_with_ceil(distance_km, speed_of_light_km_per_ms)
+  
+  // 计算每个跳的总延迟
+  let per_hop_delay = add(propagation_delay, add(processing_delay_ms, queue_delay_ms))
+  
+  // 计算总延迟
+  let total_delay = multiply(per_hop_delay, hops)
+  
+  // 计算往返时间（RTT）
+  let rtt = multiply(total_delay, 2)
+  
+  assert_eq(4, propagation_delay)
+  assert_eq(11, per_hop_delay)
+  assert_eq(33, total_delay)
+  assert_eq(66, rtt)
+}
+
+test "temperature_conversion_system" {
+  // 温度转换系统测试
+  let celsius_temp = 25
+  let fahrenheit_temp = 77
+  
+  // 摄氏度转华氏度：F = (C * 9/5) + 32
+  let converted_to_fahrenheit = add(divide_with_ceil(multiply(celsius_temp, 9), 5), 32)
+  
+  // 华氏度转摄氏度：C = (F - 32) * 5/9
+  let converted_to_celsius = divide_with_ceil(multiply(add(fahrenheit_temp, -32), 5), 9)
+  
+  // 测试极端温度
+  let freezing_celsius = 0
+  let freezing_fahrenheit = add(divide_with_ceil(multiply(freezing_celsius, 9), 5), 32)
+  
+  let boiling_celsius = 100
+  let boiling_fahrenheit = add(divide_with_ceil(multiply(boiling_celsius, 9), 5), 32)
+  
+  assert_eq(77, converted_to_fahrenheit)
+  assert_eq(25, converted_to_celsius)
+  assert_eq(32, freezing_fahrenheit)
+  assert_eq(212, boiling_fahrenheit)
+}
+
+test "database_query_optimization" {
+  // 数据库查询优化模拟
+  let table_rows = 100000
+  let index_selectivity = 10  // 索引选择性百分比
+  let join_tables = 3
+  let where_conditions = 4
+  
+  // 计算全表扫描的成本
+  let full_scan_cost = table_rows
+  
+  // 计算索引扫描的成本
+  let index_scan_cost = divide_with_ceil(multiply(table_rows, index_selectivity), 100)
+  
+  // 计算连接操作的成本
+  let join_cost = multiply(table_rows, join_tables)
+  
+  // 计算WHERE条件的过滤效果
+  let filtered_rows = divide_with_ceil(multiply(table_rows, 100 - multiply(where_conditions, 10)), 100)
+  
+  // 计算优化后的查询成本
+  let optimized_cost = add(index_scan_cost, join_cost)
+  
+  assert_eq(100000, full_scan_cost)
+  assert_eq(10000, index_scan_cost)
+  assert_eq(300000, join_cost)
+  assert_eq(60000, filtered_rows)
+  assert_eq(310000, optimized_cost)
+}
+
+test "machine_learning_metrics" {
+  // 机器学习指标计算
+  let total_samples = 1000
+  let true_positives = 450
+  let false_positives = 50
+  let false_negatives = 100
+  let true_negatives = 400
+  
+  // 计算准确率
+  let accuracy = divide_with_ceil(multiply(add(true_positives, true_negatives), 100), total_samples)
+  
+  // 计算精确率
+  let precision = divide_with_ceil(multiply(true_positives, 100), add(true_positives, false_positives))
+  
+  // 计算召回率
+  let recall = divide_with_ceil(multiply(true_positives, 100), add(true_positives, false_negatives))
+  
+  // 计算F1分数（简化版）
+  let f1_score = divide_with_ceil(add(precision, recall), 2)
+  
+  // 计算错误率
+  let error_rate = add(100, -accuracy)
+  
+  assert_eq(85, accuracy)
+  assert_eq(90, precision)
+  assert_eq(82, recall)
+  assert_eq(86, f1_score)
+  assert_eq(15, error_rate)
+}
+
+test "advanced_boundary_combinations" {
+  // 高级边界情况组合测试
+  // 测试多个边界条件的组合
+  let boundary_values = [0, 1, -1, 2147483647, -2147483647]
+  
+  // 测试边界值的加法组合
+  let pos_max_plus_one = add(2147483646, 1)
+  let neg_max_plus_one = add(-2147483646, -1)
+  let pos_neg_zero = add(2147483647, -2147483647)
+  
+  // 测试边界值的乘法组合
+  let max_times_one = multiply(2147483647, 1)
+  let max_times_zero = multiply(2147483647, 0)
+  let min_times_one = multiply(-2147483647, 1)
+  
+  // 测试边界值的除法组合
+  let max_divided_by_self = divide_with_ceil(2147483647, 2147483647)
+  let min_divided_by_self = divide_with_ceil(-2147483647, -2147483647)
+  let max_divided_by_one = divide_with_ceil(2147483647, 1)
+  let zero_divided_by_max = divide_with_ceil(0, 2147483647)
+  
+  // 测试边界值的安全除法
+  let max_divided_by_zero = divide_with_ceil(2147483647, 0)
+  let min_divided_by_zero = divide_with_ceil(-2147483647, 0)
+  
+  assert_eq(2147483647, pos_max_plus_one)
+  assert_eq(-2147483647, neg_max_plus_one)
+  assert_eq(0, pos_neg_zero)
+  assert_eq(2147483647, max_times_one)
+  assert_eq(0, max_times_zero)
+  assert_eq(-2147483647, min_times_one)
+  assert_eq(1, max_divided_by_self)
+  assert_eq(1, min_divided_by_self)
+  assert_eq(2147483647, max_divided_by_one)
+  assert_eq(0, zero_divided_by_max)
+  assert_eq(0, max_divided_by_zero)
+  assert_eq(0, min_divided_by_zero)
+}
