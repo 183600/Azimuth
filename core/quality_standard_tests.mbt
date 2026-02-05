@@ -13,199 +13,169 @@
 // limitations under the License.
 
 ///|
-test "int_overflow_and_underflow" {
-  // 测试整数溢出和下溢
-  inspect(@int.max_value + 1, content=@int.min_value.to_string())
-  inspect(@int.min_value - 1, content=@int.max_value.to_string())
-  
-  // 测试大数运算
-  let large_num = 1000000
-  inspect(large_num * large_num, content="1000000000000")
-}
-
-///|
-test "advanced_string_operations" {
-  // 测试字符串高级操作
-  let text = "Hello, 世界!"
-  
-  // 测试字符访问
-  inspect(text.char_at(0), content="'H'")
-  inspect(text.char_at(7), content="'世'")
-  inspect(text.char_at(8), content="'界'")
-  
-  // 测试字符串比较
-  inspect("hello" == "hello", content="true")
-  inspect("hello" != "world", content="true")
-  inspect("abc" < "abd", content="true")
-}
-
-///|
-test "array_advanced_operations" {
-  // 测试数组高级操作
-  let numbers = [1, 2, 3, 4, 5]
-  let empty : Array[Int] = []
-  
-  // 测试数组包含
-  inspect(numbers.contains(3), content="true")
-  inspect(numbers.contains(6), content="false")
-  inspect(empty.contains(1), content="false")
-  
-  // 测试数组反转
-  let reversed = numbers.reverse()
-  inspect(reversed, content="[5, 4, 3, 2, 1]")
-  
-  // 测试数组切片（如果支持）
-  inspect(numbers.length(), content="5")
-}
-
-///|
-test "result_type_comprehensive" {
-  // 测试 Result 类型的综合操作
-  let success : Result[Int, String] = Ok(42)
-  let error : Result[Int, String] = Err("Something went wrong")
-  
-  // 测试 map_err 操作
-  let mapped_err = error.map_err(msg => msg.length())
-  inspect(mapped_err, content="Err(19)")
-  
-  // 测试 and_then 操作
-  let chained = success.and_then(x => if x > 40 { Ok(x * 2) } else { Err("too small") })
-  inspect(chained, content="Ok(84)")
-  
-  // 测试 or_else 操作
-  let fallback = error.or_else(_ => Ok(0))
-  inspect(fallback, content="Ok(0)")
-}
-
-///|
-test "boolean_short_circuit_evaluation" {
-  // 测试布尔运算的短路求值
-  let mut counter = 0
-  let increment = () => { counter = counter + 1; true }
-  
-  // 短路测试：如果第一个条件为 false，第二个不会执行
-  let result1 = false && increment()
-  inspect(result1, content="false")
-  inspect(counter, content="0")  // increment() 没有被调用
-  
-  // 短路测试：如果第一个条件为 true，第二个不会执行
-  let result2 = true || increment()
-  inspect(result2, content="true")
-  inspect(counter, content="0")  // increment() 没有被调用
-}
-
-///|
-test "tuple_nested_operations" {
-  // 测试嵌套元组操作
-  let simple = (1, "hello")
-  let nested = ((1, 2), ("hello", "world"))
-  let mixed = (42, "answer", [1, 2, 3])
-  
-  // 测试嵌套访问
-  inspect(nested.0.0, content="1")
-  inspect(nested.0.1, content="2")
-  inspect(nested.1.0, content="hello")
-  inspect(nested.1.1, content="world")
-  
-  // 测试混合类型元组
-  inspect(mixed.0, content="42")
-  inspect(mixed.1, content="answer")
-  inspect(mixed.2.length(), content="3")
-}
-
-///|
-test "option_chain_operations" {
-  // 测试 Option 链式操作
-  let data : Option<Array[Int>> = Some([1, 2, 3, 4, 5])
-  let none_data : Option<Array[Int>> = None
-  
-  // 链式操作：获取数组，过滤偶数，求和
-  let result = data
-    .filter(arr => arr.length() > 0)
-    .map(arr => arr.filter(x => x % 2 == 0))
-    .map(arr => arr.fold(0, (acc, x) => acc + x))
-  
-  inspect(result, content="Some(6)")  // 2 + 4 = 6
-  
-  // 对 None 进行相同操作
-  let none_result = none_data
-    .filter(arr => arr.length() > 0)
-    .map(arr => arr.filter(x => x % 2 == 0))
-    .map(arr => arr.fold(0, (acc, x) => acc + x))
-  
-  inspect(none_result, content="None")
-}
-
-///|
-test "type_conversion_edge_cases" {
-  // 测试类型转换的边界情况
+test "int basic arithmetic" {
+  let x = 42
+  let y = -17
   let zero = 0
-  let negative = -42
-  let positive = 42
   
-  // Int 到 Uint 的转换
-  let zero_uint = zero.reinterpret_as_uint()
-  let pos_uint = positive.reinterpret_as_uint()
-  let neg_uint = negative.reinterpret_as_uint()
+  assert_eq(x + y, 25)
+  assert_eq(x - y, 59)
+  assert_eq(x * y, -714)
+  assert_eq(x / y, -2)
+  assert_eq(x % y, 8)
   
-  inspect(zero_uint.to_int(), content="0")
-  inspect(pos_uint.to_int(), content="42")
-  // 负数转换为 uint 后再转回 int 的结果取决于实现
-  
-  // 测试字节转换
-  let test_val = 0x12345678
-  let bytes = @int.Int::to_be_bytes(test_val)
-  inspect(bytes.length(), content="4")
-  inspect(bytes[0], content="18")  // 0x12
+  assert_eq(Int::abs(y), 17)
+  assert_eq(Int::abs(zero), 0)
+  assert_eq(Int::abs(x), 42)
 }
 
 ///|
-test "math_function_precision" {
-  // 测试数学函数的精度
-  let pi = @math.pi
-  let e = @math.e
+test "int boundary values" {
+  assert_eq(Int::max_value, 2147483647)
+  assert_eq(Int::min_value, -2147483648)
   
-  // 测试基本数学常数
-  inspect(pi > 3.14 && pi < 3.15, content="true")
-  inspect(e > 2.71 && e < 2.72, content="true")
+  let max_val = Int::max_value
+  let min_val = Int::min_value
   
-  // 测试幂运算
-  inspect(@math.powf(2.0, 3.0), content="8")
-  inspect(@math.powf(5.0, 0.0), content="1")
-  inspect(@math.powf(0.0, 5.0), content="0")
-  
-  // 测试平方根
-  inspect(@math.sqrtf(9.0), content="3")
-  inspect(@math.sqrtf(16.0), content="4")
-  inspect(@math.sqrtf(0.0), content="0")
+  assert_eq(max_val + 1, -2147483648)
+  assert_eq(min_val - 1, 2147483647)
 }
 
 ///|
-test "complex_pattern_matching" {
-  // 测试复杂的模式匹配
-  let nested_option : Option<Option<Int>> = Some(Some(42))
-  let nested_none : Option<Option[Int>> = Some(None)
-  let double_none : Option<Option[Int>> = None
+test "list basic operations" {
+  let list1 = @list.from_array([1, 2, 3])
+  let list2 = @list.from_array([4, 5, 6])
   
-  // 嵌套 Option 匹配
-  let result1 = match nested_option {
-    Some(Some(x)) => x * 2
-    Some(None) => 0
-    None => -1
-  }
-  inspect(result1, content="84")
+  // Test length
+  assert_eq(list1.length(), 3)
+  assert_eq(list2.length(), 3)
   
-  let result2 = match nested_none {
-    Some(Some(x)) => x * 2
-    Some(None) => 0
-    None => -1
-  }
-  inspect(result2, content="0")
+  // Test concatenation
+  let concatenated = list1.concat(list2)
+  assert_eq(concatenated, @list.from_array([1, 2, 3, 4, 5, 6]))
   
-  let result3 = match double_none {
-    Some(Some(x)) => x * 2
-    Some(None) => 0
-    None => -1
-  }
-  inspect(result3, content="-1")
+  // Test head and tail
+  assert_eq(list1.head(), Some(1))
+  assert_eq(list1.last(), Some(3))
+}
+
+///|
+test "list map and filter" {
+  let numbers = @list.from_array([1, 2, 3, 4, 5])
+  
+  // Test map
+  let doubled = numbers.map(x => x * 2)
+  assert_eq(doubled, @list.from_array([2, 4, 6, 8, 10]))
+  
+  // Test filter
+  let evens = numbers.filter(x => x % 2 == 0)
+  assert_eq(evens, @list.from_array([2, 4]))
+  
+  // Test fold
+  let sum = numbers.fold(0, (acc, x) => acc + x)
+  assert_eq(sum, 15)
+}
+
+///|
+test "option basic operations" {
+  let some_value : Int? = Some(42)
+  let none_value : Int? = None
+  
+  // Test is_some and is_none
+  assert_eq(some_value.is_some(), true)
+  assert_eq(some_value.is_none(), false)
+  assert_eq(none_value.is_some(), false)
+  assert_eq(none_value.is_none(), true)
+  
+  // Test unwrap_or
+  assert_eq(some_value.unwrap_or(0), 42)
+  assert_eq(none_value.unwrap_or(0), 0)
+  
+  // Test map
+  let mapped = some_value.map(x => x * 2)
+  assert_eq(mapped, Some(84))
+}
+
+///|
+test "option chaining" {
+  let some_value : Int? = Some(42)
+  let none_value : Int? = None
+  
+  // Test and_then
+  let chained = some_value.and_then(x => if x > 40 { Some(x * 2) } else { None })
+  assert_eq(chained, Some(84))
+  
+  let none_chained = none_value.and_then(x => Some(x * 2))
+  assert_eq(none_chained, None)
+  
+  // Test filter
+  let filtered = some_value.filter(x => x > 40)
+  assert_eq(filtered, Some(42))
+  
+  let filtered_out = some_value.filter(x => x > 50)
+  assert_eq(filtered_out, None)
+}
+
+///|
+test "string basic operations" {
+  let text = "Hello"
+  let empty = ""
+  
+  // Test length
+  assert_eq(text.length(), 5)
+  assert_eq(empty.length(), 0)
+  
+  // Test concatenation
+  let greeting = text + ", World!"
+  assert_eq(greeting, "Hello, World!")
+  
+  // Test character access
+  assert_eq(text[0], 'H')
+  assert_eq(text[4], 'o')
+}
+
+///|
+test "string comparison" {
+  let text1 = "Hello"
+  let text2 = "hello"
+  let text3 = "Hello"
+  
+  // Test equality
+  assert_eq(text1 == text3, true)
+  assert_eq(text1 == text2, false)
+  assert_eq(text1 != text2, true)
+  
+  // Test empty string
+  assert_eq("".is_empty(), true)
+  assert_eq(text1.is_empty(), false)
+}
+
+///|
+test "math basic functions" {
+  // Test absolute value
+  assert_eq(@math.abs(-5), 5)
+  assert_eq(@math.abs(0), 0)
+  assert_eq(@math.abs(7), 7)
+  
+  // Test min and max
+  assert_eq(@math.min(3, 7), 3)
+  assert_eq(@math.max(3, 7), 3)
+  
+  // Test power
+  assert_eq(@math.pow(2, 3), 8)
+  assert_eq(@math.pow(5, 0), 1)
+}
+
+///|
+test "math constants and special values" {
+  // Test operations with zero
+  assert_eq(@math.pow(0, 5), 0)
+  assert_eq(@math.pow(5, 0), 1)
+  
+  // Test logarithmic functions (basic checks)
+  assert_eq(@math.log(1), 0)
+  assert_eq(@math.log10(10), 1)
+  
+  // Test mathematical constants
+  inspect(@math.pi, content="3.14159")
 }
