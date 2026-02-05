@@ -1,166 +1,199 @@
-// 高质量 MoonBit 测试用例
-// 针对 azimuth 库的核心功能进行深度测试
+// 高质量 MoonBit 测试用例 - 针对 Azimuth 库
+// 专注于边界情况、实际应用场景和错误处理
 
-test "mathematical_identity_properties" {
-  // 测试数学单位元性质
-  // 加法单位元：a + 0 = a
-  assert_eq(42, add(42, 0))
-  assert_eq(-17, add(-17, 0))
-  assert_eq(0, add(0, 0))
+test "mathematical_commutativity_verification" {
+  // 验证数学交换律：加法和乘法的交换性质
+  let a = 42
+  let b = 17
   
-  // 乘法单位元：a * 1 = a
-  assert_eq(42, multiply(42, 1))
-  assert_eq(-17, multiply(-17, 1))
-  assert_eq(0, multiply(0, 1))
+  // 加法交换律验证
+  azimuth::assert_eq(azimuth::add(a, b), azimuth::add(b, a))
+  
+  // 乘法交换律验证
+  azimuth::assert_eq(azimuth::multiply(a, b), azimuth::multiply(b, a))
+  
+  // 测试负数情况
+  let c = -15
+  let d = 23
+  azimuth::assert_eq(azimuth::add(c, d), azimuth::add(d, c))
+  azimuth::assert_eq(azimuth::multiply(c, d), azimuth::multiply(d, c))
 }
 
-test "divide_with_ceil_comprehensive_behavior" {
-  // 全面测试向上取整除法的行为
-  // 正数情况
-  assert_eq(4, divide_with_ceil(10, 3))    // 3.333... -> 4
-  assert_eq(3, divide_with_ceil(9, 3))     // 3 -> 3
-  assert_eq(1, divide_with_ceil(1, 100))   // 0.01 -> 1
+test "divide_with_ceil_boundary_analysis" {
+  // 除法向上取整的边界分析
+  // 测试各种边界情况，包括零、负数和大数
   
-  // 负数情况
-  assert_eq(-3, divide_with_ceil(-10, 3))  // -3.333... -> -3
-  assert_eq(3, divide_with_ceil(10, -3))   // -3.333... -> -3
-  assert_eq(4, divide_with_ceil(-10, -3))  // 3.333... -> 4
+  // 零除数情况
+  azimuth::assert_eq(0, azimuth::divide_with_ceil(100, 0))
+  azimuth::assert_eq(0, azimuth::divide_with_ceil(-100, 0))
+  azimuth::assert_eq(0, azimuth::divide_with_ceil(0, 0))
   
-  // 边界情况
-  assert_eq(0, divide_with_ceil(0, 5))     // 0 -> 0
-  assert_eq(0, divide_with_ceil(5, 0))     // 除零保护
+  // 完全整除情况
+  azimuth::assert_eq(5, azimuth::divide_with_ceil(25, 5))
+  azimuth::assert_eq(-5, azimuth::divide_with_ceil(-25, 5))
+  azimuth::assert_eq(5, azimuth::divide_with_ceil(-25, -5))
+  
+  // 接近整除的边界情况
+  azimuth::assert_eq(6, azimuth::divide_with_ceil(26, 5))  // 5.2 -> 6
+  azimuth::assert_eq(-4, azimuth::divide_with_ceil(-21, 5))  // -4.2 -> -4
+  azimuth::assert_eq(5, azimuth::divide_with_ceil(24, 5))  // 4.8 -> 5
 }
 
-test "complex_business_calculation" {
-  // 复杂业务计算：订单总价计算
-  let unit_price = 89
-  let quantity = 4
-  let tax_rate = 8    // 8%
-  let shipping = 12
-  let discount = 20
-  
-  // 计算小计
-  let subtotal = multiply(unit_price, quantity)
-  // 计算税费
-  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  // 计算总价
-  let total = add(add(subtotal, tax), add(shipping, -discount))
-  
-  assert_eq(356, subtotal)    // 89 * 4
-  assert_eq(29, tax)          // ceil(356 * 8 / 100)
-  assert_eq(377, total)       // 356 + 29 + 12 - 20
-}
-
-test "string_greeting_internationalization" {
-  // 测试问候函数的国际化支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, María!", greet("María"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, !", greet(""))
-}
-
-test "algorithm_efficiency_simulation" {
-  // 模拟算法效率计算
-  let base_operations = 1000
-  let optimization_factor = 3
-  let overhead_percentage = 15
-  
-  // 优化后的操作数
-  let optimized = multiply(base_operations, optimization_factor)
-  // 开销
-  let overhead = divide_with_ceil(multiply(optimized, overhead_percentage), 100)
-  // 实际性能
-  let actual = add(optimized, -overhead)
-  
-  assert_eq(3000, optimized)
-  assert_eq(450, overhead)
-  assert_eq(2550, actual)
-}
-
-test "resource_allocation_optimization" {
-  // 资源分配优化问题
-  let total_budget = 10000
-  let project_a_cost = 3500
-  let project_b_cost = 2800
-  let reserve_percentage = 10
-  
-  // 已分配预算
-  let allocated = add(project_a_cost, project_b_cost)
-  // 储备金
-  let reserve = divide_with_ceil(multiply(total_budget, reserve_percentage), 100)
-  // 可用剩余预算
-  let available = add(total_budget, -add(allocated, reserve))
-  
-  assert_eq(6300, allocated)
-  assert_eq(1000, reserve)
-  assert_eq(2700, available)
-}
-
-test "time_series_calculation" {
-  // 时间序列计算
-  let initial_value = 1000
-  let growth_rates = [5, 8, 12, 6]  // 百分比增长
+test "complex_financial_compound_interest" {
+  // 复杂的金融复利计算场景
+  let principal = 10000
+  let annual_rate = 8  // 8%
   
   // 第一年
-  let year1 = add(initial_value, divide_with_ceil(multiply(initial_value, growth_rates[0]), 100))
-  // 第二年
-  let year2 = add(year1, divide_with_ceil(multiply(year1, growth_rates[1]), 100))
-  // 第三年
-  let year3 = add(year2, divide_with_ceil(multiply(year2, growth_rates[2]), 100))
-  // 第四年
-  let year4 = add(year3, divide_with_ceil(multiply(year3, growth_rates[3]), 100))
+  let year1_interest = azimuth::divide_with_ceil(azimuth::multiply(principal, annual_rate), 100)
+  let year1_total = azimuth::add(principal, year1_interest)
   
-  assert_eq(1050, year1)
-  assert_eq(1134, year2)
-  assert_eq(1271, year3)
-  assert_eq(1348, year4)
+  // 第二年（基于第一年的总额）
+  let year2_interest = azimuth::divide_with_ceil(azimuth::multiply(year1_total, annual_rate), 100)
+  let year2_total = azimuth::add(year1_total, year2_interest)
+  
+  // 验证复利增长
+  azimuth::assert_eq(10800, year1_total)  // 10000 + 800
+  azimuth::assert_eq(11664, year2_total)  // 10800 + 864
 }
 
-test "inventory_turnover_calculation" {
-  // 库存周转率计算
-  let initial_inventory = 500
-  let purchases = 1200
-  let final_inventory = 300
-  let cost_of_goods_sold = add(initial_inventory, purchases) - final_inventory
-  let average_inventory = divide_with_ceil(add(initial_inventory, final_inventory), 2)
-  let turnover_rate = divide_with_ceil(multiply(cost_of_goods_sold, 100), average_inventory)
+test "inventory_warehouse_optimization" {
+  // 仓库库存优化计算
+  let total_products = 347
+  let pallet_capacity = 24
+  let safety_stock_ratio = 15  // 15% 安全库存
   
-  assert_eq(1400, cost_of_goods_sold)
-  assert_eq(400, average_inventory)
-  assert_eq(350, turnover_rate)
+  // 计算需要的托盘数量
+  let required_pallets = azimuth::divide_with_ceil(total_products, pallet_capacity)
+  
+  // 计算安全库存
+  let safety_stock = azimuth::divide_with_ceil(azimuth::multiply(total_products, safety_stock_ratio), 100)
+  
+  // 计算总存储需求
+  let total_storage_needed = azimuth::add(total_products, safety_stock)
+  let total_pallets_needed = azimuth::divide_with_ceil(total_storage_needed, pallet_capacity)
+  
+  azimuth::assert_eq(15, required_pallets)  // ceil(347/24) = 15
+  azimuth::assert_eq(52, safety_stock)      // ceil(347*15/100) = 52
+  azimuth::assert_eq(17, total_pallets_needed)  // ceil(399/24) = 17
 }
 
-test "data_structure_performance_test" {
-  // 数据结构性能测试
-  let base_access_time = 10  // 微秒
+test "string_processing_internationalization" {
+  // 字符串处理国际化测试
+  let english_name = "John Doe"
+  let chinese_name = "张三"
+  let japanese_name = "田中太郎"
+  let emoji_name = "🚀Developer"
+  let mixed_name = "Alice李"
+  
+  // 测试各种字符集的问候
+  azimuth::assert_eq_string("Hello, John Doe!", azimuth::greet(english_name))
+  azimuth::assert_eq_string("Hello, 张三!", azimuth::greet(chinese_name))
+  azimuth::assert_eq_string("Hello, 田中太郎!", azimuth::greet(japanese_name))
+  azimuth::assert_eq_string("Hello, 🚀Developer!", azimuth::greet(emoji_name))
+  azimuth::assert_eq_string("Hello, Alice李!", azimuth::greet(mixed_name))
+  
+  // 测试空字符串和特殊字符
+  azimuth::assert_eq_string("Hello, !", azimuth::greet(""))
+  azimuth::assert_eq_string("Hello, 	
+!", azimuth::greet("\t\n"))
+}
+
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟计算
+  let base_operations = 100
   let data_size = 1000
-  let algorithm_complexity_factor = 2  // O(log n) 近似
   
-  // 预期访问时间
-  let expected_time = multiply(base_access_time, divide_with_ceil(data_size, algorithm_complexity_factor))
+  // 模拟 O(n) 算法
+  let linear_operations = azimuth::multiply(base_operations, azimuth::divide_with_ceil(data_size, 100))
   
-  // 性能提升后的时间
-  let optimization_factor = 3
-  let optimized_time = divide_with_ceil(expected_time, optimization_factor)
+  // 模拟 O(n²) 算法
+  let quadratic_operations = azimuth::multiply(base_operations, azimuth::divide_with_ceil(azimuth::multiply(data_size, data_size), 10000))
   
-  assert_eq(5000, expected_time)
-  assert_eq(1667, optimized_time)
+  // 模拟 O(log n) 算法（简化为除以对数的近似值）
+  let logarithmic_operations = azimuth::multiply(base_operations, azimuth::divide_with_ceil(data_size, 100))
+  
+  // 计算相对性能
+  let linear_vs_log = azimuth::divide_with_ceil(linear_operations, logarithmic_operations)
+  let quadratic_vs_linear = azimuth::divide_with_ceil(quadratic_operations, linear_operations)
+  
+  azimuth::assert_eq(1000, linear_operations)
+  azimuth::assert_eq(100, quadratic_operations)
+  azimuth::assert_eq(1000, logarithmic_operations)
+  azimuth::assert_eq(1, linear_vs_log)
+  azimuth::assert_eq(1, quadratic_vs_linear)
 }
 
-test "error_boundary_robustness" {
-  // 错误边界健壮性测试
-  // 测试极端值
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(2147483647, 0))
-  assert_eq(0, divide_with_ceil(-2147483648, 0))
+test "error_handling_robustness_comprehensive" {
+  // 全面的错误处理健壮性测试
+  // 测试各种边界情况和异常情况
   
-  // 测试大数运算
-  let large_num = 1000000
-  assert_eq(2000000, add(large_num, large_num))
-  assert_eq(1000000000000, multiply(large_num, large_num))
+  // 极值测试
+  let large_positive = 1000000
+  let large_negative = -1000000
   
-  // 测试边界字符串
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, A!", greet("A"))
+  // 测试大数运算的稳定性
+  azimuth::assert_eq(2000000, azimuth::add(large_positive, large_positive))
+  azimuth::assert_eq(0, azimuth::add(large_positive, -large_positive))
+  azimuth::assert_eq(-2000000, azimuth::add(large_negative, large_negative))
+  
+  // 测试除法的各种边界情况
+  azimuth::assert_eq(1, azimuth::divide_with_ceil(1, 1))
+  azimuth::assert_eq(1000000, azimuth::divide_with_ceil(large_positive, 1))
+  azimuth::assert_eq(-1000000, azimuth::divide_with_ceil(large_negative, 1))
+  azimuth::assert_eq(0, azimuth::divide_with_ceil(large_positive, large_positive))
+  
+  // 测试零的各种运算
+  azimuth::assert_eq(0, azimuth::multiply(0, large_positive))
+  azimuth::assert_eq(0, azimuth::multiply(large_negative, 0))
+  azimuth::assert_eq(large_positive, azimuth::add(large_positive, 0))
+  azimuth::assert_eq(0, azimuth::divide_with_ceil(0, large_positive))
+}
+
+test "real_world_project_management" {
+  // 真实世界项目管理计算
+  let team_members = 8
+  let working_hours_per_day = 8
+  let project_days = 15
+  let total_tasks = 180
+  
+  // 计算总可用工时
+  let total_available_hours = azimuth::multiply(team_members, azimuth::multiply(working_hours_per_day, project_days))
+  
+  // 计算每个任务的平均工时
+  let hours_per_task = azimuth::divide_with_ceil(total_available_hours, total_tasks)
+  
+  // 计算需要的额外天数
+  let additional_days_needed = azimuth::divide_with_ceil(
+    azimuth::add(total_available_hours, -total_available_hours), 
+    azimuth::multiply(team_members, working_hours_per_day)
+  )
+  
+  azimuth::assert_eq(960, total_available_hours)  // 8 * 8 * 15
+  azimuth::assert_eq(6, hours_per_task)           // ceil(960/180)
+  azimuth::assert_eq(0, additional_days_needed)   // ceil(0/(8*8))
+}
+
+test "mathematical_series_progression" {
+  // 数学级数和递进计算
+  let first_term = 3
+  let common_difference = 4
+  let terms_count = 10
+  
+  // 计算等差数列第n项：a_n = a_1 + (n-1)d
+  let tenth_term = azimuth::add(first_term, azimuth::multiply(terms_count - 1, common_difference))
+  
+  // 计算等差数列和：S_n = n/2 * (2a_1 + (n-1)d)
+  let series_sum = azimuth::divide_with_ceil(
+    azimuth::multiply(terms_count, azimuth::add(azimuth::multiply(2, first_term), azimuth::multiply(terms_count - 1, common_difference))),
+    2
+  )
+  
+  // 计算等比数列（简化版本）
+  let geometric_ratio = 2
+  let geometric_sum = azimuth::multiply(first_term, azimuth::subtract(azimuth::multiply(geometric_ratio, terms_count), 1))
+  
+  azimuth::assert_eq(39, tenth_term)      // 3 + 9*4 = 39
+  azimuth::assert_eq(210, series_sum)     // 10/2 * (6 + 36) = 5 * 42 = 210
+  azimuth::assert_eq(3069, geometric_sum) // 3 * (2^10 - 1) = 3 * 1023
 }
