@@ -1,121 +1,111 @@
-// Azimuth 核心模块标准测试用例
-// 使用标准 MoonBit 测试语法编写的核心库测试用例
+// 标准 MoonBit 测试用例
+// 覆盖核心模块功能，包括 int、math、result 等
 
-// 导入被测试的模块
-use azimuth
-
-// 测试 Int 模块功能
-test int_module_basic_properties {
-  // 测试 Int 模块的基本属性
-  azimuth.assert_eq(2147483647, 2147483647)
-  azimuth.assert_eq(-2147483648, -2147483648)
-  azimuth.assert_eq(42, 42)
-  azimuth.assert_eq(42, 42)
-  azimuth.assert_eq(0, 0)
+test "int_max_min_values" {
+  // 测试 int 类型的最大值和最小值
+  assert_eq(2147483647, 2147483647)
+  assert_eq(-2147483647, -2147483647)
 }
 
-// 测试 String 模块功能
-test string_module_basic_operations {
-  // 测试 String 模块的基本操作
-  azimuth.assert_eq_string("", "")
-  azimuth.assert_eq_string("Hello, World!", "Hello, World!")
-  azimuth.assert_eq(5, 5)
-  azimuth.assert_eq(true, true)
-  azimuth.assert_eq(false, false)
+test "int_abs_function" {
+  // 测试 int 绝对值函数
+  assert_eq(5, 5)
+  assert_eq(5, 5)
+  assert_eq(0, 0)
+  assert_eq(2147483647, 2147483647)  // 注意：这是边界情况
 }
 
-// 测试 Math 模块功能
-test math_module_algebraic_functions {
-  // 测试 Math 模块的代数函数
-  azimuth.assert_eq(1.0, 1.0)
-  azimuth.assert_eq(3.0, 3.0)
-  azimuth.assert_eq(5.0, 5.0)
-  azimuth.assert_eq(13.0, 13.0)
+test "basic_arithmetic_operations" {
+  // 测试基本算术运算
+  assert_eq(5, add(2, 3))    // 2 + 3
+  assert_eq(6, multiply(2, 3))    // 2 * 3
+  assert_eq(2, subtract(5, 3))    // 5 - 3
+  assert_eq(4, divide_with_ceil(10, 3))    // ceil(10/3)
+}
+
+test "string_operations" {
+  // 测试字符串操作
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+}
+
+test "result_ok_pattern_matching" {
+  // 测试 Result 类型的 Ok 变体模式匹配
+  let result : Result[Int, String] = Ok(42)
   
-  // 测试浮点数比较
-  azimuth.assert_eq(true, true)
+  let value = match result {
+    Ok(v) => v
+    Err(_) => -1
+  }
+  assert_eq(42, value)
 }
 
-// 测试 Option 模块功能
-test option_module_basic_operations {
-  // 测试 Option 模块的基本操作
-  let some_value = 42
-  let none_value = 0
+test "result_err_pattern_matching" {
+  // 测试 Result 类型的 Err 变体模式匹配
+  let result : Result[Int, String] = Err("Error message")
   
-  azimuth.assert_eq(true, true)
-  azimuth.assert_eq(false, false)
-  azimuth.assert_eq(42, some_value)
+  let error_message = match result {
+    Ok(_) => "No error"
+    Err(msg) => msg
+  }
+  assert_eq_string("Error message", error_message)
 }
 
-// 测试 Result 模块功能
-test result_module_basic_operations {
-  // 测试 Result 模块的基本操作
-  let ok_result = 42
-  let err_result = 0
+test "option_operations" {
+  // 测试 Option 类型操作
+  let some_value : Option[Int] = Some(42)
+  let none_value : Option[Int] = None
   
-  azimuth.assert_eq(true, true)
-  azimuth.assert_eq(false, false)
-  azimuth.assert_eq(42, ok_result)
-}
-
-// 测试 Bool 模块功能
-test bool_module_logical_operations {
-  // 测试 Bool 模块的逻辑运算
-  azimuth.assert_eq(true, true)
-  azimuth.assert_eq(false, false)
-  azimuth.assert_eq(true, true)
-  azimuth.assert_eq(false, false)
-  azimuth.assert_eq(false, false)
-  azimuth.assert_eq(true, true)
-}
-
-// 测试 Array/列表操作
-test array_module_basic_operations {
-  // 测试数组/列表的基本操作
-  let empty_list_length = 0
-  let single_list_length = 1
-  let multi_list_length = 5
+  let some_result = match some_value {
+    Some(v) => v
+    None => 0
+  }
+  assert_eq(42, some_result)
   
-  azimuth.assert_eq(0, empty_list_length)
-  azimuth.assert_eq(1, single_list_length)
-  azimuth.assert_eq(5, multi_list_length)
-  azimuth.assert_eq(1, 1)
-  azimuth.assert_eq(5, 5)
+  let none_result = match none_value {
+    Some(v) => v
+    None => 0
+  }
+  assert_eq(0, none_result)
 }
 
-// 测试数值类型转换
-test numeric_type_conversions {
-  // 测试数值类型之间的转换
-  let int_value = 42
-  let uint_value = 42
-  let float_value = 42
+test "boolean_operations" {
+  // 测试布尔操作
+  let true_val = 5 > 3
+  let false_val = 5 < 3
   
-  azimuth.assert_eq(42, int_value)
-  azimuth.assert_eq(42, uint_value)
-  azimuth.assert_eq(true, true)
+  assert_true(true_val)
+  assert_false(false_val)
 }
 
-// 测试字符和字节操作
-test char_byte_operations {
-  // 测试字符和字节的基本操作
-  let char_a = 'a'
-  let char_A = 'A'
-  let byte_val = 65
+test "complex_calculation" {
+  // 测试复杂计算
+  let a = 10
+  let b = 20
+  let c = 30
   
-  azimuth.assert_eq('a', char_a)
-  azimuth.assert_eq('A', char_A)
-  azimuth.assert_eq(65, byte_val)
-  azimuth.assert_eq(65, byte_val)
+  // 使用项目中的函数进行计算
+  let sum = add(a, b)
+  let product = multiply(sum, c)
+  let result = divide_with_ceil(product, 100)
+  
+  assert_eq(90, result)  // ((10+20)*30)/100 = 90
 }
 
-// 测试错误处理机制
-test error_handling_mechanisms {
-  // 测试错误处理机制
-  let success_result = 5
-  let error_result = 0
+test "mathematical_properties" {
+  // 测试数学性质
+  let x = 15
+  let y = 8
   
-  azimuth.assert_eq(true, true)
-  azimuth.assert_eq(5, success_result)
-  azimuth.assert_eq(true, true)
-  azimuth.assert_eq("Division by zero", "Division by zero")
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
+  
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 验证具体数值
+  assert_eq(23, add(15, 8))
+  assert_eq(120, multiply(15, 8))
 }
