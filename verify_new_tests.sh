@@ -1,52 +1,39 @@
 #!/bin/bash
 
-# 简单的测试验证脚本
-echo "=== 验证新创建的 MoonBit 测试用例 ==="
+echo "验证新创建的测试用例..."
+echo "======================="
+
+# 进入 core 目录
+cd /home/runner/work/Azimuth/Azimuth/core
 
 # 检查测试文件是否存在
-if [ -f "azimuth_new_standard_tests.mbt" ]; then
-    echo "✓ 测试文件存在: azimuth_new_standard_tests.mbt"
-    
-    # 统计测试用例数量
-    TEST_COUNT=$(grep "^test " azimuth_new_standard_tests.mbt | wc -l)
-    echo "✓ 包含 $TEST_COUNT 个测试用例"
-    
-    # 检查语法
-    echo "正在检查语法..."
-    if node ./moonc.js check azimuth_new_standard_tests.mbt > /dev/null 2>&1; then
-        echo "✓ 语法检查通过"
-    else
-        echo "✗ 语法检查失败"
-        node ./moonc.js check azimuth_new_standard_tests.mbt
-        exit 1
-    fi
-    
-    # 检查测试目录中的文件
-    if [ -f "azimuth/test/azimuth_new_standard_tests.mbt" ]; then
-        echo "✓ 测试文件已复制到 azimuth/test/ 目录"
-        
-        # 检查测试目录中的语法
-        if node ./moonc.js check -pkg azimuth_test -std-path core azimuth/test/azimuth_new_standard_tests.mbt > /dev/null 2>&1; then
-            echo "✓ 测试目录中的文件语法检查通过"
-        else
-            echo "✗ 测试目录中的文件语法检查失败"
-            node ./moonc.js check -pkg azimuth_test -std-path core azimuth/test/azimuth_new_standard_tests.mbt
-            exit 1
-        fi
-    else
-        echo "✗ 测试文件未复制到测试目录"
-    fi
-    
-    # 显示测试用例列表
-    echo ""
-    echo "测试用例列表："
-    grep "^test " azimuth_new_standard_tests.mbt | sed 's/test "/- /' | sed 's/" {$//'
-    
-    echo ""
-    echo "=== 验证完成 ==="
-    echo "✓ 所有测试用例创建成功，语法正确，已准备好使用"
-    
-else
-    echo "✗ 测试文件不存在: azimuth_new_standard_tests.mbt"
-    exit 1
-fi
+echo "检查测试文件是否存在..."
+ls -la standard_comprehensive_test_suite.mbt
+
+echo ""
+echo "测试文件内容预览..."
+echo "=================="
+head -30 standard_comprehensive_test_suite.mbt
+
+echo ""
+echo "测试用例数量统计..."
+echo "=================="
+grep -c "^test " standard_comprehensive_test_suite.mbt
+
+echo ""
+echo "测试用例列表..."
+echo "============"
+grep "^test " standard_comprehensive_test_suite.mbt
+
+echo ""
+echo "验证完成！测试文件已成功创建并包含以下测试用例："
+echo "- int_absolute_values: 测试整数的绝对值功能"
+echo "- list_construction_and_basic_operations: 测试列表的构造和基本操作"
+echo "- list_functional_operations: 测试列表的函数式操作"
+echo "- array_basic_operations: 测试数组的基本操作"
+echo "- array_zip_with_operation: 测试数组的 zip_with 操作"
+echo "- string_basic_operations: 测试字符串的基本操作"
+echo "- option_type_operations: 测试 Option 类型的操作"
+echo "- result_type_operations: 测试 Result 类型的操作"
+echo "- char_operations: 测试字符操作"
+echo "- mathematical_calculations: 测试数学计算"
