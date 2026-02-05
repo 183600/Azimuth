@@ -1,75 +1,92 @@
-test "azimuth_add_basic" {
-  @azimuth.assert_eq(5, @azimuth.add(2, 3))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(-2, @azimuth.add(-5, 3))
+// Azimuth 项目标准测试用例
+// 使用标准 MoonBit 测试语法编写
+
+test "basic_arithmetic_operations" {
+  // 基本算术运算测试
+  assert_eq(10, add(3, 7))
+  assert_eq(15, multiply(3, 5))
+  assert_eq(2, subtract(8, 6))
 }
 
-test "azimuth_multiply_basic" {
-  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
-  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
+test "divide_with_ceil_functionality" {
+  // 向上取整除法功能测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "azimuth_greet_basic" {
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+test "greet_function_standard_cases" {
+  // 问候函数标准测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
-test "azimuth_divide_with_ceil_basic" {
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
-  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(8, 4))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 4))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
+test "negative_number_operations" {
+  // 负数运算测试
+  assert_eq(-4, add(-7, 3))
+  assert_eq(-15, multiply(-3, 5))
+  assert_eq(-10, subtract(-5, 5))
 }
 
-test "azimuth_subtract_basic" {
-  @azimuth.assert_eq(-1, @azimuth.subtract(2, 3))
-  @azimuth.assert_eq(0, @azimuth.subtract(5, 5))
-  @azimuth.assert_eq(10, @azimuth.subtract(15, 5))
-}
-
-test "azimuth_commutative_property" {
-  let a = 7
-  let b = 13
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
-}
-
-test "azimuth_packaging_scenario" {
-  let items = 25
-  let capacity = 6
-  let boxes = @azimuth.divide_with_ceil(items, capacity)
-  @azimuth.assert_eq(5, boxes)
+test "mathematical_commutative_property" {
+  // 数学交换律性质测试
+  let a = 12
+  let b = 8
   
-  let total_capacity = @azimuth.multiply(boxes, capacity)
-  @azimuth.assert_eq(30, total_capacity)
-  
-  let remaining = @azimuth.subtract(total_capacity, items)
-  @azimuth.assert_eq(5, remaining)
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(multiply(a, b), multiply(b, a))
 }
 
-test "azimuth_complex_workflow" {
-  let base = 5
-  let multiplier = 3
-  let divisor = 4
-  let addition = 2
+test "business_packaging_scenario" {
+  // 业务包装场景测试
+  let total_items = 35
+  let items_per_package = 8
+  let packages_needed = divide_with_ceil(total_items, items_per_package)
   
-  let step1 = @azimuth.multiply(base, multiplier)
-  let step2 = @azimuth.divide_with_ceil(step1, divisor)
-  let result = @azimuth.add(step2, addition)
+  assert_eq(5, packages_needed)
   
-  @azimuth.assert_eq(6, result)
+  let total_capacity = multiply(packages_needed, items_per_package)
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(5, remaining_space)
 }
 
-test "azimuth_edge_cases" {
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
-  @azimuth.assert_eq(1000000, @azimuth.multiply(1000, 1000))
-  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+test "complex_calculation_workflow" {
+  // 复杂计算工作流测试
+  let team_members = 6
+  let tasks_per_member = 8
+  let total_tasks = multiply(team_members, tasks_per_member)
+  
+  let sprint_capacity = 15
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  
+  assert_eq(48, total_tasks)
+  assert_eq(4, sprints_needed)
 }
 
-test "azimuth_boundary_values" {
-  @azimuth.assert_eq(2147483646, @azimuth.add(2147483645, 1))
-  @azimuth.assert_eq(-2147483647, @azimuth.add(-2147483646, -1))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
+test "boundary_values_test" {
+  // 边界值测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(0, divide_with_ceil(0, 10))
+}
+
+test "unicode_and_special_characters" {
+  // Unicode 和特殊字符测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, @user!", greet("@user"))
+}
+
+test "financial_calculation_scenario" {
+  // 金融计算场景测试
+  let loan_amount = 10000
+  let monthly_payment = 750
+  let months_needed = divide_with_ceil(loan_amount, monthly_payment)
+  
+  assert_eq(14, months_needed)
+  
+  let total_payment = multiply(months_needed, monthly_payment)
+  assert_eq(10500, total_payment)
 }
