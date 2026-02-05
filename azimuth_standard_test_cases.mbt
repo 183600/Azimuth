@@ -1,185 +1,119 @@
-// Azimuth 项目标准 MoonBit 测试用例
-// 包含10个高质量测试用例，覆盖核心功能模块
+// Azimuth 项目标准测试用例
+// 包含10个高质量测试用例，覆盖主要功能模块
 
-// 测试 1: Int 模块基本功能测试
-test "int_module_basic_functionality" {
-  // 测试 Int 模块的最大值和最小值
-  assert_eq(@int.max_value, 2147483647)
-  assert_eq(@int.min_value, -2147483648)
-  
-  // 测试绝对值功能
-  assert_eq(@int.abs(5), 5)
-  assert_eq(@int.abs(-5), 5)
-  assert_eq(@int.abs(0), 0)
+test "basic_addition_comprehensive" {
+  // 基本加法综合测试
+  assert_eq(8, add(3, 5))
+  assert_eq(0, add(0, 0))
+  assert_eq(-2, add(-5, 3))
+  assert_eq(100, add(50, 50))
+  assert_eq(-100, add(-50, -50))
 }
 
-// 测试 2: String 模块基本功能测试
-test "string_module_basic_functionality" {
-  // 测试字符串默认值
-  assert_eq(@string.default(), "")
-  
-  // 测试字符串连接
-  let str1 = "Hello"
-  let str2 = "MoonBit"
-  let combined = str1 + ", " + str2 + "!"
-  assert_eq(combined, "Hello, MoonBit!")
+test "basic_multiplication_comprehensive" {
+  // 基本乘法综合测试
+  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-15, multiply(-3, 5))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(10000, multiply(100, 100))
 }
 
-// 测试 3: List 模块创建和基本操作测试
-test "list_module_creation_and_basic_operations" {
-  // 测试空列表创建
-  let empty_list : @list.List[Int] = @list.new()
-  assert_eq(empty_list.length(), 0)
-  assert_eq(empty_list.is_empty(), true)
-  
-  // 测试从数组创建列表
-  let int_list = @list.from_array([1, 2, 3, 4, 5])
-  assert_eq(int_list.length(), 5)
-  assert_eq(int_list.is_empty(), false)
-  
-  // 测试列表头部和尾部
-  assert_eq(int_list.head(), Some(1))
-  assert_eq(int_list.last(), Some(5))
+test "divide_with_ceil_positive_scenarios" {
+  // 向上取整除法正数场景测试
+  assert_eq(3, divide_with_ceil(8, 3))
+  assert_eq(2, divide_with_ceil(6, 3))
+  assert_eq(1, divide_with_ceil(1, 5))
+  assert_eq(0, divide_with_ceil(0, 10))
+  assert_eq(0, divide_with_ceil(10, 0))
 }
 
-// 测试 4: List 模块映射和过滤操作测试
-test "list_module_map_and_filter_operations" {
-  let numbers = @list.from_array([1, 2, 3, 4, 5])
-  
-  // 测试映射操作
-  let doubled = numbers.map(x => x * 2)
-  assert_eq(doubled, @list.from_array([2, 4, 6, 8, 10]))
-  
-  // 测试带索引的映射操作
-  let indexed = numbers.mapi((i, x) => x + i)
-  assert_eq(indexed, @list.from_array([1, 3, 5, 7, 9]))
-  
-  // 测试过滤操作
-  let evens = numbers.filter(x => x % 2 == 0)
-  assert_eq(evens, @list.from_array([2, 4]))
+test "divide_with_ceil_negative_scenarios" {
+  // 向上取整除法负数场景测试
+  assert_eq(-2, divide_with_ceil(-8, 3))
+  assert_eq(-3, divide_with_ceil(8, -3))
+  assert_eq(3, divide_with_ceil(-8, -3))
+  assert_eq(-1, divide_with_ceil(-1, 2))
+  assert_eq(1, divide_with_ceil(-1, -2))
 }
 
-// 测试 5: List 模块折叠和聚合操作测试
-test "list_module_fold_and_aggregate_operations" {
-  let numbers = @list.from_array([1, 2, 3, 4, 5])
-  
-  // 测试左折叠求和
-  let sum = numbers.fold(init=0, (acc, x) => acc + x)
-  assert_eq(sum, 15)
-  
-  // 测试左折叠求积
-  let product = numbers.fold(init=1, (acc, x) => acc * x)
-  assert_eq(product, 120)
-  
-  // 测试最大值和最小值
-  assert_eq(numbers.maximum(), Some(5))
-  assert_eq(numbers.minimum(), Some(1))
+test "greet_function_various_inputs" {
+  // 问候函数各种输入测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 用户!", greet("用户"))
 }
 
-// 测试 6: List 模块组合操作测试
-test "list_module_combination_operations" {
-  let list1 = @list.from_array([1, 2, 3])
-  let list2 = @list.from_array([4, 5, 6])
-  
-  // 测试连接操作
-  let concatenated = list1.concat(list2)
-  assert_eq(concatenated, @list.from_array([1, 2, 3, 4, 5, 6]))
-  
-  // 测试反转操作
-  let reversed = list1.rev()
-  assert_eq(reversed, @list.from_array([3, 2, 1]))
-  
-  // 测试压缩操作
-  let zipped = @list.zip(list1, list2)
-  assert_eq(zipped, @list.from_array([(1, 4), (2, 5), (3, 6)]))
+test "subtract_function_comprehensive" {
+  // 减法函数综合测试
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(15, 15))
+  assert_eq(20, subtract(10, -10))
+  assert_eq(-20, subtract(-10, 10))
 }
 
-// 测试 7: 数学运算和边界值测试
-test "mathematical_operations_and_boundary_values" {
-  // 测试基本数学运算
-  assert_eq(5 + 3, 8)
-  assert_eq(10 - 4, 6)
-  assert_eq(6 * 7, 42)
-  assert_eq(20 / 4, 5)
+test "mathematical_properties_validation" {
+  // 数学性质验证测试
+  let a = 12
+  let b = 7
   
-  // 测试边界值
-  let max_int = @int.max_value
-  let min_int = @int.min_value
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
   
-  // 测试溢出边界
-  assert_eq(max_int - 1, 2147483646)
-  assert_eq(min_int + 1, -2147483647)
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
   
-  // 测试零值运算
-  assert_eq(0 * 5, 0)
-  assert_eq(5 * 0, 0)
-  assert_eq(0 + 0, 0)
+  // 验证具体数值
+  assert_eq(19, add(12, 7))
+  assert_eq(84, multiply(12, 7))
 }
 
-// 测试 8: 条件判断和逻辑操作测试
-test "conditional_and_logical_operations" {
-  // 测试基本条件判断
-  assert_eq(true && true, true)
-  assert_eq(true && false, false)
-  assert_eq(false && true, false)
-  assert_eq(false && false, false)
+test "business_packaging_scenario" {
+  // 业务包装场景测试
+  let total_items = 35
+  let items_per_package = 8
+  let packages_needed = divide_with_ceil(total_items, items_per_package)
   
-  assert_eq(true || true, true)
-  assert_eq(true || false, true)
-  assert_eq(false || true, true)
-  assert_eq(false || false, false)
+  assert_eq(5, packages_needed)
   
-  assert_eq(!true, false)
-  assert_eq(!false, true)
+  // 验证总容量
+  let total_capacity = multiply(packages_needed, items_per_package)
+  assert_eq(40, total_capacity)
   
-  // 测试比较操作
-  assert_eq(5 > 3, true)
-  assert_eq(5 >= 5, true)
-  assert_eq(3 < 5, true)
-  assert_eq(5 <= 5, true)
-  assert_eq(5 == 5, true)
-  assert_eq(5 != 3, true)
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(5, remaining_space)
 }
 
-// 测试 9: 字符串处理和操作测试
-test "string_processing_and_operations" {
-  // 测试字符串长度和内容
-  let test_str = "MoonBit"
-  assert_eq(test_str.length(), 7)
+test "complex_workflow_calculation" {
+  // 复杂工作流计算测试
+  // 场景：项目资源计算
+  let team_members = 6
+  let tasks_per_member = 8
+  let total_tasks = multiply(team_members, tasks_per_member)
   
-  // 测试字符串比较
-  assert_eq("hello" == "hello", true)
-  assert_eq("hello" != "world", true)
+  let sprint_capacity = 15
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
   
-  // 测试字符串包含（如果可用）
-  // 注意：这里使用基本的字符串操作，因为不确定具体可用的字符串函数
-  
-  // 测试空字符串
-  let empty_str = ""
-  assert_eq(empty_str.length(), 0)
-  assert_eq(empty_str == "", true)
+  assert_eq(48, total_tasks)  // 6 * 8 = 48
+  assert_eq(4, sprints_needed)  // ceil(48/15) = 4
 }
 
-// 测试 10: 复杂数据结构和算法测试
-test "complex_data_structures_and_algorithms" {
-  // 测试嵌套列表操作
-  let inner_list1 = @list.from_array([1, 2, 3])
-  let inner_list2 = @list.from_array([4, 5, 6])
-  let inner_list3 = @list.from_array([7, 8, 9])
+test "edge_cases_and_boundary_values" {
+  // 边界情况和极值测试
+  // 除法边界情况
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(1, divide_with_ceil(-5, -5))
+  assert_eq(0, divide_with_ceil(0, 5))
   
-  let list_of_lists = @list.from_array([inner_list1, inner_list2, inner_list3])
+  // 大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(100000000, multiply(10000, 10000))
   
-  // 测试展平操作
-  let flattened = list_of_lists.flatten()
-  assert_eq(flattened, @list.from_array([1, 2, 3, 4, 5, 6, 7, 8, 9]))
-  
-  // 测试平面映射操作
-  let numbers = @list.from_array([1, 2, 3])
-  let expanded = numbers.flat_map(x => @list.from_array([x, x * 10]))
-  assert_eq(expanded, @list.from_array([1, 10, 2, 20, 3, 30]))
-  
-  // 测试列表排序
-  let unsorted = @list.from_array([5, 2, 8, 1, 9, 3])
-  let sorted = unsorted.sort()
-  assert_eq(sorted, @list.from_array([1, 2, 3, 5, 8, 9]))
+  // 特殊问候情况
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, special@chars!", greet("special@chars"))
 }
