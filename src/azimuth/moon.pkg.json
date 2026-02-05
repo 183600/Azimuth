@@ -6,7 +6,12 @@
   ],
   "test-import": [
     "azimuth",
-    "moonbitlang/core/test"
+    "moonbitlang/core/test",
+    "moonbitlang/core/string",
+    "moonbitlang/core/option",
+    "moonbitlang/core/result",
+    "moonbitlang/core/array",
+    "moonbitlang/core/int"
   ],
   "test": [
     "high_quality_comprehensive_tests.mbt",
@@ -306,6 +311,7 @@
     "standard_moonbit_tests.mbt",
     "test/standard_moonbit_tests.mbt",
     "azimuth_enhanced_test_cases.mbt",
+    "standard_core_tests.mbt",
     "new_comprehensive_azimuth_tests.mbt",
     "standard_moonbit_tests_v22.mbt",
     "azimuth_high_quality_test_suite.mbt",
@@ -438,6 +444,7 @@
     "enhanced_test_cases.mbt",
     "comprehensive_new_test_cases.mbt",
     "standard_enhanced_tests.mbt",
+      "standard_core_tests.mbt",
       "quality_focused_tests.mbt",
       "simple_test_validation.mbt",
       "azimuth_quality_enhanced_tests.mbt",
