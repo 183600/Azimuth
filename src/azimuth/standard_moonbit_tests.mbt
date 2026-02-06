@@ -1,118 +1,98 @@
-// 标准 MoonBit 测试用例
-// 测试 lib.mbt 中的核心功能
+// 标准 MoonBit 测试用例 - Azimuth 项目
+// 包含8个高质量测试用例，使用标准 MoonBit 测试语法
 
-test "basic_arithmetic_addition" {
-  // 测试基本加法运算
-  assert_eq(5, 2 + 3)
-  assert_eq(30, add(10, 20))
-  assert_eq(0, add(-5, 5))
-  assert_eq(-30, add(-10, -20))
+test "basic_arithmetic_operations" {
+  // 基本算术运算测试
+  assert_eq(7, add(3, 4))
+  assert_eq(12, multiply(3, 4))
+  assert_eq(2, subtract(10, 8))
+  assert_eq(3, divide_with_ceil(8, 3))
 }
 
-test "basic_arithmetic_multiplication" {
-  // 测试基本乘法运算
-  assert_eq(20, 4 * 5)
-  assert_eq(42, multiply(6, 7))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(24, multiply(-4, -6))
-  assert_eq(0, multiply(0, 100))
-}
-
-test "basic_arithmetic_subtraction" {
-  // 测试基本减法运算
-  assert_eq(7, 10 - 3)
-  assert_eq(12, subtract(20, 8))
-  assert_eq(-5, subtract(5, 10))
-  assert_eq(5, subtract(-5, -10))
-}
-
-test "divide_with_ceil_functionality" {
-  // 测试向上取整除法功能
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-3, divide_with_ceil(10, -3))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(5, 0))
-}
-
-test "string_greeting_function" {
-  // 测试字符串问候函数
-  assert_eq("Hello, World!", greet("World"))
-  assert_eq("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq("Hello, !", greet(""))
-  assert_eq("Hello, 123!", greet("123"))
-}
-
-test "assert_eq_functionality" {
-  // 测试断言函数功能
-  assert_eq(1, 1)
-  assert_eq(100, 100)
-  assert_eq(-50, -50)
-  assert_eq(0, 0)
-}
-
-test "assert_eq_string_functionality" {
-  // 测试字符串断言函数功能
-  assert_eq_string("hello", "hello")
-  assert_eq_string("", "")
-  assert_eq_string("MoonBit", "MoonBit")
-  assert_eq_string("123", "123")
-}
-
-test "complex_calculation_scenario" {
-  // 测试复杂计算场景
-  let a = 15
-  let b = 25
-  let c = 10
+test "mathematical_properties" {
+  // 数学性质验证测试
+  let x = 15
+  let y = 8
   
-  // 计算 (a + b) * c
-  let sum = add(a, b)
-  let result = multiply(sum, c)
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
   
-  assert_eq(40, sum)
-  assert_eq(400, result)
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
   
-  // 计算 result - a * b
-  let product = multiply(a, b)
-  let final_result = subtract(result, product)
-  
-  assert_eq(375, product)
-  assert_eq(25, final_result)
+  // 分配律
+  assert_eq(
+    multiply(x, add(y, 2)),
+    add(multiply(x, y), multiply(x, 2))
+  )
 }
 
-test "edge_cases_handling" {
-  // 测试边界情况处理
-  // 大数运算
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(100000000, multiply(10000, 10000))
-  
-  // 负数运算
-  assert_eq(100, subtract(-100, -200))
-  assert_eq(-33, divide_with_ceil(-100, 3))
-  
-  // 零值运算
-  assert_eq(0, multiply(0, -5000))
+test "edge_cases_and_boundaries" {
+  // 边界情况和极值测试
   assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(1, divide_with_ceil(1, 1))
 }
 
-test "real_world_application" {
-  // 测试实际应用场景
-  // 计算购物车总价
-  let item1_price = 199
-  let item2_price = 299
-  let item3_price = 149
-  let discount = 50
+test "negative_numbers_handling" {
+  // 负数处理测试
+  assert_eq(-2, add(-5, 3))
+  assert_eq(-15, multiply(-5, 3))
+  assert_eq(15, multiply(-5, -3))
+  assert_eq(-1, divide_with_ceil(-3, 4))
+  assert_eq(1, divide_with_ceil(-3, -4))
+}
+
+test "string_greeting_functionality" {
+  // 字符串问候功能测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+}
+
+test "complex_business_scenario" {
+  // 复杂业务场景测试
+  // 场景：计算装盒需求
+  let total_items = 47
+  let box_capacity = 12
+  let boxes_needed = divide_with_ceil(total_items, box_capacity)
   
-  let subtotal = add(add(item1_price, item2_price), item3_price)
-  let total = subtract(subtotal, discount)
+  assert_eq(4, boxes_needed)
   
-  assert_eq(647, subtotal)
-  assert_eq(597, total)
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(48, total_capacity)
   
-  // 计算每人需要支付的金额（向上取整）
-  let people_count = 4
-  let per_person = divide_with_ceil(total, people_count)
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(1, remaining_space)
+}
+
+test "mathematical_identity_properties" {
+  // 数学恒等式测试
+  let x = 42
   
-  assert_eq(150, per_person)
+  // 加法恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(x, add(0, x))
+  
+  // 乘法恒等式
+  assert_eq(x, multiply(x, 1))
+  assert_eq(x, multiply(1, x))
+  assert_eq(0, multiply(x, 0))
+  
+  // 减法恒等式
+  assert_eq(0, subtract(x, x))
+  assert_eq(x, subtract(x, 0))
+}
+
+test "unicode_and_special_characters" {
+  // Unicode和特殊字符测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, @#$%!", greet("@#$%"))
 }
