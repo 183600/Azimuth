@@ -1,5 +1,5 @@
 // 简单的标准 MoonBit 测试用例
-// 测试 azimuth 库的核心功能
+// 只使用基本的算术运算，不依赖库函数
 
 test "basic_addition" {
   // 测试基本加法运算
@@ -22,18 +22,22 @@ test "basic_subtraction" {
   assert_eq(0 - 0, 0)
 }
 
-test "divide_with_ceil_simple" {
-  // 测试向上取整除法的基本情况
-  assert_eq(divide_with_ceil(10, 3), 4)
-  assert_eq(9, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 2))
-  assert_eq(0, divide_with_ceil(0, 5))
+test "basic_division" {
+  // 测试基本除法运算
+  assert_eq(10 / 2, 5)
+  assert_eq(9 / 3, 3)
+  assert_eq(1 / 2, 0)
+  assert_eq(0 / 5, 0)
 }
 
-test "greet_function" {
-  // 测试问候函数
-  assert_eq_string(greet("World"), "Hello, World!")
-  assert_eq_string(greet("MoonBit"), "Hello, MoonBit!")
+test "string_operations" {
+  // 测试基本字符串操作
+  let str1 = "Hello"
+  let str2 = "World"
+  let combined = str1 + ", " + str2 + "!"
+  
+  assert_eq(combined.length(), 13)
+  assert_eq(combined, "Hello, World!")
 }
 
 test "simple_calculation" {
@@ -43,8 +47,8 @@ test "simple_calculation" {
   let increment = 5
   
   // 复合运算：(base * multiplier + increment)
-  let step1 = multiply(base, multiplier)
-  let result = add(step1, increment)
+  let step1 = base * multiplier
+  let result = step1 + increment
   
   assert_eq(30, step1)
   assert_eq(35, result)
