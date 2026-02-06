@@ -12,110 +12,102 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-///|
-test "integer arithmetic" {
-  assert_eq(1 + 2, 3)
-  assert_eq(10 - 3, 7)
-  assert_eq(4 * 5, 20)
-  assert_eq(15 / 3, 5)
-  assert_eq(17 % 5, 2)
+// 标准 MoonBit 测试用例 - 10个核心功能测试
+// 使用标准的 MoonBit 测试语法，覆盖核心功能
+
+test "integer_arithmetic_operations" {
+  // 整数算术运算测试
+  inspect(15 + 27, content="42")
+  inspect(100 - 37, content="63")
+  inspect(12 * 8, content="96")
+  inspect(45 / 9, content="5")
+  inspect(45 % 8, content="5")
 }
 
-///|
-test "integer comparisons" {
-  assert_eq(5 > 3, true)
-  assert_eq(2 < 4, true)
-  assert_eq(7 == 7, true)
-  assert_eq(9 != 5, true)
-  assert_eq(6 >= 6, true)
-  assert_eq(3 <= 8, true)
+test "integer_boundary_values" {
+  // 整数边界值测试
+  inspect(Int::max_value, content="2147483647")
+  inspect(Int::min_value, content="-2147483648")
+  inspect(0 + Int::max_value, content="2147483647")
+  inspect(0 - Int::max_value, content="-2147483647")
 }
 
-///|
-test "string operations" {
-  let hello = "Hello"
-  let world = "World"
-  let combined = hello + " " + world
-  assert_eq(combined, "Hello World")
-  assert_eq(combined.length(), 11)
-  assert_eq(hello == "Hello", true)
-  assert_eq(hello != world, true)
+test "string_operations" {
+  // 字符串操作测试
+  let prefix = "Hello"
+  let suffix = "MoonBit"
+  let combined = prefix + ", " + suffix + "!"
+  inspect(combined, content="Hello, MoonBit!")
+  inspect(combined.length(), content="17")
+  inspect(combined[0], content="72")  // 'H' ASCII码
+  inspect(combined[16], content="33") // '!' ASCII码
 }
 
-///|
-test "string comparisons" {
-  let a = "apple"
-  let b = "banana"
-  let c = "apple"
-  
-  assert_eq(a == c, true)
-  assert_eq(a == b, false)
-  assert_eq(a < b, true)
-  assert_eq(b > a, true)
+test "array_operations" {
+  // 数组操作测试
+  let numbers = [10, 20, 30, 40, 50]
+  inspect(numbers.length(), content="5")
+  inspect(numbers[0], content="10")
+  inspect(numbers[4], content="50")
+  inspect(numbers[2] + numbers[3], content="70")
 }
 
-///|
-test "array operations" {
-  let numbers = [1, 2, 3, 4, 5]
-  assert_eq(numbers.length(), 5)
-  assert_eq(numbers[0], 1)
-  assert_eq(numbers[4], 5)
-  let sum = numbers[0] + numbers[1] + numbers[2] + numbers[3] + numbers[4]
-  assert_eq(sum, 15)
+test "boolean_logic" {
+  // 布尔逻辑测试
+  inspect(true && true, content="true")
+  inspect(true && false, content="false")
+  inspect(true || false, content="true")
+  inspect(false || false, content="false")
+  inspect(!true, content="false")
+  inspect(!false, content="true")
 }
 
-///|
-test "array string operations" {
-  let strings = ["a", "b", "c"]
-  assert_eq(strings.length(), 3)
-  assert_eq(strings[0], "a")
-  assert_eq(strings[2], "c")
-  let combined = strings[0] + strings[1] + strings[2]
-  assert_eq(combined, "abc")
+test "option_type_operations" {
+  // Option 类型操作测试
+  let some_value = Some(123)
+  let none_value : Option[Int] = None
+  inspect(some_value.is_some(), content="true")
+  inspect(some_value.is_none(), content="false")
+  inspect(none_value.is_some(), content="false")
+  inspect(none_value.is_none(), content="true")
 }
 
-///|
-test "boolean operations" {
-  let t = true
-  let f = false
-  assert_eq(t && f, false)
-  assert_eq(t || f, true)
-  assert_eq(!t, false)
-  assert_eq(!f, true)
+test "result_type_operations" {
+  // Result 类型操作测试
+  let success = Ok("operation completed")
+  let failure = Err("network error")
+  inspect(success.is_ok(), content="true")
+  inspect(success.is_err(), content="false")
+  inspect(failure.is_ok(), content="false")
+  inspect(failure.is_err(), content="true")
 }
 
-///|
-test "conditional expressions" {
-  let x = 5
-  let result = if x > 0 { "positive" } else { "non-positive" }
-  assert_eq(result, "positive")
-  
-  let y = -3
-  let result2 = if y > 0 { "positive" } else { "non-positive" }
-  assert_eq(result2, "non-positive")
+test "bitwise_operations" {
+  // 位运算测试
+  inspect(1 << 4, content="16")
+  inspect(16 >> 2, content="4")
+  inspect(12 & 10, content="8")
+  inspect(12 | 10, content="14")
+  inspect(12 ^ 10, content="6")
 }
 
-///|
-test "function definitions" {
-  let add = (a, b) => a + b
-  let multiply = (a, b) => a * b
-  
-  assert_eq(add(2, 3), 5)
-  assert_eq(multiply(4, 5), 20)
-  
-  let square = x => x * x
-  assert_eq(square(7), 49)
+test "comparison_operations" {
+  // 比较运算测试
+  inspect(15 > 10, content="true")
+  inspect(15 >= 15, content="true")
+  inspect(10 < 15, content="true")
+  inspect(15 <= 15, content="true")
+  inspect(15 == 15, content="true")
+  inspect(15 != 10, content="true")
 }
 
-///|
-test "nested expressions" {
-  let a = 2
-  let b = 3
-  let c = 4
-  
-  let result = (a + b) * c
-  assert_eq(result, 20)
-  
-  let nested = if a > b { a * c } else { b * c }
-  assert_eq(nested, 12)
+test "type_conversion_operations" {
+  // 类型转换测试
+  let number = 456
+  let string_num = "789"
+  inspect(number.to_string(), content="456")
+  inspect(string_num.to_int(), content="Some(789)")
+  inspect("invalid".to_int(), content="None")
+  inspect(true.to_string(), content="true")
+  inspect(false.to_string(), content="false")
 }
