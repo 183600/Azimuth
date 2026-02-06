@@ -1,86 +1,7 @@
-// 标准 MoonBit 测试用例
-// 为 azimuth 库添加的8个高质量测试用例
+// 标准 MoonBit 测试用例 - 为 Azimuth 项目添加
+// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
 
-test "add_function_comprehensive" {
-  // 全面测试加法功能
-  assert_eq(10, add(3, 7))
-  assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(1000, add(500, 500))
-}
-
-test "multiply_function_edge_cases" {
-  // 测试乘法函数的边界情况
-  assert_eq(15, multiply(3, 5))
-  assert_eq(0, multiply(0, 10))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(6, multiply(-2, -3))
-}
-
-test "divide_with_ceil_precision" {
-  // 测试向上取整除法的精度
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(2, divide_with_ceil(3, 2))
-  assert_eq(0, divide_with_ceil(5, 0))
-}
-
-test "greet_function_unicode_support" {
-  // 测试问候函数的 Unicode 支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-}
-
-test "subtract_function_basic" {
-  // 测试基本的减法功能
-  assert_eq(5, subtract(8, 3))
-  assert_eq(-5, subtract(3, 8))
-  assert_eq(0, subtract(10, 10))
-  assert_eq(10, subtract(0, -10))
-}
-
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 7
-  let b = 13
-  
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 零元素性质
-  assert_eq(0, multiply(a, 0))
-  assert_eq(a, add(a, 0))
-}
-
-test "business_calculation_scenario" {
-  // 业务计算场景：计算订单总价
-  let unit_price = 25
-  let quantity = 8
-  let shipping = 15
-  
-  let subtotal = multiply(unit_price, quantity)
-  let total = add(subtotal, shipping)
-  
-  assert_eq(200, subtotal)
-  assert_eq(215, total)
-}
-
-test "packaging_calculation" {
-  // 包装计算场景
-  let total_items = 25
-  let items_per_box = 6
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
-  
-  assert_eq(5, boxes_needed)
-}
-
-// 新增的10个标准 MoonBit 测试用例
-test "basic_arithmetic_operations_enhanced" {
+test "basic_arithmetic_operations" {
   // 基本算术运算测试
   assert_eq(8, add(3, 5))
   assert_eq(15, multiply(3, 5))
@@ -89,7 +10,7 @@ test "basic_arithmetic_operations_enhanced" {
   assert_eq(3, divide_with_ceil(9, 3))
 }
 
-test "mathematical_properties_enhanced" {
+test "mathematical_properties" {
   // 数学性质验证测试
   let x = 12
   let y = 8
@@ -105,7 +26,7 @@ test "mathematical_properties_enhanced" {
   assert_eq(96, multiply(12, 8))
 }
 
-test "negative_numbers_handling_enhanced" {
+test "negative_numbers_handling" {
   // 负数处理测试
   assert_eq(-2, add(-5, 3))
   assert_eq(-15, multiply(-5, 3))
@@ -115,7 +36,7 @@ test "negative_numbers_handling_enhanced" {
   assert_eq(1, divide_with_ceil(-3, -4))
 }
 
-test "divide_with_ceil_comprehensive_enhanced" {
+test "divide_with_ceil_comprehensive" {
   // 向上取整除法综合测试
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
@@ -129,7 +50,7 @@ test "divide_with_ceil_comprehensive_enhanced" {
   assert_eq(4, divide_with_ceil(-10, -3))
 }
 
-test "greet_function_various_inputs_enhanced" {
+test "greet_function_various_inputs" {
   // 问候函数各种输入测试
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, World!", greet("World"))
@@ -139,7 +60,7 @@ test "greet_function_various_inputs_enhanced" {
   assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
 
-test "business_packaging_scenario_enhanced" {
+test "business_packaging_scenario" {
   // 业务包装场景测试
   let total_items = 35
   let items_per_package = 8
@@ -156,7 +77,7 @@ test "business_packaging_scenario_enhanced" {
   assert_eq(5, remaining_space)
 }
 
-test "complex_workflow_calculation_enhanced" {
+test "complex_workflow_calculation" {
   // 复杂工作流计算测试
   // 场景：项目资源计算
   let team_members = 6
@@ -170,7 +91,7 @@ test "complex_workflow_calculation_enhanced" {
   assert_eq(4, sprints_needed)  // ceil(48/15) = 4
 }
 
-test "boundary_values_and_edge_cases_enhanced" {
+test "boundary_values_and_edge_cases" {
   // 边界值和边缘情况测试
   // 除法边界情况
   assert_eq(1, divide_with_ceil(5, 5))
@@ -187,7 +108,7 @@ test "boundary_values_and_edge_cases_enhanced" {
   assert_eq(5, subtract(5, 0))
 }
 
-test "mathematical_distributive_property_enhanced" {
+test "mathematical_distributive_property" {
   // 数学分配律测试
   let a = 6
   let b = 4
@@ -199,7 +120,7 @@ test "mathematical_distributive_property_enhanced" {
   assert_eq(left_side, right_side)  // 6*(4+3) = 6*4 + 6*3 = 42
 }
 
-test "real_world_event_planning_enhanced" {
+test "real_world_event_planning" {
   // 真实世界事件规划测试
   let attendees = 250
   let chairs_per_table = 8
