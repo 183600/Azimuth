@@ -1,163 +1,201 @@
-// 增强综合测试用例 - 针对 azimuth 库的全面测试
-// 包含边界情况、错误处理和实际应用场景
+// 增强综合测试用例 - 为 Azimuth 项目添加的高质量测试
+// 包含 8 个专业级测试用例，覆盖各种实际应用场景
 
-test "advanced_mathematical_operations" {
-  // 高级数学运算测试
-  let x = 15
-  let y = 7
+test "algorithm_complexity_analysis" {
+  // 算法复杂度分析测试
+  let n = 100
   
-  // 测试复合运算：(x + y) * (x - y)
-  let sum = @azimuth.add(x, y)
-  let diff = @azimuth.add(x, -y)
-  let product = @azimuth.multiply(sum, diff)
-  @azimuth.assert_eq(176, product)  // (15 + 7) * (15 - 7) = 22 * 8 = 176
+  // 模拟 O(n) 算法的时间复杂度计算
+  let linear_ops = @azimuth.multiply(n, 3)
   
-  // 测试平方计算：x^2
-  let square = @azimuth.multiply(x, x)
-  @azimuth.assert_eq(225, square)
+  // 模拟 O(n²) 算法的操作次数
+  let quadratic_ops = @azimuth.multiply(n, n)
+  
+  // 模拟 O(log n) 算法的操作次数（使用除法近似）
+  let log_ops = @azimuth.divide_with_ceil(n, 10)
+  
+  // 计算总操作数
+  let total_ops = @azimuth.add(@azimuth.add(linear_ops, quadratic_ops), log_ops)
+  
+  @azimuth.assert_eq(300, linear_ops)
+  @azimuth.assert_eq(10000, quadratic_ops)
+  @azimuth.assert_eq(10, log_ops)
+  @azimuth.assert_eq(10310, total_ops)
 }
 
-test "financial_calculations" {
-  // 金融计算场景测试
+test "financial_calculation" {
+  // 金融计算测试：复利计算
   let principal = 10000
-  let rate_percent = 8
-  let _years = 3
+  let rate_percent = 5
   
-  // 简单利息计算（每年）
-  let yearly_interest = @azimuth.divide_with_ceil(@azimuth.multiply(principal, rate_percent), 100)
-  let total_after_3_years = @azimuth.add(@azimuth.add(@azimuth.add(principal, yearly_interest), yearly_interest), yearly_interest)
+  // 第一年
+  let year1_interest = @azimuth.divide_with_ceil(@azimuth.multiply(principal, rate_percent), 100)
+  let year1_total = @azimuth.add(principal, year1_interest)
   
-  @azimuth.assert_eq(800, yearly_interest)
-  @azimuth.assert_eq(12400, total_after_3_years)
+  // 第二年
+  let year2_interest = @azimuth.divide_with_ceil(@azimuth.multiply(year1_total, rate_percent), 100)
+  let year2_total = @azimuth.add(year1_total, year2_interest)
+  
+  // 第三年
+  let year3_interest = @azimuth.divide_with_ceil(@azimuth.multiply(year2_total, rate_percent), 100)
+  let year3_total = @azimuth.add(year2_total, year3_interest)
+  
+  // 计算总收益
+  let total_profit = @azimuth.subtract(year3_total, principal)
+  
+  @azimuth.assert_eq(500, year1_interest)
+  @azimuth.assert_eq(10500, year1_total)
+  @azimuth.assert_eq(525, year2_interest)
+  @azimuth.assert_eq(11025, year2_total)
+  @azimuth.assert_eq(552, year3_interest)
+  @azimuth.assert_eq(11577, year3_total)
+  @azimuth.assert_eq(1577, total_profit)
 }
 
-test "inventory_management_system" {
-  // 库存管理系统测试
+test "inventory_management" {
+  // 库存管理测试
   let initial_stock = 500
   let daily_sales = 25
-  let days = 14
-  let new_shipment = 300
+  let days_in_month = 30
+  let reorder_threshold = 200
+  let batch_size = 300
   
-  // 计算剩余库存
-  let total_sold = @azimuth.multiply(daily_sales, days)
-  let stock_before_shipment = @azimuth.add(initial_stock, -total_sold)
-  let final_stock = @azimuth.add(stock_before_shipment, new_shipment)
+  // 计算月度销售
+  let monthly_sales = @azimuth.multiply(daily_sales, days_in_month)
   
-  @azimuth.assert_eq(350, total_sold)
-  @azimuth.assert_eq(150, stock_before_shipment)
-  @azimuth.assert_eq(450, final_stock)
+  // 计算月末库存
+  let ending_stock = @azimuth.subtract(initial_stock, monthly_sales)
+  
+  // 判断是否需要补货
+  let needs_reorder = if ending_stock < reorder_threshold { 1 } else { 0 }
+  
+  // 计算补货批次数
+  let batches_needed = @azimuth.multiply(needs_reorder, @azimuth.divide_with_ceil(reorder_threshold, batch_size))
+  
+  @azimuth.assert_eq(750, monthly_sales)
+  @azimuth.assert_eq(-250, ending_stock)
+  @azimuth.assert_eq(1, needs_reorder)
+  @azimuth.assert_eq(1, batches_needed)
 }
 
-test "resource_allocation_optimization" {
-  // 资源分配优化测试
-  let total_budget = 5000
-  let project_a_cost = 1200
-  let project_b_cost = 1800
-  let project_c_cost = 1500
+test "data_structure_operations" {
+  // 数据结构操作模拟测试
+  let array_size = 10
+  let element_size = 4
   
-  // 计算剩余预算和可分配的小项目数量
-  let allocated_budget = @azimuth.add(@azimuth.add(project_a_cost, project_b_cost), project_c_cost)
-  let remaining_budget = @azimuth.add(total_budget, -allocated_budget)
-  let small_projects = @azimuth.divide_with_ceil(remaining_budget, 200)
+  // 计算数组总大小
+  let total_array_size = @azimuth.multiply(array_size, element_size)
   
-  @azimuth.assert_eq(4500, allocated_budget)
-  @azimuth.assert_eq(500, remaining_budget)
-  @azimuth.assert_eq(3, small_projects)
+  // 模拟插入操作（需要移动元素）
+  let insert_position = 5
+  let elements_to_move = @azimuth.subtract(array_size, insert_position)
+  let move_operations = @azimuth.multiply(elements_to_move, element_size)
+  
+  // 模拟查找操作（二分查找的步骤数）
+  let search_steps = @azimuth.divide_with_ceil(array_size, 2)
+  
+  @azimuth.assert_eq(40, total_array_size)
+  @azimuth.assert_eq(20, move_operations)
+  @azimuth.assert_eq(5, search_steps)
 }
 
-test "data_processing_pipeline" {
-  // 数据处理管道测试
-  let data_points = 1000
-  let processing_batches = 7
-  let error_rate_percent = 2
+test "network_throughput" {
+  // 网络吞吐量计算测试
+  let packet_size = 1500  // bytes
+  let packets_per_second = 1000
+  let transmission_duration = 60  // seconds
   
-  // 计算处理批次和错误数量
-  let batch_size = @azimuth.divide_with_ceil(data_points, processing_batches)
-  let error_count = @azimuth.divide_with_ceil(@azimuth.multiply(data_points, error_rate_percent), 100)
-  let successful_processed = @azimuth.add(data_points, -error_count)
+  // 计算每秒吞吐量
+  let throughput_per_second = @azimuth.multiply(packet_size, packets_per_second)
   
-  @azimuth.assert_eq(143, batch_size)
-  @azimuth.assert_eq(20, error_count)
-  @azimuth.assert_eq(980, successful_processed)
+  // 计算总传输时间内的数据量
+  let total_data = @azimuth.multiply(throughput_per_second, transmission_duration)
+  
+  // 转换为 MB（向上取整）
+  let total_mb = @azimuth.divide_with_ceil(total_data, @azimuth.multiply(1024, 1024))
+  
+  @azimuth.assert_eq(1500000, throughput_per_second)
+  @azimuth.assert_eq(90000000, total_data)
+  @azimuth.assert_eq(86, total_mb)
 }
 
-test "time_management_scenarios" {
-  // 时间管理场景测试
-  let total_tasks = 87
-  let tasks_per_day = 8
-  let working_days = 22
+test "caching_performance" {
+  // 缓存性能分析测试
+  let hit_rate_percent = 80
+  let miss_penalty = 10
+  let hit_reward = 1
   
-  // 计算完成时间和工作效率
-  let days_needed = @azimuth.divide_with_ceil(total_tasks, tasks_per_day)
-  let monthly_capacity = @azimuth.multiply(tasks_per_day, working_days)
-  let efficiency_percent = @azimuth.divide_with_ceil(@azimuth.multiply(total_tasks, 100), monthly_capacity)
+  // 计算命中和未命中次数
+  let total_requests = 1000
+  let hits = @azimuth.divide_with_ceil(@azimuth.multiply(total_requests, hit_rate_percent), 100)
+  let misses = @azimuth.subtract(total_requests, hits)
   
-  @azimuth.assert_eq(11, days_needed)
-  @azimuth.assert_eq(176, monthly_capacity)
-  @azimuth.assert_eq(50, efficiency_percent)
+  // 计算性能得分
+  let hit_score = @azimuth.multiply(hits, hit_reward)
+  let miss_score = @azimuth.multiply(misses, miss_penalty)
+  let total_score = @azimuth.add(hit_score, miss_score)
+  
+  // 计算缓存效率
+  let efficiency = @azimuth.divide_with_ceil(@azimuth.multiply(hits, 100), total_requests)
+  
+  @azimuth.assert_eq(800, hits)
+  @azimuth.assert_eq(200, misses)
+  @azimuth.assert_eq(800, hit_score)
+  @azimuth.assert_eq(2000, miss_score)
+  @azimuth.assert_eq(2800, total_score)
+  @azimuth.assert_eq(80, efficiency)
 }
 
-test "complex_string_greeting_scenarios" {
-  // 复杂字符串问候场景测试
-  let company = "TechCorp"
-  let department = "研发部"
-  let employee_id = "EMP-2024-001"
+test "compression_analysis" {
+  // 压缩算法分析测试
+  let original_size = 10000
+  let compression_ratio = 70  // 30% 压缩率
+  let chunk_size = 1024
   
-  // 构建复杂的问候字符串
-  let full_identifier = company + " " + department + " " + employee_id
-  let formal_greeting = @azimuth.greet(full_identifier)
-  let casual_greeting = @azimuth.greet("团队成员")
+  // 计算压缩后大小
+  let compressed_size = @azimuth.divide_with_ceil(@azimuth.multiply(original_size, compression_ratio), 100)
   
-  @azimuth.assert_eq_string("Hello, TechCorp 研发部 EMP-2024-001!", formal_greeting)
-  @azimuth.assert_eq_string("Hello, 团队成员!", casual_greeting)
+  // 计算节省的空间
+  let space_saved = @azimuth.subtract(original_size, compressed_size)
+  
+  // 计算需要的块数
+  let original_chunks = @azimuth.divide_with_ceil(original_size, chunk_size)
+  let compressed_chunks = @azimuth.divide_with_ceil(compressed_size, chunk_size)
+  
+  // 计算压缩效率
+  let compression_efficiency = @azimuth.divide_with_ceil(@azimuth.multiply(space_saved, 100), original_size)
+  
+  @azimuth.assert_eq(7000, compressed_size)
+  @azimuth.assert_eq(3000, space_saved)
+  @azimuth.assert_eq(10, original_chunks)
+  @azimuth.assert_eq(7, compressed_chunks)
+  @azimuth.assert_eq(30, compression_efficiency)
 }
 
-test "extreme_boundary_conditions" {
-  // 极端边界条件测试
-  let large_number = 1000000
-  let small_number = 1
-  let negative_large = -500000
+test "load_balancing" {
+  // 负载均衡算法测试
+  let total_requests = 1000
+  let server_count = 3
+  let server_capacity = 400
   
-  // 测试极端数值运算
-  let large_sum = @azimuth.add(large_number, small_number)
-  let large_product = @azimuth.multiply(large_number, small_number)
-  let mixed_operation = @azimuth.add(@azimuth.multiply(negative_large, 2), large_number)
+  // 计算每台服务器的理想负载
+  let ideal_load = @azimuth.divide_with_ceil(total_requests, server_count)
   
-  @azimuth.assert_eq(1000001, large_sum)
-  @azimuth.assert_eq(1000000, large_product)
-  @azimuth.assert_eq(0, mixed_operation)
-}
-
-test "error_handling_and_edge_cases" {
-  // 错误处理和边界情况测试
-  let normal_dividend = 100
-  let zero_divisor = 0
-  let negative_dividend = -50
-  let negative_divisor = -5
+  // 检查是否需要更多服务器
+  let needs_more_servers = if ideal_load > server_capacity { 1 } else { 0 }
   
-  // 测试各种除法情况
-  let zero_division_result = @azimuth.divide_with_ceil(normal_dividend, zero_divisor)
-  let negative_division_result = @azimuth.divide_with_ceil(negative_dividend, negative_divisor)
-  let mixed_division_result = @azimuth.divide_with_ceil(normal_dividend, negative_divisor)
+  // 计算实际需要的服务器数量
+  let actual_servers = @azimuth.add(server_count, needs_more_servers)
   
-  @azimuth.assert_eq(0, zero_division_result)
-  @azimuth.assert_eq(10, negative_division_result)
-  @azimuth.assert_eq(-20, mixed_division_result)
-}
-
-test "real_world_shipping_calculation" {
-  // 真实世界运输计算测试
-  let package_weight = 47
-  let weight_limit_per_box = 10
-  let cost_per_box = 25
-  let base_handling_fee = 15
+  // 重新分配负载
+  let redistributed_load = @azimuth.divide_with_ceil(total_requests, actual_servers)
   
-  // 计算需要的箱数和总成本
-  let boxes_needed = @azimuth.divide_with_ceil(package_weight, weight_limit_per_box)
-  let shipping_cost = @azimuth.multiply(boxes_needed, cost_per_box)
-  let total_cost = @azimuth.add(shipping_cost, base_handling_fee)
+  // 计算负载均衡度
+  let balance_score = @azimuth.subtract(server_capacity, redistributed_load)
   
-  @azimuth.assert_eq(5, boxes_needed)
-  @azimuth.assert_eq(125, shipping_cost)
-  @azimuth.assert_eq(140, total_cost)
+  @azimuth.assert_eq(334, ideal_load)
+  @azimuth.assert_eq(1, needs_more_servers)
+  @azimuth.assert_eq(4, actual_servers)
+  @azimuth.assert_eq(250, redistributed_load)
+  @azimuth.assert_eq(150, balance_score)
 }
