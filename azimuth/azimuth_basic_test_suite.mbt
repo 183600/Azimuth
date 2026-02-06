@@ -1,4 +1,4 @@
-// 标准 MoonBit 核心测试用例 - 10个基本测试
+// Azimuth 基本测试套件 - 10个标准 MoonBit 测试用例
 // 测试 azimuth 库的核心功能
 
 test "basic_addition" {

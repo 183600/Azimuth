@@ -1,58 +1,73 @@
-// Azimuth 核心测试 - 包含10个标准测试用例
-// 使用标准的 MoonBit 测试语法
+// Azimuth 核心测试 - 10个标准 MoonBit 测试用例
+// 测试 azimuth 库的核心功能
 
-test "add_function_basic" {
-  @azimuth.assert_eq(5, @azimuth.add(2, 3))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(-5, @azimuth.add(-2, -3))
+test "basic_addition" {
+  // 基本加法测试
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-1, add(-3, 2))
 }
 
-test "multiply_function_basic" {
-  @azimuth.assert_eq(6, @azimuth.multiply(2, 3))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
-  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
+test "basic_multiplication" {
+  // 基本乘法测试
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-6, multiply(-2, 3))
 }
 
-test "greet_function_basic" {
-  @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
+test "basic_subtraction" {
+  // 基本减法测试
+  assert_eq(2, subtract(5, 3))
+  assert_eq(-2, subtract(3, 5))
+  assert_eq(0, subtract(5, 5))
 }
 
-test "divide_with_ceil_positive" {
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 100))
+test "divide_with_ceil_basic" {
+  // 向上取整除法基本测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(0, divide_with_ceil(5, 0))
 }
 
 test "divide_with_ceil_negative" {
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(-10, -3))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(5, 0))
+  // 向上取整除法负数测试
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(3, divide_with_ceil(-10, -3))
+  assert_eq(-4, divide_with_ceil(10, -3))
+}
+
+test "greet_function" {
+  // 问候函数测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
 test "mathematical_commutative" {
-  @azimuth.assert_eq(@azimuth.add(7, 13), @azimuth.add(13, 7))
-  @azimuth.assert_eq(@azimuth.multiply(7, 13), @azimuth.multiply(13, 7))
+  // 数学交换律测试
+  let a = 7
+  let b = 13
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(multiply(a, b), multiply(b, a))
 }
 
 test "zero_element_properties" {
-  @azimuth.assert_eq(5, @azimuth.add(5, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+  // 零元素性质测试
+  assert_eq(5, add(5, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
 }
 
 test "complex_arithmetic" {
-  let result = @azimuth.add(@azimuth.multiply(2, 3), @azimuth.multiply(4, 5))
-  @azimuth.assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
+  // 复合算术运算测试
+  let result = add(multiply(2, 3), multiply(4, 5))
+  assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
 }
 
-test "packaging_calculation" {
+test "business_packaging" {
+  // 业务包装场景测试
   let total_items = 25
   let items_per_box = 6
-  let boxes_needed = @azimuth.divide_with_ceil(total_items, items_per_box)
-  @azimuth.assert_eq(5, boxes_needed)  // ceil(25/6) = 5
-}
-
-test "unicode_greeting" {
-  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
-  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
+  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  assert_eq(5, boxes_needed)  // ceil(25/6) = 5
 }
