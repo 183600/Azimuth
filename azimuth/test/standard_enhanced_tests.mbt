@@ -1,220 +1,219 @@
-// 标准 MoonBit 增强测试用例
-// 专注于边界条件、实际应用场景和高级功能测试
+// 标准 MoonBit 测试用例 - 为 Azimuth 项目添加的高质量测试
+// 包含10个精心设计的测试用例，覆盖各种场景
 
-test "integer_overflow_boundary_conditions" {
-  // 测试整数溢出的边界条件
-  let max_int = 2147483647
-  let min_int = -2147483648
+test "comprehensive_arithmetic_validation" {
+  // 综合算术验证测试
+  // 测试基本算术运算的正确性
+  assert_eq(42, add(20, 22))
+  assert_eq(-5, add(10, -15))
+  assert_eq(0, add(-100, 100))
   
-  // 测试接近最大值的加法
-  @azimuth.assert_eq(max_int, @azimuth.add(max_int - 1, 1))
-  @azimuth.assert_eq(max_int, @azimuth.add(max_int - 100, 100))
+  assert_eq(100, multiply(10, 10))
+  assert_eq(-100, multiply(-10, 10))
+  assert_eq(100, multiply(-10, -10))
+  assert_eq(0, multiply(1000, 0))
   
-  // 测试接近最小值的减法（通过加负数实现）
-  @azimuth.assert_eq(min_int, @azimuth.add(min_int + 1, -1))
-  @azimuth.assert_eq(min_int, @azimuth.add(min_int + 100, -100))
+  assert_eq(10, subtract(30, 20))
+  assert_eq(-10, subtract(20, 30))
+  assert_eq(0, subtract(50, 50))
 }
 
-test "real_world_inventory_management" {
-  // 实际库存管理场景测试
-  let initial_stock = 150
-  let incoming_shipment = 75
-  let sold_items = 43
-  let returned_items = 5
+test "divide_with_ceil_comprehensive_scenarios" {
+  // 向上取整除法的综合场景测试
+  // 正数除法
+  assert_eq(4, divide_with_ceil(15, 4))
+  assert_eq(4, divide_with_ceil(16, 4))
+  assert_eq(5, divide_with_ceil(17, 4))
+  assert_eq(1, divide_with_ceil(3, 5))
+  assert_eq(0, divide_with_ceil(0, 10))
+  assert_eq(0, divide_with_ceil(25, 0))
   
-  // 计算最终库存
-  let total_received = @azimuth.add(initial_stock, incoming_shipment)
-  let net_sold = @azimuth.add(sold_items, -returned_items)
-  let final_stock = @azimuth.add(total_received, -net_sold)
-  
-  @azimuth.assert_eq(187, final_stock)
-  
-  // 计算需要的存储箱数量（每箱最多装25个）
-  let boxes_needed = @azimuth.divide_with_ceil(final_stock, 25)
-  @azimuth.assert_eq(8, boxes_needed)  // ceil(187/25) = 8
+  // 负数除法
+  assert_eq(-3, divide_with_ceil(-11, 4))
+  assert_eq(-4, divide_with_ceil(-13, 4))
+  assert_eq(-3, divide_with_ceil(-12, 4))
+  assert_eq(3, divide_with_ceil(-11, -4))
+  assert_eq(4, divide_with_ceil(-13, -4))
 }
 
-test "string_processing_internationalization" {
-  // 国际化字符串处理测试
-  let asian_names = ["张三", "李四", "王五", "田中", "김철수"]
-  let european_names = ["Jean", "François", "Müller", "Øyvind", "Świętopełk"]
-  let mixed_names = ["José", "张伟", "Mohammed", "Иван", "John"]
-  
-  // 测试亚洲姓名
-  for name in asian_names {
-    let greeting = @azimuth.greet(name)
-    let expected = "Hello, " + name + "!"
-    @azimuth.assert_eq_string(expected, greeting)
-  }
-  
-  // 测试欧洲姓名
-  for name in european_names {
-    let greeting = @azimuth.greet(name)
-    let expected = "Hello, " + name + "!"
-    @azimuth.assert_eq_string(expected, greeting)
-  }
-  
-  // 测试混合姓名
-  for name in mixed_names {
-    let greeting = @azimuth.greet(name)
-    let expected = "Hello, " + name + "!"
-    @azimuth.assert_eq_string(expected, greeting)
-  }
+test "greet_function_international_support" {
+  // 问候函数的国际化支持测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, user123!", greet("user123"))
 }
 
-test "mathematical_sequence_calculations" {
-  // 数学序列计算测试
-  // 斐波那契数列前几项的计算
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = @azimuth.add(fib1, fib2)  // 2
-  let fib4 = @azimuth.add(fib2, fib3)  // 3
-  let fib5 = @azimuth.add(fib3, fib4)  // 5
-  let fib6 = @azimuth.add(fib4, fib5)  // 8
-  let fib7 = @azimuth.add(fib5, fib6)  // 13
+test "mathematical_properties_and_identities" {
+  // 数学性质和恒等式测试
+  let x = 17
+  let y = 23
   
-  @azimuth.assert_eq(2, fib3)
-  @azimuth.assert_eq(3, fib4)
-  @azimuth.assert_eq(5, fib5)
-  @azimuth.assert_eq(8, fib6)
-  @azimuth.assert_eq(13, fib7)
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
   
-  // 阶乘计算
-  let fact3 = @azimuth.multiply(3, 2)  // 6
-  let fact4 = @azimuth.multiply(fact3, 3)  // 18
-  let fact5 = @azimuth.multiply(fact4, 4)  // 72
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
   
-  @azimuth.assert_eq(6, fact3)
-  @azimuth.assert_eq(18, fact4)
-  @azimuth.assert_eq(72, fact5)
+  // 加法恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(x, add(0, x))
+  
+  // 乘法恒等式
+  assert_eq(x, multiply(x, 1))
+  assert_eq(x, multiply(1, x))
+  assert_eq(0, multiply(x, 0))
+  
+  // 减法逆运算
+  assert_eq(x, add(subtract(x, y), y))
 }
 
-test "business_financial_calculations" {
-  // 业务财务计算测试
-  let unit_price = 199
-  let quantity = 17
-  let discount_rate = 15  // 15% 折扣
-  let tax_rate = 8        // 8% 税率
+test "business_inventory_management_scenario" {
+  // 库存管理业务场景测试
+  let total_products = 258
+  let box_capacity = 36
+  let cost_per_box = 15
   
-  // 计算小计
-  let subtotal = @azimuth.multiply(unit_price, quantity)
+  // 计算需要的箱子数量
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  assert_eq(8, boxes_needed)
   
-  // 计算折扣金额
-  let discount_amount = @azimuth.divide_with_ceil(@azimuth.multiply(subtotal, discount_rate), 100)
+  // 计算总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(288, total_capacity)
   
-  // 计算折后价格
-  let discounted_price = @azimuth.add(subtotal, -discount_amount)
+  // 计算剩余空间
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(30, remaining_space)
   
-  // 计算税费
-  let tax_amount = @azimuth.divide_with_ceil(@azimuth.multiply(discounted_price, tax_rate), 100)
-  
-  // 计算总价
-  let total_price = @azimuth.add(discounted_price, tax_amount)
-  
-  @azimuth.assert_eq(3383, subtotal)
-  @azimuth.assert_eq(508, discount_amount)  // ceil(3383 * 15 / 100)
-  @azimuth.assert_eq(2875, discounted_price)
-  @azimuth.assert_eq(231, tax_amount)      // ceil(2875 * 8 / 100)
-  @azimuth.assert_eq(3106, total_price)
+  // 计算总成本
+  let total_cost = multiply(boxes_needed, cost_per_box)
+  assert_eq(120, total_cost)
 }
 
-test "performance_large_number_operations" {
-  // 大数操作性能测试
-  let large_numbers = [100000, 250000, 500000, 750000, 1000000]
+test "complex_calculation_workflow" {
+  // 复杂计算工作流测试
+  // 场景：项目资源规划和成本计算
+  let team_members = 12
+  let hourly_rate = 45
+  let hours_per_day = 8
+  let project_days = 15
+  let budget_limit = 50000
   
-  // 测试大数加法
-  let mut sum = 0
-  for num in large_numbers {
-    sum = @azimuth.add(sum, num)
-  }
-  @azimuth.assert_eq(2600000, sum)
+  // 计算总工时
+  let total_hours = multiply(team_members, multiply(hours_per_day, project_days))
+  assert_eq(1440, total_hours)
   
-  // 测试大数乘法
-  let large_num1 = 10000
-  let large_num2 = 10000
-  let large_product = @azimuth.multiply(large_num1, large_num2)
-  @azimuth.assert_eq(100000000, large_product)
+  // 计算总成本
+  let total_cost = multiply(total_hours, hourly_rate)
+  assert_eq(64800, total_cost)
   
-  // 测试大数除法向上取整
-  let large_dividend = 1000000
-  let large_divisor = 37
-  let large_div_result = @azimuth.divide_with_ceil(large_dividend, large_divisor)
-  @azimuth.assert_eq(27028, large_div_result)  // ceil(1000000/37)
+  // 计算需要的预算周期（每周期不超过预算限制）
+  let budget_cycles = divide_with_ceil(total_cost, budget_limit)
+  assert_eq(2, budget_cycles)
+  
+  // 验证超预算金额
+  let over_budget = subtract(total_cost, budget_limit)
+  assert_eq(14800, over_budget)
 }
 
-test "edge_case_special_values" {
-  // 特殊值边界情况测试
-  // 测试零值的各种组合
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 1))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, -1))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 1000))
+test "edge_cases_and_boundary_values" {
+  // 边界情况和极值测试
+  // 极值测试
+  assert_eq(2147483646, add(2147483645, 1))
+  assert_eq(-2147483647, add(-2147483646, -1))
+  assert_eq(1000000, multiply(1000, 1000))
   
-  // 测试单位值的各种组合
-  @azimuth.assert_eq(2, @azimuth.add(1, 1))
-  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
-  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(2, 1))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 2))
+  // 边界除法测试
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(1000000, divide_with_ceil(1000000, 1))
+  assert_eq(1, divide_with_ceil(1000000, 1000000))
   
-  // 测试负单位值
-  @azimuth.assert_eq(-2, @azimuth.add(-1, -1))
-  @azimuth.assert_eq(1, @azimuth.multiply(-1, -1))
-  @azimuth.assert_eq(-1, @azimuth.multiply(-1, 1))
-  @azimuth.assert_eq(-1, @azimuth.multiply(1, -1))
+  // 特殊字符串测试
+  assert_eq_string("Hello, \n\t!", greet("\n\t"))
+  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))
 }
 
-test "complex_data_processing_pipeline" {
-  // 复杂数据处理流水线测试
-  // 模拟数据处理流程：收集 -> 处理 -> 分组 -> 汇总
+test "algorithm_efficiency_simulation" {
+  // 算法效率模拟测试
+  let input_size = 1000
   
-  // 阶段1：数据收集
-  let data_points = [15, 23, 7, 42, 18, 33, 27, 11]
-  let mut total = 0
-  for point in data_points {
-    total = @azimuth.add(total, point)
-  }
-  @azimuth.assert_eq(176, total)
+  // O(1) 常数时间算法
+  let constant_time = 5
+  assert_eq(5, constant_time)
   
-  // 阶段2：数据处理 - 计算平均值（向上取整）
-  let count = 8
-  let average = @azimuth.divide_with_ceil(total, count)
-  @azimuth.assert_eq(22, average)  // ceil(176/8)
+  // O(n) 线性时间算法模拟
+  let linear_time = multiply(input_size, 2)
+  assert_eq(2000, linear_time)
   
-  // 阶段3：数据分组 - 按平均值分组
-  let above_average = @azimuth.divide_with_ceil(@azimuth.multiply(42, 33), average)
-  let below_average = @azimuth.divide_with_ceil(@azimuth.multiply(15, 7), average)
+  // O(log n) 对数时间算法模拟
+  let log_time = divide_with_ceil(input_size, 100)
+  assert_eq(10, log_time)
   
-  // 阶段4：数据汇总
-  let processing_result = @azimuth.add(above_average, below_average)
-  @azimuth.assert_eq(88, processing_result)
+  // O(n²) 平方时间算法模拟
+  let quadratic_time = multiply(input_size, divide_with_ceil(input_size, 100))
+  assert_eq(10000, quadratic_time)
 }
 
-test "unicode_and_emoji_support" {
-  // Unicode和表情符号支持测试
-  let emoji_names = ["🚀", "🌙", "⭐", "💎", "🎯"]
-  let unicode_symbols = ["α", "β", "γ", "δ", "ε"]
-  let mixed_content = ["Hello🌍", "测试🧪", "Math∑", "Code💻", "Data📊"]
+test "real_world_event_planning" {
+  // 真实世界活动规划测试
+  let attendees = 156
+  let tables_available = 20
+  let chairs_per_table = 8
+  let cost_per_chair = 25
+  let total_budget = 4000
   
-  // 测试表情符号
-  for emoji in emoji_names {
-    let greeting = @azimuth.greet(emoji)
-    let expected = "Hello, " + emoji + "!"
-    @azimuth.assert_eq_string(expected, greeting)
-  }
+  // 计算需要的桌子数量
+  let tables_needed = divide_with_ceil(attendees, chairs_per_table)
+  assert_eq(20, tables_needed)
   
-  // 测试Unicode符号
-  for symbol in unicode_symbols {
-    let greeting = @azimuth.greet(symbol)
-    let expected = "Hello, " + symbol + "!"
-    @azimuth.assert_eq_string(expected, greeting)
-  }
+  // 验证桌子是否足够
+  let chairs_available = multiply(tables_available, chairs_per_table)
+  assert_eq(160, chairs_available)
+  assert_true(chairs_available >= attendees)
   
-  // 测试混合内容
-  for content in mixed_content {
-    let greeting = @azimuth.greet(content)
-    let expected = "Hello, " + content + "!"
-    @azimuth.assert_eq_string(expected, greeting)
-  }
+  // 计算总成本
+  let total_chairs_needed = multiply(tables_needed, chairs_per_table)
+  let total_cost = multiply(total_chairs_needed, cost_per_chair)
+  assert_eq(4000, total_cost)
+  
+  // 验证预算
+  assert_true(total_cost <= total_budget)
+  
+  // 计算剩余座位
+  let empty_chairs = subtract(chairs_available, attendees)
+  assert_eq(4, empty_chairs)
+}
+
+test "data_analysis_and_statistics" {
+  // 数据分析和统计测试
+  let data_points = 1000
+  let sample_size = 75
+  let confidence_level = 95
+  
+  // 计算样本数量（向上取整）
+  let samples_needed = divide_with_ceil(data_points, sample_size)
+  assert_eq(14, samples_needed)
+  
+  // 计算总样本数
+  let total_samples = multiply(samples_needed, sample_size)
+  assert_eq(1050, total_samples)
+  
+  // 计算额外样本
+  let extra_samples = subtract(total_samples, data_points)
+  assert_eq(50, extra_samples)
+  
+  // 计算置信区间的样本大小
+  let confidence_samples = divide_with_ceil(multiply(data_points, confidence_level), 100)
+  assert_eq(950, confidence_samples)
+  
+  // 验证样本覆盖率
+  let coverage = multiply(divide_with_ceil(confidence_samples, data_points), 100)
+  assert_eq(95, coverage)
 }
