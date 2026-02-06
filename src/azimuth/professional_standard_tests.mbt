@@ -1,4 +1,4 @@
-// 标准 MoonBit 测试用例
+// 专业标准 MoonBit 测试用例
 // 测试 lib.mbt 中的核心功能
 
 test "basic_arithmetic_addition" {
