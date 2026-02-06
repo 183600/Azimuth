@@ -1,126 +1,122 @@
-// Azimuth 增强测试套件
-// 使用标准 MoonBit 测试语法，包含8个专业级测试用例
+// Enhanced Azimuth Test Suite - 高级测试用例集合
+// 测试 azimuth 库的核心功能和边界条件
 
-test "string_operations_enhanced" {
-  // 字符串操作增强测试
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, 用户!", greet("用户"))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, !", greet(""))
+///|
+test "basic_arithmetic_operations" {
+  // 测试基本算术运算
+  assert_eq(add(5, 3), 8)
+  assert_eq(multiply(4, 6), 24)
+  assert_eq(subtract(10, 4), 6)
+  assert_eq(divide_with_ceil(10, 3), 4)
+  assert_eq(divide_with_ceil(9, 3), 3)
 }
 
-test "arithmetic_edge_cases" {
-  // 算术运算边界情况测试
-  assert_eq(0, add(0, 0))
-  assert_eq(1, multiply(1, 1))
-  assert_eq(0, multiply(0, 12345))
-  assert_eq(0, subtract(100, 100))
-  assert_eq(-1, subtract(0, 1))
-  assert_eq(1000000, add(500000, 500000))
+///|
+test "divide_with_ceil_edge_cases" {
+  // 测试除法向上取整的边界情况
+  assert_eq(divide_with_ceil(0, 5), 0)
+  assert_eq(divide_with_ceil(5, 0), 0)
+  assert_eq(divide_with_ceil(0, 0), 0)
+  assert_eq(divide_with_ceil(-10, 3), -3)
+  assert_eq(divide_with_ceil(10, -3), -3)
+  assert_eq(divide_with_ceil(-10, -3), 4)
 }
 
-test "divide_with_ceil_comprehensive" {
-  // 向上取整除法综合测试
-  assert_eq(5, divide_with_ceil(10, 2))
-  assert_eq(4, divide_with_ceil(7, 2))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-3, divide_with_ceil(10, -3))
-  assert_eq(4, divide_with_ceil(-10, -3))
+///|
+test "string_operations" {
+  // 测试字符串操作
+  assert_eq_string(greet("World"), "Hello, World!")
+  assert_eq_string(greet(""), "Hello, !")
+  assert_eq_string(greet("MoonBit"), "Hello, MoonBit!")
 }
 
+///|
 test "complex_calculation_sequence" {
-  // 复杂计算序列测试
-  let step1 = add(10, 20)
-  let step2 = multiply(step1, 3)
-  let step3 = subtract(step2, 15)
-  let step4 = divide_with_ceil(step3, 5)
+  // 测试复杂计算序列
+  let step1 = add(10, 5)
+  let step2 = multiply(step1, 2)
+  let step3 = subtract(step2, 8)
+  let step4 = divide_with_ceil(step3, 3)
   
-  assert_eq(30, step1)
-  assert_eq(90, step2)
-  assert_eq(75, step3)
-  assert_eq(15, step4)
+  assert_eq(step1, 15)
+  assert_eq(step2, 30)
+  assert_eq(step3, 22)
+  assert_eq(step4, 8)
 }
 
-test "financial_calculations" {
-  // 金融计算模拟测试
-  let principal = 10000
-  let rate = 5
-  let years = 3
+///|
+test "mathematical_series" {
+  // 测试数学级数计算
+  let sum1 = add(add(add(1, 2), 3), 4)
+  let sum2 = add(sum1, 5)
+  let product = multiply(2, multiply(3, 4))
+  let average = divide_with_ceil(sum2, 5)
   
-  // 计算简单利息
-  let interest_year1 = divide_with_ceil(multiply(principal, rate), 100)
-  let interest_year2 = divide_with_ceil(multiply(add(principal, interest_year1), rate), 100)
-  let interest_year3 = divide_with_ceil(multiply(add(add(principal, interest_year1), interest_year2), rate), 100)
-  
-  let total_interest = add(add(interest_year1, interest_year2), interest_year3)
-  let final_amount = add(principal, total_interest)
-  
-  assert_eq(500, interest_year1)
-  assert_eq(525, interest_year2)
-  assert_eq(551, interest_year3)
-  assert_eq(1576, total_interest)
-  assert_eq(11576, final_amount)
+  assert_eq(sum1, 10)
+  assert_eq(sum2, 15)
+  assert_eq(product, 24)
+  assert_eq(average, 3)
 }
 
-test "algorithm_complexity_simulation" {
-  // 算法复杂度模拟测试
-  let n = 100
-  
-  // O(1) 操作
-  let constant_time = 1
-  
-  // O(n) 操作
-  let linear_time = n
-  
-  // O(n²) 操作（简化计算）
-  let quadratic_time = divide_with_ceil(multiply(n, n), 10)
-  
-  // O(log n) 操作（简化计算）
-  let logarithmic_time = divide_with_ceil(n, 10)
-  
-  assert_eq(1, constant_time)
-  assert_eq(100, linear_time)
-  assert_eq(1000, quadratic_time)
-  assert_eq(10, logarithmic_time)
+///|
+test "boundary_value_analysis" {
+  // 测试边界值分析
+  assert_eq(divide_with_ceil(1, 1), 1)
+  assert_eq(divide_with_ceil(1, 2), 1)
+  assert_eq(divide_with_ceil(99, 100), 1)
+  assert_eq(divide_with_ceil(100, 100), 1)
+  assert_eq(divide_with_ceil(101, 100), 2)
 }
 
-test "data_structure_operations" {
-  // 数据结构操作模拟测试
-  let array_size = 10
-  let element_size = 4
-  
-  // 计算数组总大小
-  let total_size = multiply(array_size, element_size)
-  
-  // 模拟索引访问（简化）
-  let index_access = divide_with_ceil(multiply(5, element_size), 1)
-  
-  // 模拟插入操作（需要移动元素）
-  let elements_to_move = subtract(array_size, 5)
-  let move_cost = multiply(elements_to_move, element_size)
-  
-  assert_eq(40, total_size)
-  assert_eq(20, index_access)
-  assert_eq(20, elements_to_move)
-  assert_eq(80, move_cost)
+///|
+test "negative_number_operations" {
+  // 测试负数运算
+  assert_eq(add(-5, 3), -2)
+  assert_eq(add(-5, -3), -8)
+  assert_eq(multiply(-4, 6), -24)
+  assert_eq(multiply(-4, -6), 24)
+  assert_eq(subtract(-10, 4), -14)
+  assert_eq(subtract(10, -4), 14)
 }
 
-test "error_handling_scenarios" {
-  // 错误处理场景测试
-  // 测试除零保护
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  
+///|
+test "large_number_operations" {
   // 测试大数运算
-  let large_num1 = 100000
-  let large_num2 = 200000
-  let large_sum = add(large_num1, large_num2)
-  let large_product = divide_with_ceil(multiply(large_num1, large_num2), 1000000)
+  let large_num = 1000000
+  assert_eq(add(large_num, large_num), 2000000)
+  assert_eq(multiply(large_num, 2), 2000000)
+  assert_eq(subtract(large_num, 500000), 500000)
+  assert_eq(divide_with_ceil(large_num, 3), 333334)
+}
+
+///|
+test "functional_composition" {
+  // 测试函数组合
+  let compose_add_greet = fn(x : Int) : String {
+    greet(x.to_string())
+  }
   
-  assert_eq(300000, large_sum)
-  assert_eq(20, large_product)
+  let result1 = compose_add_greet(42)
+  let result2 = greet(add(1, 1).to_string())
+  
+  assert_eq_string(result1, "Hello, 42!")
+  assert_eq_string(result2, "Hello, 2!")
+}
+
+///|
+test "error_handling_scenarios" {
+  // 测试错误处理场景
+  // 测试除零行为
+  assert_eq(divide_with_ceil(10, 0), 0)
+  assert_eq(divide_with_ceil(-10, 0), 0)
+  assert_eq(divide_with_ceil(0, 0), 0)
+  
+  // 测试极值情况
+  let max_int = 2147483647
+  let min_int = -2147483648
+  
+  assert_eq(add(max_int, 0), max_int)
+  assert_eq(add(min_int, 0), min_int)
+  assert_eq(multiply(max_int, 1), max_int)
+  assert_eq(multiply(min_int, 1), min_int)
 }
