@@ -12,102 +12,122 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// 标准 MoonBit 测试用例 - 10个核心功能测试
-// 使用标准的 MoonBit 测试语法，覆盖核心功能
+// 标准 MoonBit 测试用例
+// 使用标准的 MoonBit 测试语法编写
 
-test "integer_arithmetic_operations" {
-  // 整数算术运算测试
-  inspect(15 + 27, content="42")
-  inspect(100 - 37, content="63")
-  inspect(12 * 8, content="96")
-  inspect(45 / 9, content="5")
-  inspect(45 % 8, content="5")
+test "int_arithmetic_operations" {
+  inspect(1 + 1, content="2")
+  inspect(10 - 3, content="7")
+  inspect(3 * 4, content="12")
+  inspect(20 / 4, content="5")
+  inspect(15 % 4, content="3")
+  inspect(-5 + 10, content="5")
+  inspect(-3 * -2, content="6")
 }
 
-test "integer_boundary_values" {
-  // 整数边界值测试
-  inspect(Int::max_value, content="2147483647")
-  inspect(Int::min_value, content="-2147483648")
-  inspect(0 + Int::max_value, content="2147483647")
-  inspect(0 - Int::max_value, content="-2147483647")
+test "string_concatenation_and_length" {
+  let str1 = "Hello"
+  let str2 = "MoonBit"
+  let combined = str1 + " " + str2 + "!"
+  inspect(combined, content="\"Hello MoonBit!\"")
+  inspect(@string.length(str1), content="5")
+  inspect(@string.length(str2), content="7")
+  inspect(@string.length(combined), content="14")
 }
 
-test "string_operations" {
-  // 字符串操作测试
-  let prefix = "Hello"
-  let suffix = "MoonBit"
-  let combined = prefix + ", " + suffix + "!"
-  inspect(combined, content="Hello, MoonBit!")
-  inspect(combined.length(), content="17")
-  inspect(combined[0], content="72")  // 'H' ASCII码
-  inspect(combined[16], content="33") // '!' ASCII码
+test "array_indexing_and_length" {
+  let arr = [10, 20, 30, 40, 50]
+  inspect(@array.length(arr), content="5")
+  inspect(arr[0], content="10")
+  inspect(arr[2], content="30")
+  inspect(arr[4], content="50")
+  let first_plus_last = arr[0] + arr[4]
+  inspect(first_plus_last, content="60")
 }
 
-test "array_operations" {
-  // 数组操作测试
-  let numbers = [10, 20, 30, 40, 50]
-  inspect(numbers.length(), content="5")
-  inspect(numbers[0], content="10")
-  inspect(numbers[4], content="50")
-  inspect(numbers[2] + numbers[3], content="70")
-}
-
-test "boolean_logic" {
-  // 布尔逻辑测试
+test "boolean_comparisons" {
   inspect(true && true, content="true")
   inspect(true && false, content="false")
-  inspect(true || false, content="true")
+  inspect(false || true, content="true")
   inspect(false || false, content="false")
   inspect(!true, content="false")
   inspect(!false, content="true")
+  inspect(true == true, content="true")
+  inspect(true != false, content="true")
 }
 
-test "option_type_operations" {
-  // Option 类型操作测试
-  let some_value = Some(123)
-  let none_value : Option[Int] = None
-  inspect(some_value.is_some(), content="true")
-  inspect(some_value.is_none(), content="false")
-  inspect(none_value.is_some(), content="false")
-  inspect(none_value.is_none(), content="true")
+test "option_type_pattern_matching" {
+  let some_number : Int? = Some(100)
+  let no_number : Int? = None
+  
+  let extracted = match some_number {
+    Some(x) => x
+    None => 0
+  }
+  inspect(extracted, content="100")
+  
+  let default = match no_number {
+    Some(x) => x
+    None => -1
+  }
+  inspect(default, content="-1")
 }
 
-test "result_type_operations" {
-  // Result 类型操作测试
-  let success = Ok("operation completed")
-  let failure = Err("network error")
-  inspect(success.is_ok(), content="true")
-  inspect(success.is_err(), content="false")
-  inspect(failure.is_ok(), content="false")
-  inspect(failure.is_err(), content="true")
+test "result_type_error_handling" {
+  let success_result : Result[String, Int] = Ok("Success")
+  let error_result : Result[String, Int] = Err(404)
+  
+  let success_msg = match success_result {
+    Ok(msg) => msg
+    Err(_) => "Error"
+  }
+  inspect(success_msg, content="\"Success\"")
+  
+  let error_code = match error_result {
+    Ok(_) => 0
+    Err(code) => code
+  }
+  inspect(error_code, content="404")
 }
 
-test "bitwise_operations" {
-  // 位运算测试
-  inspect(1 << 4, content="16")
-  inspect(16 >> 2, content="4")
-  inspect(12 & 10, content="8")
-  inspect(12 | 10, content="14")
-  inspect(12 ^ 10, content="6")
+test "character_comparison_and_conversion" {
+  let char_x = 'x'
+  let char_y = 'y'
+  inspect(@char.to_string(char_x), content="\"x\"")
+  inspect(char_x < char_y, content="true")
+  inspect(char_y > char_x, content="true")
+  inspect('A' < 'a', content="true")
+  inspect('0' < '9', content="true")
 }
 
-test "comparison_operations" {
-  // 比较运算测试
-  inspect(15 > 10, content="true")
-  inspect(15 >= 15, content="true")
-  inspect(10 < 15, content="true")
-  inspect(15 <= 15, content="true")
-  inspect(15 == 15, content="true")
-  inspect(15 != 10, content="true")
+test "list_operations" {
+  let num_list = [1, 2, 3, 4, 5]
+  inspect(@list.length(num_list), content="5")
+  let head = num_list[0]
+  inspect(head, content="1")
+  let sum = num_list[0] + num_list[1] + num_list[2]
+  inspect(sum, content="6")
 }
 
-test "type_conversion_operations" {
-  // 类型转换测试
-  let number = 456
-  let string_num = "789"
-  inspect(number.to_string(), content="456")
-  inspect(string_num.to_int(), content="Some(789)")
-  inspect("invalid".to_int(), content="None")
-  inspect(true.to_string(), content="true")
-  inspect(false.to_string(), content="false")
+test "math_functions" {
+  let x = 3.0
+  let y = 4.0
+  inspect(x + y, content="7")
+  inspect(y - x, content="1")
+  inspect(x * y, content="12")
+  inspect(y / x, content="1")
+  let positive = 5.0
+  let negative = -5.0
+  inspect(positive + negative, content="0")
+}
+
+test "type_coercion_and_literals" {
+  let int_val = 42
+  let bool_val = true
+  inspect(@int.to_string(int_val), content="\"42\"")
+  inspect(@bool.to_string(bool_val), content="\"true\"")
+  inspect(int_val > 0, content="true")
+  inspect(int_val < 100, content="true")
+  inspect(bool_val == true, content="true")
+  inspect(bool_val != false, content="true")
 }

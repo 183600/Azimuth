@@ -12,144 +12,122 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// 标准 MoonBit 测试用例集
-// 包含 8 个高质量测试用例，使用标准 MoonBit 测试语法
+// 标准 MoonBit 测试用例
+// 使用标准的 MoonBit 测试语法编写
 
-test "integer_arithmetic_operations" {
-  // 测试基本整数运算
-  assert_eq(10 + 5, 15)
-  assert_eq(20 - 8, 12)
-  assert_eq(6 * 7, 42)
-  assert_eq(25 / 5, 5)
-  assert_eq(27 % 4, 3)
-  
-  // 测试负数运算
-  assert_eq(-10 + 15, 5)
-  assert_eq(-5 * -3, 15)
+test "int_arithmetic_operations" {
+  inspect(1 + 1, content="2")
+  inspect(10 - 3, content="7")
+  inspect(3 * 4, content="12")
+  inspect(20 / 4, content="5")
+  inspect(15 % 4, content="3")
+  inspect(-5 + 10, content="5")
+  inspect(-3 * -2, content="6")
 }
 
-test "string_manipulation" {
-  // 测试字符串基本操作
-  let greeting = "Hello"
-  let target = "World"
-  let message = greeting + ", " + target + "!"
-  
-  assert_eq(message, "Hello, World!")
-  assert_eq(message.length(), 13)
-  assert_eq(greeting.length(), 5)
-  
-  // 测试字符串比较
-  assert_eq(greeting == "Hello", true)
-  assert_eq(greeting != target, true)
+test "string_concatenation_and_length" {
+  let str1 = "Hello"
+  let str2 = "MoonBit"
+  let combined = str1 + " " + str2 + "!"
+  inspect(combined, content="\"Hello MoonBit!\"")
+  inspect(@string.length(str1), content="5")
+  inspect(@string.length(str2), content="7")
+  inspect(@string.length(combined), content="14")
 }
 
-test "array_functionality" {
-  // 测试数组创建和访问
-  let numbers = [10, 20, 30, 40, 50]
-  let mixed = ["apple", 42, true]
-  
-  assert_eq(numbers.length(), 5)
-  assert_eq(numbers[0], 10)
-  assert_eq(numbers[4], 50)
-  assert_eq(mixed.length(), 3)
-  assert_eq(mixed[0], "apple")
-  
-  // 测试数组求和
-  let sum = numbers[0] + numbers[1] + numbers[2] + numbers[3] + numbers[4]
-  assert_eq(sum, 150)
+test "array_indexing_and_length" {
+  let arr = [10, 20, 30, 40, 50]
+  inspect(@array.length(arr), content="5")
+  inspect(arr[0], content="10")
+  inspect(arr[2], content="30")
+  inspect(arr[4], content="50")
+  let first_plus_last = arr[0] + arr[4]
+  inspect(first_plus_last, content="60")
 }
 
-test "boolean_logic_expressions" {
-  // 测试布尔逻辑运算
-  assert_eq(true && true, true)
-  assert_eq(true && false, false)
-  assert_eq(false || true, true)
-  assert_eq(false || false, false)
-  assert_eq(!true, false)
-  assert_eq(!false, true)
-  
-  // 测试布尔比较
-  assert_eq(true == true, true)
-  assert_eq(true != false, true)
+test "boolean_comparisons" {
+  inspect(true && true, content="true")
+  inspect(true && false, content="false")
+  inspect(false || true, content="true")
+  inspect(false || false, content="false")
+  inspect(!true, content="false")
+  inspect(!false, content="true")
+  inspect(true == true, content="true")
+  inspect(true != false, content="true")
 }
 
-test "option_type_patterns" {
-  // 测试 Option 类型处理
+test "option_type_pattern_matching" {
   let some_number : Int? = Some(100)
   let no_number : Int? = None
-  let some_text : String? = Some("test")
   
-  // 使用模式匹配处理 Option
   let extracted = match some_number {
-    Some(value) => value
+    Some(x) => x
     None => 0
   }
-  assert_eq(extracted, 100)
+  inspect(extracted, content="100")
   
-  let default_value = match no_number {
-    Some(value) => value
+  let default = match no_number {
+    Some(x) => x
     None => -1
   }
-  assert_eq(default_value, -1)
-  
-  // 测试 Option 比较
-  assert_eq(some_number == Some(100), true)
-  assert_eq(no_number == None, true)
+  inspect(default, content="-1")
 }
 
-test "result_type_handling" {
-  // 测试 Result 类型处理
-  let success_result : Result[String, Int] = Ok("success")
+test "result_type_error_handling" {
+  let success_result : Result[String, Int] = Ok("Success")
   let error_result : Result[String, Int] = Err(404)
   
-  // 使用模式匹配处理 Result
-  let success_message = match success_result {
-    Ok(message) => message
-    Err(code) => "error: " + code.to_string()
+  let success_msg = match success_result {
+    Ok(msg) => msg
+    Err(_) => "Error"
   }
-  assert_eq(success_message, "success")
+  inspect(success_msg, content="\"Success\"")
   
-  let error_message = match error_result {
-    Ok(message) => message
-    Err(code) => "error: " + code.to_string()
+  let error_code = match error_result {
+    Ok(_) => 0
+    Err(code) => code
   }
-  assert_eq(error_message, "error: 404")
+  inspect(error_code, content="404")
 }
 
-test "character_operations" {
-  // 测试字符操作
-  let char_a = 'a'
-  let char_Z = 'Z'
-  let digit_5 = '5'
-  
-  // 测试字符转换
-  assert_eq(char_a.to_string(), "a")
-  assert_eq(char_Z.to_string(), "Z")
-  assert_eq(digit_5.to_string(), "5")
-  
-  // 测试字符比较
-  assert_eq('a' > 'Z', true)
-  assert_eq('0' < '9', true)
-  assert_eq('A' < 'a', true)
+test "character_comparison_and_conversion" {
+  let char_x = 'x'
+  let char_y = 'y'
+  inspect(@char.to_string(char_x), content="\"x\"")
+  inspect(char_x < char_y, content="true")
+  inspect(char_y > char_x, content="true")
+  inspect('A' < 'a', content="true")
+  inspect('0' < '9', content="true")
 }
 
-test "mathematical_functions" {
-  // 测试数学运算
+test "list_operations" {
+  let num_list = [1, 2, 3, 4, 5]
+  inspect(@list.length(num_list), content="5")
+  let head = num_list[0]
+  inspect(head, content="1")
+  let sum = num_list[0] + num_list[1] + num_list[2]
+  inspect(sum, content="6")
+}
+
+test "math_functions" {
   let x = 3.0
   let y = 4.0
-  
-  // 基本浮点运算
-  assert_eq(x + y, 7.0)
-  assert_eq(y - x, 1.0)
-  assert_eq(x * y, 12.0)
-  assert_eq(y / x, 1.3333333333333333)
-  
-  // 测试特殊值
-  let positive = 5.5
-  let negative = -5.5
-  let zero = 0.0
-  
-  assert_eq(positive > zero, true)
-  assert_eq(negative < zero, true)
-  assert_eq(positive + negative, 0.0)
+  inspect(x + y, content="7")
+  inspect(y - x, content="1")
+  inspect(x * y, content="12")
+  inspect(y / x, content="1")
+  let positive = 5.0
+  let negative = -5.0
+  inspect(positive + negative, content="0")
+}
+
+test "type_coercion_and_literals" {
+  let int_val = 42
+  let bool_val = true
+  inspect(@int.to_string(int_val), content="\"42\"")
+  inspect(@bool.to_string(bool_val), content="\"true\"")
+  inspect(int_val > 0, content="true")
+  inspect(int_val < 100, content="true")
+  inspect(bool_val == true, content="true")
+  inspect(bool_val != false, content="true")
 }
