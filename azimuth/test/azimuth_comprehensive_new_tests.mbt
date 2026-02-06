@@ -1,129 +1,217 @@
-// 新的综合测试用例
-// 使用标准 MoonBit 测试语法
+// Azimuth 综合新测试用例 - 10个标准 MoonBit 测试
+// 提供新的测试场景和边界情况覆盖
 
-test "add_function_commutative_property" {
-  // 测试加法交换律
-  inspect(add(5, 3), "8")?
-  inspect(add(3, 5), "8")?
-  inspect(add(-2, 7), "5")?
-  inspect(add(7, -2), "5")?
-  inspect(add(-4, -6), "-10")?
-  inspect(add(-6, -4), "-10")?
-}
-
-test "add_function_associative_property" {
-  // 测试加法结合律
-  inspect(add(add(2, 3), 4), "9")?
-  inspect(add(2, add(3, 4)), "9")?
-  inspect(add(add(-2, 3), 5), "6")?
-  inspect(add(-2, add(3, 5)), "6")?
-}
-
-test "multiply_function_commutative_property" {
-  // 测试乘法交换律
-  inspect(multiply(4, 5), "20")?
-  inspect(multiply(5, 4), "20")?
-  inspect(multiply(-3, 6), "-18")?
-  inspect(multiply(6, -3), "-18")?
-  inspect(multiply(-2, -7), "14")?
-  inspect(multiply(-7, -2), "14")?
-}
-
-test "multiply_function_distributive_property" {
-  // 测试乘法分配律
-  inspect(multiply(3, add(2, 4)), "18")?
-  inspect(add(multiply(3, 2), multiply(3, 4)), "18")?
-  inspect(multiply(-2, add(5, 3)), "-16")?
-  inspect(add(multiply(-2, 5), multiply(-2, 3)), "-16")?
-}
-
-test "divide_with_ceil_precision_tests" {
-  // 测试向上取整除法的精度
-  inspect(divide_with_ceil(10, 3), "4")?
-  inspect(divide_with_ceil(11, 3), "4")?
-  inspect(divide_with_ceil(12, 3), "4")?
-  inspect(divide_with_ceil(13, 3), "5")?
-  inspect(divide_with_ceil(-10, 3), "-3")?
-  inspect(divide_with_ceil(-11, 3), "-3")?
-  inspect(divide_with_ceil(-12, 3), "-4")?
-}
-
-test "greet_function_unicode_and_special_chars" {
-  // 测试 greet 函数的 Unicode 和特殊字符处理
-  inspect(greet("世界"), "Hello, 世界!")?
-  inspect(greet("🚀"), "Hello, 🚀!")?
-  inspect(greet("naïve"), "Hello, naïve!")?
-  inspect(greet("café"), "Hello, café!")?
-  inspect(greet("123!@#"), "Hello, 123!@#!")?
-}
-
-test "complex_nested_operations" {
-  // 测试复杂的嵌套运算
-  inspect(add(multiply(2, 3), multiply(4, 5)), "26")?
-  inspect(multiply(add(2, 3), add(4, 5)), "45")?
-  inspect(divide_with_ceil(multiply(6, 7), 4), "11")?
-  inspect(add(divide_with_ceil(15, 4), multiply(3, 2)), "11")?
-}
-
-test "boundary_value_comprehensive_tests" {
-  // 综合边界值测试
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "advanced_arithmetic_combinations" {
+  // 高级算术组合测试 - 测试多个函数的复合使用
+  let base_value = 10
+  let multiplier = 3
+  let addition = 5
+  let divisor = 4
   
-  // 边界值加法
-  inspect(add(max_val, 0), "2147483647")?
-  inspect(add(min_val, 0), "-2147483648")?
-  inspect(add(0, max_val), "2147483647")?
-  inspect(add(0, min_val), "-2147483648")?
+  // 复合计算: (base * multiplier) + addition
+  let step1 = @azimuth.multiply(base_value, multiplier)
+  let step2 = @azimuth.add(step1, addition)
+  @azimuth.assert_eq(35, step2)  // (10 * 3) + 5 = 35
   
-  // 边界值乘法
-  inspect(multiply(0, max_val), "0")?
-  inspect(multiply(0, min_val), "0")?
-  inspect(multiply(1, max_val), "2147483647")?
-  inspect(multiply(1, min_val), "-2147483648")?
+  // 复合计算: ceil(result / divisor)
+  let final_result = @azimuth.divide_with_ceil(step2, divisor)
+  @azimuth.assert_eq(9, final_result)  // ceil(35/4) = 9
 }
 
-test "mathematical_identities" {
-  // 测试数学恒等式
-  // 加法单位元
-  inspect(add(5, 0), "5")?
-  inspect(add(-3, 0), "-3")?
-  inspect(add(0, 7), "7")?
-  inspect(add(0, -2), "-2")?
+test "financial_calculations" {
+  // 金融计算场景测试
+  let principal = 10000
+  let rate = 5
+  let years = 3
+  let fee = -50
   
-  // 乘法单位元
-  inspect(multiply(5, 1), "5")?
-  inspect(multiply(-3, 1), "-3")?
-  inspect(multiply(1, 7), "7")?
-  inspect(multiply(1, -2), "-2")?
+  // 计算简单利息: principal + (principal * rate / 100) * years
+  let interest_per_year = @azimuth.divide_with_ceil(@azimuth.multiply(principal, rate), 100)
+  let total_interest = @azimuth.multiply(interest_per_year, years)
+  let amount_before_fee = @azimuth.add(principal, total_interest)
+  let final_amount = @azimuth.add(amount_before_fee, fee)
   
-  // 乘法零元
-  inspect(multiply(5, 0), "0")?
-  inspect(multiply(-3, 0), "0")?
-  inspect(multiply(0, 7), "0")?
-  inspect(multiply(0, -2), "0")?
+  @azimuth.assert_eq(11500, final_amount)  // 10000 + (10000*5/100)*3 - 50 = 11500
 }
 
-test "real_world_application_scenarios" {
-  // 实际应用场景测试
-  // 场景1：计算商品总价（含税）
-  let price1 = 199
-  let price2 = 299
-  let tax_rate = 2
-  let subtotal = add(price1, price2)
-  let total = multiply(subtotal, tax_rate)
-  inspect(total, "996")?
+test "inventory_optimization" {
+  // 库存优化场景测试
+  let demand_forecast = 157
+  let safety_stock = 20
+  let package_size = 12
   
-  // 场景2：计算平均分（向上取整）
-  let score1 = 88
-  let score2 = 92
-  let score3 = 85
-  let total_score = add(add(score1, score2), score3)
-  let average = divide_with_ceil(total_score, 3)
-  inspect(average, "89")?
+  // 计算需要订购的总数量
+  let total_needed = @azimuth.add(demand_forecast, safety_stock)
   
-  // 场景3：生成用户欢迎消息
-  let username = "用户"
-  let welcome = greet(username)
-  inspect(welcome, "Hello, 用户!")?
+  // 计算包装数量
+  let packages_needed = @azimuth.divide_with_ceil(total_needed, package_size)
+  let total_order = @azimuth.multiply(packages_needed, package_size)
+  
+  // 计算剩余空间
+  let remaining_space = @azimuth.subtract(total_order, total_needed)
+  
+  @azimuth.assert_eq(15, packages_needed)
+  @azimuth.assert_eq(180, total_order)
+  @azimuth.assert_eq(3, remaining_space)
+}
+
+test "unicode_and_internationalization" {
+  // Unicode和国际化的扩展测试
+  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
+  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
+  @azimuth.assert_eq_string("Hello, café!", @azimuth.greet("café"))
+  @azimuth.assert_eq_string("Hello, Москва!", @azimuth.greet("Москва"))
+  @azimuth.assert_eq_string("Hello, ñoño!", @azimuth.greet("ñoño"))
+  @azimuth.assert_eq_string("Hello, 🏳️‍🌈!", @azimuth.greet("🏳️‍🌈"))
+  @azimuth.assert_eq_string("Hello, العربية!", @azimuth.greet("العربية"))
+  @azimuth.assert_eq_string("Hello, עברית!", @azimuth.greet("עברית"))
+}
+
+test "error_handling_and_edge_cases" {
+  // 错误处理和边界情况测试
+  // 测试除零的各种情况
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-100, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
+  
+  // 测试极值运算
+  let large_positive = 1000000
+  let large_negative = -1000000
+  
+  @azimuth.assert_eq(2000000, @azimuth.add(large_positive, large_positive))
+  @azimuth.assert_eq(-2000000, @azimuth.add(large_negative, large_negative))
+  @azimuth.assert_eq(0, @azimuth.add(large_positive, large_negative))
+  
+  @azimuth.assert_eq(100000000000, @azimuth.multiply(large_positive, large_positive))
+  @azimuth.assert_eq(100000000000, @azimuth.multiply(large_negative, large_negative))
+  @azimuth.assert_eq(-100000000000, @azimuth.multiply(large_positive, large_negative))
+}
+
+test "project_management_workflow" {
+  // 项目管理工作流测试
+  let team_size = 8
+  let story_points_per_person = 5
+  let sprint_duration = 2
+  let capacity_buffer = 10
+  
+  // 计算团队总容量
+  let base_capacity = @azimuth.multiply(team_size, story_points_per_person)
+  let total_capacity = @azimuth.add(base_capacity, capacity_buffer)
+  
+  // 计算每个冲刺的平均完成量
+  let sprint_capacity = @azimuth.divide_with_ceil(total_capacity, sprint_duration)
+  
+  // 计算完成100个故事点需要的冲刺数
+  let total_stories = 100
+  let sprints_needed = @azimuth.divide_with_ceil(total_stories, sprint_capacity)
+  
+  @azimuth.assert_eq(50, base_capacity)
+  @azimuth.assert_eq(60, total_capacity)
+  @azimuth.assert_eq(30, sprint_capacity)
+  @azimuth.assert_eq(4, sprints_needed)
+}
+
+test "data_processing_pipeline" {
+  // 数据处理管道测试
+  let input_records = 1000
+  let batch_size = 75
+  let processing_rate = 20
+  let error_rate = -5
+  
+  // 计算批次数
+  let batches = @azimuth.divide_with_ceil(input_records, batch_size)
+  
+  // 计算预期处理时间（分钟）
+  let total_batches = @azimuth.multiply(batches, batch_size)
+  let effective_records = @azimuth.add(total_batches, error_rate)
+  let processing_time = @azimuth.divide_with_ceil(effective_records, processing_rate)
+  
+  // 计算实际处理的记录数
+  let actual_processed = @azimuth.multiply(processing_time, processing_rate)
+  
+  @azimuth.assert_eq(14, batches)  // ceil(1000/75) = 14
+  @azimuth.assert_eq(1050, total_batches)  // 14 * 75 = 1050
+  @azimuth.assert_eq(1045, effective_records)  // 1050 - 5 = 1045
+  @azimuth.assert_eq(53, processing_time)  // ceil(1045/20) = 53
+  @azimuth.assert_eq(1060, actual_processed)  // 53 * 20 = 1060
+}
+
+test "mathematical_series_and_patterns" {
+  // 数学序列和模式测试
+  // 斐波那契数列相关计算
+  let fib1 = 1
+  let fib2 = 1
+  let fib3 = @azimuth.add(fib1, fib2)  // 2
+  let fib4 = @azimuth.add(fib2, fib3)  // 3
+  let fib5 = @azimuth.add(fib3, fib4)  // 5
+  
+  // 计算前5个斐波那契数的和
+  let fib_sum = @azimuth.add(fib1, @azimuth.add(fib2, @azimuth.add(fib3, @azimuth.add(fib4, fib5))))
+  @azimuth.assert_eq(12, fib_sum)
+  
+  // 计算几何级数: 2^1 + 2^2 + 2^3 + 2^4
+  let geo_sum = @azimuth.add(2, @azimuth.add(4, @azimuth.add(8, 16)))
+  @azimuth.assert_eq(30, geo_sum)
+  
+  // 测试分配律: a * (b + c) = a*b + a*c
+  let a = 6
+  let b = 7
+  let c = 8
+  let left_side = @azimuth.multiply(a, @azimuth.add(b, c))
+  let right_side = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
+  @azimuth.assert_eq(left_side, right_side)  // 6*(7+8) = 6*7 + 6*8 = 90
+}
+
+test "resource_allocation_scenarios" {
+  // 资源分配场景测试
+  let total_budget = 50000
+  let priority_projects = 3
+  let standard_projects = 5
+  let reserve_percentage = 10
+  
+  // 计算预留资金
+  let reserve_amount = @azimuth.divide_with_ceil(@azimuth.multiply(total_budget, reserve_percentage), 100)
+  let available_budget = @azimuth.subtract(total_budget, reserve_amount)
+  
+  // 计算优先项目平均预算
+  let priority_budget_per_project = @azimuth.divide_with_ceil(@azimuth.multiply(available_budget, 60), 100)
+  let total_priority_budget = @azimuth.multiply(priority_budget_per_project, priority_projects)
+  
+  // 计算标准项目平均预算
+  let remaining_budget = @azimuth.subtract(available_budget, total_priority_budget)
+  let standard_budget_per_project = @azimuth.divide_with_ceil(remaining_budget, standard_projects)
+  
+  @azimuth.assert_eq(5000, reserve_amount)  // ceil(50000*10/100) = 5000
+  @azimuth.assert_eq(45000, available_budget)  // 50000 - 5000 = 45000
+  @azimuth.assert_eq(27000, total_priority_budget)  // ceil(45000*60/100) * 3 = 27000
+  @azimuth.assert_eq(9000, priority_budget_per_project)  // ceil(45000*60/100) = 9000
+  @azimuth.assert_eq(3600, standard_budget_per_project)  // ceil(18000/5) = 3600
+}
+
+test "performance_benchmarking" {
+  // 性能基准测试
+  let iterations = 1000
+  let base_value = 42
+  let increment = 17
+  
+  // 模拟重复运算的性能测试
+  let result1 = @azimuth.add(base_value, increment)
+  let result2 = @azimuth.multiply(result1, 2)
+  let result3 = @azimuth.divide_with_ceil(result2, 3)
+  let result4 = @azimuth.subtract(result3, 5)
+  
+  // 验证计算链的正确性
+  @azimuth.assert_eq(59, result1)  // 42 + 17 = 59
+  @azimuth.assert_eq(118, result2)  // 59 * 2 = 118
+  @azimuth.assert_eq(40, result3)  // ceil(118/3) = 40
+  @azimuth.assert_eq(35, result4)  // 40 - 5 = 35
+  
+  // 测试大规模运算的一致性
+  let large_scale = @azimuth.multiply(iterations, @azimuth.add(base_value, increment))
+  let batch_processed = @azimuth.divide_with_ceil(large_scale, 100)
+  let final_result = @azimuth.multiply(batch_processed, @azimuth.divide_with_ceil(100, iterations))
+  
+  @azimuth.assert_eq(59000, large_scale)  // 1000 * (42 + 17) = 59000
+  @azimuth.assert_eq(590, batch_processed)  // ceil(59000/100) = 590
+  @azimuth.assert_eq(590, final_result)  // 590 * ceil(100/1000) = 590
 }
