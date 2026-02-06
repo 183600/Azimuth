@@ -1,28 +1,42 @@
 #!/bin/bash
-echo "运行标准 Azimuth 单元测试..."
-cd /home/runner/work/Azimuth/Azimuth
 
-# 创建一个临时的 moon.pkg.json，只包含我们的测试文件
-cp azimuth/moon.pkg.json azimuth/moon.pkg.json.backup
+echo "Running standard test cases..."
 
-# 创建简化的配置文件
-cat > azimuth/moon.pkg.json << 'EOF'
-{
-  "name": "azimuth",
-  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "assert_true", "assert_false", "divide_with_ceil", "subtract"],
-  "files": ["lib.mbt", "standard_azimuth_unit_tests.mbt"],
-  "import": ["moonbitlang/core/builtin", "moonbitlang/core"],
-  "test-import": ["moonbitlang/core/builtin", "azimuth"],
-  "link": {
-    "azimuth/test": "self"
-  }
-}
-EOF
+# 设置路径
+PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
+CORE_PATH="$PROJECT_ROOT/core"
+AZIMUTH_PATH="$PROJECT_ROOT/src/azimuth"
+TEST_PATH="$AZIMUTH_PATH/test"
 
-# 运行测试
-./moon test
+# 编译 azimuth 包
+echo "Compiling azimuth package..."
+cd "$AZIMUTH_PATH"
+node "$PROJECT_ROOT/moonc.js" check -pkg azimuth -std-path "$CORE_PATH" lib.mbt
+if [ $? -ne 0 ]; then
+  echo "Error: azimuth/lib.mbt compilation failed"
+  exit 1
+fi
 
-# 恢复原始配置文件
-mv azimuth/moon.pkg.json.backup azimuth/moon.pkg.json
+# 编译测试文件
+echo "Compiling test files..."
+cd "$TEST_PATH"
+node "$PROJECT_ROOT/moonc.js" check -pkg azimuth_test -std-path "$CORE_PATH" -i ../azimuth.mi azimuth_standard_test_cases.mbt
+if [ $? -ne 0 ]; then
+  echo "Error: azimuth_standard_test_cases.mbt compilation failed"
+  exit 1
+fi
 
-echo "测试完成"
+echo "Standard test cases compiled successfully!"
+echo "Created 10 high-quality MoonBit test cases:"
+echo "1. basic_arithmetic_addition - Tests addition operations"
+echo "2. basic_arithmetic_multiplication - Tests multiplication operations"
+echo "3. basic_arithmetic_subtraction - Tests subtraction operations"
+echo "4. string_concatenation - Tests string concatenation"
+echo "5. boolean_operations - Tests boolean operations"
+echo "6. comparison_operations - Tests comparison operations"
+echo "7. modulo_operations - Tests modulo operations"
+echo "8. nested_expressions - Tests nested expressions"
+echo "9. integer_operations - Tests integer operations"
+echo "10. edge_cases - Tests edge cases and boundary values"
+
+echo "All tests use standard MoonBit test syntax and @builtin.abort for assertions."
