@@ -1,83 +1,77 @@
-// 简单的新测试用例 - 针对 azimuth 库的核心功能
-// 使用标准 MoonBit 测试语法
-
-test "simple_add_test" {
-  // 测试基本加法功能
-  azimuth::assert_eq(5, azimuth::add(2, 3))
-  azimuth::assert_eq(0, azimuth::add(0, 0))
-  azimuth::assert_eq(-5, azimuth::add(-2, -3))
-}
-
-test "simple_multiply_test" {
-  // 测试基本乘法功能
-  azimuth::assert_eq(6, azimuth::multiply(2, 3))
-  azimuth::assert_eq(0, azimuth::multiply(0, 10))
-  azimuth::assert_eq(-6, azimuth::multiply(-2, 3))
-}
-
-test "simple_greet_test" {
-  // 测试基本问候功能
-  azimuth::assert_eq_string("Hello, MoonBit!", azimuth::greet("MoonBit"))
-  azimuth::assert_eq_string("Hello, World!", azimuth::greet("World"))
-  azimuth::assert_eq_string("Hello, !", azimuth::greet(""))
-}
-
-test "simple_divide_with_ceil_test" {
-  // 测试向上取整除法
-  azimuth::assert_eq(4, azimuth::divide_with_ceil(10, 3))
-  azimuth::assert_eq(3, azimuth::divide_with_ceil(9, 3))
-  azimuth::assert_eq(0, azimuth::divide_with_ceil(5, 0))
-}
-
-test "simple_mathematical_properties" {
-  // 测试数学性质
-  let a = 7
-  let b = 13
+// 简单的新测试用例 - 验证基本功能
+test "simple_financial_calculation" {
+  // 简单贷款计算测试
+  let loan_amount = 100000
+  let interest_rate = 5
+  let years = 10
   
-  // 加法交换律
-  azimuth::assert_eq(azimuth::add(a, b), azimuth::add(b, a))
+  let total_interest = multiply(loan_amount, interest_rate)
+  let total_repayment = add(loan_amount, divide_with_ceil(total_interest, 100))
   
-  // 乘法交换律
-  azimuth::assert_eq(azimuth::multiply(a, b), azimuth::multiply(b, a))
+  assert_eq(500000, total_interest)  // 100000 * 5 = 500000
+  assert_eq(105000, total_repayment)  // 100000 + 5000 = 105000
 }
 
-test "simple_combined_operations" {
-  // 测试组合运算
-  let result1 = azimuth::add(azimuth::multiply(2, 3), azimuth::multiply(4, 5))
-  azimuth::assert_eq(26, result1)  // 2*3 + 4*5 = 6 + 20 = 26
-}
-
-test "simple_practical_scenario" {
-  // 实际应用场景：计算订单总价
-  let unit_price = 25
-  let quantity = 8
-  let shipping = 15
+test "simple_inventory_management" {
+  // 简单库存管理测试
+  let items = 47
+  let box_capacity = 12
+  let boxes_needed = divide_with_ceil(items, box_capacity)
   
-  let subtotal = azimuth::multiply(unit_price, quantity)
-  let total = azimuth::add(subtotal, shipping)
+  assert_eq(4, boxes_needed)  // ceil(47/12) = 4
   
-  azimuth::assert_eq(200, subtotal)
-  azimuth::assert_eq(215, total)
-}
-
-test "simple_packaging_calculation" {
-  // 包装计算场景
-  let total_items = 25
-  let items_per_box = 6
-  let boxes_needed = azimuth::divide_with_ceil(total_items, items_per_box)
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  let remaining_space = subtract(total_capacity, items)
   
-  azimuth::assert_eq(5, boxes_needed)  // ceil(25/6) = 5
+  assert_eq(48, total_capacity)  // 4 * 12 = 48
+  assert_eq(1, remaining_space)  // 48 - 47 = 1
 }
 
-test "simple_unicode_test" {
-  // 测试 Unicode 字符
-  azimuth::assert_eq_string("Hello, 世界!", azimuth::greet("世界"))
-  azimuth::assert_eq_string("Hello, 🚀!", azimuth::greet("🚀"))
+test "simple_string_processing" {
+  // 简单字符串处理测试
+  let name = "MoonBit"
+  let greeting = greet(name)
+  
+  assert_eq_string("Hello, MoonBit!", greeting)
+  
+  let empty_greeting = greet("")
+  assert_eq_string("Hello, !", empty_greeting)
 }
 
-test "simple_edge_cases" {
-  // 测试边界情况
-  azimuth::assert_eq(0, azimuth::multiply(5, 0))
-  azimuth::assert_eq(0, azimuth::divide_with_ceil(0, 5))
-  azimuth::assert_eq(1, azimuth::divide_with_ceil(1, 100))
+test "simple_mathematical_operations" {
+  // 简单数学运算测试
+  let a = 15
+  let b = 7
+  
+  // 加法和乘法
+  let sum = add(a, b)
+  let product = multiply(a, b)
+  
+  assert_eq(22, sum)  // 15 + 7 = 22
+  assert_eq(105, product)  // 15 * 7 = 105
+  
+  // 减法和除法
+  let difference = subtract(a, b)
+  let quotient = divide_with_ceil(a, b)
+  
+  assert_eq(8, difference)  // 15 - 7 = 8
+  assert_eq(3, quotient)  // ceil(15/7) = 3
+}
+
+test "simple_boundary_conditions" {
+  // 简单边界条件测试
+  // 零值测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(5, 0))
+  
+  // 负数测试
+  assert_eq(-10, add(-5, -5))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-2, divide_with_ceil(-10, 5))
+  
+  // 边界除法
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(1, divide_with_ceil(-5, -5))
 }
