@@ -1,22 +1,24 @@
-// 标准 MoonBit 测试用例 - 10个高质量测试用例
-// 使用标准 MoonBit 测试语法
+// 标准 MoonBit 测试用例 - Azimuth 项目
+// 测试核心数学函数和字符串处理功能
 
 test "basic_addition_functionality" {
-  // 测试基本加法功能
+  // 基本加法功能测试
   assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
   assert_eq(-1, add(-3, 2))
+  assert_eq(100, add(50, 50))
 }
 
 test "basic_multiplication_functionality" {
-  // 测试基本乘法功能
+  // 基本乘法功能测试
   assert_eq(6, multiply(2, 3))
   assert_eq(0, multiply(5, 0))
   assert_eq(-6, multiply(-2, 3))
+  assert_eq(15, multiply(-3, -5))
 }
 
 test "divide_with_ceil_positive_numbers" {
-  // 测试向上取整除法的正数情况
+  // 向上取整除法正数测试
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
   assert_eq(1, divide_with_ceil(1, 5))
@@ -24,7 +26,7 @@ test "divide_with_ceil_positive_numbers" {
 }
 
 test "divide_with_ceil_negative_numbers" {
-  // 测试向上取整除法的负数情况
+  // 向上取整除法负数测试
   assert_eq(-3, divide_with_ceil(-10, 3))
   assert_eq(-4, divide_with_ceil(10, -3))
   assert_eq(4, divide_with_ceil(-10, -3))
@@ -32,7 +34,7 @@ test "divide_with_ceil_negative_numbers" {
 }
 
 test "greet_function_standard_cases" {
-  // 测试问候函数的标准情况
+  // 问候函数标准测试
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
@@ -40,7 +42,7 @@ test "greet_function_standard_cases" {
 }
 
 test "subtract_function_basic_cases" {
-  // 测试减法函数的基本情况
+  // 减法函数基本测试
   assert_eq(2, subtract(5, 3))
   assert_eq(-2, subtract(3, 5))
   assert_eq(0, subtract(5, 5))
@@ -48,7 +50,7 @@ test "subtract_function_basic_cases" {
 }
 
 test "mathematical_commutative_properties" {
-  // 测试数学交换律性质
+  // 数学交换律性质测试
   let a = 7
   let b = 13
   
@@ -60,7 +62,7 @@ test "mathematical_commutative_properties" {
 }
 
 test "business_packaging_scenario" {
-  // 测试业务包装场景
+  // 业务包装场景测试
   let total_items = 25
   let items_per_package = 6
   let packages_needed = divide_with_ceil(total_items, items_per_package)
@@ -74,7 +76,7 @@ test "business_packaging_scenario" {
 }
 
 test "complex_workflow_calculation" {
-  // 测试复杂工作流计算
+  // 复杂工作流计算测试
   // 场景：项目资源计算
   let team_members = 4
   let tasks_per_member = 8
@@ -87,8 +89,8 @@ test "complex_workflow_calculation" {
   assert_eq(3, sprints_needed)  // ceil(32/15) = 3
 }
 
-test "boundary_values_and_edge_cases" {
-  // 测试边界值和边缘情况
+test "boundary_and_edge_cases" {
+  // 边界和边缘情况测试
   // 除法边界情况
   assert_eq(1, divide_with_ceil(5, 5))
   assert_eq(1, divide_with_ceil(-5, -5))
