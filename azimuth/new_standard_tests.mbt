@@ -1,34 +1,36 @@
-// 标准 MoonBit 测试用例 - Azimuth 项目
-// 包含 10 个高质量测试用例，使用标准 MoonBit 测试语法
+// 新的标准 MoonBit 测试用例
+// 包含10个高质量测试用例，覆盖核心功能和边界情况
 
-test "basic_addition_functionality" {
-  // 基本加法功能测试
-  assert_eq(8, add(3, 5))
+test "add_function_comprehensive" {
+  // 加法函数综合测试
+  assert_eq(10, add(3, 7))
   assert_eq(0, add(0, 0))
-  assert_eq(-2, add(-5, 3))
-  assert_eq(100, add(50, 50))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(1, add(-5, 6))
+  assert_eq(1000, add(500, 500))
 }
 
-test "basic_multiplication_functionality" {
-  // 基本乘法功能测试
-  assert_eq(15, multiply(3, 5))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(15, multiply(-3, -5))
+test "multiply_function_edge_cases" {
+  // 乘法函数边界情况测试
+  assert_eq(25, multiply(5, 5))
+  assert_eq(0, multiply(100, 0))
+  assert_eq(-30, multiply(-6, 5))
+  assert_eq(30, multiply(-6, -5))
+  assert_eq(10000, multiply(100, 100))
 }
 
-test "divide_with_ceil_positive_numbers" {
-  // 向上取整除法正数测试
-  assert_eq(3, divide_with_ceil(8, 3))
+test "divide_with_ceil_precision" {
+  // 向上取整除法精度测试
+  assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 5))
-  assert_eq(0, divide_with_ceil(0, 10))
-  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(1, divide_with_ceil(1, 10))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(8, 0))
 }
 
 test "divide_with_ceil_negative_numbers" {
   // 向上取整除法负数测试
-  assert_eq(-2, divide_with_ceil(-8, 3))
+  assert_eq(-2, divide_with_ceil(-8, 4))
   assert_eq(-3, divide_with_ceil(8, -3))
   assert_eq(3, divide_with_ceil(-8, -3))
   assert_eq(-1, divide_with_ceil(-1, 2))
@@ -100,7 +102,7 @@ test "complex_workflow_calculation" {
   assert_eq(4, sprints_needed)  // ceil(48/15) = 4
 }
 
-test "edge_cases_and_boundary_values" {
+test "boundary_values_and_edge_cases" {
   // 边界情况和极值测试
   // 除法边界情况
   assert_eq(1, divide_with_ceil(5, 5))
