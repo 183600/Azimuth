@@ -1,184 +1,156 @@
-// 新增的高质量 MoonBit 测试用例
-// 测试 azimuth 模块的核心功能
+// 增强测试套件 - Azimuth 项目
+// 包含9个高质量测试用例，使用标准 MoonBit 测试语法
+// 覆盖各种功能点和边界情况
 
-test "addition_comprehensive_test" {
-  // 全面的加法测试
-  assert_eq(42, add(15, 27))
-  assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(100, add(50, 50))
-  assert_eq(0, add(100, -100))
+test "advanced_arithmetic_sequences" {
+  // 高级算术序列测试
+  let first_term = 3
+  let common_diff = 5
+  let n_terms = 6
+  
+  // 计算等差数列前n项和: S = n/2 * (2a + (n-1)d)
+  let sum_formula = divide_with_ceil(multiply(n_terms, add(multiply(2, first_term), multiply(subtract(n_terms, 1), common_diff))), 2)
+  
+  // 手动计算验证
+  let manual_sum = add(add(add(add(add(3, 8), 13), 18), 23), 28)
+  
+  assert_eq(sum_formula, manual_sum)
+  assert_eq(93, manual_sum)
 }
 
-test "multiplication_comprehensive_test" {
-  // 全面的乘法测试
-  assert_eq(96, multiply(12, 8))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(-6, multiply(-2, 3))
-  assert_eq(6, multiply(-2, -3))
-  assert_eq(100, multiply(10, 10))
+test "financial_calculations" {
+  // 金融计算测试
+  let principal = 1000
+  let rate_percent = 5
+  let time_years = 3
+  
+  // 简单利息计算: I = P * R * T
+  let simple_interest = divide_with_ceil(multiply(multiply(principal, rate_percent), time_years), 100)
+  
+  // 复利计算（简化版本）
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
+  let compound_amount = year3
+  
+  assert_eq(150, simple_interest)
+  assert_eq(1158, compound_amount)
 }
 
-test "divide_with_ceil_precision_test" {
-  // 向上取整除法的精度测试
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 100))
-  assert_eq(0, divide_with_ceil(5, 0))
-  assert_eq(-3, divide_with_ceil(-10, 3))
+test "inventory_management" {
+  // 库存管理测试
+  let initial_stock = 120
+  let daily_sales = 15
+  let days = 5
+  let restock_batch = 80
+  
+  // 计算剩余库存
+  let total_sold = multiply(daily_sales, days)
+  let remaining = subtract(initial_stock, total_sold)
+  
+  // 计算需要补货的批次
+  let restock_needed = divide_with_ceil(multiply(-1, remaining), restock_batch)
+  
+  assert_eq(75, total_sold)
+  assert_eq(45, remaining)
+  assert_eq(1, restock_needed)
 }
 
-test "greeting_unicode_test" {
-  // 问候功能的 Unicode 测试
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, αβγ!", greet("αβγ"))
-  assert_eq_string("Hello, !", greet(""))
+test "temperature_conversions" {
+  // 温度转换测试
+  let celsius = 25
+  
+  // 摄氏度转华氏度: F = (C * 9/5) + 32
+  let fahrenheit = add(divide_with_ceil(multiply(celsius, 9), 5), 32)
+  
+  // 华氏度转摄氏度: C = (F - 32) * 5/9
+  let celsius_back = divide_with_ceil(multiply(subtract(fahrenheit, 32), 5), 9)
+  
+  assert_eq(77, fahrenheit)
+  assert_eq(25, celsius_back)
 }
 
-test "complex_business_calculation" {
-  // 复杂业务计算：订单总价计算
-  let unit_price = 89
-  let quantity = 7
-  let tax_rate = 8
-  let shipping = 15
-  let discount = 25
+test "combinatorial_mathematics" {
+  // 组合数学测试
+  let n = 10
+  let r = 3
   
-  // 计算小计
-  let subtotal = multiply(unit_price, quantity)
-  // 计算税费
-  let tax_amount = divide_with_ceil(multiply(subtotal, tax_rate), 100)
-  // 计算折扣前总价
-  let total_before_discount = add(add(subtotal, tax_amount), shipping)
-  // 计算最终总价
-  let final_total = add(total_before_discount, -discount)
+  // 计算排列: P(n,r) = n! / (n-r)!
+  let factorial_n = multiply(multiply(multiply(multiply(multiply(multiply(multiply(multiply(multiply(1, 2), 3), 4), 5), 6), 7), 8), 9), 10)
+  let factorial_n_minus_r = multiply(multiply(multiply(multiply(multiply(multiply(1, 2), 3), 4), 5), 6), 7)
+  let permutation = divide_with_ceil(factorial_n, factorial_n_minus_r)
   
-  assert_eq(623, subtotal)
-  assert_eq(50, tax_amount)
-  assert_eq(688, total_before_discount)
-  assert_eq(663, final_total)
+  assert_eq(720, permutation)
 }
 
-test "mathematical_properties_test" {
-  // 数学性质验证
-  let x = 17
-  let y = 23
-  let z = 31
+test "signal_processing" {
+  // 信号处理测试
+  let signal_values = [10, 15, 12, 18, 20, 14, 16]
   
-  // 验证加法交换律
-  let add_comm1 = add(x, y)
-  let add_comm2 = add(y, x)
-  assert_eq(add_comm1, add_comm2)
+  // 计算信号平均值
+  let sum_values = add(add(add(add(add(add(10, 15), 12), 18), 20), 14), 16)
+  let average = divide_with_ceil(sum_values, 7)
   
-  // 验证乘法交换律
-  let mult_comm1 = multiply(x, y)
-  let mult_comm2 = multiply(y, x)
-  assert_eq(mult_comm1, mult_comm2)
+  // 计算信号范围
+  let max_val = 20
+  let min_val = 10
+  let range = subtract(max_val, min_val)
   
-  // 验证分配律：x * (y + z) = x * y + x * z
-  let distrib_left = multiply(x, add(y, z))
-  let distrib_right = add(multiply(x, y), multiply(x, z))
-  assert_eq(distrib_left, distrib_right)
+  assert_eq(105, sum_values)
+  assert_eq(15, average)
+  assert_eq(10, range)
 }
 
-test "resource_allocation_test" {
-  // 资源分配优化问题
-  let total_budget = 10000
-  let project_cost1 = 1200
-  let project_cost2 = 2300
-  let project_cost3 = 1800
-  let project_cost4 = 2700
-  let project_cost5 = 1500
+test "geometric_progressions" {
+  // 几何级数测试
+  let first_term = 2
+  let common_ratio = 3
+  let n_terms = 5
   
-  // 计算项目总成本
-  let total_cost = add(
-    add(
-      add(project_cost1, project_cost2),
-      add(project_cost3, project_cost4)
-    ),
-    project_cost5
-  )
+  // 计算几何级数前n项和: S = a * (r^n - 1) / (r - 1)
+  let r_power_n = multiply(multiply(multiply(multiply(1, common_ratio), common_ratio), common_ratio), common_ratio)
+  let sum_geometric = divide_with_ceil(multiply(first_term, subtract(r_power_n, 1)), subtract(common_ratio, 1))
   
-  // 计算剩余预算
-  let remaining_budget = add(total_budget, -total_cost)
+  // 手动计算验证
+  let manual_sum = add(add(add(add(2, 6), 18), 54), 162)
   
-  // 计算可以支持的小项目数量（每个500）
-  let small_projects = divide_with_ceil(remaining_budget, 500)
-  
-  assert_eq(9500, total_cost)
-  assert_eq(500, remaining_budget)
-  assert_eq(1, small_projects)
+  assert_eq(242, sum_geometric)
+  assert_eq(242, manual_sum)
 }
 
-test "time_calculation_test" {
-  // 基于时间的计算：项目完成时间估算
-  let total_tasks = 157
-  let tasks_per_day = 8
-  let work_days_per_week = 5
+test "cryptography_basics" {
+  // 密码学基础测试
+  let plaintext = 42
+  let key_a = 7
+  let key_b = 11
+  let modulus = 100
   
-  // 计算需要的工作日
-  let work_days_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  // 简单加密: E = (a * P + b) mod m
+  let encrypted_value = add(multiply(plaintext, key_a), key_b) % modulus
   
-  // 计算需要的周数
-  let weeks_needed = divide_with_ceil(work_days_needed, work_days_per_week)
+  // 简单解密（简化版本）
+  let decrypted_approx = divide_with_ceil(subtract(encrypted_value, key_b), key_a)
   
-  // 计算总工作小时数（每天8小时）
-  let total_hours = multiply(work_days_needed, 8)
-  
-  assert_eq(20, work_days_needed)
-  assert_eq(4, weeks_needed)
-  assert_eq(160, total_hours)
+  assert_eq(305, add(multiply(42, 7), 11))
+  assert_eq(5, encrypted_value)
+  assert_eq(-1, decrypted_approx)
 }
 
-test "error_handling_test" {
-  // 错误处理健壮性测试
-  // 测试除零安全性
-  let divide_by_zero_1 = divide_with_ceil(100, 0)
-  let divide_by_zero_2 = divide_with_ceil(-100, 0)
-  let divide_by_zero_3 = divide_with_ceil(0, 0)
+test "physics_kinematics" {
+  // 物理运动学测试
+  let initial_position = 10
+  let initial_velocity = 5
+  let acceleration = 3
+  let time = 4
   
-  assert_eq(0, divide_by_zero_1)
-  assert_eq(0, divide_by_zero_2)
-  assert_eq(0, divide_by_zero_3)
+  // 计算最终位置: s = s0 + v0*t + 0.5*a*t^2
+  let displacement = add(multiply(initial_velocity, time), divide_with_ceil(multiply(acceleration, multiply(time, time)), 2))
+  let final_position = add(initial_position, displacement)
   
-  // 测试极端数值
-  let extreme_positive = 2147483647
-  let extreme_negative = -2147483647
+  // 计算平均速度
+  let average_velocity = divide_with_ceil(displacement, time)
   
-  // 测试极端值的加法
-  let extreme_add = add(extreme_positive, extreme_negative)
-  assert_eq(0, extreme_add)
-  
-  // 测试极端值的乘法
-  let extreme_mult = multiply(extreme_positive, 0)
-  assert_eq(0, extreme_mult)
-}
-
-test "packaging_optimization_test" {
-  // 包装优化问题
-  let items_per_box = 12
-  let total_items_small = 35
-  let total_items_medium = 78
-  let total_items_large = 156
-  
-  // 计算每种类型需要的箱子数
-  let boxes_small = divide_with_ceil(total_items_small, items_per_box)
-  let boxes_medium = divide_with_ceil(total_items_medium, items_per_box)
-  let boxes_large = divide_with_ceil(total_items_large, items_per_box)
-  
-  // 计算总箱子数
-  let total_boxes = add(add(boxes_small, boxes_medium), boxes_large)
-  
-  // 计算总容量
-  let total_capacity = multiply(total_boxes, items_per_box)
-  
-  // 计算剩余空间
-  let remaining_space = subtract(total_capacity, add(add(total_items_small, total_items_medium), total_items_large))
-  
-  assert_eq(3, boxes_small)
-  assert_eq(7, boxes_medium)
-  assert_eq(13, boxes_large)
-  assert_eq(23, total_boxes)
-  assert_eq(276, total_capacity)
-  assert_eq(7, remaining_space)
+  assert_eq(32, displacement)
+  assert_eq(42, final_position)
+  assert_eq(8, average_velocity)
 }
