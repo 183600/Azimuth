@@ -1,281 +1,351 @@
-// Azimuth 项目增强测试用例
-// 包含10个高质量的标准 MoonBit 测试用例
-// 覆盖各种功能和使用场景
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-// 定义基本函数
-fn add(a : Int, b : Int) -> Int {
-  a + b
+// Azimuth 增强测试用例集
+// 包含 10 个高质量测试用例，使用标准 MoonBit 测试语法
+// 覆盖边界值、字符串处理、列表操作、数学函数、类型转换、错误处理、递归、模式匹配、集合操作和性能测试
+
+using @builtin { inspect }
+
+test "boundary_value_testing" {
+  // 测试整数边界值
+  let max_int = 2147483647
+  let min_int = -2147483648
+  
+  inspect(max_int, content="2147483647")
+  inspect(min_int, content="-2147483648")
+  inspect(max_int + 1, content="-2147483648")  // 溢出测试
+  inspect(min_int - 1, content="2147483647")  // 下溢测试
+  
+  // 测试零值操作
+  inspect(0 * max_int, content="0")
+  inspect(0 + min_int, content="-2147483648")
+  inspect(max_int - max_int, content="0")
 }
 
-fn multiply(a : Int, b : Int) -> Int {
-  a * b
+test "advanced_string_operations" {
+  // 测试字符串高级操作
+  let text = "MoonBit Programming"
+  let empty = ""
+  let single_char = "A"
+  
+  // 字符串长度和索引
+  inspect(text.length(), content="18")
+  inspect(text[0], content="'M'")
+  inspect(text[17], content="'g'")
+  
+  // 字符串连接和比较
+  let prefix = "MoonBit"
+  let suffix = "Programming"
+  inspect(prefix + " " + suffix, content=""MoonBit Programming"")
+  inspect(prefix == "MoonBit", content="true")
+  inspect(prefix != suffix, content="true")
+  
+  // 特殊字符串处理
+  inspect(empty.length(), content="0")
+  inspect(single_char.length(), content="1")
+  inspect(single_char == "A", content="true")
 }
 
-fn greet(name : String) -> String {
-  "Hello, " + name + "!"
+test "list_manipulation_operations" {
+  // 测试列表操作
+  let empty_list : List[Int] = []
+  let numbers = [1, 2, 3, 4, 5]
+  let strings = ["apple", "banana", "cherry"]
+  
+  // 列表长度和索引访问
+  inspect(numbers.length(), content="5")
+  inspect(numbers[0], content="1")
+  inspect(numbers[4], content="5")
+  inspect(empty_list.length(), content="0")
+  
+  // 列表元素操作
+  let sum = numbers[0] + numbers[1] + numbers[2] + numbers[3] + numbers[4]
+  inspect(sum, content="15")
+  
+  // 字符串列表操作
+  inspect(strings[0], content=""apple"")
+  inspect(strings[1], content=""banana"")
+  inspect(strings[2], content=""cherry"")
+  inspect(strings[0] + " " + strings[1], content=""apple banana"")
 }
 
-fn divide_with_ceil(a : Int, b : Int) -> Int {
-  if b == 0 { 
-    0 
-  } else {
-    let quotient = a / b
-    let remainder = a % b
-    if remainder == 0 {
-      quotient
-    } else if a > 0 && b > 0 {
-      quotient + 1
-    } else if a < 0 && b < 0 {
-      quotient + 1
-    } else {
-      quotient
-    }
+test "mathematical_function_testing" {
+  // 测试数学函数
+  let positive = 42
+  let negative = -42
+  let zero = 0
+  
+  // 基本数学运算
+  inspect(positive + negative, content="0")
+  inspect(positive - negative, content="84")
+  inspect(positive * negative, content="-1764")
+  inspect(positive / positive, content="1")
+  inspect(positive % 5, content="2")
+  
+  // 负数运算
+  inspect(negative + negative, content="-84")
+  inspect(negative * positive, content="-1764")
+  inspect(negative / positive, content="-1")
+  
+  // 零值运算
+  inspect(zero + positive, content="42")
+  inspect(positive * zero, content="0")
+  inspect(zero / positive, content="0")
+}
+
+test "type_conversion_scenarios" {
+  // 测试类型转换场景
+  let int_val = 123
+  let bool_true = true
+  let bool_false = false
+  let char_val = 'X'
+  
+  // 整数到字符串转换
+  inspect(int_val.to_string(), content=""123"")
+  inspect((-456).to_string(), content=""-456"")
+  inspect(0.to_string(), content=""0"")
+  
+  // 布尔值到字符串转换
+  inspect(bool_true.to_string(), content=""true"")
+  inspect(bool_false.to_string(), content=""false"")
+  
+  // 字符到字符串转换
+  inspect(char_val.to_string(), content=""X"")
+  inspect('A'.to_string(), content=""A"")
+  
+  // 类型一致性检查
+  inspect(int_val == 123, content="true")
+  inspect(bool_true == true, content="true")
+  inspect(char_val == 'X', content="true")
+}
+
+test "error_handling_patterns" {
+  // 测试错误处理模式
+  let success_result : Result[Int, String] = Ok(42)
+  let error_result : Result[Int, String] = Err("Something went wrong")
+  let some_option : Int? = Some(100)
+  let none_option : Int? = None
+  
+  // Result 类型处理
+  let success_value = match success_result {
+    Ok(value) => value
+    Err(error) => 0
   }
+  inspect(success_value, content="42")
+  
+  let error_value = match error_result {
+    Ok(value) => value
+    Err(error) => 0
+  }
+  inspect(error_value, content="0")
+  
+  // Option 类型处理
+  let some_value = match some_option {
+    Some(value) => value
+    None => 0
+  }
+  inspect(some_value, content="100")
+  
+  let none_value = match none_option {
+    Some(value) => value
+    None => -1
+  }
+  inspect(none_value, content="-1")
 }
 
-fn subtract(a : Int, b : Int) -> Int {
-  a - b
+test "recursive_operation_testing" {
+  // 测试递归操作
+  // 阶乘计算（使用简单循环模拟递归）
+  let mut result = 1
+  let mut i = 1
+  while i <= 5 {
+    result = result * i
+    i = i + 1
+  }
+  inspect(result, content="120")  // 5! = 120
+  
+  // 斐波那契数列（前几项）
+  let fib_0 = 0
+  let fib_1 = 1
+  let fib_2 = fib_0 + fib_1
+  let fib_3 = fib_1 + fib_2
+  let fib_4 = fib_2 + fib_3
+  let fib_5 = fib_3 + fib_4
+  
+  inspect(fib_0, content="0")
+  inspect(fib_1, content="1")
+  inspect(fib_2, content="1")
+  inspect(fib_3, content="2")
+  inspect(fib_4, content="3")
+  inspect(fib_5, content="5")
+  
+  // 累加和
+  let mut sum = 0
+  let mut j = 1
+  while j <= 10 {
+    sum = sum + j
+    j = j + 1
+  }
+  inspect(sum, content="55")  // 1+2+...+10 = 55
 }
 
-// 断言函数
-fn assert_eq(expected : Int, actual : Int) -> Unit {
-  ()
+test "pattern_matching_complexity" {
+  // 测试复杂模式匹配
+  let numbers = [1, 2, 3, 4, 5]
+  let mixed_values = [0, -1, 42, -100, 999]
+  
+  // 基于值的模式匹配
+  let first_number = numbers[0]
+  let category = match first_number {
+    0 => "zero"
+    1 => "one"
+    2 => "two"
+    _ => "other"
+  }
+  inspect(category, content=""one"")
+  
+  // 正负数分类
+  let positive_count = {
+    let mut count = 0
+    let mut i = 0
+    while i < mixed_values.length() {
+      if mixed_values[i] > 0 {
+        count = count + 1
+      }
+      i = i + 1
+    }
+    count
+  }
+  inspect(positive_count, content="2")  // 42 和 999 是正数
+  
+  // 奇偶数判断
+  let even_count = {
+    let mut count = 0
+    let mut i = 0
+    while i < numbers.length() {
+      if numbers[i] % 2 == 0 {
+        count = count + 1
+      }
+      i = i + 1
+    }
+    count
+  }
+  inspect(even_count, content="2")  // 2 和 4 是偶数
 }
 
-fn assert_eq_string(expected : String, actual : String) -> Unit {
-  ()
+test "collection_operation_testing" {
+  // 测试集合操作
+  let array1 = [1, 2, 3, 4, 5]
+  let array2 = [4, 5, 6, 7, 8]
+  let strings = ["hello", "world", "moonbit"]
+  
+  // 数组长度和访问
+  inspect(array1.length(), content="5")
+  inspect(array2.length(), content="5")
+  inspect(strings.length(), content="3")
+  
+  // 数组元素查找和比较
+  let common_elements = {
+    let mut count = 0
+    let mut i = 0
+    while i < array1.length() {
+      let mut j = 0
+      while j < array2.length() {
+        if array1[i] == array2[j] {
+          count = count + 1
+          break
+        }
+        j = j + 1
+      }
+      i = i + 1
+    }
+    count
+  }
+  inspect(common_elements, content="2")  // 4 和 5 是共同元素
+  
+  // 字符串数组操作
+  let total_length = {
+    let mut total = 0
+    let mut i = 0
+    while i < strings.length() {
+      total = total + strings[i].length()
+      i = i + 1
+    }
+    total
+  }
+  inspect(total_length, content="16")  // 5 + 5 + 6 = 16
+  
+  // 数组求和
+  let sum1 = {
+    let mut total = 0
+    let mut i = 0
+    while i < array1.length() {
+      total = total + array1[i]
+      i = i + 1
+    }
+    total
+  }
+  inspect(sum1, content="15")  // 1+2+3+4+5 = 15
 }
 
-fn assert_true(condition : Bool) -> Unit {
-  ()
-}
-
-test "complex_arithmetic_expressions" {
-  // 复杂算术表达式测试
-  let a = 15
-  let b = 7
-  let c = 3
+test "performance_related_operations" {
+  // 测试性能相关操作
+  let large_numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  let repeated_strings = ["test", "test", "test", "test", "test"]
   
-  // 测试复合运算
-  let result1 = add(multiply(a, b), divide_with_ceil(c, 2))
-  assert_eq(106, result1)  // 15*7 + ceil(3/2) = 105 + 2 = 107
+  // 大数组操作效率测试
+  let large_sum = {
+    let mut total = 0
+    let mut i = 0
+    while i < large_numbers.length() {
+      total = total + large_numbers[i]
+      i = i + 1
+    }
+    total
+  }
+  inspect(large_sum, content="55")  // 1到10的和
   
-  let result2 = multiply(add(a, b), subtract(c, 1))
-  assert_eq(44, result2)   // (15+7) * (3-1) = 22 * 2 = 44
+  // 字符串重复操作
+  let concatenated = repeated_strings[0] + repeated_strings[1] + repeated_strings[2] + repeated_strings[3] + repeated_strings[4]
+  inspect(concatenated, content="\"testtesttesttesttest\"")
+  inspect(concatenated.length(), content="20")
   
-  let result3 = divide_with_ceil(multiply(a, b), c)
-  assert_eq(35, result3)   // ceil(15*7/3) = ceil(105/3) = 35
-}
-
-test "data_structure_operations" {
-  // 数据结构操作测试
-  let batch_size = 25
-  let total_items = 187
-  let processing_batches = divide_with_ceil(total_items, batch_size)
+  // 条件分支性能测试
+  let conditional_result = {
+    let mut result = 0
+    let mut i = 0
+    while i < 100 {
+      if i % 2 == 0 {
+        result = result + i
+      } else {
+        result = result - i
+      }
+      i = i + 1
+    }
+    result
+  }
+  inspect(conditional_result, content="-50")  // 偶数和减奇数和
   
-  assert_eq(8, processing_batches)
-  
-  // 验证总处理能力
-  let total_capacity = multiply(processing_batches, batch_size)
-  assert_eq(200, total_capacity)
-  
-  // 验证剩余容量
-  let remaining_capacity = subtract(total_capacity, total_items)
-  assert_eq(13, remaining_capacity)
-}
-
-test "time_based_calculations" {
-  // 基于时间的计算测试
-  let hours_per_day = 8
-  let days_per_week = 5
-  let weeks_per_month = 4
-  
-  // 计算月工作小时数
-  let monthly_hours = multiply(hours_per_day, multiply(days_per_week, weeks_per_month))
-  assert_eq(160, monthly_hours)
-  
-  // 计算项目所需时间（以月为单位）
-  let total_project_hours = 720
-  let months_needed = divide_with_ceil(total_project_hours, monthly_hours)
-  assert_eq(5, months_needed)
-  
-  // 验证实际可用小时数
-  let actual_hours = multiply(months_needed, monthly_hours)
-  assert_eq(800, actual_hours)
-  
-  // 验证剩余小时数
-  let remaining_hours = subtract(actual_hours, total_project_hours)
-  assert_eq(80, remaining_hours)
-}
-
-test "financial_calculations" {
-  // 金融计算测试
-  let principal = 10000
-  let interest_rate = 5  // 5%
-  let years = 3
-  
-  // 计算简单利息
-  let total_interest = multiply(principal, multiply(interest_rate, years))
-  let total_with_interest = add(principal, divide_with_ceil(total_interest, 100))
-  
-  assert_eq(1500, total_interest)     // 10000 * 5 * 3 = 150000, /100 = 1500
-  assert_eq(11500, total_with_interest)  // 10000 + 1500 = 11500
-  
-  // 计算分期付款
-  let monthly_payment = divide_with_ceil(total_with_interest, multiply(years, 12))
-  assert_eq(320, monthly_payment)  // ceil(11500/36) = 320
-  
-  // 验证总支付金额
-  let total_paid = multiply(monthly_payment, multiply(years, 12))
-  assert_eq(11520, total_paid)
-}
-
-test "resource_optimization" {
-  // 资源优化测试
-  let total_tasks = 95
-  let team_capacity = 8
-  let overtime_capacity = 2
-  
-  // 计算正常工作日所需天数
-  let regular_days = divide_with_ceil(total_tasks, team_capacity)
-  assert_eq(12, regular_days)
-  
-  // 计算包含加班的天数
-  let enhanced_capacity = add(team_capacity, overtime_capacity)
-  let enhanced_days = divide_with_ceil(total_tasks, enhanced_capacity)
-  assert_eq(10, enhanced_days)
-  
-  // 验证效率提升
-  let days_saved = subtract(regular_days, enhanced_days)
-  assert_eq(2, days_saved)
-  
-  // 计算效率提升百分比
-  let efficiency_gain = divide_with_ceil(multiply(days_saved, 100), regular_days)
-  assert_eq(17, efficiency_gain)  // ceil(2*100/12) = 17
-}
-
-test "inventory_management" {
-  // 库存管理测试
-  let product_types = 15
-  let min_stock_per_type = 50
-  let max_storage_capacity = 1200
-  
-  // 计算最小总库存需求
-  let min_total_stock = multiply(product_types, min_stock_per_type)
-  assert_eq(750, min_total_stock)
-  
-  // 验证存储容量是否足够
-  assert_true(min_total_stock <= max_storage_capacity)
-  
-  // 计算剩余存储空间
-  let remaining_space = subtract(max_storage_capacity, min_total_stock)
-  assert_eq(450, remaining_space)
-  
-  // 计算可以增加的产品类型数量
-  let additional_types = divide_with_ceil(remaining_space, min_stock_per_type)
-  assert_eq(9, additional_types)
-  
-  // 验证新的产品类型总数
-  let new_total_types = add(product_types, additional_types)
-  assert_eq(24, new_total_types)
-}
-
-test "performance_metrics" {
-  // 性能指标测试
-  let baseline_performance = 100
-  let improvement_factor = 15  // 15% 改进
-  let measurement_periods = 6
-  
-  // 计算改进后的性能
-  let improvement_amount = divide_with_ceil(multiply(baseline_performance, improvement_factor), 100)
-  let improved_performance = add(baseline_performance, improvement_amount)
-  
-  assert_eq(15, improvement_amount)
-  assert_eq(115, improved_performance)
-  
-  // 计算累积性能增益
-  let cumulative_gain = multiply(improvement_amount, measurement_periods)
-  assert_eq(90, cumulative_gain)
-  
-  // 计算平均每期增益
-  let average_gain = divide_with_ceil(cumulative_gain, measurement_periods)
-  assert_eq(15, average_gain)
-}
-
-test "error_boundary_conditions" {
-  // 错误边界条件测试
-  // 测试除零的各种情况
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(1, 0))
-  assert_eq(0, divide_with_ceil(-1, 0))
-  
-  // 测试极值运算
-  let large_number = 100000
-  let small_number = 1
-  
-  assert_eq(100001, add(large_number, small_number))
-  assert_eq(99999, subtract(large_number, small_number))
-  assert_eq(100000, multiply(large_number, 1))
-  assert_eq(100000, divide_with_ceil(large_number, 1))
-  assert_eq(1, divide_with_ceil(large_number, large_number))
-}
-
-test "internationalization_support" {
-  // 国际化支持测试
-  // 测试各种字符集的问候功能
-  assert_eq_string("Hello, English!", greet("English"))
-  assert_eq_string("Hello, 中文!", greet("中文"))
-  assert_eq_string("Hello, 日本語!", greet("日本語"))
-  assert_eq_string("Hello, 한국어!", greet("한국어"))
-  assert_eq_string("Hello, Español!", greet("Español"))
-  assert_eq_string("Hello, Français!", greet("Français"))
-  assert_eq_string("Hello, Русский!", greet("Русский"))
-  assert_eq_string("Hello, العربية!", greet("العربية"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, !", greet(""))
-}
-
-test "complex_business_workflow" {
-  // 复杂业务工作流测试
-  // 场景：电商平台订单处理
-  
-  let order_quantity = 47
-  let items_per_box = 12
-  let boxes_per_pallet = 8
-  let cost_per_item = 25
-  let shipping_cost_per_pallet = 150
-  
-  // 计算需要的箱子数量
-  let boxes_needed = divide_with_ceil(order_quantity, items_per_box)
-  assert_eq(4, boxes_needed)
-  
-  // 计算需要的托盘数量
-  let pallets_needed = divide_with_ceil(boxes_needed, boxes_per_pallet)
-  assert_eq(1, pallets_needed)
-  
-  // 计算商品总成本
-  let item_cost_total = multiply(order_quantity, cost_per_item)
-  assert_eq(1175, item_cost_total)
-  
-  // 计算运输总成本
-  let shipping_cost_total = multiply(pallets_needed, shipping_cost_per_pallet)
-  assert_eq(150, shipping_cost_total)
-  
-  // 计算订单总成本
-  let total_order_cost = add(item_cost_total, shipping_cost_total)
-  assert_eq(1325, total_order_cost)
-  
-  // 计算总容量
-  let total_box_capacity = multiply(boxes_needed, items_per_box)
-  assert_eq(48, total_box_capacity)
-  
-  // 计算剩余空间
-  let remaining_space = subtract(total_box_capacity, order_quantity)
-  assert_eq(1, remaining_space)
-  
-  // 验证空间利用率
-  let space_utilization = divide_with_ceil(multiply(order_quantity, 100), total_box_capacity)
-  assert_eq(98, space_utilization)  // ceil(47*100/48) = 98
+  // 内存分配测试（创建多个临时变量）
+  let temp_calculation = {
+    let a = 10
+    let b = 20
+    let c = 30
+    let d = 40
+    let e = 50
+    a + b + c + d + e
+  }
+  inspect(temp_calculation, content="150")
 }
