@@ -1,5 +1,5 @@
-// 标准 MoonBit 测试用例 - Azimuth 项目核心功能测试
-// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
+// 标准 MoonBit 测试用例 - Azimuth 核心功能测试
+// 包含 10 个高质量测试用例，使用标准 MoonBit 测试语法
 
 test "basic_addition_functionality" {
   // 基本加法功能测试
@@ -15,6 +15,14 @@ test "basic_multiplication_functionality" {
   assert_eq(0, multiply(5, 0))
   assert_eq(-6, multiply(-2, 3))
   assert_eq(15, multiply(-3, -5))
+}
+
+test "basic_subtraction_functionality" {
+  // 基本减法功能测试
+  assert_eq(2, subtract(5, 3))
+  assert_eq(-2, subtract(3, 5))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(10, subtract(0, -10))
 }
 
 test "divide_with_ceil_positive_numbers" {
@@ -33,20 +41,12 @@ test "divide_with_ceil_negative_numbers" {
   assert_eq(-1, divide_with_ceil(-1, 2))
 }
 
-test "greet_function_standard_cases" {
-  // 问候函数标准测试
+test "greet_function_basic_cases" {
+  // 问候函数基本测试
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
   assert_eq_string("Hello, 123!", greet("123"))
-}
-
-test "subtract_function_basic_cases" {
-  // 减法函数基本测试
-  assert_eq(2, subtract(5, 3))
-  assert_eq(-2, subtract(3, 5))
-  assert_eq(0, subtract(5, 5))
-  assert_eq(10, subtract(0, -10))
 }
 
 test "mathematical_commutative_properties" {
@@ -78,19 +78,19 @@ test "business_packaging_scenario" {
 test "complex_workflow_calculation" {
   // 复杂工作流计算测试
   // 场景：项目资源计算
-  let team_members = 6
+  let team_members = 4
   let tasks_per_member = 8
   let total_tasks = multiply(team_members, tasks_per_member)
   
   let sprint_capacity = 15
   let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
   
-  assert_eq(48, total_tasks)  // 6 * 8 = 48
-  assert_eq(4, sprints_needed)  // ceil(48/15) = 4
+  assert_eq(32, total_tasks)  // 4 * 8 = 32
+  assert_eq(3, sprints_needed)  // ceil(32/15) = 3
 }
 
-test "edge_cases_and_boundary_values" {
-  // 边界情况和极值测试
+test "boundary_values_and_edge_cases" {
+  // 边界值和边缘情况测试
   // 除法边界情况
   assert_eq(1, divide_with_ceil(5, 5))
   assert_eq(1, divide_with_ceil(-5, -5))
