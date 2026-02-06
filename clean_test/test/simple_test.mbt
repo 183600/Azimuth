@@ -269,3 +269,104 @@ test "real_world_packaging_calculation" {
   @clean_test.assert_eq(4, boxes_needed)  // ceil(47/12) = 4
   @clean_test.assert_eq(48, total_capacity)  // 4 * 12 = 48
 }
+
+// 新增的标准 MoonBit 测试用例
+test "add_function_edge_cases" {
+  // 加法函数边界情况测试
+  @clean_test.assert_eq(2147483647, @clean_test.add(2147483646, 1))
+  @clean_test.assert_eq(-2147483648, @clean_test.add(-2147483647, -1))
+  @clean_test.assert_eq(0, @clean_test.add(2147483647, -2147483647))
+}
+
+test "multiply_function_edge_cases" {
+  // 乘法函数边界情况测试
+  @clean_test.assert_eq(2147483647, @clean_test.multiply(2147483647, 1))
+  @clean_test.assert_eq(-2147483648, @clean_test.multiply(-2147483648, 1))
+  @clean_test.assert_eq(0, @clean_test.multiply(2147483647, 0))
+}
+
+test "greet_function_unicode_support" {
+  // 问候函数Unicode支持测试
+  @clean_test.assert_eq_string("Hello, 🌟!", @clean_test.greet("🌟"))
+  @clean_test.assert_eq_string("Hello, café!", @clean_test.greet("café"))
+  @clean_test.assert_eq_string("Hello, Москва!", @clean_test.greet("Москва"))
+  @clean_test.assert_eq_string("Hello, 🏳️‍🌈!", @clean_test.greet("🏳️‍🌈"))
+}
+
+test "mathematical_distributive_property" {
+  // 验证数学分配律: a * (b + c) = a * b + a * c
+  let a = 6
+  let b = 4
+  let c = 3
+  
+  let left_side = @clean_test.multiply(a, @clean_test.add(b, c))
+  let right_side = @clean_test.add(
+    @clean_test.multiply(a, b),
+    @clean_test.multiply(a, c)
+  )
+  
+  @clean_test.assert_eq(left_side, right_side)  // 6*(4+3) = 6*4 + 6*3 = 42
+}
+
+test "complex_business_calculation" {
+  // 复杂业务计算测试
+  // 场景：计算项目资源需求
+  let team_members = 8
+  let tasks_per_member = 5
+  let total_tasks = @clean_test.multiply(team_members, tasks_per_member)
+  let tasks_per_sprint = 15
+  let mut sprints_needed = total_tasks / tasks_per_sprint
+  if total_tasks % tasks_per_sprint > 0 {
+    sprints_needed = sprints_needed + 1
+  }
+  @clean_test.assert_eq(3, sprints_needed)  // ceil(40/15) = 3
+}
+
+test "overflow_protection_comprehensive" {
+  // 溢出保护综合测试
+  let max_val = 2147483647
+  let min_val = -2147483648
+  
+  // 加法溢出保护
+  @clean_test.assert_eq(max_val, @clean_test.add(max_val, 1))
+  @clean_test.assert_eq(max_val, @clean_test.add(max_val, max_val))
+  @clean_test.assert_eq(min_val, @clean_test.add(min_val, -1))
+  @clean_test.assert_eq(min_val, @clean_test.add(min_val, min_val))
+  
+  // 乘法溢出保护
+  @clean_test.assert_eq(max_val, @clean_test.multiply(max_val, 2))
+  @clean_test.assert_eq(min_val, @clean_test.multiply(min_val, 2))
+  @clean_test.assert_eq(min_val, @clean_test.multiply(min_val, -1))
+}
+
+test "real_world_inventory_management" {
+  // 真实世界库存管理测试
+  let total_products = 157
+  let box_capacity = 24
+  let mut boxes_needed = total_products / box_capacity
+  if total_products % box_capacity > 0 {
+    boxes_needed = boxes_needed + 1
+  }
+  
+  // 验证需要的箱子数量
+  @clean_test.assert_eq(7, boxes_needed)
+  
+  // 验证总容量
+  let total_capacity = @clean_test.multiply(boxes_needed, box_capacity)
+  @clean_test.assert_eq(168, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = total_capacity - total_products
+  @clean_test.assert_eq(11, remaining_space)
+}
+
+test "string_processing_comprehensive" {
+  // 字符串处理综合测试
+  @clean_test.assert_eq_string("Hello, World!", @clean_test.greet("World"))
+  @clean_test.assert_eq_string("Hello, MoonBit!", @clean_test.greet("MoonBit"))
+  @clean_test.assert_eq_string("Hello, !", @clean_test.greet(""))
+  @clean_test.assert_eq_string("Hello, 123!", @clean_test.greet("123"))
+  @clean_test.assert_eq_string("Hello, 世界!", @clean_test.greet("世界"))
+  @clean_test.assert_eq_string("Hello,   !", @clean_test.greet("  "))
+  @clean_test.assert_eq_string("Hello, special@chars!", @clean_test.greet("special@chars"))
+}
