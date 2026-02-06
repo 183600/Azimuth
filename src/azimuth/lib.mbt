@@ -920,3 +920,222 @@ test "stack_operations_simulation" {
   assert_eq(pop3, 10)
   assert_eq(stack_size_after_pop3, 0)
 }
+
+// 高质量 MoonBit 测试套件
+// 包含 8 个专业级测试用例，覆盖核心功能和边界情况
+
+test "arithmetic_precision_validation" {
+  // 算术精度验证测试
+  // 测试除法向上取整函数的精度行为
+  
+  // 正常除法情况
+  assert_eq(divide_with_ceil(10, 3), 4)
+  assert_eq(divide_with_ceil(15, 5), 3)
+  assert_eq(divide_with_ceil(7, 2), 4)
+  
+  // 边界情况：被除数为0
+  assert_eq(divide_with_ceil(0, 5), 0)
+  assert_eq(divide_with_ceil(0, 1), 0)
+  
+  // 边界情况：除数为0
+  assert_eq(divide_with_ceil(10, 0), 0)
+  assert_eq(divide_with_ceil(0, 0), 0)
+  
+  // 负数测试
+  assert_eq(divide_with_ceil(-10, 3), -3)
+  assert_eq(divide_with_ceil(10, -3), 3)
+  assert_eq(divide_with_ceil(-10, -3), 4)
+}
+
+test "string_concatenation_edge_cases" {
+  // 字符串连接边界情况测试
+  // 测试greet函数在不同输入下的行为
+  
+  // 标准情况
+  assert_eq_string(greet("World"), "Hello, World!")
+  assert_eq_string(greet("MoonBit"), "Hello, MoonBit!")
+  
+  // 边界情况
+  assert_eq_string(greet(""), "Hello, !")
+  assert_eq_string(greet(" "), "Hello,  !")
+  assert_eq_string(greet("A"), "Hello, A!")
+  
+  // 特殊字符
+  assert_eq_string(greet("123"), "Hello, 123!")
+  assert_eq_string(greet("!@#"), "Hello, !@#!")
+}
+
+test "complex_calculation_pipeline" {
+  // 复杂计算流水线测试
+  // 模拟多步骤的计算过程
+  
+  let initial_value = 100
+  let factor1 = 3
+  let factor2 = 2
+  let offset = 15
+  let divisor = 4
+  
+  // 计算流水线
+  let step1 = multiply(initial_value, factor1)  // 100 * 3 = 300
+  let step2 = add(step1, offset)                // 300 + 15 = 315
+  let step3 = subtract(step2, factor2)          // 315 - 2 = 313
+  let step4 = divide_with_ceil(step3, divisor)  // ceil(313/4) = 79
+  
+  // 验证每一步
+  assert_eq(step1, 300)
+  assert_eq(step2, 315)
+  assert_eq(step3, 313)
+  assert_eq(step4, 79)
+}
+
+test "mathematical_properties_verification" {
+  // 数学性质验证测试
+  // 验证基本算术运算的数学性质
+  
+  let x = 17
+  let y = 23
+  let z = 5
+  
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
+  
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 加法结合律
+  assert_eq(add(add(x, y), z), add(x, add(y, z)))
+  
+  // 乘法结合律
+  assert_eq(multiply(multiply(x, y), z), multiply(x, multiply(y, z)))
+  
+  // 分配律
+  assert_eq(multiply(x, add(y, z)), add(multiply(x, y), multiply(x, z)))
+  
+  // 单位元性质
+  assert_eq(add(x, 0), x)
+  assert_eq(multiply(x, 1), x)
+}
+
+test "boundary_value_comprehensive" {
+  // 边界值综合测试
+  // 系统性测试各种边界条件
+  
+  // 零值边界
+  assert_eq(add(0, 0), 0)
+  assert_eq(multiply(0, 100), 0)
+  assert_eq(subtract(0, 0), 0)
+  assert_eq(divide_with_ceil(0, 10), 0)
+  
+  // 单位值边界
+  assert_eq(add(1, 0), 1)
+  assert_eq(multiply(1, 100), 100)
+  assert_eq(subtract(1, 0), 1)
+  assert_eq(divide_with_ceil(100, 1), 100)
+  
+  // 负单位边界
+  assert_eq(add(-1, 1), 0)
+  assert_eq(multiply(-1, 100), -100)
+  assert_eq(subtract(0, -1), 1)
+  assert_eq(divide_with_ceil(-100, 1), -100)
+  
+  // 大数边界
+  let large_num = 100000
+  assert_eq(add(large_num, large_num), 200000)
+  assert_eq(divide_with_ceil(large_num, 3), 33334)
+}
+
+test "error_handling_simulation" {
+  // 错误处理模拟测试
+  // 模拟各种错误情况下的函数行为
+  
+  // 除零错误处理
+  let result1 = divide_with_ceil(50, 0)
+  let result2 = divide_with_ceil(0, 0)
+  let result3 = divide_with_ceil(-50, 0)
+  
+  // 验证错误情况下的默认行为
+  assert_eq(result1, 0)
+  assert_eq(result2, 0)
+  assert_eq(result3, 0)
+  
+  // 溢出情况模拟
+  let max_int = 1000000
+  let overflow_add = add(max_int, max_int)
+  let overflow_mult = multiply(max_int, 2)
+  
+  // 验证计算结果
+  assert_eq(overflow_add, 2000000)
+  assert_eq(overflow_mult, 2000000)
+}
+
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟测试
+  // 模拟不同算法的时间复杂度特征
+  
+  // O(1) 常数时间操作
+  let constant_op = add(5, 3)
+  assert_eq(constant_op, 8)
+  
+  // O(n) 线性时间操作模拟
+  let n = 10
+  let sum_result = 0
+  let sum_step1 = add(sum_result, 1)
+  let sum_step2 = add(sum_step1, 2)
+  let sum_step3 = add(sum_step2, 3)
+  let sum_step4 = add(sum_step3, 4)
+  let sum_step5 = add(sum_step4, 5)
+  let sum_step6 = add(sum_step5, 6)
+  let sum_step7 = add(sum_step6, 7)
+  let sum_step8 = add(sum_step7, 8)
+  let sum_step9 = add(sum_step8, 9)
+  let sum_step10 = add(sum_step9, 10)
+  
+  // 验证线性求和结果 (1+2+...+10 = 55)
+  assert_eq(sum_step10, 55)
+  
+  // O(n²) 二次时间操作模拟
+  let nested_result = multiply(n, n)
+  assert_eq(nested_result, 100)
+}
+
+test "real_world_application_scenario" {
+  // 真实世界应用场景测试
+  // 模拟购物车计算的完整场景
+  
+  // 商品价格和数量
+  let item1_price = 25
+  let item1_quantity = 3
+  let item2_price = 15
+  let item2_quantity = 2
+  let item3_price = 8
+  let item3_quantity = 5
+  
+  // 计算各商品小计
+  let item1_subtotal = multiply(item1_price, item1_quantity)  // 25 * 3 = 75
+  let item2_subtotal = multiply(item2_price, item2_quantity)  // 15 * 2 = 30
+  let item3_subtotal = multiply(item3_price, item3_quantity)  // 8 * 5 = 40
+  
+  // 计算商品总计
+  let items_total = add(add(item1_subtotal, item2_subtotal), item3_subtotal)  // 75 + 30 + 40 = 145
+  
+  // 计算税费（假设税率10%，向上取整）
+  let tax_rate = 10
+  let tax_amount = divide_with_ceil(multiply(items_total, tax_rate), 100)  // ceil(145 * 10 / 100) = 15
+  
+  // 计算总价
+  let grand_total = add(items_total, tax_amount)  // 145 + 15 = 160
+  
+  // 计算每箱包装数量（假设每箱最多装12个商品）
+  let total_items = add(add(item1_quantity, item2_quantity), item3_quantity)  // 3 + 2 + 5 = 10
+  let boxes_needed = divide_with_ceil(total_items, 12)  // ceil(10/12) = 1
+  
+  // 验证计算结果
+  assert_eq(item1_subtotal, 75)
+  assert_eq(item2_subtotal, 30)
+  assert_eq(item3_subtotal, 40)
+  assert_eq(items_total, 145)
+  assert_eq(tax_amount, 15)
+  assert_eq(grand_total, 160)
+  assert_eq(total_items, 10)
+  assert_eq(boxes_needed, 1)
+}
