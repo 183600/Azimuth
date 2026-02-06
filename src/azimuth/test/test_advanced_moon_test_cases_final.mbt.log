@@ -240,7 +240,7 @@ clean_test_test/advanced_moon_test_cases_final.mbt:288:3-288:40 [E4021] The valu
 clean_test_test/advanced_moon_test_cases_final.mbt:288:16-288:27 [E4021] The value identifier bitwise_and is unbound.
 clean_test_test/advanced_moon_test_cases_final.mbt:288:31-288:40 [E4021] The value identifier check_bit is unbound.
 clean_test_test/advanced_moon_test_cases_final.mbt:289:3-289:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/advanced_moon_test_cases_final.mbt:289:24-289:34 [E4021] The value identifier is_bit_set is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:289:12-289:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/advanced_moon_test_cases_final.mbt:292:3-292:17 [E4021] The value identifier check_bit2 is unbound.
 clean_test_test/advanced_moon_test_cases_final.mbt:293:3-293:42 [E4021] The value identifier bitwise_and2 is unbound.
 clean_test_test/advanced_moon_test_cases_final.mbt:293:18-293:23 [E4021] The value identifier value is unbound.
@@ -249,7 +249,7 @@ clean_test_test/advanced_moon_test_cases_final.mbt:294:3-294:43 [E4021] The valu
 clean_test_test/advanced_moon_test_cases_final.mbt:294:17-294:29 [E4021] The value identifier bitwise_and2 is unbound.
 clean_test_test/advanced_moon_test_cases_final.mbt:294:33-294:43 [E4021] The value identifier check_bit2 is unbound.
 clean_test_test/advanced_moon_test_cases_final.mbt:295:3-295:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/advanced_moon_test_cases_final.mbt:295:25-295:36 [E4021] The value identifier is_bit_set2 is unbound.
+clean_test_test/advanced_moon_test_cases_final.mbt:295:12-295:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/advanced_moon_test_cases_final.mbt:298:3-298:8 [E4021] The value identifier x is unbound.
 clean_test_test/advanced_moon_test_cases_final.mbt:299:3-299:9 [E4021] The value identifier y is unbound.
 clean_test_test/advanced_moon_test_cases_final.mbt:302:13-302:20 [E3002] Expected upper case identifier for type name, found lower case identifier.

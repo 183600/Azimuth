@@ -81,7 +81,7 @@ clean_test_test/comprehensive_application_tests.mbt:181:3-181:21 [E4020] Package
 clean_test_test/comprehensive_application_tests.mbt:181:30-181:47 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/comprehensive_application_tests.mbt:182:3-182:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/comprehensive_application_tests.mbt:185:7-185:23 [E0002] Warning (unused_value): Unused variable 'received_message'
-clean_test_test/comprehensive_application_tests.mbt:190:3-190:14 [E4021] The value identifier assert_true is unbound.
+clean_test_test/comprehensive_application_tests.mbt:190:3-190:23 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/comprehensive_application_tests.mbt:198:7-198:21 [E0002] Warning (unused_value): Unused variable 'feature_values'
 clean_test_test/comprehensive_application_tests.mbt:202:13-202:25 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/comprehensive_application_tests.mbt:202:26-202:38 [E4020] Package "azimuth" not found in the loaded packages.

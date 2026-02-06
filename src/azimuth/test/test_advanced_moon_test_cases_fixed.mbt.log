@@ -193,8 +193,12 @@ clean_test_test/advanced_moon_test_cases_fixed.mbt:277:20-277:27 [E3002] Expecte
 clean_test_test/advanced_moon_test_cases_fixed.mbt:277:29-277:37 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/advanced_moon_test_cases_fixed.mbt:278:3-278:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
 clean_test_test/advanced_moon_test_cases_fixed.mbt:278:12-278:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/advanced_moon_test_cases_fixed.mbt:288:7-288:17 [E0002] Warning (unused_value): Unused variable 'is_bit_set'
 clean_test_test/advanced_moon_test_cases_fixed.mbt:289:3-289:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:289:12-289:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/advanced_moon_test_cases_fixed.mbt:294:7-294:18 [E0002] Warning (unused_value): Unused variable 'is_bit_set2'
 clean_test_test/advanced_moon_test_cases_fixed.mbt:295:3-295:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/advanced_moon_test_cases_fixed.mbt:295:12-295:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/advanced_moon_test_cases_fixed.mbt:298:7-298:8 [E0002] Warning (unused_value): Unused variable 'x'
 clean_test_test/advanced_moon_test_cases_fixed.mbt:299:7-299:8 [E0002] Warning (unused_value): Unused variable 'y'
 clean_test_test/advanced_moon_test_cases_fixed.mbt:302:7-302:14 [E0002] Warning (unused_value): Unused variable 'x_xor_y'

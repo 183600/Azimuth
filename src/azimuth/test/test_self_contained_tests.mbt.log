@@ -1,0 +1,83 @@
+clean_test_test/self_contained_tests.mbt:5:17-5:20 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/self_contained_tests.mbt:5:20-5:21 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/self_contained_tests.mbt:7:2-7:2 [E4074] Missing type annotation for the return value.
+clean_test_test/self_contained_tests.mbt:9:17-9:25 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/self_contained_tests.mbt:9:25-9:26 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/self_contained_tests.mbt:11:2-11:2 [E4074] Missing type annotation for the return value.
+clean_test_test/self_contained_tests.mbt:13:17-13:22 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/self_contained_tests.mbt:13:22-13:23 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/self_contained_tests.mbt:15:2-15:2 [E4074] Missing type annotation for the return value.
+clean_test_test/self_contained_tests.mbt:17:17-17:26 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/self_contained_tests.mbt:17:26-17:27 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/self_contained_tests.mbt:21:5-21:8 [E4074] Missing type annotation for the return value.
+clean_test_test/self_contained_tests.mbt:21:9-21:10 [E3002] Parse error, unexpected token `_`, you may expect id (lowercase start).
+clean_test_test/self_contained_tests.mbt:21:9-21:10 [E4074] Cannot infer the type of variable , please add more type annotation.
+clean_test_test/self_contained_tests.mbt:26:17-26:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/self_contained_tests.mbt:26:33-26:34 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/self_contained_tests.mbt:30:5-30:8 [E4074] Missing type annotation for the return value.
+clean_test_test/self_contained_tests.mbt:30:9-30:10 [E3002] Parse error, unexpected token `_`, you may expect id (lowercase start).
+clean_test_test/self_contained_tests.mbt:30:9-30:10 [E4074] Cannot infer the type of variable , please add more type annotation.
+clean_test_test/self_contained_tests.mbt:39:20-39:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:39:33-39:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:40:3-40:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:43:18-43:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:43:31-43:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:44:3-44:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:47:17-47:29 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:47:30-47:47 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:48:3-48:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:57:25-57:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:59:21-59:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:61:3-61:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:62:3-62:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:72:18-72:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:72:47-72:64 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:73:15-73:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:75:3-75:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:83:24-83:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:84:3-84:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:89:23-89:40 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:90:3-90:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:96:24-96:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:96:42-96:54 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:97:3-97:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:111:16-111:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:112:16-112:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:113:16-113:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:116:20-116:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:116:33-116:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:116:46-116:58 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:119:3-119:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:126:17-126:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:127:3-127:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:131:17-131:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:132:3-132:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:135:23-135:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:135:36-135:53 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:135:68-135:85 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:136:3-136:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:149:13-149:25 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:149:26-149:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:149:39-149:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:149:52-149:64 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:153:3-153:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:154:3-154:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:162:18-162:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:164:3-164:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:168:15-168:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:169:3-169:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:178:20-178:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:179:3-179:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:183:13-183:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:184:24-184:36 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:186:3-186:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:187:3-187:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:197:15-197:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:197:28-197:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:198:3-198:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:201:21-201:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:201:34-201:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:202:3-202:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:204:20-204:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:204:33-204:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/self_contained_tests.mbt:205:3-205:21 [E4020] Package "azimuth" not found in the loaded packages.

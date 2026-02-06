@@ -13,6 +13,12 @@ clean_test_test/self_contained_standard_tests.mbt:23:2-23:2 [E4074] Missing type
 clean_test_test/self_contained_standard_tests.mbt:25:17-25:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
 clean_test_test/self_contained_standard_tests.mbt:25:33-25:34 [E3002] Parse error, unexpected token `(`, you may expect `::`.
 clean_test_test/self_contained_standard_tests.mbt:31:2-31:2 [E4074] Missing type annotation for the return value.
+clean_test_test/self_contained_standard_tests.mbt:33:17-33:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/self_contained_standard_tests.mbt:33:28-33:29 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/self_contained_standard_tests.mbt:39:2-39:2 [E4074] Missing type annotation for the return value.
+clean_test_test/self_contained_standard_tests.mbt:41:17-41:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/self_contained_standard_tests.mbt:41:29-41:30 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/self_contained_standard_tests.mbt:47:2-47:2 [E4074] Missing type annotation for the return value.
 clean_test_test/self_contained_standard_tests.mbt:52:3-52:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/self_contained_standard_tests.mbt:52:26-52:38 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/self_contained_standard_tests.mbt:53:3-53:21 [E4020] Package "azimuth" not found in the loaded packages.

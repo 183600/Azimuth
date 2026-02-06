@@ -1,41 +1,41 @@
-clean_test_test/new_practical_tests.mbt:8:27-8:35 [E4021] The value identifier multiply is unbound.
-clean_test_test/new_practical_tests.mbt:9:21-9:24 [E4021] The value identifier add is unbound.
-clean_test_test/new_practical_tests.mbt:11:3-11:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/new_practical_tests.mbt:18:13-18:16 [E4021] The value identifier add is unbound.
-clean_test_test/new_practical_tests.mbt:20:3-20:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/new_practical_tests.mbt:30:26-30:34 [E4021] The value identifier multiply is unbound.
-clean_test_test/new_practical_tests.mbt:31:28-31:36 [E4021] The value identifier multiply is unbound.
-clean_test_test/new_practical_tests.mbt:32:27-32:35 [E4021] The value identifier multiply is unbound.
-clean_test_test/new_practical_tests.mbt:34:3-34:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/new_practical_tests.mbt:35:3-35:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/new_practical_tests.mbt:36:3-36:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/new_practical_tests.mbt:43:27-43:35 [E4021] The value identifier multiply is unbound.
-clean_test_test/new_practical_tests.mbt:45:3-45:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/new_practical_tests.mbt:55:23-55:26 [E4021] The value identifier add is unbound.
-clean_test_test/new_practical_tests.mbt:55:32-55:40 [E4021] The value identifier multiply is unbound.
-clean_test_test/new_practical_tests.mbt:56:22-56:30 [E4021] The value identifier multiply is unbound.
-clean_test_test/new_practical_tests.mbt:58:3-58:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/new_practical_tests.mbt:65:20-65:23 [E4021] The value identifier add is unbound.
-clean_test_test/new_practical_tests.mbt:65:24-65:32 [E4021] The value identifier multiply is unbound.
-clean_test_test/new_practical_tests.mbt:67:3-67:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/new_practical_tests.mbt:76:14-76:22 [E4021] The value identifier multiply is unbound.
-clean_test_test/new_practical_tests.mbt:78:19-78:22 [E4021] The value identifier add is unbound.
-clean_test_test/new_practical_tests.mbt:78:23-78:31 [E4021] The value identifier multiply is unbound.
-clean_test_test/new_practical_tests.mbt:78:44-78:52 [E4021] The value identifier multiply is unbound.
-clean_test_test/new_practical_tests.mbt:80:3-80:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/new_practical_tests.mbt:81:3-81:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/new_practical_tests.mbt:92:21-92:24 [E4021] The value identifier add is unbound.
-clean_test_test/new_practical_tests.mbt:92:25-92:28 [E4021] The value identifier add is unbound.
-clean_test_test/new_practical_tests.mbt:92:29-92:32 [E4021] The value identifier add is unbound.
-clean_test_test/new_practical_tests.mbt:96:3-96:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/new_practical_tests.mbt:97:3-97:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/new_practical_tests.mbt:106:23-106:26 [E4021] The value identifier add is unbound.
-clean_test_test/new_practical_tests.mbt:106:27-106:35 [E4021] The value identifier multiply is unbound.
-clean_test_test/new_practical_tests.mbt:108:3-108:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/new_practical_tests.mbt:121:18-121:21 [E4021] The value identifier add is unbound.
-clean_test_test/new_practical_tests.mbt:121:22-121:30 [E4021] The value identifier multiply is unbound.
-clean_test_test/new_practical_tests.mbt:121:61-121:69 [E4021] The value identifier multiply is unbound.
-clean_test_test/new_practical_tests.mbt:123:13-123:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/new_practical_tests.mbt:125:15-125:18 [E4021] The value identifier add is unbound.
-clean_test_test/new_practical_tests.mbt:125:19-125:22 [E4021] The value identifier add is unbound.
-clean_test_test/new_practical_tests.mbt:127:3-127:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/new_practical_tests.mbt:8:27-8:44 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:9:21-9:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:11:3-11:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:18:13-18:25 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:20:3-20:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:30:26-30:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:31:28-31:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:32:27-32:44 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:34:3-34:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:35:3-35:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:36:3-36:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:43:27-43:44 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:45:3-45:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:55:23-55:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:55:41-55:58 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:56:22-56:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:58:3-58:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:65:20-65:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:65:33-65:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:67:3-67:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:76:14-76:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:78:19-78:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:78:32-78:49 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:78:62-78:79 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:80:3-80:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:81:3-81:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:92:21-92:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:92:34-92:46 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:92:47-92:59 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:96:3-96:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:97:3-97:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:106:23-106:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:106:36-106:53 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:108:3-108:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:121:18-121:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:121:31-121:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:121:79-121:96 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:123:13-123:30 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:125:15-125:27 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:125:28-125:40 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_practical_tests.mbt:127:3-127:21 [E4020] Package "azimuth" not found in the loaded packages.

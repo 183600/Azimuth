@@ -42,6 +42,16 @@ clean_test_test/standalone_new_tests.mbt:130:33-130:34 [E3002] Parse error, unex
 clean_test_test/standalone_new_tests.mbt:137:5-137:8 [E4074] Missing type annotation for the return value.
 clean_test_test/standalone_new_tests.mbt:137:9-137:10 [E3002] Parse error, unexpected token `_`, you may expect id (lowercase start).
 clean_test_test/standalone_new_tests.mbt:137:9-137:10 [E4074] Cannot infer the type of variable , please add more type annotation.
+clean_test_test/standalone_new_tests.mbt:142:17-142:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standalone_new_tests.mbt:142:28-142:29 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/standalone_new_tests.mbt:149:5-149:8 [E4074] Missing type annotation for the return value.
+clean_test_test/standalone_new_tests.mbt:149:9-149:10 [E3002] Parse error, unexpected token `_`, you may expect id (lowercase start).
+clean_test_test/standalone_new_tests.mbt:149:9-149:10 [E4074] Cannot infer the type of variable , please add more type annotation.
+clean_test_test/standalone_new_tests.mbt:154:17-154:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standalone_new_tests.mbt:154:29-154:30 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/standalone_new_tests.mbt:159:5-159:8 [E4074] Missing type annotation for the return value.
+clean_test_test/standalone_new_tests.mbt:159:9-159:10 [E3002] Parse error, unexpected token `_`, you may expect id (lowercase start).
+clean_test_test/standalone_new_tests.mbt:159:9-159:10 [E4074] Cannot infer the type of variable , please add more type annotation.
 clean_test_test/standalone_new_tests.mbt:169:3-169:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standalone_new_tests.mbt:169:26-169:38 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standalone_new_tests.mbt:170:3-170:21 [E4020] Package "azimuth" not found in the loaded packages.
@@ -109,12 +119,18 @@ clean_test_test/standalone_new_tests.mbt:271:3-271:21 [E4020] Package "azimuth" 
 clean_test_test/standalone_new_tests.mbt:272:3-272:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standalone_new_tests.mbt:273:3-273:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standalone_new_tests.mbt:274:3-274:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standalone_new_tests.mbt:279:3-279:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standalone_new_tests.mbt:280:3-280:24 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standalone_new_tests.mbt:281:3-281:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standalone_new_tests.mbt:281:22-281:34 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standalone_new_tests.mbt:290:15-290:27 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standalone_new_tests.mbt:291:15-291:27 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standalone_new_tests.mbt:292:15-292:32 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/standalone_new_tests.mbt:293:15-293:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standalone_new_tests.mbt:290:3-290:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standalone_new_tests.mbt:290:24-290:36 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standalone_new_tests.mbt:291:3-291:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standalone_new_tests.mbt:291:24-291:36 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standalone_new_tests.mbt:292:3-292:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standalone_new_tests.mbt:292:24-292:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standalone_new_tests.mbt:293:3-293:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standalone_new_tests.mbt:293:24-293:41 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standalone_new_tests.mbt:296:3-296:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standalone_new_tests.mbt:296:26-296:38 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/standalone_new_tests.mbt:297:3-297:21 [E4020] Package "azimuth" not found in the loaded packages.

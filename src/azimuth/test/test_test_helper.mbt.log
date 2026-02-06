@@ -1,0 +1,12 @@
+clean_test_test/test_helper.mbt:3:17-3:26 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/test_helper.mbt:3:26-3:27 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/test_helper.mbt:7:2-7:2 [E4074] Missing type annotation for the return value.
+clean_test_test/test_helper.mbt:9:17-9:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/test_helper.mbt:9:33-9:34 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/test_helper.mbt:13:2-13:2 [E4074] Missing type annotation for the return value.
+clean_test_test/test_helper.mbt:15:17-15:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/test_helper.mbt:15:28-15:29 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/test_helper.mbt:19:2-19:2 [E4074] Missing type annotation for the return value.
+clean_test_test/test_helper.mbt:21:17-21:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/test_helper.mbt:21:29-21:30 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/test_helper.mbt:25:2-25:2 [E4074] Missing type annotation for the return value.

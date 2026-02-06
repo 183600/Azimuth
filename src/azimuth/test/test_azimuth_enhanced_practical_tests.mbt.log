@@ -1,94 +1,94 @@
-clean_test_test/azimuth_enhanced_practical_tests.mbt:13:18-13:26 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:17:24-17:32 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:18:3-18:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:21:26-21:34 [E4021] The value identifier subtract is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:22:3-22:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:25:25-25:41 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:26:3-26:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:29:24-29:32 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:33:21-33:24 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:34:3-34:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:43:25-43:28 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:44:3-44:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:49:7-49:10 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:53:3-53:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:56:22-56:25 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:59:7-59:15 [E4021] The value identifier subtract is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:63:3-63:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:75:23-75:26 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:75:27-75:35 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:76:3-76:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:80:3-80:14 [E4021] The value identifier assert_true is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:83:23-83:26 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:84:3-84:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:87:24-87:40 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:88:3-88:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:99:24-99:32 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:100:3-100:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:103:24-103:32 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:104:3-104:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:108:3-108:14 [E4021] The value identifier assert_true is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:111:23-111:39 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:112:3-112:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:115:21-115:37 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:115:38-115:46 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:116:3-116:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:127:21-127:37 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:128:3-128:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:131:24-131:27 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:132:3-132:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:135:20-135:28 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:136:3-136:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:139:22-139:30 [E4021] The value identifier subtract is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:140:35-140:43 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:141:25-141:33 [E4021] The value identifier subtract is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:142:3-142:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:13:18-13:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:14:3-14:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:17:24-17:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:18:3-18:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:21:26-21:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:22:3-22:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:25:25-25:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:26:3-26:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:29:24-29:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:30:3-30:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:33:21-33:33 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:34:3-34:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:43:25-43:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:44:3-44:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:49:7-49:19 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:53:3-53:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:56:22-56:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:59:7-59:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:63:3-63:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:75:23-75:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:75:36-75:53 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:76:3-76:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:80:3-80:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:83:23-83:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:84:3-84:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:87:24-87:49 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:88:3-88:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:99:24-99:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:100:3-100:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:103:24-103:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:104:3-104:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:108:3-108:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:111:23-111:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:112:3-112:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:115:21-115:46 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:115:47-115:64 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:116:3-116:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:127:21-127:46 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:128:3-128:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:131:24-131:36 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:132:3-132:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:135:20-135:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:136:3-136:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:139:22-139:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:140:35-140:52 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:141:25-141:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:142:3-142:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/azimuth_enhanced_practical_tests.mbt:149:7-149:12 [E0002] Warning (unused_value): Unused variable 'years'
-clean_test_test/azimuth_enhanced_practical_tests.mbt:152:23-152:26 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:152:38-152:54 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:152:55-152:63 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:153:3-153:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:155:23-155:26 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:155:42-155:58 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:155:59-155:67 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:156:3-156:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:158:23-158:26 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:158:42-158:58 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:158:59-158:67 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:159:3-159:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:162:24-162:32 [E4021] The value identifier subtract is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:163:3-163:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:166:21-166:37 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:166:38-166:46 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:167:3-167:12 [E4021] The value identifier assert_eq is unbound.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:152:23-152:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:152:47-152:72 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:152:73-152:90 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:153:3-153:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:155:23-155:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:155:51-155:76 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:155:77-155:94 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:156:3-156:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:158:23-158:35 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:158:51-158:76 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:158:77-158:94 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:159:3-159:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:162:24-162:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:163:3-163:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:166:21-166:46 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:166:47-166:64 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:167:3-167:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/azimuth_enhanced_practical_tests.mbt:173:7-173:22 [E0002] Warning (unused_value): Unused variable 'eur_to_usd_rate'
 clean_test_test/azimuth_enhanced_practical_tests.mbt:174:7-174:22 [E0002] Warning (unused_value): Unused variable 'gbp_to_usd_rate'
 clean_test_test/azimuth_enhanced_practical_tests.mbt:175:7-175:22 [E0002] Warning (unused_value): Unused variable 'jpy_to_usd_rate'
-clean_test_test/azimuth_enhanced_practical_tests.mbt:178:24-178:32 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:179:20-179:36 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:180:3-180:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:183:24-183:32 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:184:20-184:36 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:185:3-185:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:188:24-188:32 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:189:20-189:36 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:190:3-190:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:193:30-193:46 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:193:47-193:55 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:194:3-194:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:208:23-208:31 [E4021] The value identifier subtract is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:211:7-211:15 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:215:3-215:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:218:20-218:28 [E4021] The value identifier subtract is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:221:7-221:15 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:225:3-225:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:228:32-228:35 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:228:53-228:61 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:229:31-229:47 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:230:3-230:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:233:20-233:23 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:234:3-234:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:237:37-237:45 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_enhanced_practical_tests.mbt:238:3-238:14 [E4021] The value identifier assert_true is unbound.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:178:24-178:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:179:20-179:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:180:3-180:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:183:24-183:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:184:20-184:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:185:3-185:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:188:24-188:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:189:20-189:45 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:190:3-190:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:193:30-193:55 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:193:56-193:73 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:194:3-194:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:208:23-208:40 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:211:7-211:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:215:3-215:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:218:20-218:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:221:7-221:24 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:225:3-225:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:228:32-228:44 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:228:62-228:79 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:229:31-229:56 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:230:3-230:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:233:20-233:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:234:3-234:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:237:37-237:54 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_enhanced_practical_tests.mbt:238:3-238:23 [E4020] Package "azimuth" not found in the loaded packages.

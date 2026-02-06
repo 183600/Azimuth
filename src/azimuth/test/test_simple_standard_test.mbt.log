@@ -1,3 +1,3 @@
-clean_test_test/simple_standard_test.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_standard_test.mbt:13:3-13:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/simple_standard_test.mbt:19:3-19:19 [E4021] The value identifier assert_eq_string is unbound.
+clean_test_test/simple_standard_test.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_standard_test.mbt:13:3-13:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/simple_standard_test.mbt:19:3-19:28 [E4020] Package "azimuth" not found in the loaded packages.

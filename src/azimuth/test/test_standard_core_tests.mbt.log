@@ -1,1 +1,82 @@
 clean_test_test/standard_core_tests.mbt:4:18-4:25 [E0002] Warning (unused_value): Unused variable 'inspect'
+clean_test_test/standard_core_tests.mbt:7:4-7:13 [E0001] Warning (unused_value): Unused function 'assert_eq'
+clean_test_test/standard_core_tests.mbt:16:13-16:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_core_tests.mbt:16:29-16:30 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/standard_core_tests.mbt:18:5-18:8 [E4074] Missing type annotation for the return value.
+clean_test_test/standard_core_tests.mbt:18:9-18:10 [E3002] Parse error, unexpected token `_`, you may expect id (lowercase start).
+clean_test_test/standard_core_tests.mbt:18:9-18:10 [E4074] Cannot infer the type of variable , please add more type annotation.
+clean_test_test/standard_core_tests.mbt:26:13-26:16 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_core_tests.mbt:26:16-26:17 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/standard_core_tests.mbt:28:2-28:2 [E4074] Missing type annotation for the return value.
+clean_test_test/standard_core_tests.mbt:30:13-30:21 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_core_tests.mbt:30:21-30:22 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/standard_core_tests.mbt:32:2-32:2 [E4074] Missing type annotation for the return value.
+clean_test_test/standard_core_tests.mbt:34:13-34:18 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_core_tests.mbt:34:18-34:19 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/standard_core_tests.mbt:36:2-36:2 [E4074] Missing type annotation for the return value.
+clean_test_test/standard_core_tests.mbt:38:13-38:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/standard_core_tests.mbt:38:29-38:30 [E3002] Parse error, unexpected token `(`, you may expect `::`.
+clean_test_test/standard_core_tests.mbt:42:5-42:8 [E4074] Missing type annotation for the return value.
+clean_test_test/standard_core_tests.mbt:42:9-42:17 [E0002] Warning (unused_value): Unused toplevel variable 'quotient'. Note if the body contains side effect, it will not happen. Use `fn init { .. }` to wrap the effect.
+clean_test_test/standard_core_tests.mbt:42:9-42:17 [E4074] Cannot infer the type of variable quotient, please add more type annotation.
+clean_test_test/standard_core_tests.mbt:42:20-42:21 [E4021] The value identifier a is unbound.
+clean_test_test/standard_core_tests.mbt:42:24-42:25 [E4021] The value identifier b is unbound.
+clean_test_test/standard_core_tests.mbt:43:9-43:18 [E0002] Warning (unused_value): Unused toplevel variable 'remainder'. Note if the body contains side effect, it will not happen. Use `fn init { .. }` to wrap the effect.
+clean_test_test/standard_core_tests.mbt:43:9-43:18 [E4074] Cannot infer the type of variable remainder, please add more type annotation.
+clean_test_test/standard_core_tests.mbt:43:21-43:22 [E4021] The value identifier a is unbound.
+clean_test_test/standard_core_tests.mbt:43:25-43:26 [E4021] The value identifier b is unbound.
+clean_test_test/standard_core_tests.mbt:44:5-44:7 [E3002] Parse error, unexpected token `if`, you may expect `pub`, `priv`, `type`, `suberror`, `typealias`, `async`, `fn`, `fnalias`, `struct`, `enum`, `let`, `const`, `extern`, `test`, `impl`, `trait`, `traitalias`, `enumview`, `#attribute` or `using`.
+clean_test_test/standard_core_tests.mbt:58:3-58:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:58:25-58:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:59:3-59:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:59:25-59:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:60:3-60:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:60:26-60:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:65:3-65:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:65:25-65:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:66:3-66:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:66:25-66:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:67:3-67:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:67:26-67:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:72:3-72:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:72:46-72:60 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:73:3-73:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:73:48-73:62 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:74:3-74:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:74:41-74:55 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:79:3-79:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:79:25-79:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:80:3-80:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:80:25-80:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:81:3-81:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:81:25-81:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:86:3-86:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:86:26-86:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:87:3-87:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:87:25-87:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:88:3-88:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:88:25-88:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:93:3-93:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:93:25-93:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:94:3-94:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:94:25-94:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:95:3-95:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:95:25-95:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:96:3-96:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:96:25-96:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:101:3-101:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:101:31-101:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:102:3-102:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:102:29-102:46 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:107:16-107:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:107:29-107:46 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:107:54-107:71 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:108:3-108:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:115:22-115:47 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:116:3-116:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:121:3-121:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:121:43-121:57 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:122:3-122:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:122:42-122:56 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:123:3-123:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/standard_core_tests.mbt:123:44-123:58 [E4020] Package "azimuth" not found in the loaded packages.

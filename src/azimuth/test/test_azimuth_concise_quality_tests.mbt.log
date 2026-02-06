@@ -1,76 +1,76 @@
-clean_test_test/azimuth_concise_quality_tests.mbt:6:3-6:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:6:16-6:19 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:7:3-7:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:7:16-7:19 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:8:3-8:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:8:17-8:20 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:9:3-9:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:9:17-9:20 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:14:3-14:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:14:17-14:25 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:15:3-15:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:15:17-15:25 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:16:3-16:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:16:16-16:24 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:17:3-17:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:17:17-17:25 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:22:3-22:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:22:37-22:42 [E4021] The value identifier greet is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:23:3-23:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:23:34-23:39 [E4021] The value identifier greet is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:24:3-24:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:24:33-24:38 [E4021] The value identifier greet is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:25:3-25:19 [E4021] The value identifier assert_eq_string is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:25:32-25:37 [E4021] The value identifier greet is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:30:3-30:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:30:16-30:32 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:31:3-31:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:31:16-31:32 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:32:3-32:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:32:16-32:32 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:33:3-33:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:33:16-33:32 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:38:3-38:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:38:17-38:33 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:39:3-39:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:39:16-39:32 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:40:3-40:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:40:16-40:32 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:41:3-41:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:41:17-41:33 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:46:17-46:20 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:46:21-46:29 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:46:37-46:45 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:47:3-47:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:49:17-49:33 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:49:34-49:37 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:50:3-50:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:57:22-57:38 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:58:3-58:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:61:24-61:32 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:62:3-62:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:71:3-71:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:71:13-71:16 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:71:24-71:27 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:74:3-74:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:74:13-74:21 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:74:29-74:37 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:77:3-77:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:77:16-77:24 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:78:3-78:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:78:16-78:19 [E4021] The value identifier add is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:84:3-84:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:84:16-84:32 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:85:3-85:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:85:16-85:32 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:86:3-86:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:86:16-86:32 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:89:3-89:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:89:16-89:32 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:90:3-90:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:90:22-90:30 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:99:23-99:39 [E4021] The value identifier divide_with_ceil is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:100:3-100:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:103:21-103:29 [E4021] The value identifier multiply is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:104:3-104:12 [E4021] The value identifier assert_eq is unbound.
-clean_test_test/azimuth_concise_quality_tests.mbt:107:3-107:14 [E4021] The value identifier assert_true is unbound.
+clean_test_test/azimuth_concise_quality_tests.mbt:6:3-6:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:6:25-6:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:7:3-7:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:7:25-7:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:8:3-8:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:8:26-8:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:9:3-9:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:9:26-9:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:14:3-14:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:14:26-14:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:15:3-15:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:15:26-15:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:16:3-16:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:16:25-16:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:17:3-17:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:17:26-17:43 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:22:3-22:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:22:46-22:60 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:23:3-23:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:23:43-23:57 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:24:3-24:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:24:42-24:56 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:25:3-25:28 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:25:41-25:55 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:30:3-30:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:30:25-30:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:31:3-31:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:31:25-31:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:32:3-32:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:32:25-32:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:33:3-33:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:33:25-33:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:38:3-38:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:38:26-38:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:39:3-39:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:39:25-39:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:40:3-40:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:40:25-40:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:41:3-41:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:41:26-41:51 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:46:17-46:29 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:46:30-46:47 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:46:55-46:72 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:47:3-47:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:49:17-49:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:49:43-49:55 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:50:3-50:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:57:22-57:47 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:58:3-58:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:61:24-61:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:62:3-62:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:71:3-71:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:71:22-71:34 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:71:42-71:54 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:74:3-74:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:74:22-74:39 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:74:47-74:64 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:77:3-77:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:77:25-77:42 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:78:3-78:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:78:25-78:37 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:84:3-84:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:84:25-84:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:85:3-85:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:85:25-85:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:86:3-86:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:86:25-86:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:89:3-89:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:89:25-89:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:90:3-90:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:90:31-90:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:99:23-99:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:100:3-100:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:103:21-103:38 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:104:3-104:21 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_concise_quality_tests.mbt:107:3-107:23 [E4020] Package "azimuth" not found in the loaded packages.

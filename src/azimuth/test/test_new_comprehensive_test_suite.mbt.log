@@ -32,20 +32,20 @@ clean_test_test/new_comprehensive_test_suite.mbt:53:16-53:33 [E4020] Package "az
 clean_test_test/new_comprehensive_test_suite.mbt:54:16-54:33 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_comprehensive_test_suite.mbt:55:20-55:32 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_comprehensive_test_suite.mbt:57:3-57:21 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/new_comprehensive_test_suite.mbt:62:3-62:14 [E4021] The value identifier assert_true is unbound.
-clean_test_test/new_comprehensive_test_suite.mbt:63:3-63:15 [E4021] The value identifier assert_false is unbound.
+clean_test_test/new_comprehensive_test_suite.mbt:62:3-62:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_comprehensive_test_suite.mbt:63:3-63:24 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_comprehensive_test_suite.mbt:64:3-64:21 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_comprehensive_test_suite.mbt:64:27-64:39 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_comprehensive_test_suite.mbt:65:3-65:28 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_comprehensive_test_suite.mbt:65:45-65:59 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/new_comprehensive_test_suite.mbt:73:3-73:14 [E4021] The value identifier assert_true is unbound.
-clean_test_test/new_comprehensive_test_suite.mbt:73:15-73:27 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/new_comprehensive_test_suite.mbt:74:3-74:14 [E4021] The value identifier assert_true is unbound.
-clean_test_test/new_comprehensive_test_suite.mbt:74:15-74:32 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/new_comprehensive_test_suite.mbt:77:3-77:14 [E4021] The value identifier assert_true is unbound.
-clean_test_test/new_comprehensive_test_suite.mbt:77:15-77:27 [E4020] Package "azimuth" not found in the loaded packages.
-clean_test_test/new_comprehensive_test_suite.mbt:78:3-78:14 [E4021] The value identifier assert_true is unbound.
-clean_test_test/new_comprehensive_test_suite.mbt:78:15-78:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_comprehensive_test_suite.mbt:73:3-73:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_comprehensive_test_suite.mbt:73:24-73:36 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_comprehensive_test_suite.mbt:74:3-74:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_comprehensive_test_suite.mbt:74:24-74:41 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_comprehensive_test_suite.mbt:77:3-77:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_comprehensive_test_suite.mbt:77:24-77:36 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_comprehensive_test_suite.mbt:78:3-78:23 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/new_comprehensive_test_suite.mbt:78:24-78:41 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_comprehensive_test_suite.mbt:83:16-83:28 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_comprehensive_test_suite.mbt:83:29-83:41 [E4020] Package "azimuth" not found in the loaded packages.
 clean_test_test/new_comprehensive_test_suite.mbt:83:49-83:61 [E4020] Package "azimuth" not found in the loaded packages.

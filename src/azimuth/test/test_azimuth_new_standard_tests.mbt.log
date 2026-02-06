@@ -1,0 +1,36 @@
+clean_test_test/azimuth_new_standard_tests.mbt:35:7-35:23 [E0002] Warning (unused_value): Unused variable 'divide_with_ceil'
+clean_test_test/azimuth_new_standard_tests.mbt:54:7-54:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:55:41-55:66 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:57:7-57:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:58:41-58:66 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:60:7-60:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:61:41-61:66 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:65:7-65:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:66:42-66:67 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:68:7-68:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:69:42-69:67 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:71:7-71:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:72:41-72:66 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:76:7-76:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:77:41-77:66 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:79:7-79:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:80:41-80:66 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:82:7-82:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:83:41-83:66 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:89:7-89:12 [E0002] Warning (unused_value): Unused variable 'greet'
+clean_test_test/azimuth_new_standard_tests.mbt:93:17-93:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:98:17-98:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:103:17-103:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:108:17-108:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:113:17-113:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:118:17-118:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:158:7-158:23 [E0002] Warning (unused_value): Unused variable 'divide_with_ceil'
+clean_test_test/azimuth_new_standard_tests.mbt:178:23-178:48 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:219:7-219:23 [E0002] Warning (unused_value): Unused variable 'divide_with_ceil'
+clean_test_test/azimuth_new_standard_tests.mbt:238:25-238:50 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:255:7-255:23 [E0002] Warning (unused_value): Unused variable 'divide_with_ceil'
+clean_test_test/azimuth_new_standard_tests.mbt:273:7-273:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:276:7-276:32 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:292:7-292:12 [E0002] Warning (unused_value): Unused variable 'greet'
+clean_test_test/azimuth_new_standard_tests.mbt:296:17-296:31 [E4020] Package "azimuth" not found in the loaded packages.
+clean_test_test/azimuth_new_standard_tests.mbt:301:17-301:31 [E4020] Package "azimuth" not found in the loaded packages.

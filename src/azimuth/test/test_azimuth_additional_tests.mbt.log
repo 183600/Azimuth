@@ -1,76 +1,111 @@
 clean_test_test/azimuth_additional_tests.mbt:6:3-6:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:6:34-6:41 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:6:12-6:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:7:3-7:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:7:35-7:42 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:7:12-7:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:8:3-8:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:8:25-8:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:8:12-8:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:13:3-13:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:13:34-13:41 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:13:12-13:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:14:3-14:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:14:35-14:42 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:14:12-14:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:15:3-15:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:15:25-15:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:15:12-15:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:20:3-20:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:20:25-20:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:20:12-20:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:21:3-21:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:21:25-21:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:21:12-21:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:22:3-22:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:22:25-22:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:22:12-22:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:23:3-23:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:23:25-23:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:23:12-23:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:24:3-24:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:24:26-24:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:24:12-24:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:29:3-29:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:29:42-29:49 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:29:12-29:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:30:3-30:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:30:44-30:51 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:30:12-30:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:31:3-31:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:31:48-31:55 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:31:12-31:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:32:3-32:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:32:47-32:54 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:32:12-32:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/azimuth_additional_tests.mbt:37:7-37:8 [E0002] Warning (unused_value): Unused variable 'a'
+clean_test_test/azimuth_additional_tests.mbt:38:7-38:8 [E0002] Warning (unused_value): Unused variable 'b'
+clean_test_test/azimuth_additional_tests.mbt:39:7-39:8 [E0002] Warning (unused_value): Unused variable 'c'
+clean_test_test/azimuth_additional_tests.mbt:42:7-42:14 [E0002] Warning (unused_value): Unused variable 'result1'
 clean_test_test/azimuth_additional_tests.mbt:42:17-42:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:42:35-42:42 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:42:26-42:34 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:43:3-43:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:43:12-43:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/azimuth_additional_tests.mbt:46:7-46:14 [E0002] Warning (unused_value): Unused variable 'result2'
 clean_test_test/azimuth_additional_tests.mbt:46:17-46:24 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:46:30-46:37 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:46:26-46:34 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:47:3-47:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:47:12-47:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:52:3-52:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:52:27-52:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:52:12-52:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:53:3-53:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:53:26-53:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:53:12-53:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:54:3-54:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:54:26-54:33 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:54:12-54:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:55:3-55:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:55:25-55:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:55:12-55:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:60:3-60:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:60:25-60:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:60:12-60:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:61:3-61:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:61:29-61:36 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:61:12-61:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:62:3-62:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:62:30-62:37 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:62:12-62:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:63:3-63:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:63:25-63:32 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:63:12-63:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/azimuth_additional_tests.mbt:68:7-68:18 [E0002] Warning (unused_value): Unused variable 'item1_price'
+clean_test_test/azimuth_additional_tests.mbt:69:7-69:21 [E0002] Warning (unused_value): Unused variable 'item1_quantity'
+clean_test_test/azimuth_additional_tests.mbt:70:7-70:18 [E0002] Warning (unused_value): Unused variable 'item2_price'
+clean_test_test/azimuth_additional_tests.mbt:71:7-71:21 [E0002] Warning (unused_value): Unused variable 'item2_quantity'
+clean_test_test/azimuth_additional_tests.mbt:72:7-72:15 [E0002] Warning (unused_value): Unused variable 'discount'
+clean_test_test/azimuth_additional_tests.mbt:74:7-74:16 [E0002] Warning (unused_value): Unused variable 'subtotal1'
 clean_test_test/azimuth_additional_tests.mbt:74:19-74:26 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:74:28-74:36 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/azimuth_additional_tests.mbt:75:7-75:16 [E0002] Warning (unused_value): Unused variable 'subtotal2'
 clean_test_test/azimuth_additional_tests.mbt:75:19-75:26 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:75:28-75:36 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/azimuth_additional_tests.mbt:76:7-76:28 [E0002] Warning (unused_value): Unused variable 'total_before_discount'
 clean_test_test/azimuth_additional_tests.mbt:76:31-76:38 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:76:40-76:48 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/azimuth_additional_tests.mbt:77:7-77:18 [E0002] Warning (unused_value): Unused variable 'final_total'
 clean_test_test/azimuth_additional_tests.mbt:77:21-77:28 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:77:30-77:38 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:79:3-79:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:79:12-79:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:80:3-80:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:80:12-80:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:81:3-81:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:81:12-81:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:82:3-82:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:82:12-82:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/azimuth_additional_tests.mbt:87:7-87:21 [E0002] Warning (unused_value): Unused variable 'total_products'
+clean_test_test/azimuth_additional_tests.mbt:88:7-88:19 [E0002] Warning (unused_value): Unused variable 'box_capacity'
+clean_test_test/azimuth_additional_tests.mbt:89:7-89:29 [E0002] Warning (unused_value): Unused variable 'warehouse_cost_per_box'
+clean_test_test/azimuth_additional_tests.mbt:91:7-91:19 [E0002] Warning (unused_value): Unused variable 'boxes_needed'
 clean_test_test/azimuth_additional_tests.mbt:91:22-91:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:91:31-91:39 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/azimuth_additional_tests.mbt:92:7-92:17 [E0002] Warning (unused_value): Unused variable 'total_cost'
 clean_test_test/azimuth_additional_tests.mbt:92:20-92:27 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:92:29-92:37 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:94:3-94:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:94:12-94:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:95:3-95:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:95:12-95:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/azimuth_additional_tests.mbt:100:7-100:8 [E0002] Warning (unused_value): Unused variable 'x'
+clean_test_test/azimuth_additional_tests.mbt:101:7-101:8 [E0002] Warning (unused_value): Unused variable 'y'
 clean_test_test/azimuth_additional_tests.mbt:104:3-104:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:104:22-104:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:104:42-104:49 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:104:12-104:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:107:3-107:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:107:22-107:29 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:107:47-107:54 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:107:12-107:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/azimuth_additional_tests.mbt:110:7-110:24 [E0002] Warning (unused_value): Unused variable 'distributive_left'
 clean_test_test/azimuth_additional_tests.mbt:110:27-110:34 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:110:48-110:55 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:110:36-110:44 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
+clean_test_test/azimuth_additional_tests.mbt:111:7-111:25 [E0002] Warning (unused_value): Unused variable 'distributive_right'
 clean_test_test/azimuth_additional_tests.mbt:111:28-111:35 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:111:41-111:48 [E3002] Expected upper case identifier for type name, found lower case identifier.
-clean_test_test/azimuth_additional_tests.mbt:111:66-111:73 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:111:37-111:45 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
 clean_test_test/azimuth_additional_tests.mbt:112:3-112:10 [E3002] Expected upper case identifier for type name, found lower case identifier.
+clean_test_test/azimuth_additional_tests.mbt:112:12-112:20 [E3002] Parse error, unexpected token package name, you may expect method name, constructor name, "[" or "{".
