@@ -1,5 +1,6 @@
-// 标准 MoonBit 测试用例 - Azimuth 项目
-// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
+// 标准 MoonBit 测试用例
+// 为 Azimuth 项目添加 10 个高质量测试用例
+// 使用标准 MoonBit 测试语法
 
 test "basic_addition_functionality" {
   // 基本加法功能测试
@@ -89,8 +90,8 @@ test "complex_workflow_calculation" {
   assert_eq(4, sprints_needed)  // ceil(48/15) = 4
 }
 
-test "boundary_and_edge_cases" {
-  // 边界和边缘情况测试
+test "boundary_values_and_edge_cases" {
+  // 边界值和边缘情况测试
   // 除法边界情况
   assert_eq(1, divide_with_ceil(5, 5))
   assert_eq(1, divide_with_ceil(-5, -5))
