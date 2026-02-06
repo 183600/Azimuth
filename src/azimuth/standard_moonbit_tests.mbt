@@ -1,94 +1,105 @@
-// 标准 MoonBit 测试用例 - 为 Azimuth 项目添加
-// 包含8个高质量测试用例，使用标准 MoonBit 测试语法
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-test "arithmetic_addition_comprehensive" {
-  // 加法运算综合测试
-  assert_eq(8, add(3, 5))
-  assert_eq(0, add(0, 0))
-  assert_eq(-2, add(-5, 3))
-  assert_eq(100, add(50, 50))
-  assert_eq(-100, add(-50, -50))
+///|
+test "array basic operations" {
+  let arr = [1, 2, 3, 4, 5]
+  inspect(arr.length(), content="5")
+  inspect(arr[0], content="1")
+  inspect(arr[4], content="5")
 }
 
-test "arithmetic_multiplication_comprehensive" {
-  // 乘法运算综合测试
-  assert_eq(15, multiply(3, 5))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(10000, multiply(100, 100))
+///|
+test "string concatenation" {
+  let s1 = "Hello"
+  let s2 = "World"
+  inspect(s1 + " " + s2, content="Hello World")
+  inspect("abc".length(), content="3")
 }
 
-test "divide_with_ceil_positive_scenarios" {
-  // 向上取整除法正数场景测试
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 5))
-  assert_eq(0, divide_with_ceil(0, 10))
-  assert_eq(0, divide_with_ceil(10, 0))
+///|
+test "option basic operations" {
+  let some_value : Int? = Some(42)
+  let none_value : Int? = None
+  
+  inspect(some_value.is_some(), content="true")
+  inspect(some_value.is_none(), content="false")
+  inspect(none_value.is_some(), content="false")
+  inspect(none_value.is_none(), content="true")
 }
 
-test "divide_with_ceil_negative_scenarios" {
-  // 向上取整除法负数场景测试
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-4, divide_with_ceil(10, -3))
-  assert_eq(3, divide_with_ceil(-10, -3))
-  assert_eq(-1, divide_with_ceil(-1, 2))
-  assert_eq(1, divide_with_ceil(-1, -2))
+///|
+test "result basic operations" {
+  let success : Result[Int, String] = Ok(42)
+  let error : Result[Int, String] = Err("Error")
+  
+  inspect(success.is_ok(), content="true")
+  inspect(success.is_err(), content="false")
+  inspect(error.is_ok(), content="false")
+  inspect(error.is_err(), content="true")
 }
 
-test "greet_function_various_inputs" {
-  // 问候函数各种输入测试
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 中文!", greet("中文"))
+///|
+test "int arithmetic operations" {
+  inspect(10 + 5, content="15")
+  inspect(10 - 5, content="5")
+  inspect(10 * 5, content="50")
+  inspect(10 / 3, content="3")
+  inspect(10 % 3, content="1")
 }
 
-test "mathematical_commutative_properties" {
-  // 数学交换律性质测试
-  let a = 12
-  let b = 7
-  
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 验证具体数值
-  assert_eq(19, add(12, 7))
-  assert_eq(84, multiply(12, 7))
+///|
+test "int comparison operations" {
+  inspect(10 > 5, content="true")
+  inspect(10 < 5, content="false")
+  inspect(10 >= 10, content="true")
+  inspect(10 <= 5, content="false")
+  inspect(10 == 10, content="true")
+  inspect(10 != 5, content="true")
 }
 
-test "business_packaging_calculation" {
-  // 业务包装计算测试
-  let total_items = 35
-  let items_per_package = 8
-  let packages_needed = divide_with_ceil(total_items, items_per_package)
-  
-  assert_eq(5, packages_needed)
-  
-  // 验证总容量
-  let total_capacity = multiply(packages_needed, items_per_package)
-  assert_eq(40, total_capacity)
-  
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_items)
-  assert_eq(5, remaining_space)
+///|
+test "int bit operations" {
+  inspect(10 & 12, content="8")
+  inspect(10 | 12, content="14")
+  inspect(10 ^ 12, content="6")
+  inspect(~10, content="-11")
+  inspect(10 << 2, content="40")
+  inspect(10 >> 2, content="2")
 }
 
-test "complex_workflow_calculation" {
-  // 复杂工作流计算测试
-  // 场景：项目资源计算
-  let team_members = 6
-  let tasks_per_member = 8
-  let total_tasks = multiply(team_members, tasks_per_member)
+///|
+test "boolean operations" {
+  inspect(true && true, content="true")
+  inspect(true && false, content="false")
+  inspect(true || false, content="true")
+  inspect(false || false, content="false")
+  inspect(!true, content="false")
+  inspect(!false, content="true")
+}
+
+///|
+test "char operations" {
+  let char_a = 'a'
+  let char_A = 'A'
   
-  let sprint_capacity = 15
-  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
-  
-  assert_eq(48, total_tasks)  // 6 * 8 = 48
-  assert_eq(4, sprints_needed)  // ceil(48/15) = 4
+  inspect(char_a.to_string(), content="\"a\"")
+  inspect(char_A.to_string(), content="\"A\"")
+}
+
+///|
+test "int overflow behavior" {
+  inspect(2147483647 + 1, content="-2147483648")
+  inspect(-2147483648 - 1, content="2147483647")
 }
