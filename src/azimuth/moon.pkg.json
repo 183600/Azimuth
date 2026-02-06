@@ -343,7 +343,8 @@
     "azimuth_enhanced_test_suite.mbt",
     "professional_standard_tests.mbt",
     "essential_test_cases.mbt",
-    "standard_test_cases.mbt"
+    "standard_test_cases.mbt",
+    "azimuth_professional_tests.mbt"
   ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
     "new_advanced_tests.mbt",
