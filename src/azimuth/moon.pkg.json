@@ -14,6 +14,7 @@
     "moonbitlang/core/int"
   ],
   "test": [
+    "concise_essential_tests.mbt",
     "basic_arithmetic_tests.mbt",
     "simple_standard_tests.mbt",
     "additional_standard_moonbit_tests.mbt",
