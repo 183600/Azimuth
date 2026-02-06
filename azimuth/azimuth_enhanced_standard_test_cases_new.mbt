@@ -1,8 +1,8 @@
-// Azimuth 项目新增标准测试用例
+// Azimuth 项目增强标准测试用例
 // 包含 10 个高质量的 MoonBit 测试用例
 // 测试基本数学运算、字符串处理和业务逻辑场景
 
-test "standard_add_function_comprehensive" {
+test "enhanced_add_function_comprehensive" {
   // 加法函数综合测试
   assert_eq(10, add(7, 3))
   assert_eq(0, add(0, 0))
@@ -10,7 +10,7 @@ test "standard_add_function_comprehensive" {
   assert_eq(1000, add(500, 500))
 }
 
-test "standard_multiply_function_edge_cases" {
+test "enhanced_multiply_function_edge_cases" {
   // 乘法函数边界情况测试
   assert_eq(25, multiply(5, 5))
   assert_eq(0, multiply(100, 0))
@@ -18,7 +18,7 @@ test "standard_multiply_function_edge_cases" {
   assert_eq(30, multiply(-6, -5))
 }
 
-test "standard_divide_with_ceil_positive" {
+test "enhanced_divide_with_ceil_positive" {
   // 向上取整除法正数测试
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
@@ -26,7 +26,7 @@ test "standard_divide_with_ceil_positive" {
   assert_eq(0, divide_with_ceil(0, 5))
 }
 
-test "standard_divide_with_ceil_negative" {
+test "enhanced_divide_with_ceil_negative" {
   // 向上取整除法负数测试
   assert_eq(-3, divide_with_ceil(-10, 3))
   assert_eq(-4, divide_with_ceil(10, -3))
@@ -34,7 +34,7 @@ test "standard_divide_with_ceil_negative" {
   assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "standard_greet_function_various_inputs" {
+test "enhanced_greet_function_various_inputs" {
   // 问候函数各种输入测试
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, World!", greet("World"))
@@ -42,7 +42,7 @@ test "standard_greet_function_various_inputs" {
   assert_eq_string("Hello, 123!", greet("123"))
 }
 
-test "standard_subtract_function_comprehensive" {
+test "enhanced_subtract_function_comprehensive" {
   // 减法函数综合测试
   assert_eq(5, subtract(10, 5))
   assert_eq(-5, subtract(5, 10))
@@ -50,7 +50,7 @@ test "standard_subtract_function_comprehensive" {
   assert_eq(20, subtract(10, -10))
 }
 
-test "standard_mathematical_properties" {
+test "enhanced_mathematical_properties" {
   // 数学性质验证测试
   let a = 12
   let b = 8
@@ -62,7 +62,7 @@ test "standard_mathematical_properties" {
   assert_eq(multiply(a, b), multiply(b, a))
 }
 
-test "standard_packaging_business_scenario" {
+test "enhanced_packaging_business_scenario" {
   // 包装业务场景测试
   let total_items = 35
   let items_per_package = 8
@@ -79,7 +79,7 @@ test "standard_packaging_business_scenario" {
   assert_eq(5, remaining_space)
 }
 
-test "standard_complex_workflow_calculation" {
+test "enhanced_complex_workflow_calculation" {
   // 复杂工作流计算测试
   // 场景：项目资源计算
   let team_members = 6
@@ -93,7 +93,7 @@ test "standard_complex_workflow_calculation" {
   assert_eq(4, sprints_needed)  // ceil(48/15) = 4
 }
 
-test "standard_boundary_and_edge_cases" {
+test "enhanced_boundary_and_edge_cases" {
   // 边界和边缘情况测试
   // 除法边界情况
   assert_eq(1, divide_with_ceil(5, 5))
