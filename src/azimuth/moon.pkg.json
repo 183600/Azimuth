@@ -351,7 +351,8 @@
     "standard_moonbit_tests.mbt"",
     "essential_test_cases.mbt",
     "standard_test_cases.mbt",
-    "azimuth_professional_tests.mbt"
+    "azimuth_professional_tests.mbt",
+    "enhanced_practical_test_cases.mbt"
   ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
     "new_advanced_tests.mbt",
@@ -656,4 +657,5 @@
     "quality_standard_tests.mbt",
     "user_minimal_test.mbt",
     "essential_test_cases.mbt",
-    "professional_moonbit_tests.mbt"                                                                                                                                           ]}
+    "professional_moonbit_tests.mbt",
+    "enhanced_practical_test_cases.mbt"                                                                                                                                           ]}
