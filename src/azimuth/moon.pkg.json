@@ -648,4 +648,5 @@
     "standard_comprehensive_tests.mbt",
     "quality_standard_tests.mbt",
     "user_minimal_test.mbt",
-    "essential_test_cases.mbt"                                                                                                                                           ]}
+    "essential_test_cases.mbt",
+    "professional_moonbit_tests.mbt"                                                                                                                                           ]}
