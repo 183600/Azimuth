@@ -1,136 +1,125 @@
-// 标准 MoonBit 测试用例 - 为 Azimuth 项目添加
-// 使用标准 MoonBit 测试语法，包含10个高质量测试用例
+// 标准 MoonBit 测试用例 - 专注于核心功能和边界情况
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  assert_eq(8, add(3, 5))
-  assert_eq(15, multiply(3, 5))
-  assert_eq(3, divide_with_ceil(15, 5))
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(2, subtract(7, 5))
+test "addition_communicative_property" {
+  // 测试加法交换律
+  assert_eq(add(7, 12), add(12, 7))
+  assert_eq(add(-5, 10), add(10, -5))
+  assert_eq(add(-3, -8), add(-8, -3))
+  assert_eq(add(0, 15), add(15, 0))
 }
 
-test "mathematical_properties" {
-  // 数学性质验证测试
-  let a = 12
-  let b = 8
-  
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 验证具体数值
-  assert_eq(20, add(12, 8))
-  assert_eq(96, multiply(12, 8))
-}
-
-test "boundary_edge_cases" {
-  // 边界和边缘情况测试
-  // 零值测试
-  assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(10, 0))
-  
-  // 单位值测试
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(5, add(5, 0))
-  assert_eq(5, multiply(5, 1))
-}
-
-test "negative_numbers_handling" {
-  // 负数处理测试
-  assert_eq(-8, add(-3, -5))
-  assert_eq(2, add(-3, 5))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(-2, divide_with_ceil(-8, 3))
-  assert_eq(3, divide_with_ceil(-8, -3))
-}
-
-test "greet_function_various_inputs" {
-  // 问候函数各种输入测试
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 中文!", greet("中文"))
-}
-
-test "business_packaging_scenario" {
-  // 业务包装场景测试
-  let total_items = 35
-  let items_per_package = 8
-  let packages_needed = divide_with_ceil(total_items, items_per_package)
-  
-  assert_eq(5, packages_needed)
-  
-  // 验证总容量
-  let total_capacity = multiply(packages_needed, items_per_package)
-  assert_eq(40, total_capacity)
-  
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_items)
-  assert_eq(5, remaining_space)
-}
-
-test "complex_workflow_calculation" {
-  // 复杂工作流计算测试
-  // 场景：项目资源计算
-  let team_members = 6
-  let tasks_per_member = 8
-  let total_tasks = multiply(team_members, tasks_per_member)
-  
-  let sprint_capacity = 15
-  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
-  
-  assert_eq(48, total_tasks)  // 6 * 8 = 48
-  assert_eq(4, sprints_needed)  // ceil(48/15) = 4
-}
-
-test "large_number_operations" {
-  // 大数运算测试
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(1000000, multiply(1000, 1000))
-  assert_eq(1001, divide_with_ceil(1000000, 999))
-  assert_eq(500000, subtract(1000000, 500000))
-}
-
-test "mathematical_distributive_property" {
-  // 数学分配律测试
+test "multiply_distributive_property" {
+  // 测试乘法分配律
   let a = 6
   let b = 4
   let c = 3
+  
+  // a * (b + c) = a * b + a * c
   let left_side = multiply(a, add(b, c))
   let right_side = add(multiply(a, b), multiply(a, c))
-  assert_eq(left_side, right_side)  // 6*(4+3) = 6*4 + 6*3 = 42
+  
+  assert_eq(left_side, right_side)
 }
 
-test "real_world_event_planning" {
-  // 真实世界事件规划测试
-  let attendees = 250
-  let chairs_per_table = 8
-  let cost_per_chair = 15
-  let total_budget = 4000
+test "divide_with_ceil_precision" {
+  // 测试向上取整除法的精度
+  assert_eq(divide_with_ceil(1, 2), 1)
+  assert_eq(divide_with_ceil(3, 2), 2)
+  assert_eq(divide_with_ceil(5, 2), 3)
+  assert_eq(divide_with_ceil(7, 3), 3)
+  assert_eq(divide_with_ceil(10, 3), 4)
+  assert_eq(divide_with_ceil(100, 9), 12)
+}
+
+test "subtract_negative_numbers" {
+  // 测试负数减法的各种情况
+  assert_eq(subtract(5, -3), 8)
+  assert_eq(subtract(-5, 3), -8)
+  assert_eq(subtract(-5, -3), -2)
+  assert_eq(subtract(0, -7), 7)
+  assert_eq(subtract(-7, 0), -7)
+}
+
+test "greet_function_variations" {
+  // 测试问候函数的各种输入情况
+  assert_eq_string(greet("Alice"), "Hello, Alice!")
+  assert_eq_string(greet("Bob"), "Hello, Bob!")
+  assert_eq_string(greet("世界"), "Hello, 世界!")
+  assert_eq_string(greet("123"), "Hello, 123!")
+  assert_eq_string(greet("!@#$"), "Hello, !@#$!")
+}
+
+test "complex_calculation_sequence" {
+  // 测试复杂计算序列
+  let initial = 100
   
-  // 计算需要的桌子数量
-  let tables_needed = divide_with_ceil(attendees, chairs_per_table)
-  assert_eq(32, tables_needed)
+  // 连续操作：先加法，再乘法，最后减法
+  let step1 = add(initial, 25)  // 125
+  let step2 = multiply(step1, 2)  // 250
+  let step3 = subtract(step2, 50)  // 200
   
-  // 计算总座位数
-  let total_seats = multiply(tables_needed, chairs_per_table)
-  assert_eq(256, total_seats)
+  // 另一个计算路径
+  let alt_path = multiply(add(initial, 75), 2)  // 350
   
-  // 计算总成本
-  let total_cost = multiply(total_seats, cost_per_chair)
-  assert_eq(3840, total_cost)
+  assert_eq(step3, 200)
+  assert_eq(alt_path, 350)
+}
+
+test "zero_division_edge_cases" {
+  // 测试零除法的边界情况
+  assert_eq(divide_with_ceil(0, 1), 0)
+  assert_eq(divide_with_ceil(0, -1), 0)
+  assert_eq(divide_with_ceil(0, 100), 0)
+  assert_eq(divide_with_ceil(0, -100), 0)
+  assert_eq(divide_with_ceil(0, 0), 0)
+  assert_eq(divide_with_ceil(50, 0), 0)
+  assert_eq(divide_with_ceil(-50, 0), 0)
+}
+
+test "mathematical_series_calculation" {
+  // 测试数学级数计算
+  // 等差数列：1 + 3 + 5 + 7 + 9 = 25
+  let arithmetic_sum = add(add(add(add(1, 3), 5), 7), 9)
   
-  // 验证预算充足
-  assert_true(total_cost <= total_budget)
+  // 等比数列：2 + 4 + 8 + 16 = 30
+  let geometric_sum = add(add(add(2, 4), 8), 16)
   
-  // 计算剩余预算
-  let remaining_budget = subtract(total_budget, total_cost)
-  assert_eq(160, remaining_budget)
+  // 验证平方数：5² = 25
+  let square_of_five = multiply(5, 5)
+  
+  assert_eq(arithmetic_sum, 25)
+  assert_eq(geometric_sum, 30)
+  assert_eq(square_of_five, 25)
+}
+
+test "string_length_edge_cases" {
+  // 测试字符串长度相关的边界情况
+  let empty_name = ""
+  let single_char = "A"
+  let long_name = "VeryLongNameWithManyCharacters"
+  
+  assert_eq_string(greet(empty_name), "Hello, !")
+  assert_eq_string(greet(single_char), "Hello, A!")
+  assert_eq_string(greet(long_name), "Hello, VeryLongNameWithManyCharacters!")
+}
+
+test "financial_calculation_simulation" {
+  // 测试金融计算模拟
+  let principal = 1000
+  let interest_rate = 5  // 5%
+  
+  // 计算一年利息（向上取整）
+  let yearly_interest = divide_with_ceil(multiply(principal, interest_rate), 100)
+  
+  // 计算本息合计
+  let total_with_interest = add(principal, yearly_interest)
+  
+  // 计算复利（第二年）
+  let second_year_interest = divide_with_ceil(multiply(total_with_interest, interest_rate), 100)
+  let two_year_total = add(total_with_interest, second_year_interest)
+  
+  assert_eq(yearly_interest, 50)
+  assert_eq(total_with_interest, 1050)
+  assert_eq(second_year_interest, 53)
+  assert_eq(two_year_total, 1103)
 }
