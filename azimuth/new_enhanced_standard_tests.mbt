@@ -1,24 +1,26 @@
-// 增强 MoonBit 标准测试用例
+// 新增强 MoonBit 标准测试用例
 // 为 azimuth 库添加的 10 个高质量测试用例
 
-test "basic_arithmetic_addition" {
-  // 基本加法运算测试
+test "enhanced_basic_arithmetic_addition" {
+  // 增强基本加法运算测试
   @azimuth.assert_eq(8, @azimuth.add(3, 5))
   @azimuth.assert_eq(0, @azimuth.add(0, 0))
   @azimuth.assert_eq(-2, @azimuth.add(-5, 3))
   @azimuth.assert_eq(100, @azimuth.add(50, 50))
+  @azimuth.assert_eq(-100, @azimuth.add(-50, -50))
 }
 
-test "basic_arithmetic_multiplication" {
-  // 基本乘法运算测试
+test "enhanced_basic_arithmetic_multiplication" {
+  // 增强基本乘法运算测试
   @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
   @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
   @azimuth.assert_eq(-15, @azimuth.multiply(-3, 5))
   @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
+  @azimuth.assert_eq(10000, @azimuth.multiply(100, 100))
 }
 
-test "divide_with_ceil_basic" {
-  // 向上取整除法基本测试
+test "enhanced_divide_with_ceil_comprehensive" {
+  // 增强向上取整除法综合测试
   @azimuth.assert_eq(3, @azimuth.divide_with_ceil(8, 3))
   @azimuth.assert_eq(2, @azimuth.divide_with_ceil(6, 3))
   @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 5))
@@ -26,36 +28,51 @@ test "divide_with_ceil_basic" {
   @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
 }
 
-test "greet_function_standard" {
-  // 问候函数标准测试
+test "enhanced_divide_with_ceil_negative_scenarios" {
+  // 增强向上取整除法负数场景测试
+  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-8, 3))
+  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(8, -3))
+  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(-8, -3))
+  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-1, 2))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-1, -2))
+}
+
+test "enhanced_greet_function_various_inputs" {
+  // 增强问候函数各种输入测试
   @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
   @azimuth.assert_eq_string("Hello, World!", @azimuth.greet("World"))
   @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
   @azimuth.assert_eq_string("Hello, 123!", @azimuth.greet("123"))
+  @azimuth.assert_eq_string("Hello, 中文!", @azimuth.greet("中文"))
 }
 
-test "subtract_function_basic" {
-  // 减法函数基本测试
+test "enhanced_subtract_function_comprehensive" {
+  // 增强减法函数综合测试
   @azimuth.assert_eq(5, @azimuth.subtract(10, 5))
   @azimuth.assert_eq(-5, @azimuth.subtract(5, 10))
   @azimuth.assert_eq(0, @azimuth.subtract(15, 15))
   @azimuth.assert_eq(20, @azimuth.subtract(10, -10))
+  @azimuth.assert_eq(-20, @azimuth.subtract(-10, 10))
 }
 
-test "mathematical_commutative_laws" {
-  // 数学交换律测试
+test "enhanced_mathematical_properties_validation" {
+  // 增强数学性质验证测试
   let a = 12
-  let b = 7
+  let b = 8
   
   // 加法交换律
   @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
   
   // 乘法交换律
   @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
+  
+  // 验证具体数值
+  @azimuth.assert_eq(20, @azimuth.add(12, 8))
+  @azimuth.assert_eq(96, @azimuth.multiply(12, 8))
 }
 
-test "packaging_calculation_scenario" {
-  // 包装计算场景测试
+test "enhanced_business_packaging_scenario" {
+  // 增强业务包装场景测试
   let total_items = 35
   let items_per_package = 8
   let packages_needed = @azimuth.divide_with_ceil(total_items, items_per_package)
@@ -71,17 +88,9 @@ test "packaging_calculation_scenario" {
   @azimuth.assert_eq(5, remaining_space)
 }
 
-test "divide_with_ceil_negative_numbers" {
-  // 向上取整除法负数测试
-  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-8, 3))
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(8, -3))
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(-8, -3))
-  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(-1, 2))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-1, -2))
-}
-
-test "complex_workflow_calculation" {
-  // 复杂工作流计算测试
+test "enhanced_complex_workflow_calculation" {
+  // 增强复杂工作流计算测试
+  // 场景：项目资源计算
   let team_members = 6
   let tasks_per_member = 8
   let total_tasks = @azimuth.multiply(team_members, tasks_per_member)
@@ -93,8 +102,8 @@ test "complex_workflow_calculation" {
   @azimuth.assert_eq(4, sprints_needed)  // ceil(48/15) = 4
 }
 
-test "boundary_and_edge_cases" {
-  // 边界和边缘情况测试
+test "enhanced_boundary_and_edge_cases" {
+  // 增强边界和边缘情况测试
   // 除法边界情况
   @azimuth.assert_eq(1, @azimuth.divide_with_ceil(5, 5))
   @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-5, -5))
