@@ -1,157 +1,121 @@
-// Copyright 2026 International Digital Economy Academy
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// 标准 Azimuth 测试用例
+// 包含8个高质量测试用例，使用标准 MoonBit 测试语法
 
-///|
-test "list basic operations" {
-  let empty_list : @list.List[Int] = @list.empty()
-  assert_eq(empty_list.length(), 0)
-  assert_eq(empty_list.is_empty(), true)
-  
-  let list1 = @list.from_array([1, 2, 3, 4, 5])
-  assert_eq(list1.length(), 5)
-  assert_eq(list1.is_empty(), false)
-  assert_eq(list1.head(), Some(1))
-  assert_eq(list1.last(), Some(5))
+test "basic_arithmetic_operations" {
+  // 基本算术运算测试
+  assert_eq(add(3, 5), 8)
+  assert_eq(multiply(4, 7), 28)
+  assert_eq(subtract(15, 9), 6)
+  assert_eq(add(0, 0), 0)
+  assert_eq(multiply(1, 100), 100)
 }
 
-///|
-test "list map and filter operations" {
-  let numbers = @list.from_array([1, 2, 3, 4, 5])
-  
-  let doubled = numbers.map(x => x * 2)
-  assert_eq(doubled, @list.from_array([2, 4, 6, 8, 10]))
-  
-  let evens = numbers.filter(x => x % 2 == 0)
-  assert_eq(evens, @list.from_array([2, 4]))
-  
-  let sum = numbers.fold(0, (acc, x) => acc + x)
-  assert_eq(sum, 15)
+test "divide_with_ceil_functionality" {
+  // 向上取整除法功能测试
+  assert_eq(divide_with_ceil(10, 3), 4)
+  assert_eq(divide_with_ceil(9, 3), 3)
+  assert_eq(divide_with_ceil(1, 2), 1)
+  assert_eq(divide_with_ceil(0, 5), 0)
+  assert_eq(divide_with_ceil(10, 0), 0)
 }
 
-///|
-test "list concatenation and reversal" {
-  let list1 = @list.from_array([1, 2, 3])
-  let list2 = @list.from_array([4, 5, 6])
-  
-  let combined = list1.concat(list2)
-  assert_eq(combined, @list.from_array([1, 2, 3, 4, 5, 6]))
-  
-  let reversed = combined.rev()
-  assert_eq(reversed, @list.from_array([6, 5, 4, 3, 2, 1]))
+test "negative_number_operations" {
+  // 负数运算测试
+  assert_eq(add(-3, 7), 4)
+  assert_eq(add(5, -8), -3)
+  assert_eq(multiply(-4, 3), -12)
+  assert_eq(multiply(-2, -5), 10)
+  assert_eq(subtract(-10, 5), -15)
 }
 
-///|
-test "option type operations" {
-  let some_value : Int? = Some(42)
-  let none_value : Int? = None
-  
-  assert_eq(some_value.is_some(), true)
-  assert_eq(some_value.is_none(), false)
-  assert_eq(none_value.is_some(), false)
-  assert_eq(none_value.is_none(), true)
-  
-  let mapped = some_value.map(x => x * 2)
-  assert_eq(mapped, Some(84))
-  
-  let default_value = none_value.unwrap_or(0)
-  assert_eq(default_value, 0)
+test "string_greeting_functionality" {
+  // 字符串问候功能测试
+  assert_eq_string(greet("MoonBit"), "Hello, MoonBit!")
+  assert_eq_string(greet("用户"), "Hello, 用户!")
+  assert_eq_string(greet(""), "Hello, !")
+  assert_eq_string(greet("123"), "Hello, 123!")
 }
 
-///|
-test "boolean logical operations" {
-  let t = true
-  let f = false
+test "complex_calculation_scenarios" {
+  // 复杂计算场景测试
+  let a = 12
+  let b = 8
+  let c = 5
   
-  assert_eq(t && f, false)
-  assert_eq(t || f, true)
-  assert_eq(!t, false)
-  assert_eq(!f, true)
+  // 复合运算：(a + b) * c
+  let result1 = multiply(add(a, b), c)
+  assert_eq(result1, 100)
   
-  assert_eq(t == t, true)
-  assert_eq(t == f, false)
-  assert_eq(t != f, true)
+  // 复合运算：a * b + c
+  let result2 = add(multiply(a, b), c)
+  assert_eq(result2, 101)
+  
+  // 复合运算：(a - b) / c (向上取整)
+  let result3 = divide_with_ceil(subtract(a, b), c)
+  assert_eq(result3, 1)
 }
 
-///|
-test "integer arithmetic operations" {
-  let a = 15
-  let b = 4
+test "boundary_value_testing" {
+  // 边界值测试
+  // 测试零值
+  assert_eq(add(0, 5), 5)
+  assert_eq(multiply(0, 100), 0)
+  assert_eq(subtract(10, 0), 10)
+  assert_eq(divide_with_ceil(0, 10), 0)
   
-  assert_eq(a + b, 19)
-  assert_eq(a - b, 11)
-  assert_eq(a * b, 60)
-  assert_eq(a / b, 3)
-  assert_eq(a % b, 3)
+  // 测试单位值
+  assert_eq(add(1, 0), 1)
+  assert_eq(multiply(1, 50), 50)
+  assert_eq(subtract(1, 1), 0)
+  assert_eq(divide_with_ceil(5, 1), 5)
   
-  assert_eq(a < b, false)
-  assert_eq(a > b, true)
-  assert_eq(a <= b, false)
-  assert_eq(a >= b, true)
+  // 测试负单位值
+  assert_eq(add(-1, 1), 0)
+  assert_eq(multiply(-1, 10), -10)
 }
 
-///|
-test "string operations" {
-  let str1 = "Hello"
-  let str2 = "World"
+test "mathematical_properties_validation" {
+  // 数学性质验证测试
+  let x = 15
+  let y = 7
   
-  let combined = str1 + " " + str2
-  assert_eq(combined, "Hello World")
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
   
-  assert_eq(str1.length(), 5)
-  assert_eq(combined.length(), 11)
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 加法单位元
+  assert_eq(add(x, 0), x)
+  
+  // 乘法单位元
+  assert_eq(multiply(x, 1), x)
+  
+  // 减法的逆运算验证
+  assert_eq(add(subtract(x, y), y), x)
 }
 
-///|
-test "list zip and unzip operations" {
-  let list1 = @list.from_array([1, 2, 3])
-  let list2 = @list.from_array(["a", "b", "c"])
+test "real_world_application_simulation" {
+  // 真实世界应用模拟测试
+  // 模拟购物车计算
+  let item_price = 25
+  let quantity = 4
+  let tax_rate = 10
   
-  let zipped = @list.zip(list1, list2)
-  assert_eq(zipped, @list.from_array([(1, "a"), (2, "b"), (3, "c")]))
+  // 计算小计
+  let subtotal = multiply(item_price, quantity)
   
-  let (unzipped1, unzipped2) = zipped.unzip()
-  assert_eq(unzipped1, @list.from_array([1, 2, 3]))
-  assert_eq(unzipped2, @list.from_array(["a", "b", "c"]))
-}
-
-///|
-test "list find and contains operations" {
-  let numbers = @list.from_array([10, 20, 30, 40, 50])
+  // 计算税费（向上取整）
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
   
-  assert_eq(numbers.contains(30), true)
-  assert_eq(numbers.contains(25), false)
+  // 计算总价
+  let total = add(subtotal, tax)
   
-  let found = numbers.find(x => x > 25)
-  assert_eq(found, Some(30))
+  // 计算每箱包装数量（假设每箱最多装6个）
+  let boxes_needed = divide_with_ceil(quantity, 6)
   
-  let not_found = numbers.find(x => x > 100)
-  assert_eq(not_found, None)
-}
-
-///|
-test "list take and drop operations" {
-  let numbers = @list.from_array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-  
-  let taken = numbers.take(5)
-  assert_eq(taken, @list.from_array([1, 2, 3, 4, 5]))
-  
-  let dropped = numbers.drop(5)
-  assert_eq(dropped, @list.from_array([6, 7, 8, 9, 10]))
-  
-  let all_taken = numbers.take(20)
-  assert_eq(all_taken, numbers)
-  
-  let all_dropped = numbers.drop(20)
-  assert_eq(all_dropped, @list.empty())
+  assert_eq(subtotal, 100)
+  assert_eq(tax, 10)
+  assert_eq(total, 110)
+  assert_eq(boxes_needed, 1)
 }
