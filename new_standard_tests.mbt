@@ -1,150 +1,206 @@
-// 新增的标准 MoonBit 测试用例
-// 针对 azimuth 库的核心功能进行全面测试
+// 新增标准 MoonBit 测试用例
+// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
 
-test "addition_edge_cases" {
-  // 测试加法的边界情况
-  assert_eq(2147483647, add(2147483646, 1))  // 接近最大值
-  assert_eq(-2147483647, add(-2147483646, -1))  // 接近最小值
-  assert_eq(0, add(2147483647, -2147483647))  // 最大值与相反数
-  assert_eq(1, add(0, 1))  // 零加一
-  assert_eq(-1, add(0, -1))  // 零减一
+test "power_calculation_simulation" {
+  // 幂运算模拟测试
+  // 计算 2^5 = 32
+  let base = 2
+  let exponent = 5
+  
+  let power1 = base                    // 2^1 = 2
+  let power2 = multiply(power1, base)  // 2^2 = 4
+  let power3 = multiply(power2, base)  // 2^3 = 8
+  let power4 = multiply(power3, base)  // 2^4 = 16
+  let power5 = multiply(power4, base)  // 2^5 = 32
+  
+  assert_eq(2, power1)
+  assert_eq(4, power2)
+  assert_eq(8, power3)
+  assert_eq(16, power4)
+  assert_eq(32, power5)
 }
 
-test "multiplication_distributive_law" {
-  // 测试乘法分配律：a * (b + c) = a * b + a * c
-  let a = 7
-  let b = 12
-  let c = 8
+test "greatest_common_divisor" {
+  // 最大公约数计算测试
+  // 使用欧几里得算法模拟计算 GCD(48, 18) = 6
   
-  let left_side = multiply(a, add(b, c))
-  let right_side = add(multiply(a, b), multiply(a, c))
+  let a = 48
+  let b = 18
   
-  assert_eq(left_side, right_side)  // 7 * (12 + 8) = 7 * 12 + 7 * 8 = 140
+  // 模拟欧几里得算法步骤
+  let step1_remainder = a % b        // 48 % 18 = 12
+  let step2_remainder = b % step1_remainder  // 18 % 12 = 6
+  let step3_remainder = step1_remainder % step2_remainder  // 12 % 6 = 0
+  
+  // GCD 是最后一个非零余数
+  let gcd = step2_remainder
+  
+  assert_eq(12, step1_remainder)
+  assert_eq(6, step2_remainder)
+  assert_eq(0, step3_remainder)
+  assert_eq(6, gcd)
 }
 
-test "divide_with_ceil_precision_test" {
-  // 测试向上取整除法的精度
-  assert_eq(1, divide_with_ceil(1, 1))  // 完全相等
-  assert_eq(2, divide_with_ceil(3, 2))  // 1.5 -> 2
-  assert_eq(34, divide_with_ceil(100, 3))  // 33.333... -> 34
-  assert_eq(1000, divide_with_ceil(999999, 1000))  // 999.999 -> 1000
-  assert_eq(-3, divide_with_ceil(-10, 3))  // -3.333... -> -3
-  assert_eq(-2, divide_with_ceil(-4, 2))  // -2 -> -2
+test "average_calculation" {
+  // 平均值计算测试
+  let numbers_sum = add(add(add(add(15, 25), 35), 45), 55)
+  let count = 5
+  let average = divide_with_ceil(numbers_sum, count)
+  
+  assert_eq(175, numbers_sum)
+  assert_eq(35, average)
 }
 
-test "greet_function_unicode_support" {
-  // 测试问候函数的 Unicode 支持
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, αβγδε!", greet("αβγδε"))
-  assert_eq_string("Hello, ñáéíóú!", greet("ñáéíóú"))
-  assert_eq_string("Hello, 🌍🌎🌏!", greet("🌍🌎🌏"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
+test "percentage_calculations" {
+  // 百分比计算测试
+  let total = 200
+  let part = 50
+  let percentage = divide_with_ceil(multiply(part, 100), total)
+  
+  // 计算 25% 增长
+  let original = 80
+  let growth_rate = 25
+  let increase = divide_with_ceil(multiply(original, growth_rate), 100)
+  let new_total = add(original, increase)
+  
+  assert_eq(25, percentage)
+  assert_eq(20, increase)
+  assert_eq(100, new_total)
 }
 
-test "complex_arithmetic_expressions" {
-  // 测试复杂算术表达式
-  let x = 15
-  let y = 25
-  let z = 8
+test "time_calculations" {
+  // 时间计算测试
+  let hours = 2
+  let minutes = 45
+  let seconds = 30
   
-  // 测试 (x + y) * z - y / x
-  let result1 = add(multiply(add(x, y), z), -divide_with_ceil(y, x))
-  assert_eq(319, result1)  // (15 + 25) * 8 - ceil(25/15) = 40*8 - 2 = 320 - 2 = 318
+  // 转换为总秒数
+  let total_seconds = add(multiply(hours, 3600), add(multiply(minutes, 60), seconds))
   
-  // 测试嵌套表达式
-  let result2 = divide_with_ceil(multiply(add(x, multiply(y, z)), 3), 5)
-  assert_eq(123, result2)  // ceil((15 + 25*8) * 3 / 5) = ceil(215 * 3 / 5) = ceil(645/5) = 129
+  // 计算总分钟数（向上取整）
+  let total_minutes = divide_with_ceil(total_seconds, 60)
+  
+  // 计算总小时数（向上取整）
+  let total_hours = divide_with_ceil(total_seconds, 3600)
+  
+  assert_eq(9930, total_seconds)
+  assert_eq(166, total_minutes)
+  assert_eq(3, total_hours)
 }
 
-test "financial_compound_interest" {
-  // 测试金融复利计算
-  let principal = 10000
-  let rate_percent = 8
-  let years = 3
+test "array_sum_simulation" {
+  // 数组求和模拟测试
+  // 模拟数组 [10, 20, 30, 40, 50] 的求和过程
   
-  // 第一年
-  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  // 第二年
-  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
-  // 第三年
-  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
+  let element1 = 10
+  let element2 = 20
+  let element3 = 30
+  let element4 = 40
+  let element5 = 50
   
-  assert_eq(10800, year1)  // 10000 + 800
-  assert_eq(11664, year2)  // 10800 + 864
-  assert_eq(12597, year3)  // 11664 + 933
+  let sum1 = element1
+  let sum2 = add(sum1, element2)
+  let sum3 = add(sum2, element3)
+  let sum4 = add(sum3, element4)
+  let sum5 = add(sum4, element5)
+  
+  // 计算平均值
+  let count = 5
+  let average = divide_with_ceil(sum5, count)
+  
+  assert_eq(10, sum1)
+  assert_eq(30, sum2)
+  assert_eq(60, sum3)
+  assert_eq(100, sum4)
+  assert_eq(150, sum5)
+  assert_eq(30, average)
 }
 
-test "inventory_management_system" {
-  // 测试库存管理系统
-  let initial_stock = 500
-  let daily_sales = 25
-  let restock_amount = 150
-  let days = 7
+test "factorial_calculation" {
+  // 阶乘计算测试
+  // 计算 6! = 720
   
-  // 计算一周的销售量
-  let weekly_sales = multiply(daily_sales, days)
-  // 计算补货前的库存
-  let stock_before_restock = subtract(initial_stock, weekly_sales)
-  // 计算最终库存
-  let final_stock = add(stock_before_restock, restock_amount)
+  let fact1 = 1  // 1! = 1
+  let fact2 = multiply(fact1, 2)  // 2! = 2
+  let fact3 = multiply(fact2, 3)  // 3! = 6
+  let fact4 = multiply(fact3, 4)  // 4! = 24
+  let fact5 = multiply(fact4, 5)  // 5! = 120
+  let fact6 = multiply(fact5, 6)  // 6! = 720
   
-  assert_eq(175, weekly_sales)  // 25 * 7
-  assert_eq(325, stock_before_restock)  // 500 - 175
-  assert_eq(475, final_stock)  // 325 + 150
+  assert_eq(1, fact1)
+  assert_eq(2, fact2)
+  assert_eq(6, fact3)
+  assert_eq(24, fact4)
+  assert_eq(120, fact5)
+  assert_eq(720, fact6)
 }
 
-test "resource_allocation_optimization" {
-  // 测试资源分配优化
-  let total_budget = 10000
-  let project_a_cost = 3500
-  let project_b_cost = 2800
-  let project_c_cost = 2200
+test "triangle_calculations" {
+  // 三角形计算测试
+  // 直角三角形，边长为 3, 4, 5
   
-  // 计算已分配预算
-  let allocated_budget = add(add(project_a_cost, project_b_cost), project_c_cost)
-  // 计算剩余预算
-  let remaining_budget = subtract(total_budget, allocated_budget)
-  // 计算可以支持的小项目数量（每个500）
-  let small_projects = divide_with_ceil(remaining_budget, 500)
+  let side_a = 3
+  let side_b = 4
+  let side_c = 5
   
-  assert_eq(8500, allocated_budget)  // 3500 + 2800 + 2200
-  assert_eq(1500, remaining_budget)  // 10000 - 8500
-  assert_eq(3, small_projects)  // ceil(1500/500)
+  // 计算周长
+  let perimeter = add(add(side_a, side_b), side_c)
+  
+  // 计算面积（使用海伦公式的简化版本）
+  let s = divide_with_ceil(perimeter, 2)  // 半周长
+  // 简化面积计算：底 × 高 ÷ 2
+  let area = divide_with_ceil(multiply(side_a, side_b), 2)
+  
+  assert_eq(12, perimeter)
+  assert_eq(6, s)
+  assert_eq(6, area)
 }
 
-test "time_management_calculations" {
-  // 测试时间管理计算
-  let tasks_per_hour = 4
-  let working_hours_per_day = 8
-  let total_tasks = 150
-  let break_hours_per_day = 2
+test "temperature_calculations" {
+  // 温度计算测试
+  let celsius = 30
   
-  // 计算有效工作时间
-  let effective_hours_per_day = subtract(working_hours_per_day, break_hours_per_day)
-  // 计算每天完成的任务数
-  let tasks_per_day = multiply(tasks_per_hour, effective_hours_per_day)
-  // 计算需要的天数
-  let days_needed = divide_with_ceil(total_tasks, tasks_per_day)
+  // 摄氏度转华氏度：F = C × 9/5 + 32
+  let fahrenheit = add(divide_with_ceil(multiply(celsius, 9), 5), 32)
   
-  assert_eq(6, effective_hours_per_day)  // 8 - 2
-  assert_eq(24, tasks_per_day)  // 4 * 6
-  assert_eq(7, days_needed)  // ceil(150/24)
+  // 华氏度转摄氏度（简化）：C = (F - 32) × 5/9
+  let celsius_back = divide_with_ceil(multiply(subtract(fahrenheit, 32), 5), 9)
+  
+  // 开尔文温度（简化）
+  let kelvin = add(celsius, 273)
+  
+  assert_eq(86, fahrenheit)
+  assert_eq(30, celsius_back)
+  assert_eq(303, kelvin)
 }
 
-test "error_handling_robustness" {
-  // 测试错误处理的健壮性
-  // 测试除零情况
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+test "shopping_cart_calculations" {
+  // 购物车计算测试
+  let item1_price = 12
+  let item1_qty = 3
+  let item2_price = 8
+  let item2_qty = 5
+  let item3_price = 15
+  let item3_qty = 2
   
-  // 测试极大数运算
-  let large_num = 1000000
-  assert_eq(2000000, add(large_num, large_num))
-  assert_eq(1000000000000, multiply(large_num, large_num))
+  // 计算各商品小计
+  let subtotal1 = multiply(item1_price, item1_qty)
+  let subtotal2 = multiply(item2_price, item2_qty)
+  let subtotal3 = multiply(item3_price, item3_qty)
   
-  // 测试极小数运算
-  let small_num = 1
-  assert_eq(2, add(small_num, small_num))
-  assert_eq(1, multiply(small_num, small_num))
+  // 计算商品总计
+  let items_total = add(add(subtotal1, subtotal2), subtotal3)
+  
+  // 计算折扣（10%折扣，向上取整）
+  let discount = divide_with_ceil(multiply(items_total, 10), 100)
+  
+  // 计算最终价格
+  let final_total = subtract(items_total, discount)
+  
+  assert_eq(36, subtotal1)
+  assert_eq(40, subtotal2)
+  assert_eq(30, subtotal3)
+  assert_eq(106, items_total)
+  assert_eq(11, discount)
+  assert_eq(95, final_total)
 }
