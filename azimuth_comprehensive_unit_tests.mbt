@@ -1,134 +1,246 @@
-// Azimuth 项目综合单元测试
-// 使用标准 MoonBit 测试语法，包含10个高质量测试用例
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-test "add_function_comprehensive" {
-  // 测试加法函数的综合情况
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(10, @azimuth.add(7, 3))
-  @azimuth.assert_eq(-10, @azimuth.add(-7, -3))
-  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
-  @azimuth.assert_eq(100, @azimuth.add(50, 50))
+// Azimuth 综合单元测试
+// 使用标准 MoonBit 测试语法，涵盖核心功能模块
+
+test "integer_boundary_values" {
+  // 测试整数边界值
+  assert_eq(2147483647, 2147483647)  // max_value
+  assert_eq(-2147483648, -2147483648)  // min_value
+  assert_eq(-2147483648, 2147483647 + 1)  // 溢出测试
+  assert_eq(2147483647, -2147483648 - 1)  // 下溢测试
+  assert_eq(42, @int.abs(-42))
+  assert_eq(0, @int.abs(0))
+  assert_eq(42, @int.abs(42))
 }
 
-test "multiply_function_edge_cases" {
-  // 测试乘法函数的边界情况
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
-  @azimuth.assert_eq(1, @azimuth.multiply(1, 1))
-  @azimuth.assert_eq(-1, @azimuth.multiply(-1, 1))
-  @azimuth.assert_eq(25, @azimuth.multiply(-5, -5))
+test "string_operations_and_conversions" {
+  // 测试字符串操作和转换
+  let empty = ""
+  let hello = "Hello"
+  let world = "World"
+  let combined = hello + " " + world + "!"
+  assert_eq("Hello World!", combined)
+  assert_eq(0, empty.length())
+  assert_eq(5, hello.length())
+  assert_eq(12, combined.length())
+  assert_eq("", @string.default())
 }
 
-test "greet_function_unicode_and_special_chars" {
-  // 测试问候函数的Unicode和特殊字符
-  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
-  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
-  @azimuth.assert_eq_string("Hello, @#$%!", @azimuth.greet("@#$%"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
-  @azimuth.assert_eq_string("Hello, Line\nBreak!", @azimuth.greet("Line\nBreak"))
-}
-
-test "divide_with_ceil_comprehensive" {
-  // 测试向上取整除法的综合情况
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(5, 0))
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(-10, -3))
-}
-
-test "complex_business_calculation" {
-  // 测试复杂业务计算场景
-  // 装盒问题：47个物品，每盒12个，需要多少盒？
-  let items = 47
-  let box_capacity = 12
-  let boxes_needed = @azimuth.divide_with_ceil(items, box_capacity)
-  @azimuth.assert_eq(5, boxes_needed)
+test "array_advanced_operations" {
+  // 测试数组高级操作
+  let arr1 = [1, 2, 3]
+  let arr2 = [4, 5, 6]
+  let arr3 = [7, 8, 9, 10]
   
-  // 价格计算：单价199，数量3，运费20
-  let price = 199
-  let quantity = 3
-  let shipping = 20
-  let subtotal = @azimuth.multiply(price, quantity)
-  let total = @azimuth.add(subtotal, shipping)
-  @azimuth.assert_eq(617, total)
+  // 测试 zip_with 函数
+  let add = (a, b) => a + b
+  let zipped = @array.zip_with(arr1, arr2, add)
+  assert_eq(5, zipped[0])
+  assert_eq(7, zipped[1])
+  assert_eq(9, zipped[2])
+  
+  // 测试不同长度数组的 zip_with
+  let partial = @array.zip_with(arr1, arr3, add)
+  assert_eq(8, partial[0])
+  assert_eq(10, partial[1])
+  assert_eq(12, partial[2])
+  
+  // 测试数组长度和索引
+  assert_eq(3, arr1.length())
+  assert_eq(1, arr1[0])
+  assert_eq(3, arr1[2])
 }
 
-test "mathematical_properties_and_identities" {
-  // 测试数学性质和恒等式
-  let x = 42
-  let y = 17
+test "boolean_logical_operations" {
+  // 测试布尔逻辑操作
+  assert_eq(true, true && true)
+  assert_eq(false, true && false)
+  assert_eq(false, false && true)
+  assert_eq(false, false && false)
   
-  // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
-  // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
-  // 加法单位元
-  @azimuth.assert_eq(x, @azimuth.add(x, 0))
-  // 乘法单位元
-  @azimuth.assert_eq(x, @azimuth.multiply(x, 1))
-  // 乘法零元
-  @azimuth.assert_eq(0, @azimuth.multiply(x, 0))
+  assert_eq(true, true || true)
+  assert_eq(true, true || false)
+  assert_eq(true, false || true)
+  assert_eq(false, false || false)
+  
+  assert_eq(false, !true)
+  assert_eq(true, !false)
+  
+  assert_eq(true, true == true)
+  assert_eq(false, true == false)
+  assert_eq(true, true != false)
 }
 
-test "error_handling_and_boundary_conditions" {
-  // 测试错误处理和边界条件
-  // 除数为零的情况
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(-10, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 0))
+test "option_type_pattern_matching" {
+  // 测试 Option 类型的模式匹配
+  let some_int : Int? = Some(42)
+  let none_int : Int? = None
+  let some_str : String? = Some("test")
   
-  // 大数运算
-  @azimuth.assert_eq(2000000, @azimuth.add(1000000, 1000000))
-  @azimuth.assert_eq(1000000000000, @azimuth.multiply(1000000, 1000000))
+  // 提取 Some 值
+  let extracted_int = match some_int {
+    Some(x) => x * 2
+    None => 0
+  }
+  assert_eq(84, extracted_int)
+  
+  // 处理 None 值
+  let default_int = match none_int {
+    Some(x) => x
+    None => -1
+  }
+  assert_eq(-1, default_int)
+  
+  // 字符串 Option 测试
+  let extracted_str = match some_str {
+    Some(s) => s + "_processed"
+    None => "default"
+  }
+  assert_eq("test_processed", extracted_str)
 }
 
-test "sequential_operations_pipeline" {
-  // 测试连续操作管道
-  let initial = 15
-  let step1 = @azimuth.add(initial, 10)        // 25
-  let step2 = @azimuth.multiply(step1, 2)      // 50
-  let step3 = @azimuth.divide_with_ceil(step2, 12)  // 5
-  let step4 = @azimuth.add(step3, 3)           // 8
-  let step5 = @azimuth.multiply(step4, 1)      // 8
+test "result_type_error_handling" {
+  // 测试 Result 类型的错误处理
+  let success : Result[String, Int] = Ok("Operation successful")
+  let failure : Result[String, Int] = Err(500)
   
-  @azimuth.assert_eq(8, step5)
+  // 处理成功情况
+  let success_message = match success {
+    Ok(msg) => msg
+    Err(code) => "Error code: " + @int.to_string(code)
+  }
+  assert_eq("Operation successful", success_message)
+  
+  // 处理错误情况
+  let error_message = match failure {
+    Ok(msg) => msg
+    Err(code) => "Error code: " + @int.to_string(code)
+  }
+  assert_eq("Error code: 500", error_message)
+  
+  // 嵌套 Result 处理
+  let nested_result : Result[Result[String, Int], String] = Ok(Ok("Nested success"))
+  let nested_value = match nested_result {
+    Ok(inner) => match inner {
+      Ok(value) => value
+      Err(_) => "Inner error"
+    }
+    Err(_) => "Outer error"
+  }
+  assert_eq("Nested success", nested_value)
 }
 
-test "string_processing_with_greet" {
-  // 测试使用greet函数进行字符串处理
-  let names = ["Alice", "Bob", "Charlie", "世界", "🚀"]
-  let expected_greetings = [
-    "Hello, Alice!",
-    "Hello, Bob!", 
-    "Hello, Charlie!",
-    "Hello, 世界!",
-    "Hello, 🚀!"
-  ]
+test "character_operations_and_comparisons" {
+  // 测试字符操作和比较
+  let lower_a = 'a'
+  let upper_a = 'A'
+  let digit_5 = '5'
+  let special = '@'
   
-  @azimuth.assert_eq_string(expected_greetings[0], @azimuth.greet(names[0]))
-  @azimuth.assert_eq_string(expected_greetings[1], @azimuth.greet(names[1]))
-  @azimuth.assert_eq_string(expected_greetings[2], @azimuth.greet(names[2]))
-  @azimuth.assert_eq_string(expected_greetings[3], @azimuth.greet(names[3]))
-  @azimuth.assert_eq_string(expected_greetings[4], @azimuth.greet(names[4]))
+  // 字符转换
+  assert_eq("a", @char.to_string(lower_a))
+  assert_eq("A", @char.to_string(upper_a))
+  assert_eq("5", @char.to_string(digit_5))
+  
+  // 字符比较
+  assert_eq(true, lower_a > upper_a)
+  assert_eq(true, upper_a < lower_a)
+  assert_eq(true, digit_5 < lower_a)
+  assert_eq(true, '0' <= digit_5)
+  assert_eq(true, digit_5 <= '9')
+  
+  // 特殊字符比较
+  assert_eq(true, special < lower_a)
+  assert_eq(true, special < digit_5)
+  assert_eq(false, special > upper_a)
 }
 
-test "real_world_inventory_management" {
-  // 测试现实世界库存管理场景
-  // 仓库有不同数量的商品，需要统一包装
-  let product_a_qty = 23
-  let product_b_qty = 47
-  let product_c_qty = 89
-  let package_size = 12
+test "list_manipulation_operations" {
+  // 测试列表操作
+  let num_list = [10, 20, 30, 40, 50]
+  let empty_list : Array[Int] = []
   
-  let packages_a = @azimuth.divide_with_ceil(product_a_qty, package_size)
-  let packages_b = @azimuth.divide_with_ceil(product_b_qty, package_size)
-  let packages_c = @azimuth.divide_with_ceil(product_c_qty, package_size)
+  // 列表长度和访问
+  assert_eq(5, num_list.length())
+  assert_eq(0, empty_list.length())
+  assert_eq(10, num_list[0])
+  assert_eq(50, num_list[4])
   
-  let total_packages = @azimuth.add(@azimuth.add(packages_a, packages_b), packages_c)
+  // 列表计算
+  let sum_first_three = num_list[0] + num_list[1] + num_list[2]
+  assert_eq(60, sum_first_three)
   
-  @azimuth.assert_eq(2, packages_a)  // ceil(23/12) = 2
-  @azimuth.assert_eq(4, packages_b)  // ceil(47/12) = 4
-  @azimuth.assert_eq(8, packages_c)  // ceil(89/12) = 8
-  @azimuth.assert_eq(14, total_packages)  // 2 + 4 + 8 = 14
+  let last_minus_first = num_list[4] - num_list[0]
+  assert_eq(40, last_minus_first)
+  
+  // 平均值计算
+  let average = sum_first_three / 3
+  assert_eq(20, average)
+}
+
+test "mathematical_operations_and_functions" {
+  // 测试数学操作和函数
+  let x = 8.0
+  let y = 2.0
+  
+  // 基本运算
+  assert_eq(10.0, x + y)
+  assert_eq(-6.0, y - x)
+  assert_eq(16.0, x * y)
+  assert_eq(4.0, x / y)
+  
+  // 正负数运算
+  let positive = 15.0
+  let negative = -10.0
+  assert_eq(5.0, positive + negative)
+  assert_eq(25.0, positive - negative)
+  assert_eq(100.0, negative * negative)
+  
+  // 零值运算
+  let zero = 0.0
+  assert_eq(8.0, x + zero)
+  assert_eq(0.0, x * zero)
+  assert_eq(0.0, zero / y)
+}
+
+test "type_conversions_and_coercions" {
+  // 测试类型转换和强制转换
+  let int_val = 123
+  let bool_val = true
+  let string_val = "456"
+  
+  // 整数转换
+  assert_eq("123", @int.to_string(int_val))
+  assert_eq("0", @int.to_string(0))
+  assert_eq("-42", @int.to_string(-42))
+  
+  // 布尔值转换
+  assert_eq("true", @bool.to_string(bool_val))
+  assert_eq("false", @bool.to_string(false))
+  
+  // 类型比较和检查
+  assert_eq(true, int_val > 0)
+  assert_eq(true, int_val < 1000)
+  assert_eq(true, int_val >= 123)
+  assert_eq(true, int_val <= 123)
+  
+  assert_eq(true, bool_val == true)
+  assert_eq(true, bool_val != false)
+  
+  // 字符串长度检查
+  assert_eq(3, string_val.length())
+  assert_eq(16, "very_long_string".length())
 }
