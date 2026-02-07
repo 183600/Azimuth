@@ -285,5 +285,6 @@
     "concise_quality_tests.mbt",
     "azimuth_new_enhanced_tests.mbt",
     "professional_standard_moonbit_tests.mbt",
-    "user_standard_tests.mbt"
+    "user_standard_tests.mbt",
+                "user_request_test.mbt"
                 ]}
