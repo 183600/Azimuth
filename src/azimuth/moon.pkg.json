@@ -14,6 +14,7 @@
     "moonbitlang/core/int"
   ],
   "test": [
+    "comprehensive_enhanced_tests.mbt",
     "standard_moonbit_test_suite.mbt",
     "azimuth_concise_standard_tests.mbt",
     "azimuth_standalone_additional_tests.mbt",
@@ -374,6 +375,9 @@
       ""azimuth_additional_comprehensive_tests.mbt",
   "simple_new_test_cases.mbt""  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
   "files": [
+    "new_enhanced_test_suite.mbt",
+    "self_contained_test.mbt",
+    "comprehensive_enhanced_tests.mbt",
     "new_advanced_tests.mbt",
     "standard_core_test_cases.mbt",
     "azimuth_new_standard_test_cases.mbt",
