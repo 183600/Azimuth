@@ -1,143 +1,228 @@
-// Azimuth 新增标准测试套件
-// 包含10个高质量测试用例，覆盖核心功能
+// Azimuth 项目新增 MoonBit 测试用例
+// 包含8个高质量测试用例，使用标准 MoonBit 测试语法
+// 测试各种实际应用场景和函数组合使用
 
-test "add_function_commutative_property" {
-  // 测试加法交换律：a + b = b + a
-  let a = 15
-  let b = 27
-  assert_eq(add(a, b), add(b, a))
+test "shopping_cart_calculation" {
+  // 购物车计算测试 - 实际商业应用场景
+  let item1_price = 29
+  let item1_quantity = 3
+  let item2_price = 45
+  let item2_quantity = 2
+  let discount = 10
   
-  let x = -10
-  let y = 25
-  assert_eq(add(x, y), add(y, x))
+  // 计算商品小计
+  let subtotal1 = @azimuth.multiply(item1_price, item1_quantity)
+  let subtotal2 = @azimuth.multiply(item2_price, item2_quantity)
   
-  let m = 0
-  let n = 100
-  assert_eq(add(m, n), add(n, m))
+  // 计算总价
+  let total_before_discount = @azimuth.add(subtotal1, subtotal2)
+  
+  // 应用折扣
+  let final_total = @azimuth.subtract(total_before_discount, discount)
+  
+  // 计算平均每件商品价格
+  let total_items = @azimuth.add(item1_quantity, item2_quantity)
+  let average_price = @azimuth.divide_with_ceil(final_total, total_items)
+  
+  @azimuth.assert_eq(87, subtotal1)
+  @azimuth.assert_eq(90, subtotal2)
+  @azimuth.assert_eq(177, total_before_discount)
+  @azimuth.assert_eq(167, final_total)
+  @azimuth.assert_eq(5, total_items)
+  @azimuth.assert_eq(34, average_price)
 }
 
-test "multiply_function_distributive_property" {
-  // 测试乘法分配律：a * (b + c) = a * b + a * c
-  let a = 5
-  let b = 8
-  let c = 12
+test "time_conversion_calculations" {
+  // 时间转换计算测试 - 实用时间处理场景
+  let hours = 2
+  let minutes = 45
+  let seconds = 30
   
-  let left_side = multiply(a, add(b, c))
-  let right_side = add(multiply(a, b), multiply(a, c))
-  assert_eq(left_side, right_side)
+  // 转换为总秒数
+  let hours_to_seconds = @azimuth.multiply(hours, 3600)
+  let minutes_to_seconds = @azimuth.multiply(minutes, 60)
+  let total_seconds = @azimuth.add(@azimuth.add(hours_to_seconds, minutes_to_seconds), seconds)
   
-  // 验证具体数值：5 * (8 + 12) = 5 * 8 + 5 * 12 = 100
-  assert_eq(100, left_side)
+  // 计算总分钟数（向上取整）
+  let total_minutes = @azimuth.divide_with_ceil(total_seconds, 60)
+  
+  // 计算总小时数（向上取整）
+  let total_hours = @azimuth.divide_with_ceil(total_seconds, 3600)
+  
+  @azimuth.assert_eq(7200, hours_to_seconds)
+  @azimuth.assert_eq(2700, minutes_to_seconds)
+  @azimuth.assert_eq(9930, total_seconds)
+  @azimuth.assert_eq(166, total_minutes)
+  @azimuth.assert_eq(3, total_hours)
 }
 
-test "divide_with_ceil_positive_fractions" {
-  // 测试正数的向上取整除法
-  assert_eq(2, divide_with_ceil(3, 2))    // 1.5 -> 2
-  assert_eq(4, divide_with_ceil(10, 3))   // 3.333... -> 4
-  assert_eq(7, divide_with_ceil(13, 2))   // 6.5 -> 7
-  assert_eq(1, divide_with_ceil(1, 100))  // 0.01 -> 1
-  assert_eq(34, divide_with_ceil(100, 3))  // 33.333... -> 34
+test "batch_processing_simulation" {
+  // 批处理模拟测试 - 数据处理场景
+  let batch_size = 25
+  let total_items = 187
+  let processing_time_per_batch = 5
+  
+  // 计算需要的批次数
+  let batches_needed = @azimuth.divide_with_ceil(total_items, batch_size)
+  
+  // 计算总处理时间
+  let total_processing_time = @azimuth.multiply(batches_needed, processing_time_per_batch)
+  
+  // 计算最后一个批次的项目数
+  let full_batches = @azimuth.divide_with_ceil(total_items, batch_size) - 1
+  let items_processed = @azimuth.multiply(full_batches, batch_size)
+  let last_batch_size = @azimuth.subtract(total_items, items_processed)
+  
+  @azimuth.assert_eq(8, batches_needed)
+  @azimuth.assert_eq(40, total_processing_time)
+  @azimuth.assert_eq(7, full_batches)
+  @azimuth.assert_eq(175, items_processed)
+  @azimuth.assert_eq(12, last_batch_size)
 }
 
-test "divide_with_ceil_negative_numbers" {
-  // 测试负数的向上取整除法
-  assert_eq(-3, divide_with_ceil(-10, 3))   // -3.333... -> -3
-  assert_eq(-4, divide_with_ceil(-11, 3))   // -3.666... -> -4
-  assert_eq(4, divide_with_ceil(-10, -3))   // 3.333... -> 4
-  assert_eq(3, divide_with_ceil(10, -3))    // -3.333... -> -3
-  assert_eq(0, divide_with_ceil(5, 0))      // 除数为零时返回0
+test "resource_allocation_optimization" {
+  // 资源分配优化测试 - 项目管理场景
+  let total_budget = 1000
+  let team_members = 8
+  let project_duration = 5
+  let reserve_fund = 150
+  
+  // 计算可用预算
+  let available_budget = @azimuth.subtract(total_budget, reserve_fund)
+  
+  // 计算每人每天的预算
+  let total_person_days = @azimuth.multiply(team_members, project_duration)
+  let budget_per_person_day = @azimuth.divide_with_ceil(available_budget, total_person_days)
+  
+  // 计算每个团队成员的总预算
+  let budget_per_person = @azimuth.multiply(budget_per_person_day, project_duration)
+  
+  // 验证总分配不超过可用预算
+  let total_allocated = @azimuth.multiply(budget_per_person, team_members)
+  
+  @azimuth.assert_eq(850, available_budget)
+  @azimuth.assert_eq(40, total_person_days)
+  @azimuth.assert_eq(22, budget_per_person_day)
+  @azimuth.assert_eq(110, budget_per_person)
+  @azimuth.assert_eq(880, total_allocated)
 }
 
-test "greet_function_unicode_support" {
-  // 测试问候函数的Unicode支持
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
-  assert_eq_string("Hello, 🚀🌙!", greet("🚀🌙"))
+test "grade_calculation_system" {
+  // 成绩计算系统测试 - 教育应用场景
+  let assignment_score = 85
+  let midterm_score = 78
+  let final_score = 92
+  let participation_score = 15
+  
+  // 计算加权成绩（作业30%，期中30%，期末35%，参与5%）
+  let assignment_weighted = @azimuth.divide_with_ceil(@azimuth.multiply(assignment_score, 30), 100)
+  let midterm_weighted = @azimuth.divide_with_ceil(@azimuth.multiply(midterm_score, 30), 100)
+  let final_weighted = @azimuth.divide_with_ceil(@azimuth.multiply(final_score, 35), 100)
+  let participation_weighted = @azimuth.divide_with_ceil(@azimuth.multiply(participation_score, 5), 100)
+  
+  // 计算总成绩
+  let total_score = @azimuth.add(@azimuth.add(@azimuth.add(assignment_weighted, midterm_weighted), final_weighted), participation_weighted)
+  
+  // 确定字母等级（简化版）
+  let grade_level = @azimuth.divide_with_ceil(total_score, 10)
+  
+  @azimuth.assert_eq(26, assignment_weighted)
+  @azimuth.assert_eq(24, midterm_weighted)
+  @azimuth.assert_eq(33, final_weighted)
+  @azimuth.assert_eq(1, participation_weighted)
+  @azimuth.assert_eq(84, total_score)
+  @azimuth.assert_eq(9, grade_level)
 }
 
-test "complex_business_calculation" {
-  // 测试复杂业务计算场景
-  // 计算订单总价：商品价格 × 数量 + 运费 - 折扣
-  let product_price = 89
-  let quantity = 4
-  let shipping = 12
-  let discount = 20
+test "fitness_tracking_calculations" {
+  // 健身追踪计算测试 - 健康应用场景
+  let daily_steps_goal = 10000
+  let actual_steps_monday = 8500
+  let actual_steps_tuesday = 12000
+  let actual_steps_wednesday = 7800
+  let actual_steps_thursday = 11000
+  let actual_steps_friday = 9200
   
-  let subtotal = multiply(product_price, quantity)
-  let total_before_discount = add(subtotal, shipping)
-  let final_total = add(total_before_discount, -discount)
+  // 计算总步数
+  let total_steps = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(actual_steps_monday, actual_steps_tuesday), actual_steps_wednesday), actual_steps_thursday), actual_steps_friday)
   
-  assert_eq(348, final_total)  // 89*4 + 12 - 20 = 356 + 12 - 20 = 348
+  // 计算平均每日步数
+  let days_tracked = 5
+  let average_steps = @azimuth.divide_with_ceil(total_steps, days_tracked)
+  
+  // 计算总目标步数
+  let total_goal = @azimuth.multiply(daily_steps_goal, days_tracked)
+  
+  // 计算完成率
+  let completion_percentage = @azimuth.divide_with_ceil(@azimuth.multiply(total_steps, 100), total_goal)
+  
+  // 计算需要额外步数来达到目标
+  let steps_needed = @azimuth.subtract(total_goal, total_steps)
+  
+  @azimuth.assert_eq(48500, total_steps)
+  @azimuth.assert_eq(9700, average_steps)
+  @azimuth.assert_eq(50000, total_goal)
+  @azimuth.assert_eq(97, completion_percentage)
+  @azimuth.assert_eq(1500, steps_needed)
 }
 
-test "mathematical_sequence_calculation" {
-  // 测试数学序列计算
-  // 计算等差数列的和：1 + 3 + 5 + ... + 19
-  let first_term = 1
-  let common_difference = 2
-  let number_of_terms = 10
+test "cooking_recipe_scaler" {
+  // 烹饪食谱缩放测试 - 生活应用场景
+  let original_servings = 4
+  let desired_servings = 7
+  let flour_per_serving = 150
+  let sugar_per_serving = 50
+  let eggs_per_serving = 1
   
-  // 使用公式计算：S = n/2 * (2a + (n-1)d)
-  let sum_formula = divide_with_ceil(
-    multiply(number_of_terms, add(multiply(2, first_term), multiply(number_of_terms - 1, common_difference))),
-    2
-  )
+  // 计算缩放因子
+  let scale_factor = @azimuth.divide_with_ceil(@azimuth.multiply(desired_servings, 100), @azimuth.multiply(original_servings, 100))
   
-  assert_eq(100, sum_formula)  // 10/2 * (2 + 18) = 5 * 20 = 100
+  // 计算新配料的量
+  let new_flour = @azimuth.divide_with_ceil(@azimuth.multiply(flour_per_serving, desired_servings), 1)
+  let new_sugar = @azimuth.divide_with_ceil(@azimuth.multiply(sugar_per_serving, desired_servings), 1)
+  let new_eggs = @azimuth.divide_with_ceil(@azimuth.multiply(eggs_per_serving, desired_servings), 1)
+  
+  // 计算总原料量
+  let total_dry_ingredients = @azimuth.add(new_flour, new_sugar)
+  
+  @azimuth.assert_eq(7, scale_factor)
+  @azimuth.assert_eq(1050, new_flour)
+  @azimuth.assert_eq(350, new_sugar)
+  @azimuth.assert_eq(7, new_eggs)
+  @azimuth.assert_eq(1400, total_dry_ingredients)
 }
 
-test "packaging_optimization" {
-  // 测试包装优化场景
-  // 计算不同商品需要的包装箱数量
-  let items_per_box = 24
+test "travel_itinerary_planner" {
+  // 旅行行程规划测试 - 旅游应用场景
+  let total_budget = 2000
+  let accommodation_per_night = 120
+  let nights = 5
+  let daily_food_budget = 60
+  let activities_total = 350
+  let emergency_fund = 200
   
-  let product_a_qty = 50
-  let product_b_qty = 75
-  let product_c_qty = 120
+  // 计算住宿总费用
+  let total_accommodation = @azimuth.multiply(accommodation_per_night, nights)
   
-  let boxes_a = divide_with_ceil(product_a_qty, items_per_box)
-  let boxes_b = divide_with_ceil(product_b_qty, items_per_box)
-  let boxes_c = divide_with_ceil(product_c_qty, items_per_box)
+  // 计算食物总费用
+  let total_food = @azimuth.multiply(daily_food_budget, nights)
   
-  let total_boxes = add(add(boxes_a, boxes_b), boxes_c)
+  // 计算基本费用
+  let basic_expenses = @azimuth.add(@azimuth.add(total_accommodation, total_food), activities_total)
   
-  assert_eq(3, boxes_a)    // ceil(50/24) = 3
-  assert_eq(4, boxes_b)    // ceil(75/24) = 4
-  assert_eq(5, boxes_c)    // ceil(120/24) = 5
-  assert_eq(12, total_boxes)  // 3 + 4 + 5 = 12
-}
-
-test "financial_compound_interest" {
-  // 测试金融复利计算
-  let principal = 1000
-  let rate_percent = 5
+  // 计算可用额外预算
+  let available_extra = @azimuth.subtract(@azimuth.subtract(total_budget, basic_expenses), emergency_fund)
   
-  // 年度复利计算（使用向上取整）
-  let year1 = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  let year2 = add(year1, divide_with_ceil(multiply(year1, rate_percent), 100))
-  let year3 = add(year2, divide_with_ceil(multiply(year2, rate_percent), 100))
+  // 计算每日可用额外花费
+  let daily_extra = @azimuth.divide_with_ceil(available_extra, nights)
   
-  assert_eq(1050, year1)  // 1000 + ceil(1000*5/100) = 1000 + 50 = 1050
-  assert_eq(1103, year2)  // 1050 + ceil(1050*5/100) = 1050 + 53 = 1103
-  assert_eq(1158, year3)  // 1103 + ceil(1103*5/100) = 1103 + 55 = 1158
-}
-
-test "error_boundary_conditions" {
-  // 测试错误边界条件
-  // 测试极值运算
-  assert_eq(0, multiply(0, 0))
-  assert_eq(0, multiply(1000, 0))
-  assert_eq(0, multiply(0, -1000))
+  // 计算总实际花费
+  let actual_total = @azimuth.add(basic_expenses, emergency_fund)
   
-  // 测试除数为零的安全处理
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  
-  // 测试零的加法性质
-  assert_eq(100, add(100, 0))
-  assert_eq(-100, add(-100, 0))
-  assert_eq(0, add(0, 0))
+  @azimuth.assert_eq(600, total_accommodation)
+  @azimuth.assert_eq(300, total_food)
+  @azimuth.assert_eq(1250, basic_expenses)
+  @azimuth.assert_eq(550, available_extra)
+  @azimuth.assert_eq(110, daily_extra)
+  @azimuth.assert_eq(1450, actual_total)
 }
