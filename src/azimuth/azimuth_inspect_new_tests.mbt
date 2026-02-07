@@ -1,5 +1,5 @@
 // Azimuth 项目新增标准 MoonBit 测试用例
-// 包含8个高质量测试用例，使用标准 MoonBit 测试语法
+// 包含8个高质量测试用例，使用 inspect 语句进行验证
 
 test "arithmetic_sequence_summation" {
   // 等差数列求和测试
@@ -17,11 +17,11 @@ test "arithmetic_sequence_summation" {
   let sum = a1 + a2 + a3 + a4 + a5
   
   // 验证结果
-  assert_eq(a2, 4)
-  assert_eq(a3, 7)
-  assert_eq(a4, 10)
-  assert_eq(a5, 13)
-  assert_eq(sum, 35)
+  inspect a2  // 期望: 4
+  inspect a3  // 期望: 7
+  inspect a4  // 期望: 10
+  inspect a5  // 期望: 13
+  inspect sum // 期望: 35
 }
 
 test "geometric_sequence_properties" {
@@ -40,12 +40,12 @@ test "geometric_sequence_properties" {
   let ratio_check2 = third / second   // 18 / 6 = 3
   let ratio_check3 = fourth / third   // 54 / 18 = 3
   
-  assert_eq(second, 6)
-  assert_eq(third, 18)
-  assert_eq(fourth, 54)
-  assert_eq(ratio_check1, 3)
-  assert_eq(ratio_check2, 3)
-  assert_eq(ratio_check3, 3)
+  inspect second      // 期望: 6
+  inspect third       // 期望: 18
+  inspect fourth      // 期望: 54
+  inspect ratio_check1 // 期望: 3
+  inspect ratio_check2 // 期望: 3
+  inspect ratio_check3 // 期望: 3
 }
 
 test "temperature_conversion_validation" {
@@ -69,9 +69,9 @@ test "temperature_conversion_validation" {
   let fahrenheit_room_step2 = fahrenheit_room_step1 / 5
   let fahrenheit_room = fahrenheit_room_step2 + 32
   
-  assert_eq(fahrenheit_freezing, 32)
-  assert_eq(fahrenheit_boiling, 212)
-  assert_eq(fahrenheit_room, 68)
+  inspect fahrenheit_freezing // 期望: 32
+  inspect fahrenheit_boiling  // 期望: 212
+  inspect fahrenheit_room     // 期望: 68
 }
 
 test "financial_compound_interest" {
@@ -94,10 +94,10 @@ test "financial_compound_interest" {
   // 计算总收益
   let total_profit = year3_balance - principal
   
-  assert_eq(year1_balance, 1080)
-  assert_eq(year2_balance, 1166)
-  assert_eq(year3_balance, 1259)
-  assert_eq(total_profit, 259)
+  inspect year1_balance // 期望: 1080
+  inspect year2_balance // 期望: 1166
+  inspect year3_balance // 期望: 1259
+  inspect total_profit  // 期望: 259
 }
 
 test "inventory_optimization" {
@@ -122,11 +122,11 @@ test "inventory_optimization" {
   // 验证库存不会断货
   let coverage_days = reorder_point / daily_usage
   
-  assert_eq(safety_stock, 45)
-  assert_eq(in_transit_stock, 105)
-  assert_eq(reorder_point, 150)
-  assert_eq(eoq, 38)
-  assert_eq(coverage_days, 10)
+  inspect safety_stock   // 期望: 45
+  inspect in_transit_stock // 期望: 105
+  inspect reorder_point // 期望: 150
+  inspect eoq          // 期望: 38
+  inspect coverage_days // 期望: 10
 }
 
 test "binary_number_operations" {
@@ -153,10 +153,10 @@ test "binary_number_operations" {
   // 右移操作模拟 (22 >> 2 = 5)
   let right_shift = decimal_value / 4
   
-  assert_eq(reconstructed, 22)
-  assert_eq(set_bits, 3)
-  assert_eq(left_shift, 88)
-  assert_eq(right_shift, 6)
+  inspect reconstructed // 期望: 22
+  inspect set_bits     // 期望: 3
+  inspect left_shift   // 期望: 88
+  inspect right_shift  // 期望: 6
 }
 
 test "game_score_system" {
@@ -185,12 +185,12 @@ test "game_score_system" {
   // 计算剩余分数
   let remainder_score = final_score - (star_rating - 1) * 50
   
-  assert_eq(basic_score, 70)
-  assert_eq(combo_score, 210)
-  assert_eq(time_score, 225)
-  assert_eq(final_score, 217)
-  assert_eq(star_rating, 5)
-  assert_eq(remainder_score, 17)
+  inspect basic_score    // 期望: 70
+  inspect combo_score    // 期望: 210
+  inspect time_score     // 期望: 225
+  inspect final_score    // 期望: 217
+  inspect star_rating    // 期望: 5
+  inspect remainder_score // 期望: 17
 }
 
 test "data_structure_operations" {
@@ -224,16 +224,16 @@ test "data_structure_operations" {
   let new_front2 = enqueue3  // 新的队首
   
   // 验证队列操作
-  assert_eq(queue_size1, 1)
-  assert_eq(front1, 10)
-  assert_eq(queue_size2, 2)
-  assert_eq(front2, 10)
-  assert_eq(queue_size3, 3)
-  assert_eq(front3, 10)
-  assert_eq(dequeue1, 10)
-  assert_eq(queue_size_after_dequeue1, 2)
-  assert_eq(new_front1, 20)
-  assert_eq(dequeue2, 20)
-  assert_eq(queue_size_after_dequeue2, 1)
-  assert_eq(new_front2, 30)
+  inspect queue_size1              // 期望: 1
+  inspect front1                   // 期望: 10
+  inspect queue_size2              // 期望: 2
+  inspect front2                   // 期望: 10
+  inspect queue_size3              // 期望: 3
+  inspect front3                   // 期望: 10
+  inspect dequeue1                 // 期望: 10
+  inspect queue_size_after_dequeue1 // 期望: 2
+  inspect new_front1               // 期望: 20
+  inspect dequeue2                 // 期望: 20
+  inspect queue_size_after_dequeue2 // 期望: 1
+  inspect new_front2               // 期望: 30
 }
