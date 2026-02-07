@@ -391,6 +391,7 @@
           "azimuth_high_quality_enhanced_tests.mbt",
     "additional_standard_tests.mbt",
     "user_standard_tests.mbt",
+    "azimuth_new_enhanced_tests.mbt",
     "azimuth_standard_enhanced_tests.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],  "files": [
     "new_enhanced_test_suite.mbt",
     "self_contained_test.mbt",
