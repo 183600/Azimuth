@@ -1,178 +1,238 @@
-// Azimuth 项目增强测试用例
-// 包含 8 个高质量的标准 MoonBit 测试用例
+// Azimuth 增强测试用例
+// 标准 MoonBit 测试语法，包含 10 个高质量测试用例
 
-test "power_calculation_simulation" {
-  // 幂运算模拟测试
-  // 计算 2^4 = 16
+test "number_theory_primes" {
+  // 数论基础 - 质数相关计算
+  // 检查 7 是否为质数（通过测试除法）
+  let num = 7
+  let divisors_tested = 0
   
-  let base = 2
-  let exponent = 4
+  // 测试除以 2
+  let remainder_by_2 = num % 2
+  divisors_tested = divisors_tested + 1
   
-  // 模拟幂运算：2^4 = 2 × 2 × 2 × 2
-  let power1 = base
-  let power2 = multiply(power1, base)  // 2^2 = 4
-  let power3 = multiply(power2, base)  // 2^3 = 8
-  let power4 = multiply(power3, base)  // 2^4 = 16
+  // 测试除以 3
+  let remainder_by_3 = num % 3
+  divisors_tested = divisors_tested + 1
   
-  assert_eq(power2, 4)
-  assert_eq(power3, 8)
-  assert_eq(power4, 16)
+  // 测试除以 5
+  let remainder_by_5 = num % 5
+  divisors_tested = divisors_tested + 1
+  
+  // 验证所有除法都有余数（质数性质）
+  let total_non_zero = remainder_by_2 + remainder_by_3 + remainder_by_5
+  
+  assert_eq(divisors_tested, 3)
+  assert_eq(total_non_zero, 1 + 1 + 2)  // 7%2=1, 7%3=1, 7%5=2
 }
 
-test "percentage_calculations" {
-  // 百分比计算测试
-  let original_value = 200
-  let percentage = 15
+test "geometry_circle_properties" {
+  // 几何学 - 圆的性质计算
+  let radius = 5
+  let pi_approx = 22  // 使用 22/7 作为 π 的近似
   
-  // 计算百分比值
-  let percentage_value = divide_with_ceil(multiply(original_value, percentage), 100)
+  // 计算直径
+  let diameter = multiply(radius, 2)
   
-  // 计算增加百分比后的值
-  let increased_value = add(original_value, percentage_value)
+  // 计算周长 (2πr)
+  let circumference = divide_with_ceil(multiply(diameter, pi_approx), 7)
   
-  // 计算减少百分比后的值
-  let decreased_value = subtract(original_value, percentage_value)
+  // 计算面积 (πr²)
+  let area = divide_with_ceil(multiply(pi_approx, multiply(radius, radius)), 7)
   
-  assert_eq(percentage_value, 30)
-  assert_eq(increased_value, 230)
-  assert_eq(decreased_value, 170)
+  assert_eq(diameter, 10)
+  assert_eq(circumference, 32)  // ceil(2 * 22/7 * 5) = ceil(220/7) = ceil(31.43) = 32
+  assert_eq(area, 79)  // ceil(22/7 * 25) = ceil(550/7) = ceil(78.57) = 79
 }
 
-test "average_calculation" {
-  // 平均值计算测试
-  let numbers_sum = add(add(add(add(45, 67), 23), 89), 56)
-  let count = 5
-  let average = divide_with_ceil(numbers_sum, count)
+test "time_conversion_calculations" {
+  // 时间转换计算
+  let hours = 2
+  let minutes = 45
+  let seconds = 30
   
-  // 验证总和和平均值
-  assert_eq(numbers_sum, 280)
-  assert_eq(average, 56)
+  // 转换为总秒数
+  let total_seconds = add(multiply(hours, 3600), add(multiply(minutes, 60), seconds))
+  
+  // 转换回小时、分钟、秒
+  let back_to_hours = divide_with_ceil(total_seconds, 3600)
+  let remaining_seconds = subtract(total_seconds, multiply(back_to_hours, 3600))
+  let back_to_minutes = divide_with_ceil(remaining_seconds, 60)
+  let back_to_seconds = subtract(remaining_seconds, multiply(back_to_minutes, 60))
+  
+  assert_eq(total_seconds, 9930)  // 2*3600 + 45*60 + 30 = 7200 + 2700 + 30
+  assert_eq(back_to_hours, 3)     // ceil(9930/3600) = ceil(2.76) = 3
+  assert_eq(back_to_minutes, 1)   // ceil(330/60) = ceil(5.5) = 6
 }
 
-test "modulo_operations_simulation" {
-  // 模运算模拟测试
-  let dividend = 27
-  let divisor = 5
+test "financial_simple_interest" {
+  // 金融 - 单利计算
+  let principal = 1000
+  let rate_percent = 5
+  let time_years = 3
   
-  // 计算商和余数
-  let quotient = divide_with_ceil(dividend, divisor)
-  let product = multiply(quotient, divisor)
-  let remainder = subtract(dividend, product)
+  // 计算利息
+  let interest = divide_with_ceil(multiply(principal, multiply(rate_percent, time_years)), 100)
   
-  // 修正向上取整的影响
-  let corrected_quotient = subtract(quotient, 1)
-  let corrected_product = multiply(corrected_quotient, divisor)
-  let corrected_remainder = subtract(dividend, corrected_product)
+  // 计算总额
+  let total_amount = add(principal, interest)
   
-  assert_eq(quotient, 6)
-  assert_eq(corrected_quotient, 5)
-  assert_eq(corrected_remainder, 2)
+  // 计算月供（假设分 12 个月）
+  let monthly_payment = divide_with_ceil(total_amount, 12)
+  
+  assert_eq(interest, 150)        // ceil(1000 * 5 * 3 / 100) = ceil(150) = 150
+  assert_eq(total_amount, 1150)   // 1000 + 150
+  assert_eq(monthly_payment, 96)  // ceil(1150/12) = ceil(95.83) = 96
 }
 
-test "factorial_simulation_iterative" {
-  // 阶乘迭代计算模拟
-  // 计算 4! = 4 × 3 × 2 × 1 = 24
+test "statistics_median_calculation" {
+  // 统计学 - 中位数计算
+  // 数据集: [3, 7, 8, 12, 15, 18, 21, 25]
+  let data_size = 8
   
-  let n = 4
-  let result1 = multiply(4, 3)  // 4 × 3 = 12
-  let result2 = multiply(result1, 2)  // 12 × 2 = 24
-  let result3 = multiply(result2, 1)  // 24 × 1 = 24
+  // 计算中位数位置（偶数个元素）
+  let mid_pos1 = divide_with_ceil(data_size, 2)
+  let mid_pos2 = subtract(mid_pos1, 1)
   
-  assert_eq(result1, 12)
-  assert_eq(result2, 24)
-  assert_eq(result3, 24)
+  // 模拟中位数数值（第4和第5个元素）
+  let value1 = 12
+  let value2 = 15
+  
+  // 计算中位数（两个中间值的平均值）
+  let median_sum = add(value1, value2)
+  let median = divide_with_ceil(median_sum, 2)
+  
+  assert_eq(mid_pos1, 4)
+  assert_eq(mid_pos2, 3)
+  assert_eq(median_sum, 27)
+  assert_eq(median, 14)  // ceil(27/2) = ceil(13.5) = 14
 }
 
-test "greatest_common_divisor_simulation" {
-  // 最大公约数模拟测试（欧几里得算法简化版）
-  // 求 GCD(48, 18)
+test "physics_kinematics" {
+  // 物理学 - 运动学计算
+  let initial_velocity = 10  // m/s
+  let acceleration = 3       // m/s²
+  let time = 4               // s
   
-  let a = 48
-  let b = 18
+  // 计算最终速度: v = u + at
+  let final_velocity = add(initial_velocity, multiply(acceleration, time))
   
-  // 模拟欧几里得算法步骤
-  let step1 = divide_with_ceil(a, b)  // 48 / 18 = 3
-  let remainder1 = subtract(a, multiply(step1 - 1, b))  // 48 - 2×18 = 12
-  let step2 = divide_with_ceil(b, remainder1)  // 18 / 12 = 2
-  let remainder2 = subtract(b, multiply(step2 - 1, remainder1))  // 18 - 1×12 = 6
-  let step3 = divide_with_ceil(remainder1, remainder2)  // 12 / 6 = 2
-  let remainder3 = subtract(remainder1, multiply(step3 - 1, remainder2))  // 12 - 1×6 = 6
+  // 计算位移: s = ut + 0.5at²
+  let displacement = add(multiply(initial_velocity, time), divide_with_ceil(multiply(acceleration, multiply(time, time)), 2))
   
-  // 当余数为0时，上一个余数就是GCD
-  let gcd = remainder2
+  // 计算平均速度
+  let average_velocity = divide_with_ceil(add(initial_velocity, final_velocity), 2)
   
-  assert_eq(step1, 3)
-  assert_eq(remainder1, 12)
-  assert_eq(step2, 2)
-  assert_eq(remainder2, 6)
-  assert_eq(step3, 2)
-  assert_eq(remainder3, 6)
-  assert_eq(gcd, 6)
+  assert_eq(final_velocity, 22)     // 10 + 3*4 = 22
+  assert_eq(displacement, 64)       // 10*4 + ceil(3*16/2) = 40 + ceil(24) = 64
+  assert_eq(average_velocity, 16)   // ceil(32/2) = 16
 }
 
-test "prime_check_simulation" {
-  // 质数检查模拟测试
-  // 检查数字 17 是否为质数
+test "computer_science_binary_operations" {
+  // 计算机科学 - 二进制运算
+  // 模拟 10 (1010) 和 6 (0110) 的运算
+  let num1 = 10
+  let num2 = 6
   
-  let number = 17
-  let sqrt_approx = divide_with_ceil(number, 2)  // 简化的平方根近似
+  // 模按位与运算
+  let and_result = num2  // 1010 & 0110 = 0010 = 2
   
-  // 检查是否能被 2 整除
-  let divisible_by_2 = subtract(number, multiply(divide_with_ceil(number, 2), 2))
+  // 模按位或运算
+  let or_result = add(num1, subtract(num2, and_result))  // 1010 | 0110 = 1110 = 14
   
-  // 检查是否能被 3 整除
-  let divisible_by_3 = subtract(number, multiply(divide_with_ceil(number, 3), 3))
+  // 模按位异或运算
+  let xor_result = subtract(or_result, and_result)  // 1010 ^ 0110 = 1100 = 12
   
-  // 检查是否能被 5 整除
-  let divisible_by_5 = subtract(number, multiply(divide_with_ceil(number, 5), 5))
-  
-  // 检查是否能被 7 整除
-  let divisible_by_7 = subtract(number, multiply(divide_with_ceil(number, 7), 7))
-  
-  // 如果所有余数都不为0，则可能是质数
-  let is_prime_candidate = multiply(multiply(multiply(divisible_by_2, divisible_by_3), divisible_by_5), divisible_by_7)
-  
-  assert_eq(sqrt_approx, 9)
-  assert_eq(divisible_by_2, 1)
-  assert_eq(divisible_by_3, 2)
-  assert_eq(divisible_by_5, 2)
-  assert_eq(divisible_by_7, 3)
-  assert_eq(is_prime_candidate, 12)
+  assert_eq(and_result, 2)
+  assert_eq(or_result, 14)
+  assert_eq(xor_result, 12)
 }
 
-test "shopping_cart_total" {
-  // 购物车总价计算测试
-  let item1_price = 29
-  let item1_quantity = 2
-  let item2_price = 15
-  let item2_quantity = 3
-  let item3_price = 8
-  let item3_quantity = 4
+test "combinatorics_permutations" {
+  // 组合数学 - 排列计算
+  let n = 5  // 5个不同的物品
+  let r = 3  // 选择3个进行排列
   
-  // 计算各商品小计
-  let subtotal1 = multiply(item1_price, item1_quantity)
-  let subtotal2 = multiply(item2_price, item2_quantity)
-  let subtotal3 = multiply(item3_price, item3_quantity)
+  // 计算 P(5,3) = 5! / (5-3)! = 5! / 2! = 5 × 4 × 3 = 60
+  let step1 = n
+  let step2 = subtract(n, 1)
+  let step3 = subtract(n, 2)
   
-  // 计算商品总计
-  let items_total = add(add(subtotal1, subtotal2), subtotal3)
+  let permutations = multiply(multiply(step1, step2), step3)
   
-  // 计算折扣（满100减10）
-  let discount = divide_with_ceil(items_total, 100) * 10
-  let subtotal_after_discount = subtract(items_total, discount)
+  // 计算组合数 C(5,3) = P(5,3) / 3! = 60 / 6 = 10
+  let factorial_3 = multiply(multiply(1, 2), 3)
+  let combinations = divide_with_ceil(permutations, factorial_3)
   
-  // 计算税费（8%）
-  let tax = divide_with_ceil(multiply(subtotal_after_discount, 8), 100)
+  assert_eq(step1, 5)
+  assert_eq(step2, 4)
+  assert_eq(step3, 3)
+  assert_eq(permutations, 60)
+  assert_eq(factorial_3, 6)
+  assert_eq(combinations, 10)
+}
+
+test "data_structures_queue_simulation" {
+  // 数据结构 - 队列操作模拟
+  // 模拟队列的入队和出队操作
   
-  // 计算最终总价
-  let final_total = add(subtotal_after_discount, tax)
+  // 初始队列为空
+  let queue_size = 0
+  let front_element = 0
   
-  assert_eq(subtotal1, 58)
-  assert_eq(subtotal2, 45)
-  assert_eq(subtotal3, 32)
-  assert_eq(items_total, 135)
-  assert_eq(discount, 10)
-  assert_eq(subtotal_after_discount, 125)
-  assert_eq(tax, 10)
-  assert_eq(final_total, 135)
+  // enqueue(10)
+  let enqueue1 = 10
+  queue_size = queue_size + 1
+  front_element = enqueue1
+  
+  // enqueue(20)
+  let enqueue2 = 20
+  queue_size = queue_size + 1
+  
+  // enqueue(30)
+  let enqueue3 = 30
+  queue_size = queue_size + 1
+  
+  // dequeue() -> 返回 10
+  let dequeue1 = front_element
+  queue_size = queue_size - 1
+  front_element = enqueue2  // 新的队首
+  
+  // dequeue() -> 返回 20
+  let dequeue2 = front_element
+  queue_size = queue_size - 1
+  front_element = enqueue3  // 新的队首
+  
+  assert_eq(dequeue1, 10)
+  assert_eq(dequeue2, 20)
+  assert_eq(queue_size, 1)
+  assert_eq(front_element, 30)
+}
+
+test "algorithm_efficiency_comparison" {
+  // 算法效率比较
+  let input_size = 100
+  
+  // O(1) 常数时间算法
+  let constant_time_result = multiply(input_size, 2)
+  
+  // O(log n) 对数时间算法模拟
+  let log_steps = 0
+  let current = input_size
+  while current > 1 {
+    current = divide_with_ceil(current, 2)
+    log_steps = log_steps + 1
+  }
+  
+  // O(n) 线性时间算法模拟
+  let linear_sum = multiply(input_size, add(input_size, 1))
+  let linear_result = divide_with_ceil(linear_sum, 2)
+  
+  // O(n²) 二次时间算法模拟
+  let quadratic_result = multiply(input_size, input_size)
+  
+  assert_eq(constant_time_result, 200)
+  assert_eq(log_steps, 7)  // 100 -> 50 -> 25 -> 13 -> 7 -> 4 -> 2 -> 1
+  assert_eq(linear_result, 5050)  // 100*101/2 = 5050
+  assert_eq(quadratic_result, 10000)
 }
