@@ -1,89 +1,86 @@
-// Azimuth 项目新增标准测试用例
-// 包含 8 个高质量测试用例，使用标准 MoonBit 测试语法
+// Azimuth 项目标准 MoonBit 测试用例
+// 包含8个高质量测试用例，使用标准 MoonBit 测试语法
 
-test "arithmetics_basic_operations" {
-  // 基本算术运算测试
-  assert_eq(10, 2 + 3)
-  assert_eq(6, 2 * 3)
-  assert_eq(4, 7 - 3)
-  assert_eq(3, 10 / 3)
+test "basic_addition_test" {
+  // 基本加法测试
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-1, add(-3, 2))
 }
 
-test "arithmetics_zero_operations" {
-  // 零值运算测试
-  assert_eq(5, 5 + 0)
-  assert_eq(0, 5 * 0)
-  assert_eq(5, 5 - 0)
-  assert_eq(0, 0 / 5)
+test "basic_multiplication_test" {
+  // 基本乘法测试
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-15, multiply(-3, 5))
 }
 
-test "arithmetics_negative_numbers" {
-  // 负数运算测试
-  assert_eq(-4, -7 + 3)
-  assert_eq(-21, -7 * 3)
-  assert_eq(-10, -7 - 3)
-  assert_eq(-3, -10 / 3)
+test "division_ceil_test" {
+  // 向上取整除法测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(10, 0))
 }
 
-test "division_precision" {
-  // 除法精度测试
-  assert_eq(0, 1 / 2)
-  assert_eq(1, 3 / 2)
-  assert_eq(3, 10 / 3)
-  assert_eq(2, 20 / 4)
-  assert_eq(6, 13 / 2)
+test "greet_function_test" {
+  // 问候函数测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
-test "string_operations" {
-  // 字符串操作测试
-  assert_eq_string("Hello, MoonBit!", "Hello, MoonBit!")
-  assert_eq_string("Hello, World!", "Hello, World!")
-  assert_eq_string("Hello, !", "Hello, !")
-  assert_eq_string("Hello, 用户!", "Hello, 用户!")
+test "subtraction_test" {
+  // 减法测试
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(15, 15))
 }
 
-test "complex_calculation_pipeline" {
-  // 复杂计算流水线测试
-  let base = 100
-  let step1 = base * 2      // 200
-  let step2 = step1 + 50    // 250
-  let step3 = step2 - 30    // 220
-  let step4 = step3 / 4     // 55
-  
-  assert_eq(200, step1)
-  assert_eq(250, step2)
-  assert_eq(220, step3)
-  assert_eq(55, step4)
-}
-
-test "mathematical_properties" {
-  // 数学性质验证测试
-  let x = 15
-  let y = 25
+test "mathematical_properties_test" {
+  // 数学性质测试
+  let a = 12
+  let b = 8
   
   // 加法交换律
-  assert_eq(x + y, y + x)
+  assert_eq(add(a, b), add(b, a))
   
   // 乘法交换律
-  assert_eq(x * y, y * x)
+  assert_eq(multiply(a, b), multiply(b, a))
   
   // 加法单位元
-  assert_eq(x + 0, x)
+  assert_eq(add(a, 0), a)
   
   // 乘法单位元
-  assert_eq(x * 1, x)
+  assert_eq(multiply(a, 1), a)
 }
 
-test "boundary_value_analysis" {
-  // 边界值分析测试
-  // 测试极值情况
-  assert_eq(2000, 1000 + 1000)
-  assert_eq(1000000, 1000 * 1000)
-  assert_eq(333, 1000 / 3)
+test "business_calculation_test" {
+  // 业务计算测试
+  let total_items = 35
+  let items_per_package = 8
+  let packages_needed = divide_with_ceil(total_items, items_per_package)
   
-  // 测试单位边界
-  assert_eq(2, 1 + 1)
-  assert_eq(1, 1 * 1)
-  assert_eq(0, 1 - 1)
-  assert_eq(1, 1 / 1)
+  assert_eq(5, packages_needed)
+  
+  // 验证总容量
+  let total_capacity = multiply(packages_needed, items_per_package)
+  assert_eq(40, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(5, remaining_space)
+}
+
+test "financial_calculation_test" {
+  // 金融计算测试
+  let principal = 10000
+  let rate = 5
+  
+  // 计算利息
+  let interest = divide_with_ceil(multiply(principal, rate), 100)
+  let total_with_interest = add(principal, interest)
+  
+  assert_eq(500, interest)
+  assert_eq(10500, total_with_interest)
 }
