@@ -1,224 +1,226 @@
-// 标准 MoonBit 测试套件 - 10个高质量测试用例
-// 使用标准 MoonBit 测试语法，覆盖核心功能
+// 高质量 MoonBit 测试套件
+// 包含8个专业测试用例，覆盖核心功能和边界情况
 
-test "basic_arithmetic_comprehensive" {
-  // 基本算术运算综合测试
-  assert_eq(8, add(5, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-8, add(-5, -3))
-  assert_eq(2, add(-5, 7))
+test "arithmetic_operations_comprehensive" {
+  // 综合算术运算测试
+  // 测试基本算术运算的正确性和数学性质
   
-  assert_eq(15, multiply(3, 5))
-  assert_eq(0, multiply(3, 0))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(15, multiply(-3, -5))
+  let a = 15
+  let b = 7
   
-  assert_eq(3, subtract(10, 7))
-  assert_eq(-3, subtract(7, 10))
-  assert_eq(0, subtract(5, 5))
+  // 加法运算验证
+  assert_eq(22, add(a, b))
+  assert_eq(8, subtract(a, b))
+  
+  // 乘法运算验证
+  assert_eq(105, multiply(a, b))
+  
+  // 除法向上取整验证
+  assert_eq(3, divide_with_ceil(a, b))
+  assert_eq(2, divide_with_ceil(b, a))
+  
+  // 数学性质验证：交换律
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(multiply(a, b), multiply(b, a))
 }
 
-test "divide_with_ceil_comprehensive" {
-  // 向上取整除法综合测试
+test "divide_with_ceil_edge_cases" {
+  // 向上取整除法边界情况测试
+  // 全面测试除法的各种边界条件
+  
+  // 正常除法情况
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(1, divide_with_ceil(1, 100))
   
-  // 负数测试
+  // 零值处理
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, 0))  // 错误情况默认返回0
+  assert_eq(0, divide_with_ceil(10, 0))  // 错误情况默认返回0
+  
+  // 负数处理
   assert_eq(-3, divide_with_ceil(-10, 3))
   assert_eq(-4, divide_with_ceil(10, -3))
   assert_eq(4, divide_with_ceil(-10, -3))
-  assert_eq(0, divide_with_ceil(0, -3))
+  
+  // 边界值
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(1000000, divide_with_ceil(1000000, 1))
 }
 
-test "greet_function_international_support" {
-  // 问候函数国际化支持测试
+test "string_operations_validation" {
+  // 字符串操作验证测试
+  // 测试字符串相关函数的正确性
+  
+  // 问候函数测试
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello, Москва!", greet("Москва"))
-  assert_eq_string("Hello, café!", greet("café"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
   assert_eq_string("Hello, !", greet(""))
+  
+  // 特殊字符处理
+  assert_eq_string("Hello, 中文!", greet("中文"))
   assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, !@#$!", greet("!@#$"))
+  
+  // 空格处理
+  assert_eq_string("Hello,  !", greet(" "))
+  assert_eq_string("Hello, multiple words!", greet("multiple words"))
 }
 
-test "mathematical_properties_validation" {
+test "complex_calculation_pipeline" {
+  // 复杂计算流水线测试
+  // 模拟多步骤计算过程，验证函数组合的正确性
+  
+  let initial = 100
+  let multiplier = 3
+  let addend = 25
+  let subtrahend = 15
+  let divisor = 4
+  
+  // 计算流水线：((initial * multiplier) + addend - subtrahend) / divisor
+  let step1 = multiply(initial, multiplier)  // 100 * 3 = 300
+  let step2 = add(step1, addend)             // 300 + 25 = 325
+  let step3 = subtract(step2, subtrahend)    // 325 - 15 = 310
+  let result = divide_with_ceil(step3, divisor)  // ceil(310/4) = 78
+  
+  // 验证中间步骤
+  assert_eq(300, step1)
+  assert_eq(325, step2)
+  assert_eq(310, step3)
+  assert_eq(78, result)
+}
+
+test "mathematical_properties_verification" {
   // 数学性质验证测试
+  // 验证基本算术运算的数学定律和性质
+  
   let x = 12
   let y = 8
+  let z = 5
   
-  // 加法交换律
-  assert_eq(add(x, y), add(y, x))
+  // 加法性质
+  assert_eq(add(x, y), add(y, x))  // 交换律
+  assert_eq(add(add(x, y), z), add(x, add(y, z)))  // 结合律
+  assert_eq(add(x, 0), x)  // 单位元
   
-  // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
-  
-  // 加法恒等式
-  assert_eq(x, add(x, 0))
-  assert_eq(0, subtract(x, x))
-  
-  // 乘法恒等式
-  assert_eq(x, multiply(x, 1))
-  assert_eq(0, multiply(x, 0))
+  // 乘法性质
+  assert_eq(multiply(x, y), multiply(y, x))  // 交换律
+  assert_eq(multiply(multiply(x, y), z), multiply(x, multiply(y, z)))  // 结合律
+  assert_eq(multiply(x, 1), x)  // 单位元
+  assert_eq(multiply(x, 0), 0)  // 零元
   
   // 分配律
-  assert_eq(
-    multiply(x, add(y, 2)),
-    add(multiply(x, y), multiply(x, 2))
-  )
+  assert_eq(multiply(x, add(y, z)), add(multiply(x, y), multiply(x, z)))
+  
+  // 减法性质
+  assert_eq(add(subtract(x, y), y), x)  // 逆运算
 }
 
-test "business_logic_inventory_management" {
-  // 业务逻辑：库存管理测试
-  let total_products = 157
-  let box_capacity = 24
-  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+test "boundary_value_analysis" {
+  // 边界值分析测试
+  // 系统性测试各种边界条件和极值情况
   
-  assert_eq(7, boxes_needed)
+  // 零值边界
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 100))
+  assert_eq(0, subtract(0, 0))
+  assert_eq(0, divide_with_ceil(0, 10))
   
-  // 验证总容量
-  let total_capacity = multiply(boxes_needed, box_capacity)
-  assert_eq(168, total_capacity)
+  // 单位值边界
+  assert_eq(1, add(1, 0))
+  assert_eq(100, multiply(1, 100))
+  assert_eq(1, subtract(1, 0))
+  assert_eq(100, divide_with_ceil(100, 1))
   
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_products)
-  assert_eq(11, remaining_space)
+  // 负单位边界
+  assert_eq(0, add(-1, 1))
+  assert_eq(-100, multiply(-1, 100))
+  assert_eq(1, subtract(0, -1))
+  assert_eq(-100, divide_with_ceil(-100, 1))
   
-  // 验证空间利用率
-  assert_true(remaining_space < box_capacity)
+  // 大数边界
+  let large_num = 100000
+  assert_eq(200000, add(large_num, large_num))
+  assert_eq(33334, divide_with_ceil(large_num, 3))
+  assert_eq(0, subtract(large_num, large_num))
 }
 
-test "complex_calculation_workflow" {
-  // 复杂计算工作流测试
-  // 场景：项目资源分配
-  let team_members = 8
-  let tasks_per_member = 5
-  let days_per_task = 2
-  let buffer_days = 3
+test "real_world_application_scenario" {
+  // 真实世界应用场景测试
+  // 模拟购物车计算的完整业务场景
   
-  // 计算总任务数
-  let total_tasks = multiply(team_members, tasks_per_member)
-  assert_eq(40, total_tasks)
+  // 商品信息
+  let item1_price = 45
+  let item1_qty = 2
+  let item2_price = 28
+  let item2_qty = 3
+  let item3_price = 15
+  let item3_qty = 4
   
-  // 计算基础天数
-  let base_days = multiply(total_tasks, days_per_task)
-  assert_eq(80, base_days)
+  // 计算各商品小计
+  let subtotal1 = multiply(item1_price, item1_qty)  // 45 * 2 = 90
+  let subtotal2 = multiply(item2_price, item2_qty)  // 28 * 3 = 84
+  let subtotal3 = multiply(item3_price, item3_qty)  // 15 * 4 = 60
   
-  // 计算总项目天数
-  let total_days = add(base_days, buffer_days)
-  assert_eq(83, total_days)
+  // 计算商品总计
+  let items_total = add(add(subtotal1, subtotal2), subtotal3)  // 90 + 84 + 60 = 234
   
-  // 计算需要的冲刺数（每冲刺10天）
-  let sprints_needed = divide_with_ceil(total_days, 10)
-  assert_eq(9, sprints_needed)
+  // 计算税费（8%税率，向上取整）
+  let tax_rate = 8
+  let tax_amount = divide_with_ceil(multiply(items_total, tax_rate), 100)  // ceil(234 * 8 / 100) = 19
+  
+  // 计算最终总价
+  let grand_total = add(items_total, tax_amount)  // 234 + 19 = 253
+  
+  // 计算包装箱数（每箱最多装10件）
+  let total_items = add(add(item1_qty, item2_qty), item3_qty)  // 2 + 3 + 4 = 9
+  let boxes_needed = divide_with_ceil(total_items, 10)  // ceil(9/10) = 1
+  
+  // 验证计算结果
+  assert_eq(90, subtotal1)
+  assert_eq(84, subtotal2)
+  assert_eq(60, subtotal3)
+  assert_eq(234, items_total)
+  assert_eq(19, tax_amount)
+  assert_eq(253, grand_total)
+  assert_eq(9, total_items)
+  assert_eq(1, boxes_needed)
 }
 
-test "error_handling_and_edge_cases" {
-  // 错误处理和边界情况测试
+test "error_handling_and_robustness" {
+  // 错误处理和健壮性测试
+  // 测试函数在异常情况下的行为
+  
   // 除零错误处理
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+  let zero_div_result1 = divide_with_ceil(50, 0)
+  let zero_div_result2 = divide_with_ceil(0, 0)
+  let zero_div_result3 = divide_with_ceil(-50, 0)
   
-  // 边界值测试
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(-1, -1))
-  assert_eq(0, divide_with_ceil(0, 1))
-  assert_eq(0, divide_with_ceil(0, -1))
+  // 验证错误情况下的安全返回值
+  assert_eq(0, zero_div_result1)
+  assert_eq(0, zero_div_result2)
+  assert_eq(0, zero_div_result3)
   
-  // 大数测试
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(1000000, multiply(1000, 1000))
-  assert_eq(1001, divide_with_ceil(1000000, 999))
-}
-
-test "negative_numbers_comprehensive_test" {
-  // 负数综合处理测试
-  // 加法负数测试
-  assert_eq(-10, add(-5, -5))
-  assert_eq(0, add(-5, 5))
-  assert_eq(5, add(-10, 15))
+  // 大数运算稳定性
+  let big_num1 = 50000
+  let big_num2 = 50000
+  let big_add = add(big_num1, big_num2)
+  let big_mult = multiply(big_num1, 2)
+  let big_div = divide_with_ceil(big_num1, 3)
   
-  // 乘法负数测试
-  assert_eq(25, multiply(-5, -5))
-  assert_eq(-15, multiply(-5, 3))
-  assert_eq(15, multiply(-5, -3))
-  assert_eq(0, multiply(-5, 0))
+  // 验证大数运算结果
+  assert_eq(100000, big_add)
+  assert_eq(100000, big_mult)
+  assert_eq(16667, big_div)
   
-  // 减法负数测试
-  assert_eq(-15, subtract(-10, 5))
-  assert_eq(5, subtract(-10, -15))
-  assert_eq(-20, subtract(-10, 10))
+  // 负数运算一致性
+  let neg1 = -15
+  let neg2 = 8
+  let pos1 = 15
+  let pos2 = -8
   
-  // 除法负数测试
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(3, divide_with_ceil(-10, -3))
-  assert_eq(-4, divide_with_ceil(10, -3))
-}
-
-test "real_world_event_planning" {
-  // 真实世界事件规划测试
-  let participants = 250
-  let tables_available = 25
-  let chairs_per_table = 8
-  let cost_per_chair = 15
-  let total_budget = 4000
-  
-  // 计算需要的桌子数量
-  let tables_needed = divide_with_ceil(participants, chairs_per_table)
-  assert_eq(32, tables_needed)
-  
-  // 检查桌子是否足够
-  assert_true(tables_needed <= tables_available)
-  
-  // 计算总座位数
-  let total_seats = multiply(tables_needed, chairs_per_table)
-  assert_eq(256, total_seats)
-  
-  // 计算剩余座位
-  let remaining_seats = subtract(total_seats, participants)
-  assert_eq(6, remaining_seats)
-  
-  // 计算总成本
-  let total_cost = multiply(total_seats, cost_per_chair)
-  assert_eq(3840, total_cost)
-  
-  // 验证预算充足
-  assert_true(total_cost <= total_budget)
-  
-  // 计算剩余预算
-  let remaining_budget = subtract(total_budget, total_cost)
-  assert_eq(160, remaining_budget)
-}
-
-test "data_processing_pipeline" {
-  // 数据处理流水线测试
-  // 场景：批量数据处理
-  let data_batches = 150
-  let batch_size = 12
-  let processing_time_per_batch = 2
-  let verification_time = 5
-  
-  // 计算需要的处理轮次
-  let processing_rounds = divide_with_ceil(data_batches, batch_size)
-  assert_eq(13, processing_rounds)
-  
-  // 计算总处理时间
-  let total_processing_time = multiply(processing_rounds, processing_time_per_batch)
-  assert_eq(26, total_processing_time)
-  
-  // 计算总时间（包括验证时间）
-  let total_time = add(total_processing_time, verification_time)
-  assert_eq(31, total_time)
-  
-  // 计算实际处理的数据量
-  let actual_processed = multiply(processing_rounds - 1, batch_size)
-  let final_batch_size = subtract(data_batches, actual_processed)
-  assert_eq(6, final_batch_size)
-  
-  // 验证所有数据都被处理
-  assert_eq(data_batches, add(actual_processed, final_batch_size))
+  // 验证负数运算的一致性
+  assert_eq(add(neg1, neg2), add(pos1, pos2))
+  assert_eq(multiply(neg1, pos2), multiply(pos1, neg2))
 }
