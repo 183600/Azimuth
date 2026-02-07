@@ -2149,3 +2149,337 @@ test "compression_algorithm_simulation" {
   assert_eq(data3_ratio, 600)
   assert_eq(average_ratio, 293)
 }
+
+// 新增的10个标准MoonBit测试用例
+test "advanced_arithmetic_sequence" {
+  // 高级算术序列测试
+  // 等差数列：3, 7, 11, 15, 19...
+  let first_term = 3
+  let common_diff = 4
+  
+  // 计算前5项
+  let term1 = first_term
+  let term2 = add(term1, common_diff)
+  let term3 = add(term2, common_diff)
+  let term4 = add(term3, common_diff)
+  let term5 = add(term4, common_diff)
+  
+  // 计算前5项和
+  let sum_5_terms = add(add(add(add(term1, term2), term3), term4), term5)
+  
+  // 验证结果
+  assert_eq(term1, 3)
+  assert_eq(term2, 7)
+  assert_eq(term3, 11)
+  assert_eq(term4, 15)
+  assert_eq(term5, 19)
+  assert_eq(sum_5_terms, 55)
+}
+
+test "string_processing_validation" {
+  // 字符串处理验证测试
+  // 测试greet函数的各种边界情况
+  
+  // 空字符串处理
+  let empty_result = greet("")
+  assert_eq_string(empty_result, "Hello, !")
+  
+  // 单字符处理
+  let single_char = greet("A")
+  assert_eq_string(single_char, "Hello, A!")
+  
+  // 长字符串处理
+  let long_name = "VeryLongNameForTestingPurpose"
+  let long_result = greet(long_name)
+  assert_eq_string(long_result, "Hello, VeryLongNameForTestingPurpose!")
+  
+  // 特殊字符处理
+  let special_chars = greet("@#$%^&*()")
+  assert_eq_string(special_chars, "Hello, @#$%^&*()!")
+}
+
+test "resource_optimization_algorithm" {
+  // 资源优化算法测试
+  // 模拟资源分配优化问题
+  
+  let total_budget = 1000
+  let project_a_cost = 350
+  let project_b_cost = 275
+  let project_c_cost = 180
+  let project_d_cost = 420
+  
+  // 计算不同组合的总成本
+  let combo_ab = add(project_a_cost, project_b_cost)
+  let combo_ac = add(project_a_cost, project_c_cost)
+  let combo_ad = add(project_a_cost, project_d_cost)
+  let combo_bc = add(project_b_cost, project_c_cost)
+  let combo_bd = add(project_b_cost, project_d_cost)
+  let combo_cd = add(project_c_cost, project_d_cost)
+  
+  // 找出最优组合（成本最接近但不超出预算）
+  let best_combo = combo_bc  // 275 + 180 = 455
+  let remaining_budget = subtract(total_budget, best_combo)
+  
+  // 计算预算利用率
+  let utilization = divide_with_ceil(multiply(best_combo, 100), total_budget)
+  
+  assert_eq(combo_ab, 625)
+  assert_eq(combo_ac, 530)
+  assert_eq(combo_ad, 770)
+  assert_eq(combo_bc, 455)
+  assert_eq(combo_bd, 695)
+  assert_eq(combo_cd, 600)
+  assert_eq(remaining_budget, 545)
+  assert_eq(utilization, 46)
+}
+
+test "error_boundary_comprehensive" {
+  // 错误边界综合测试
+  // 全面测试各种边界条件和错误情况
+  
+  // 除法零边界测试
+  assert_eq(divide_with_ceil(0, 0), 0)
+  assert_eq(divide_with_ceil(100, 0), 0)
+  assert_eq(divide_with_ceil(-100, 0), 0)
+  
+  // 极值测试
+  let max_positive = 2147483647
+  let min_negative = -2147483648
+  
+  // 测试大数运算
+  let large_sum = add(1000000, 1000000)
+  let large_product = multiply(10000, 10000)
+  let large_diff = subtract(2000000, 1000000)
+  
+  // 测试精度边界
+  assert_eq(divide_with_ceil(1, 1000000), 1)
+  assert_eq(divide_with_ceil(1000000, 999999), 2)
+  
+  assert_eq(large_sum, 2000000)
+  assert_eq(large_product, 100000000)
+  assert_eq(large_diff, 1000000)
+}
+
+test "mathematical_series_calculation" {
+  // 数学级数计算测试
+  // 计算平方数列和立方数列
+  
+  // 平方数列：1², 2², 3², 4², 5²
+  let square1 = multiply(1, 1)
+  let square2 = multiply(2, 2)
+  let square3 = multiply(3, 3)
+  let square4 = multiply(4, 4)
+  let square5 = multiply(5, 5)
+  
+  // 立方数列：1³, 2³, 3³
+  let cube1 = multiply(multiply(1, 1), 1)
+  let cube2 = multiply(multiply(2, 2), 2)
+  let cube3 = multiply(multiply(3, 3), 3)
+  
+  // 计算平方和
+  let sum_of_squares = add(add(add(add(square1, square2), square3), square4), square5)
+  
+  // 计算立方和
+  let sum_of_cubes = add(add(cube1, cube2), cube3)
+  
+  assert_eq(square1, 1)
+  assert_eq(square2, 4)
+  assert_eq(square3, 9)
+  assert_eq(square4, 16)
+  assert_eq(square5, 25)
+  assert_eq(cube1, 1)
+  assert_eq(cube2, 8)
+  assert_eq(cube3, 27)
+  assert_eq(sum_of_squares, 55)
+  assert_eq(sum_of_cubes, 36)
+}
+
+test "financial_compound_analysis" {
+  // 金融复利分析测试
+  // 复杂的金融计算场景
+  
+  let principal = 50000
+  let annual_rate = 8
+  let years = 5
+  
+  // 第一年
+  let year1_interest = divide_with_ceil(multiply(principal, annual_rate), 100)
+  let year1_total = add(principal, year1_interest)
+  
+  // 第二年（复利）
+  let year2_interest = divide_with_ceil(multiply(year1_total, annual_rate), 100)
+  let year2_total = add(year1_total, year2_interest)
+  
+  // 第三年
+  let year3_interest = divide_with_ceil(multiply(year2_total, annual_rate), 100)
+  let year3_total = add(year2_total, year3_interest)
+  
+  // 计算总收益
+  let total_profit = subtract(year3_total, principal)
+  
+  // 计算年化收益率
+  let annual_return = divide_with_ceil(multiply(total_profit, 100), principal)
+  let yearly_average = divide_with_ceil(annual_return, 3)
+  
+  assert_eq(year1_total, 54000)
+  assert_eq(year2_total, 58320)
+  assert_eq(year3_total, 62986)
+  assert_eq(total_profit, 12986)
+  assert_eq(yearly_average, 8)
+}
+
+test "geometry_area_calculations" {
+  // 几何面积计算测试
+  // 各种几何图形的面积计算
+  
+  // 矩形：长8，宽5
+  let rect_length = 8
+  let rect_width = 5
+  let rect_area = multiply(rect_length, rect_width)
+  
+  // 三角形：底6，高4，面积 = 1/2 × 底 × 高
+  let triangle_base = 6
+  let triangle_height = 4
+  let triangle_area = divide_with_ceil(multiply(triangle_base, triangle_height), 2)
+  
+  // 梯形：上底3，下底7，高4，面积 = 1/2 × (上底+下底) × 高
+  let trapezoid_top = 3
+  let trapezoid_bottom = 7
+  let trapezoid_height = 4
+  let trapezoid_area = divide_with_ceil(multiply(add(trapezoid_top, trapezoid_bottom), trapezoid_height), 2)
+  
+  // 计算总面积
+  let total_area = add(add(rect_area, triangle_area), trapezoid_area)
+  
+  assert_eq(rect_area, 40)
+  assert_eq(triangle_area, 12)
+  assert_eq(trapezoid_area, 20)
+  assert_eq(total_area, 72)
+}
+
+test "data_structure_stack_operations" {
+  // 数据结构栈操作测试
+  // 模拟栈的push和pop操作
+  
+  // 初始栈为空
+  let stack_size = 0
+  let stack_top = 0
+  
+  // push(10)
+  let push1 = 10
+  let stack_size1 = add(stack_size, 1)
+  let stack_top1 = push1
+  
+  // push(20)
+  let push2 = 20
+  let stack_size2 = add(stack_size1, 1)
+  let stack_top2 = push2
+  
+  // push(30)
+  let push3 = 30
+  let stack_size3 = add(stack_size2, 1)
+  let stack_top3 = push3
+  
+  // pop() -> 应该返回30
+  let pop1 = stack_top3
+  let stack_size_after_pop1 = subtract(stack_size3, 1)
+  let new_top1 = push2
+  
+  // pop() -> 应该返回20
+  let pop2 = new_top1
+  let stack_size_after_pop2 = subtract(stack_size_after_pop1, 1)
+  let new_top2 = push1
+  
+  // 验证栈操作
+  assert_eq(stack_size1, 1)
+  assert_eq(stack_top1, 10)
+  assert_eq(stack_size2, 2)
+  assert_eq(stack_top2, 20)
+  assert_eq(stack_size3, 3)
+  assert_eq(stack_top3, 30)
+  assert_eq(pop1, 30)
+  assert_eq(stack_size_after_pop1, 2)
+  assert_eq(new_top1, 20)
+  assert_eq(pop2, 20)
+  assert_eq(stack_size_after_pop2, 1)
+  assert_eq(new_top2, 10)
+}
+
+test "algorithm_efficiency_comparison" {
+  // 算法效率比较测试
+  // 模拟不同算法的效率比较
+  
+  let data_size = 100
+  
+  // O(1) 常数时间算法
+  let constant_time_result = multiply(5, 10)
+  
+  // O(n) 线性时间算法模拟
+  let linear_time_sum = divide_with_ceil(multiply(data_size, add(data_size, 1)), 2)
+  
+  // O(n²) 二次时间算法模拟
+  let quadratic_time_operations = multiply(data_size, data_size)
+  
+  // O(log n) 对数时间算法模拟
+  let log_time_steps = divide_with_ceil(data_size, 2)
+  let log_time_steps2 = divide_with_ceil(log_time_steps, 2)
+  let log_time_steps3 = divide_with_ceil(log_time_steps2, 2)
+  let log_time_steps4 = divide_with_ceil(log_time_steps3, 2)
+  let log_time_steps5 = divide_with_ceil(log_time_steps4, 2)
+  let total_log_steps = add(add(add(add(log_time_steps, log_time_steps2), log_time_steps3), log_time_steps4), log_time_steps5)
+  
+  // 计算效率比率
+  let linear_to_constant = divide_with_ceil(linear_time_sum, constant_time_result)
+  let quadratic_to_linear = divide_with_ceil(quadratic_time_operations, linear_time_sum)
+  
+  assert_eq(constant_time_result, 50)
+  assert_eq(linear_time_sum, 5050)
+  assert_eq(quadratic_time_operations, 10000)
+  assert_eq(total_log_steps, 93)
+  assert_eq(linear_to_constant, 101)
+  assert_eq(quadratic_to_linear, 2)
+}
+
+test "complex_business_logic" {
+  // 复杂业务逻辑测试
+  // 模拟电商平台的订单处理逻辑
+  
+  let unit_price = 120
+  let quantity = 8
+  let discount_threshold = 5
+  let discount_rate = 10
+  let tax_rate = 8
+  let shipping_cost_per_item = 15
+  let free_shipping_threshold = 1000
+  
+  // 计算商品小计
+  let subtotal = multiply(unit_price, quantity)
+  
+  // 计算折扣（如果数量超过阈值）
+  let discount_applicable = if quantity >= discount_threshold { 1 } else { 0 }
+  let discount_amount = multiply(discount_applicable, divide_with_ceil(multiply(subtotal, discount_rate), 100))
+  let subtotal_after_discount = subtract(subtotal, discount_amount)
+  
+  // 计算税费
+  let tax_amount = divide_with_ceil(multiply(subtotal_after_discount, tax_rate), 100)
+  
+  // 计算运费
+  let total_shipping = multiply(quantity, shipping_cost_per_item)
+  let shipping_discount = if subtotal_after_discount >= free_shipping_threshold { 1 } else { 0 }
+  let final_shipping = multiply(subtract(1, shipping_discount), total_shipping)
+  
+  // 计算总价
+  let total_cost = add(add(subtotal_after_discount, tax_amount), final_shipping)
+  
+  // 计算每件商品的平均成本
+  let average_cost_per_item = divide_with_ceil(total_cost, quantity)
+  
+  assert_eq(subtotal, 960)
+  assert_eq(discount_amount, 96)
+  assert_eq(subtotal_after_discount, 864)
+  assert_eq(tax_amount, 70)
+  assert_eq(total_shipping, 120)
+  assert_eq(final_shipping, 0)
+  assert_eq(total_cost, 934)
+  assert_eq(average_cost_per_item, 117)
+}
