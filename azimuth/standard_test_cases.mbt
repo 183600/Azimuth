@@ -131,3 +131,116 @@ test "real_world_application_scenario" {
   // 验证座位充足性
   @azimuth.assert_true(available_seats >= participants)
 }
+
+// 新增10个标准 MoonBit 测试用例
+test "standard_add_comprehensive" {
+  // 加法函数综合测试
+  @azimuth.assert_eq(25, @azimuth.add(12, 13))
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(-8, @azimuth.add(-3, -5))
+  @azimuth.assert_eq(7, @azimuth.add(-10, 17))
+}
+
+test "standard_multiply_comprehensive" {
+  // 乘法函数综合测试
+  @azimuth.assert_eq(56, @azimuth.multiply(7, 8))
+  @azimuth.assert_eq(0, @azimuth.multiply(15, 0))
+  @azimuth.assert_eq(-35, @azimuth.multiply(-5, 7))
+  @azimuth.assert_eq(48, @azimuth.multiply(-6, -8))
+}
+
+test "standard_divide_ceil_comprehensive" {
+  // 向上取整除法综合测试
+  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(18, 4))
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(16, 4))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(2, 7))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(9, 0))
+}
+
+test "standard_greet_comprehensive" {
+  // 问候函数综合测试
+  @azimuth.assert_eq_string("Hello, Standard!", @azimuth.greet("Standard"))
+  @azimuth.assert_eq_string("Hello, 测试!", @azimuth.greet("测试"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, 2025!", @azimuth.greet("2025"))
+}
+
+test "standard_subtract_comprehensive" {
+  // 减法函数综合测试
+  @azimuth.assert_eq(9, @azimuth.subtract(15, 6))
+  @azimuth.assert_eq(-9, @azimuth.subtract(6, 15))
+  @azimuth.assert_eq(0, @azimuth.subtract(11, 11))
+  @azimuth.assert_eq(20, @azimuth.subtract(5, -15))
+}
+
+test "standard_math_properties_comprehensive" {
+  // 数学性质验证测试
+  let a = 14
+  let b = 9
+  
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
+  
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
+  
+  // 验证具体数值
+  @azimuth.assert_eq(23, @azimuth.add(14, 9))
+  @azimuth.assert_eq(126, @azimuth.multiply(14, 9))
+}
+
+test "standard_packaging_comprehensive" {
+  // 包装计算场景测试
+  let total_products = 67
+  let products_per_box = 15
+  let boxes_needed = @azimuth.divide_with_ceil(total_products, products_per_box)
+  
+  @azimuth.assert_eq(5, boxes_needed)
+  
+  // 验证总容量
+  let total_capacity = @azimuth.multiply(boxes_needed, products_per_box)
+  @azimuth.assert_eq(75, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = @azimuth.subtract(total_capacity, total_products)
+  @azimuth.assert_eq(8, remaining_space)
+}
+
+test "standard_workflow_comprehensive" {
+  // 工作流计算测试
+  // 场景：项目任务分配
+  let developers = 7
+  let tasks_per_developer = 6
+  let total_tasks = @azimuth.multiply(developers, tasks_per_developer)
+  
+  let sprint_capacity = 10
+  let sprints_needed = @azimuth.divide_with_ceil(total_tasks, sprint_capacity)
+  
+  @azimuth.assert_eq(42, total_tasks)  // 7 * 6 = 42
+  @azimuth.assert_eq(5, sprints_needed)  // ceil(42/10) = 5
+}
+
+test "standard_negative_comprehensive" {
+  // 负数处理测试
+  @azimuth.assert_eq(-15, @azimuth.add(-8, -7))
+  @azimuth.assert_eq(3, @azimuth.subtract(-5, -8))
+  @azimuth.assert_eq(40, @azimuth.multiply(-5, -8))
+  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-9, 5))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(-9, -5))
+}
+
+test "standard_boundary_comprehensive" {
+  // 边界值测试
+  // 除法边界情况
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(15, 15))
+  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-15, -15))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 15))
+  
+  // 大数运算
+  @azimuth.assert_eq(3000, @azimuth.add(1500, 1500))
+  @azimuth.assert_eq(2250000, @azimuth.multiply(1500, 1500))
+  
+  // 特殊问候情况
+  @azimuth.assert_eq_string("Hello,     !", @azimuth.greet("     "))
+  @azimuth.assert_eq_string("Hello, symbols#$%!", @azimuth.greet("symbols#$%"))
+}
