@@ -1,132 +1,145 @@
 // 标准 MoonBit 测试套件
-// 包含 10 个高质量测试用例，使用标准 MoonBit 测试语法
-
-using @builtin { inspect }
+// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
 
 test "basic_arithmetic_operations" {
   // 基本算术运算测试
-  inspect(1 + 2, content="3")
-  inspect(10 - 3, content="7")
-  inspect(4 * 5, content="20")
-  inspect(15 / 3, content="5")
-  inspect(17 % 5, content="2")
+  assert_eq(5, add(2, 3))
+  assert_eq(15, multiply(3, 5))
+  assert_eq(7, subtract(10, 3))
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
 }
 
-test "string_operations" {
-  // 字符串操作测试
-  let hello = "Hello"
-  let world = "World"
-  let combined = hello + " " + world
-  inspect(combined, content="\"Hello World\"")
-  inspect(combined.length(), content="11")
-  inspect(hello == "Hello", content="true")
-  inspect(hello != world, content="true")
+test "string_greeting_functionality" {
+  // 字符串问候功能测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 用户!", greet("用户"))
 }
 
-test "array_operations" {
-  // 数组操作测试
-  let numbers = [1, 2, 3, 4, 5]
-  inspect(numbers.length(), content="5")
-  inspect(numbers[0], content="1")
-  inspect(numbers[4], content="5")
-  let sum = numbers[0] + numbers[1] + numbers[2] + numbers[3] + numbers[4]
-  inspect(sum, content="15")
+test "division_edge_cases" {
+  // 除法边界情况测试
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(0, 1))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(1, divide_with_ceil(1, 2))
 }
 
-test "boolean_logic" {
-  // 布尔逻辑测试
-  inspect(true && false, content="false")
-  inspect(true || false, content="true")
-  inspect(!true, content="false")
-  inspect(!false, content="true")
-  inspect(true == true, content="true")
-  inspect(true != false, content="true")
+test "negative_number_calculations" {
+  // 负数计算测试
+  assert_eq(-2, add(-5, 3))
+  assert_eq(2, add(5, -3))
+  assert_eq(-8, add(-5, -3))
+  assert_eq(-24, multiply(-4, 6))
+  assert_eq(24, multiply(-4, -6))
+  assert_eq(-17, subtract(-10, 7))
 }
 
-test "option_type_handling" {
-  // Option 类型处理测试
-  let some_value : Int? = Some(42)
-  let none_value : Int? = None
-  
-  let result = match some_value {
-    Some(x) => x
-    None => 0
-  }
-  inspect(result, content="42")
-  
-  let default_result = match none_value {
-    Some(x) => x
-    None => 0
-  }
-  inspect(default_result, content="0")
-}
-
-test "result_type_handling" {
-  // Result 类型处理测试
-  let success : Result[Int, String] = Ok(42)
-  let failure : Result[Int, String] = Err("error")
-  
-  let success_value = match success {
-    Ok(x) => x
-    Err(_) => 0
-  }
-  inspect(success_value, content="42")
-  
-  let failure_value = match failure {
-    Ok(x) => x
-    Err(_) => 0
-  }
-  inspect(failure_value, content="0")
-}
-
-test "character_operations" {
-  // 字符操作测试
-  let char_a = 'A'
-  let char_str = char_a.to_string()
-  inspect(char_str, content="\"A\"")
-  inspect('a' > 'A', content="true")
-  inspect('A' < 'B', content="true")
-}
-
-test "mathematical_operations" {
-  // 数学运算测试
-  let x = 2
+test "mathematical_properties" {
+  // 数学性质验证测试
+  let x = 12
   let y = 8
-  inspect(x + y, content="10")
-  inspect(y - x, content="6")
-  inspect(x * y, content="16")
-  inspect(y / x, content="4")
-  let pos = 5
-  let neg = -5
-  inspect(pos, content="5")
-  inspect(neg * -1, content="5")
+  
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
+  
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 加法单位元
+  assert_eq(add(x, 0), x)
+  
+  // 乘法单位元
+  assert_eq(multiply(x, 1), x)
 }
 
-test "type_conversions" {
-  // 类型转换测试
-  let int_val = 123
-  inspect(int_val.to_string(), content="\"123\"")
-  let doubled = int_val * 2
-  inspect(doubled, content="246")
-  let halved = int_val / 2
-  inspect(halved, content="61")
-  inspect(true.to_string(), content="\"true\"")
-  inspect(false.to_string(), content="\"false\"")
+test "boundary_value_analysis" {
+  // 边界值分析测试
+  // 零值测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(0, subtract(0, 0))
+  
+  // 单位值测试
+  assert_eq(1, add(1, 0))
+  assert_eq(5, multiply(1, 5))
+  assert_eq(1, subtract(1, 0))
+  assert_eq(5, divide_with_ceil(5, 1))
+  
+  // 负一测试
+  assert_eq(0, add(-1, 1))
+  assert_eq(-5, multiply(-1, 5))
+  assert_eq(1, subtract(0, -1))
 }
 
-test "edge_cases" {
-  // 边界情况测试
-  let empty_string = ""
-  inspect(empty_string.length(), content="0")
+test "complex_calculation_scenarios" {
+  // 复杂计算场景测试
+  let a = 8
+  let b = 3
+  let c = 2
   
-  let max_int = 2147483647
-  let min_int = -2147483648
-  inspect(max_int > 0, content="true")
-  inspect(min_int < 0, content="true")
-  inspect(max_int + min_int, content="-1")
+  // (a + b) * c
+  let result1 = multiply(add(a, b), c)
+  assert_eq(22, result1)
   
-  // 测试数组边界情况
-  let single_element = [42]
-  inspect(single_element.length(), content="1")
-  inspect(single_element[0], content="42")
+  // a * b + c
+  let result2 = add(multiply(a, b), c)
+  assert_eq(26, result2)
+  
+  // (a - b) / c (向上取整)
+  let result3 = divide_with_ceil(subtract(a, b), c)
+  assert_eq(3, result3)
+}
+
+test "precision_and_rounding" {
+  // 精度和舍入测试
+  assert_eq(1, divide_with_ceil(1, 2))
+  assert_eq(1, divide_with_ceil(2, 3))
+  assert_eq(1, divide_with_ceil(3, 4))
+  assert_eq(2, divide_with_ceil(100, 99))
+  assert_eq(1, divide_with_ceil(99, 100))
+  
+  // 负数舍入
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(3, divide_with_ceil(10, -3))
+  assert_eq(4, divide_with_ceil(-10, -3))
+}
+
+test "large_number_operations" {
+  // 大数运算测试
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(100000000, multiply(10000, 10000))
+  assert_eq(500000, subtract(1000000, 500000))
+  assert_eq(333334, divide_with_ceil(1000000, 3))
+  
+  // 边界大数测试
+  let big_num = 1000000
+  assert_eq(1000001, add(big_num, 1))
+  assert_eq(999999, subtract(big_num, 1))
+}
+
+test "real_world_application_simulation" {
+  // 真实世界应用模拟测试
+  // 购物车计算场景
+  let item_price = 25
+  let quantity = 4
+  let tax_rate = 10
+  
+  // 计算小计
+  let subtotal = multiply(item_price, quantity)
+  assert_eq(100, subtotal)
+  
+  // 计算税费（向上取整）
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  assert_eq(10, tax)
+  
+  // 计算总价
+  let total = add(subtotal, tax)
+  assert_eq(110, total)
+  
+  // 计算每箱包装数量（每箱最多12个）
+  let boxes_needed = divide_with_ceil(quantity, 12)
+  assert_eq(1, boxes_needed)
 }
