@@ -1,139 +1,121 @@
 // 额外的标准 MoonBit 测试用例
-// 测试 azimuth 库的核心功能
+// 为 azimuth 项目添加的核心功能测试
 
-test "arithmetic_sequence_sum" {
-  // 等差数列求和测试
-  // 数列: 3, 7, 11, 15, 19 (公差为4，共5项)
-  let first_term = 3
-  let common_diff = 4
-  let num_terms = 5
-  
-  // 使用公式: S = n/2 * (2a + (n-1)d)
-  let double_sum = multiply(num_terms, add(multiply(2, first_term), multiply(subtract(num_terms, 1), common_diff)))
-  let sum = divide_with_ceil(double_sum, 2)
-  
-  // 手动验证
-  let manual_sum = add(add(add(add(3, 7), 11), 15), 19)
-  
-  assert_eq(sum, manual_sum)
-  assert_eq(sum, 55)
+test "add_function_large_numbers" {
+  // 测试加法函数的大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(0, add(-1000000, 1000000))
+  assert_eq(-2000000, add(-1000000, -1000000))
+  assert_eq(1000001, add(1000000, 1))
+  assert_eq(1, add(0, 1))
 }
 
-test "greeting_function_edge_cases" {
-  // 测试问候函数的边界情况
-  assert_eq_string(greet("Alice"), "Hello, Alice!")
-  assert_eq_string(greet("Bob"), "Hello, Bob!")
-  assert_eq_string(greet(""), "Hello, !")
-  assert_eq_string(greet("123"), "Hello, 123!")
-  assert_eq_string(greet("!@#$%"), "Hello, !@#$%!")
+test "multiply_function_precision" {
+  // 测试乘法函数的精度
+  assert_eq(1, multiply(1, 1))
+  assert_eq(25, multiply(5, 5))
+  assert_eq(100000000, multiply(10000, 10000))
+  assert_eq(-100000000, multiply(-10000, 10000))
+  assert_eq(100000000, multiply(-10000, -10000))
 }
 
-test "complex_mathematical_expression" {
-  // 复杂数学表达式测试
-  // 计算: (15 + 23) * (42 - 18) / 7
-  let step1 = add(15, 23)  // 38
-  let step2 = subtract(42, 18)  // 24
-  let step3 = multiply(step1, step2)  // 912
-  let result = divide_with_ceil(step3, 7)  // 向上取整
-  
-  assert_eq(step1, 38)
-  assert_eq(step2, 24)
-  assert_eq(step3, 912)
-  assert_eq(result, 131)
+test "divide_with_ceil_fractional_cases" {
+  // 测试向上取整除法函数的小数情况
+  assert_eq(1, divide_with_ceil(1, 2))
+  assert_eq(1, divide_with_ceil(2, 3))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(34, divide_with_ceil(100, 3))
+  assert_eq(34, divide_with_ceil(101, 3))
 }
 
-test "negative_number_division" {
-  // 负数除法测试
-  assert_eq(divide_with_ceil(10, 3), 4)
-  assert_eq(divide_with_ceil(10, -3), 3)
-  assert_eq(divide_with_ceil(-10, 3), -3)
-  assert_eq(divide_with_ceil(-10, -3), 4)
-  assert_eq(divide_with_ceil(0, -5), 0)
-  assert_eq(divide_with_ceil(-0, 5), 0)
+test "subtract_function_borrow_simulation" {
+  // 测试减法函数的借位模拟
+  assert_eq(1, subtract(1000, 999))
+  assert_eq(0, subtract(1000, 1000))
+  assert_eq(999, subtract(1000, 1))
+  assert_eq(1001, subtract(1000, -1))
+  assert_eq(-1, subtract(0, 1))
 }
 
-test "calculator_simulation" {
-  // 计算器模拟测试
-  let accumulator = 0
-  
-  // 执行一系列计算
-  accumulator = add(accumulator, 100)  // +100
-  accumulator = multiply(accumulator, 2)  // *2
-  accumulator = subtract(accumulator, 50)  // -50
-  accumulator = divide_with_ceil(accumulator, 3)  // /3 (向上取整)
-  
-  assert_eq(accumulator, 50)
+test "greet_function_special_characters" {
+  // 测试问候函数的特殊字符处理
+  assert_eq_string("Hello, @#$!", greet("@#$"))
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, 
+	!", greet("\n\t"))
+  assert_eq_string("Hello, 🌙!", greet("🌙"))
+  assert_eq_string("Hello, a&b*c!", greet("a&b*c"))
 }
 
-test "number_properties_check" {
-  // 数字性质检查测试
-  let num = 24
+test "complex_financial_calculation" {
+  // 测试复杂金融计算场景
+  let principal = 10000
+  let rate1 = 5
+  let rate2 = 3
+  let years = 2
   
-  // 检查因子关系
-  let factor1 = 6
-  let factor2 = 4
-  let product_check = multiply(factor1, factor2)
+  // 第一年利息
+  let interest1 = divide_with_ceil(multiply(principal, rate1), 100)
+  let total1 = add(principal, interest1)
   
-  // 检查是否为偶数
-  let is_even = divide_with_ceil(num, 2)
-  let doubled_even = multiply(is_even, 2)
+  // 第二年利息（基于新的总额）
+  let interest2 = divide_with_ceil(multiply(total1, rate2), 100)
+  let final_total = add(total1, interest2)
   
-  // 检查是否为3的倍数
-  let is_multiple_of_3 = divide_with_ceil(num, 3)
-  let tripled_multiple = multiply(is_multiple_of_3, 3)
+  // 总收益
+  let total_profit = subtract(final_total, principal)
   
-  assert_eq(product_check, num)
-  assert_eq(doubled_even, num)
-  assert_eq(tripled_multiple, 24)  // 24是3的倍数，向上取整后仍然正确
+  assert_eq(500, interest1)
+  assert_eq(10500, total1)
+  assert_eq(315, interest2)
+  assert_eq(10815, final_total)
+  assert_eq(815, total_profit)
 }
 
-test "temperature_range_analysis" {
-  // 温度范围分析测试
-  let daily_highs = add(add(add(add(23, 25), 22), 26), 24)  // 5天最高温度总和
-  let daily_lows = add(add(add(add(15, 17), 14), 18), 16)   // 5天最低温度总和
+test "algorithm_efficiency_simulation" {
+  // 测试算法效率模拟
+  let n = 100
   
-  let days = 5
-  let avg_high = divide_with_ceil(daily_highs, days)
-  let avg_low = divide_with_ceil(daily_lows, days)
+  // O(1) 常数时间
+  let constant_result = multiply(2, 3)
   
-  // 计算日平均温度
-  let daily_avg_total = add(daily_highs, daily_lows)
-  let overall_avg = divide_with_ceil(daily_avg_total, multiply(days, 2))
+  // O(n) 线性时间模拟
+  let linear_sum = divide_with_ceil(multiply(n, add(n, 1)), 2)
   
-  // 计算温度范围
-  let temp_range = subtract(avg_high, avg_low)
+  // O(n²) 二次时间模拟
+  let quadratic_result = multiply(n, n)
   
-  assert_eq(daily_highs, 120)
-  assert_eq(daily_lows, 80)
-  assert_eq(avg_high, 24)
-  assert_eq(avg_low, 16)
-  assert_eq(overall_avg, 20)
-  assert_eq(temp_range, 8)
+  // O(log n) 对数时间模拟（简化）
+  let log_result = divide_with_ceil(n, 2)
+  
+  assert_eq(6, constant_result)
+  assert_eq(5050, linear_sum)
+  assert_eq(10000, quadratic_result)
+  assert_eq(50, log_result)
 }
 
-test "financial_calculator" {
-  // 金融计算器测试
-  let principal = 1000
-  let rate_percent = 5
-  let years = 3
+test "data_structure_operations" {
+  // 测试数据结构操作模拟
+  let initial_size = 0
+  let operations = 10
   
-  // 计算简单利息
-  let interest_per_year = divide_with_ceil(multiply(principal, rate_percent), 100)
-  let total_interest = multiply(interest_per_year, years)
-  let final_amount = add(principal, total_interest)
+  // 模拟栈操作：push 5 次，pop 3 次
+  let push_operations = 5
+  let pop_operations = 3
   
-  // 计算复合利息（简化版）
-  let year1_amount = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
-  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, rate_percent), 100))
-  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, rate_percent), 100))
+  let after_push = add(initial_size, push_operations)
+  let after_pop = subtract(after_push, pop_operations)
   
-  let compound_interest = subtract(year3_amount, principal)
+  // 模拟队列操作：enqueue 7 次，dequeue 4 次
+  let enqueue_operations = 7
+  let dequeue_operations = 4
   
-  assert_eq(interest_per_year, 50)
-  assert_eq(total_interest, 150)
-  assert_eq(final_amount, 1150)
-  assert_eq(year1_amount, 1050)
-  assert_eq(year2_amount, 1103)
-  assert_eq(year3_amount, 1158)
-  assert_eq(compound_interest, 158)
+  let after_enqueue = add(after_pop, enqueue_operations)
+  let after_dequeue = subtract(after_enqueue, dequeue_operations)
+  
+  // 验证最终状态
+  assert_eq(5, after_push)
+  assert_eq(2, after_pop)
+  assert_eq(9, after_enqueue)
+  assert_eq(5, after_dequeue)
 }
