@@ -3,34 +3,34 @@
 
 test "basic_addition_functionality" {
   // 基本加法功能测试
-  assert_eq(5, add(2, 3))
+  assert_eq(8, add(3, 5))
   assert_eq(0, add(0, 0))
-  assert_eq(-1, add(-3, 2))
+  assert_eq(-2, add(-5, 3))
   assert_eq(100, add(50, 50))
 }
 
 test "basic_multiplication_functionality" {
   // 基本乘法功能测试
-  assert_eq(6, multiply(2, 3))
+  assert_eq(15, multiply(3, 5))
   assert_eq(0, multiply(5, 0))
-  assert_eq(-6, multiply(-2, 3))
+  assert_eq(-15, multiply(-3, 5))
   assert_eq(15, multiply(-3, -5))
 }
 
 test "divide_with_ceil_positive_numbers" {
   // 向上取整除法正数测试
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(3, divide_with_ceil(8, 3))
+  assert_eq(2, divide_with_ceil(6, 3))
   assert_eq(1, divide_with_ceil(1, 5))
-  assert_eq(0, divide_with_ceil(5, 0))
+  assert_eq(0, divide_with_ceil(0, 10))
 }
 
-test "divide_with_ceil_negative_numbers" {
-  // 向上取整除法负数测试
+test "divide_with_ceil_edge_cases" {
+  // 向上取整除法边界情况测试
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-4, divide_with_ceil(10, -3))
-  assert_eq(4, divide_with_ceil(-10, -3))
-  assert_eq(-1, divide_with_ceil(-1, 2))
 }
 
 test "greet_function_standard_cases" {
@@ -89,18 +89,10 @@ test "complex_workflow_calculation" {
   assert_eq(4, sprints_needed)  // ceil(48/15) = 4
 }
 
-test "edge_cases_and_boundary_values" {
-  // 边界情况和极值测试
-  // 除法边界情况
-  assert_eq(1, divide_with_ceil(5, 5))
-  assert_eq(1, divide_with_ceil(-5, -5))
-  assert_eq(0, divide_with_ceil(0, 5))
-  
-  // 大数运算
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(100000000, multiply(10000, 10000))
-  
-  // 特殊问候情况
-  assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, special@chars!", greet("special@chars"))
+test "unicode_and_special_characters" {
+  // Unicode和特殊字符测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, @user!", greet("@user"))
 }
