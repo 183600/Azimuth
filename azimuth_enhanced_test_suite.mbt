@@ -1,275 +1,192 @@
-// Azimuth 项目新增 MoonBit 测试用例
-// 使用标准 MoonBit 测试语法，包含8个高质量测试用例
+// Azimuth 项目增强测试套件
+// 包含10个高质量的 MoonBit 测试用例，使用标准测试语法
 
-test "int_boundary_operations" {
-  // 测试整数边界运算
-  let max_int = 2147483647
-  let min_int = -2147483648
+test "financial_compound_interest" {
+  // 金融复利计算测试
+  let principal = 10000
+  let rate = 5
+  let years = 3
   
-  // 测试边界值的加法
-  inspect(max_int + 0, content="2147483647")
-  inspect(min_int + 0, content="-2147483648")
+  // 计算复利：每年本金增加利率
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate), 100))
   
-  // 测试边界值的乘法
-  inspect(max_int * 1, content="2147483647")
-  inspect(min_int * 1, content="-2147483648")
-  
-  // 测试零值运算
-  inspect(0 + max_int, content="2147483647")
-  inspect(0 * min_int, content="0")
-  
-  // 测试绝对值函数
-  inspect(Int::abs(-100), content="100")
-  inspect(Int::abs(100), content="100")
-  inspect(Int::abs(0), content="0")
+  // 验证计算结果
+  assert_eq(10500, year1)
+  assert_eq(11025, year2)
+  assert_eq(11576, year3)
 }
 
-test "string_unicode_operations" {
-  // 测试字符串 Unicode 操作
-  let ascii_str = "Hello"
-  let unicode_str = "你好"
-  let mixed_str = "Hello你好"
-  let emoji_str = "🚀🌟"
+test "inventory_optimization" {
+  // 库存优化算法测试
+  let demand = 450
+  let production_capacity = 100
+  let safety_stock = 50
   
-  // 测试字符串长度
-  inspect(@string.length(ascii_str), content="5")
-  inspect(@string.length(unicode_str), content="2")
-  inspect(@string.length(mixed_str), content="7")
+  // 计算生产批次数
+  let batches_needed = divide_with_ceil(demand, production_capacity)
   
-  // 测试字符串连接
-  let combined = ascii_str + " " + unicode_str
-  inspect(combined, content="\"Hello 你好\"")
+  // 计算总产量
+  let total_production = multiply(batches_needed, production_capacity)
   
-  // 测试字符串比较
-  inspect(ascii_str < unicode_str, content="true")
-  inspect(mixed_str > ascii_str, content="true")
+  // 计算剩余库存
+  let remaining_inventory = subtract(total_production, demand)
   
-  // 测试空字符串
-  let empty_str = ""
-  inspect(@string.length(empty_str), content="0")
-  inspect(empty_str + ascii_str, content="\"Hello\"")
+  // 验证优化结果
+  assert_eq(5, batches_needed)
+  assert_eq(500, total_production)
+  assert_eq(50, remaining_inventory)
 }
 
-test "boolean_logical_expressions" {
-  // 测试布尔逻辑表达式
-  let t = true
-  let f = false
+test "temperature_conversion_system" {
+  // 温度转换系统测试
+  let celsius = 25
   
-  // 基本逻辑运算
-  inspect(t && t, content="true")
-  inspect(t && f, content="false")
-  inspect(f && t, content="false")
-  inspect(f && f, content="false")
+  // 摄氏度转华氏度：F = C × 9/5 + 32
+  let fahrenheit = add(divide_with_ceil(multiply(celsius, 9), 5), 32)
   
-  inspect(t || t, content="true")
-  inspect(t || f, content="true")
-  inspect(f || t, content="true")
-  inspect(f || f, content="false")
+  // 华氏度转摄氏度（简化验证）
+  let celsius_back = divide_with_ceil(multiply(subtract(fahrenheit, 32), 5), 9)
   
-  // 复杂逻辑表达式
-  inspect((t && f) || (t || f), content="true")
-  inspect((t || f) && (f || t), content="true")
-  inspect((f && t) || (f && f), content="false")
-  
-  // 否定运算
-  inspect(!t, content="false")
-  inspect(!f, content="true")
-  inspect(!(!t), content="true")
-  
-  // 布尔比较
-  inspect(t == t, content="true")
-  inspect(t != f, content="true")
-  inspect(f == f, content="true")
+  // 验证转换结果
+  assert_eq(77, fahrenheit)
+  assert_eq(25, celsius_back)
 }
 
-test "option_type_comprehensive" {
-  // 测试 Option 类型的综合操作
-  let some_value : Int? = Some(42)
-  let none_value : Int? = None
-  let some_string : String? = Some("MoonBit")
-  let none_string : String? = None
+test "game_score_system" {
+  // 游戏评分系统测试
+  let base_score = 100
+  let level = 5
+  let multiplier = 3
+  let bonus = 50
+  let penalty = 20
   
-  // 测试 Some 值的提取
-  let extracted_int = match some_value {
-    Some(x) => x
-    None => 0
-  }
-  inspect(extracted_int, content="42")
+  // 计算最终得分
+  let level_score = multiply(base_score, level)
+  let bonus_score = add(level_score, bonus)
+  let final_score = subtract(bonus_score, penalty)
   
-  let extracted_string = match some_string {
-    Some(s) => s
-    None => "default"
-  }
-  inspect(extracted_string, content="\"MoonBit\"")
+  // 计算星级评定
+  let star_rating = divide_with_ceil(final_score, multiply(100, multiplier))
   
-  // 测试 None 值的默认处理
-  let default_int = match none_value {
-    Some(x) => x
-    None => -1
-  }
-  inspect(default_int, content="-1")
-  
-  let default_string = match none_string {
-    Some(s) => s
-    None => "default"
-  }
-  inspect(default_string, content="\"default\"")
-  
-  // 测试 Option 的链式操作
-  let chained = match some_value {
-    Some(x) => Some(x * 2)
-    None => None
-  }
-  let final_result = match chained {
-    Some(y) => y + 10
-    None => 0
-  }
-  inspect(final_result, content="94")
+  // 验证评分系统
+  assert_eq(500, level_score)
+  assert_eq(550, bonus_score)
+  assert_eq(530, final_score)
+  assert_eq(2, star_rating)
 }
 
-test "array_and_list_operations" {
-  // 测试数组和列表操作
-  let num_array = [1, 2, 3, 4, 5]
-  let string_array = ["apple", "banana", "cherry"]
+test "data_compression_analysis" {
+  // 数据压缩分析测试
+  let original_size = 2000
+  let compression_ratio = 4
   
-  // 测试数组长度和索引
-  inspect(@array.length(num_array), content="5")
-  inspect(num_array[0], content="1")
-  inspect(num_array[4], content="5")
-  inspect(@array.length(string_array), content="3")
-  inspect(string_array[1], content="\"banana\"")
+  // 计算压缩后大小
+  let compressed_size = divide_with_ceil(original_size, compression_ratio)
   
-  // 测试数组运算
-  let sum_first_three = num_array[0] + num_array[1] + num_array[2]
-  inspect(sum_first_three, content="6")
+  // 计算压缩率
+  let compression_percentage = divide_with_ceil(multiply(subtract(original_size, compressed_size), 100), original_size)
   
-  let product_last_two = num_array[3] * num_array[4]
-  inspect(product_last_two, content="20")
-  
-  // 测试列表操作（使用数组模拟列表）
-  let list_data = [10, 20, 30, 40]
-  let head = list_data[0]
-  let tail_sum = list_data[1] + list_data[2] + list_data[3]
-  
-  inspect(head, content="10")
-  inspect(tail_sum, content="90")
-  
-  // 测试边界访问
-  let single_element = [100]
-  inspect(single_element[0], content="100")
-  inspect(@array.length(single_element), content="1")
+  // 验证压缩效果
+  assert_eq(500, compressed_size)
+  assert_eq(75, compression_percentage)
 }
 
-test "character_encoding_and_comparison" {
-  // 测试字符编码和比较
-  let char_a = 'a'
-  let char_A = 'A'
-  let char_emoji = '🚀'
-  let char_digit = '5'
-  let char_chinese = '中'
+test "project_resource_allocation" {
+  // 项目资源分配测试
+  let total_budget = 100000
+  let team_size = 8
+  let project_duration = 12
   
-  // 测试字符比较
-  inspect(char_a < char_A, content="false")
-  inspect(char_A < char_a, content="true")
-  inspect(char_digit < char_a, content="true")
+  // 计算人均预算
+  let budget_per_person = divide_with_ceil(total_budget, team_size)
   
-  // 测试字符转换为字符串
-  inspect(@char.to_string(char_a), content="\"a\"")
-  inspect(@char.to_string(char_A), content="\"A\"")
-  inspect(@char.to_string(char_digit), content="\"5\"")
+  // 计算月度预算
+  let monthly_budget = divide_with_ceil(total_budget, project_duration)
   
-  // 测试字符运算（模拟）
-  let char_code_a = 97  // 'a' 的 ASCII 码
-  let char_code_A = 65  // 'A' 的 ASCII 码
-  let difference = char_code_a - char_code_A
-  inspect(difference, content="32")
+  // 计算人均月度预算
+  let monthly_per_person = divide_with_ceil(budget_per_person, project_duration)
   
-  // 测试字符边界情况
-  let char_space = ' '
-  let char_newline = '\n'
-  inspect(@char.to_string(char_space), content="\" \"")
-  
-  // 测试字符在字符串中的使用
-  let single_char_string = @char.to_string(char_chinese)
-  inspect(@string.length(single_char_string), content="1")
+  // 验证资源分配
+  assert_eq(12500, budget_per_person)
+  assert_eq(8334, monthly_budget)
+  assert_eq(1042, monthly_per_person)
 }
 
-test "mathematical_sequence_calculations" {
-  // 测试数学序列计算
-  // 等差数列: 2, 5, 8, 11, 14...
-  let arithmetic_first = 2
-  let arithmetic_diff = 3
-  let arithmetic_term5 = arithmetic_first + arithmetic_diff * 4
-  inspect(arithmetic_term5, content="14")
+test "binary_number_system" {
+  // 二进制数字系统测试
+  let decimal = 42
   
-  // 等比数列: 3, 6, 12, 24, 48...
-  let geometric_first = 3
-  let geometric_ratio = 2
-  let geometric_term4 = geometric_first * geometric_ratio * geometric_ratio * geometric_ratio
-  inspect(geometric_term4, content="24")
+  // 分解为二进制位：42 = 32 + 8 + 2
+  let bit_5 = multiply(1, 32)  // 2^5
+  let bit_4 = multiply(0, 16)  // 2^4
+  let bit_3 = multiply(1, 8)   // 2^3
+  let bit_2 = multiply(0, 4)   // 2^2
+  let bit_1 = multiply(1, 2)   // 2^1
+  let bit_0 = multiply(0, 1)   // 2^0
   
-  // 平方数列: 1, 4, 9, 16, 25...
-  let square1 = 1 * 1
-  let square3 = 3 * 3
-  let square5 = 5 * 5
-  let square_sum = square1 + square3 + square5
-  inspect(square_sum, content="35")
+  // 重新组合验证
+  let reconstructed = add(add(add(add(add(bit_5, bit_4), bit_3), bit_2), bit_1), bit_0)
   
-  // 阶乘计算: 5! = 120
-  let factorial_1 = 1
-  let factorial_2 = factorial_1 * 2
-  let factorial_3 = factorial_2 * 3
-  let factorial_4 = factorial_3 * 4
-  let factorial_5 = factorial_4 * 5
-  inspect(factorial_5, content="120")
+  // 计算设置位的数量
+  let set_bits = add(add(1, 1), 1)
   
-  // 斐波那契数列: 1, 1, 2, 3, 5, 8...
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = fib1 + fib2
-  let fib4 = fib2 + fib3
-  let fib5 = fib3 + fib4
-  inspect(fib5, content="5")
+  // 验证二进制分解
+  assert_eq(42, reconstructed)
+  assert_eq(3, set_bits)
 }
 
-test "type_conversion_and_validation" {
-  // 测试类型转换和验证
-  let int_value = 42
-  let bool_true = true
-  let bool_false = false
-  let string_value = "123"
+test "cryptographic_simulation" {
+  // 密码学模拟测试
+  let message = 12345
+  let key = 7
+  let modulus = 1000
   
-  // 测试整数转字符串
-  inspect(@int.to_string(int_value), content="\"42\"")
-  inspect(@int.to_string(0), content="\"0\"")
-  inspect(@int.to_string(-100), content="\"-100\"")
+  // 简单加密过程
+  let encrypted = multiply(message, key) % modulus
   
-  // 测试布尔值转字符串
-  inspect(@bool.to_string(bool_true), content="\"true\"")
-  inspect(@bool.to_string(bool_false), content="\"false\"")
+  // 解密过程（简化）
+  let decrypted_step1 = divide_with_ceil(encrypted, key)
   
-  // 测试数值比较和验证
-  inspect(int_value > 0, content="true")
-  inspect(int_value < 100, content="true")
-  inspect(int_value == 42, content="true")
-  inspect(int_value != 0, content="true")
+  // 验证加密过程
+  assert_eq(415, encrypted)
+  assert_eq(60, decrypted_step1)
+}
+
+test "physics_motion_calculation" {
+  // 物理运动计算测试
+  let initial_velocity = 10
+  let acceleration = 2
+  let time = 5
   
-  // 测试边界值验证
-  let zero_value = 0
-  let negative_value = -50
-  inspect(zero_value >= 0, content="true")
-  inspect(negative_value < 0, content="true")
+  // 计算最终速度：v = u + at
+  let final_velocity = add(initial_velocity, multiply(acceleration, time))
   
-  // 测试复合类型验证
-  let positive_result = int_value > 0 && int_value < 100
-  let negative_check = int_value < 0 || int_value > 1000
-  inspect(positive_result, content="true")
-  inspect(negative_check, content="false")
+  // 计算位移：s = ut + 0.5at²
+  let displacement = add(multiply(initial_velocity, time), divide_with_ceil(multiply(acceleration, multiply(time, time)), 2))
   
-  // 测试条件表达式
-  let conditional_result = if int_value > 50 { "large" } else { "small" }
-  inspect(conditional_result, content="\"small\"")
+  // 验证物理计算
+  assert_eq(20, final_velocity)
+  assert_eq(75, displacement)
+}
+
+test "statistical_analysis" {
+  // 统计分析测试
+  let values = [12, 15, 18, 21, 24, 27, 30]
   
-  let conditional_result2 = if bool_true { int_value * 2 } else { 0 }
-  inspect(conditional_result2, content="84")
+  // 计算总和
+  let sum = add(add(add(add(add(add(values[0], values[1]), values[2]), values[3]), values[4]), values[5]), values[6])
+  
+  // 计算平均值（向上取整）
+  let count = 7
+  let mean = divide_with_ceil(sum, count)
+  
+  // 计算中位数近似值
+  let median = values[3]  // 已排序数组的中位数
+  
+  // 验证统计结果
+  assert_eq(147, sum)
+  assert_eq(21, mean)
+  assert_eq(21, median)
 }
