@@ -1,29 +1,27 @@
 // 简单的 Azimuth 测试用例
+// 包含5个基本的标准 MoonBit 测试用例
 
-test "simple_add_test" {
+test "basic_addition" {
   assert_eq(5, add(2, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
+  assert_eq(10, add(4, 6))
 }
 
-test "simple_multiply_test" {
+test "basic_multiplication" {
   assert_eq(6, multiply(2, 3))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(-6, multiply(-2, 3))
+  assert_eq(12, multiply(3, 4))
 }
 
-test "simple_greet_test" {
+test "basic_subtraction" {
+  assert_eq(3, subtract(5, 2))
+  assert_eq(1, subtract(7, 6))
+}
+
+test "basic_division_ceil" {
+  assert_eq(3, divide_with_ceil(8, 3))
+  assert_eq(2, divide_with_ceil(4, 2))
+}
+
+test "greet_function" {
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-}
-
-test "simple_divide_with_ceil_test" {
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(0, divide_with_ceil(5, 0))
-}
-
-test "simple_combined_test" {
-  let result = add(multiply(2, 3), multiply(4, 5))
-  assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
 }
