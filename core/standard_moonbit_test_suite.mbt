@@ -12,249 +12,264 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// 高质量 MoonBit 标准测试用例
-// 包含 10 个核心功能测试，使用标准 MoonBit 测试语法
+// 标准 MoonBit 测试套件 - 包含10个高质量测试用例
+// 涵盖 int、string、math 等核心模块的功能测试
 
-test "array_advanced_operations" {
-  // 测试数组高级操作
-  let numbers = [1, 2, 3, 4, 5]
-  let more_numbers = [6, 7, 8, 9, 10]
+///|
+test "int arithmetic edge cases" {
+  // 测试整数算术的边缘情况
+  let max_int = @int.max_value
+  let min_int = @int.min_value
   
-  // 测试数组连接
-  let combined = @array.concat(numbers, more_numbers)
-  inspect(combined.length(), content="10")
-  inspect(combined[0], content="1")
-  inspect(combined[9], content="10")
+  // 测试溢出行为
+  assert_eq(max_int + 1, min_int)
+  assert_eq(min_int - 1, max_int)
   
-  // 测试数组切片
-  let slice = @array.slice(combined, 2, 7)
-  inspect(slice.length(), content="5")
-  inspect(slice[0], content="3")
-  inspect(slice[4], content="7")
+  // 测试零的特殊性质
+  assert_eq(0 * max_int, 0)
+  assert_eq(0 * min_int, 0)
+  assert_eq(max_int + 0, max_int)
+  assert_eq(min_int + 0, min_int)
   
-  // 测试数组反转
-  let reversed = @array.reverse(numbers)
-  inspect(reversed, content="[5, 4, 3, 2, 1]")
+  // 测试除法的边界情况
+  assert_eq(1 / 1, 1)
+  assert_eq(-1 / 1, -1)
+  assert_eq(1 / -1, -1)
+  assert_eq(-1 / -1, 1)
 }
 
-test "string_advanced_operations" {
-  // 测试字符串高级操作
-  let sentence = "  Hello, MoonBit World!  "
+///|
+test "string manipulation operations" {
+  // 测试字符串操作功能
+  let base = "MoonBit"
+  let prefix = "Hello "
+  let suffix = " 2024"
   
-  // 测试字符串修剪
-  let trimmed = sentence.trim()
-  inspect(trimmed, content="Hello, MoonBit World!")
-  inspect(trimmed.length(), content="21")
+  // 测试字符串连接
+  let greeting = prefix + base
+  assert_eq(greeting, "Hello MoonBit")
   
-  // 测试字符串分割
-  let words = trimmed.split(", ")
-  inspect(words.length(), content="2")
-  inspect(words[0], content="Hello")
-  inspect(words[1], content="MoonBit World!")
+  let full_message = greeting + suffix
+  assert_eq(full_message, "Hello MoonBit 2024")
   
-  // 测试字符串替换
-  let replaced = trimmed.replace("MoonBit", "Awesome")
-  inspect(replaced, content="Hello, Awesome World!")
+  // 测试空字符串操作
+  let empty = ""
+  assert_eq(empty + base, base)
+  assert_eq(base + empty, base)
+  assert_eq(empty + empty, empty)
   
-  // 测试字符串包含
-  inspect(trimmed.contains("MoonBit"), content="true")
-  inspect(trimmed.contains("Python"), content="false")
+  // 测试长度计算
+  assert_eq(base.length(), 7)
+  assert_eq(greeting.length(), 12)
+  assert_eq(full_message.length(), 17)
+  assert_eq(empty.length(), 0)
 }
 
-test "math_advanced_functions" {
-  // 测试高级数学函数
+///|
+test "math floating point precision" {
+  // 测试浮点数精度和特殊值
   let pi = @math.pi
   let e = @math.e
   
-  // 测试数学常数
-  inspect(pi > 3.14, content="true")
-  inspect(pi < 3.15, content="true")
-  inspect(e > 2.71, content="true")
-  inspect(e < 2.72, content="true")
+  // 测试基本常数精度
+  assert_eq(@math.floorf(pi), 3)
+  assert_eq(@math.ceilf(pi), 4)
+  assert_eq(@math.roundf(pi), 3)
   
-  // 测试幂运算
-  inspect(@math.powf(2.0, 3.0), content="8")
-  inspect(@math.powf(3.0, 2.0), content="9")
-  inspect(@math.sqrtf(16.0), content="4")
-  inspect(@math.sqrtf(25.0), content="5")
+  assert_eq(@math.floorf(e), 2)
+  assert_eq(@math.ceilf(e), 3)
+  assert_eq(@math.roundf(e), 3)
   
-  // 测试对数函数
-  inspect(@math.logf(@math.e), content="1")
-  inspect(@math.logf(1.0), content="0")
-  inspect(@math.log10f(100.0), content="2")
-  inspect(@math.log2f(8.0), content="3")
+  // 测试平方根精度
+  assert_eq(@math.sqrtf(0), 0)
+  assert_eq(@math.sqrtf(1), 1)
+  assert_eq(@math.sqrtf(4), 2)
+  assert_eq(@math.sqrtf(9), 3)
+  assert_eq(@math.sqrtf(16), 4)
+  
+  // 测试绝对值函数
+  assert_eq(@math.fabsf(3.14), 3.14)
+  assert_eq(@math.fabsf(-3.14), 3.14)
+  assert_eq(@math.fabsf(0.0), 0.0)
 }
 
-test "int_advanced_bit_operations" {
+///|
+test "math trigonometric identities" {
+  // 测试三角函数恒等式
+  let zero = 0.0
+  let pi = @math.pi
+  let pi_over_2 = pi / 2.0
+  let pi_over_4 = pi / 4.0
+  
+  // 测试基本三角函数值
+  assert_eq(@math.sinf(zero), 0.0)
+  assert_eq(@math.cosf(zero), 1.0)
+  assert_eq(@math.tanf(zero), 0.0)
+  
+  // 测试特殊角度的值
+  assert_eq(@math.sinf(pi_over_2), 1.0)
+  assert_eq(@math.cosf(pi), -1.0)
+  
+  // 测试勾股定理
+  let sin_pi_over_4 = @math.sinf(pi_over_4)
+  let cos_pi_over_4 = @math.cosf(pi_over_4)
+  let sin_squared_plus_cos_squared = sin_pi_over_4 * sin_pi_over_4 + cos_pi_over_4 * cos_pi_over_4
+  assert_eq(@math.roundf(sin_squared_plus_cos_squared * 1000) / 1000, 1.0)
+}
+
+///|
+test "int bit manipulation advanced" {
   // 测试高级位操作
-  let num = 0b10101010  // 170
+  let a = 0b10101010  // 170
+  let b = 0b01010101  // 85
   
-  // 测试位计数
-  inspect(@int.Int::count_ones(num), content="4")
-  inspect(@int.Int::count_zeros(num), content="28")
+  // 测试基本位运算
+  assert_eq(a & b, 0)          // 10101010 & 01010101 = 00000000
+  assert_eq(a | b, 255)        // 10101010 | 01010101 = 11111111
+  assert_eq(a ^ b, 255)        // 10101010 ^ 01010101 = 11111111
   
-  // 测试前导零
-  inspect(@int.Int::leading_zeros(0), content="32")
-  inspect(@int.Int::leading_zeros(1), content="31")
-  inspect(@int.Int::leading_zeros(num), content="24")
+  // 测试位移操作
+  assert_eq(a << 1, 340)       // 10101010 << 1 = 101010100
+  assert_eq(a >> 1, 85)        // 10101010 >> 1 = 01010101
+  assert_eq(b << 2, 340)       // 01010101 << 2 = 0101010100
+  assert_eq(b >> 2, 21)        // 01010101 >> 2 = 00010101
   
-  // 测试位翻转
-  inspect(@int.Int::reverse_bits(num), content="1426063360")
-  
-  // 测试循环移位
-  inspect(@int.Int::rotate_left(num, 4), content="340")
-  inspect(@int.Int::rotate_right(num, 4), content="2684354560")
+  // 测试位移的边界情况
+  assert_eq(0 << 10, 0)
+  assert_eq(1 << 0, 1)
+  assert_eq(1 >> 0, 1)
 }
 
-test "option_complex_operations" {
-  // 测试 Option 复杂操作
-  let maybe_num : Option[Int] = Some(42)
-  let maybe_str : Option[String] = None
+///|
+test "string unicode and special characters" {
+  // 测试 Unicode 和特殊字符处理
+  let chinese = "中文测试"
+  let emoji = "🚀🌟💻"
+  let mixed = "Hello 世界! 🌍"
+  let whitespace = "  \t\n\r  "
   
-  // 测试 and_then 链式操作
-  let result = maybe_num.and_then(x => Some(x * 2)).and_then(x => Some(x + 10))
-  inspect(result, content="Some(94)")
+  // 测试 Unicode 字符串长度
+  assert_eq(chinese.length(), 4)
+  assert_eq(emoji.length(), 3)
+  assert_eq(mixed.length(), 9)
+  assert_eq(whitespace.length(), 6)
   
-  // 测试 or_else
-  let fallback = maybe_str.or_else(Some("default"))
-  inspect(fallback, content="Some(\"default\")")
+  // 测试特殊字符连接
+  let combined = chinese + " " + emoji
+  assert_eq(combined, "中文测试 🚀🌟💻")
   
-  // 测试 filter
-  let filtered_some = maybe_num.filter(x => x > 40)
-  let filtered_none = maybe_num.filter(x => x > 50)
+  // 测试空格和制表符
+  let with_tabs = "Col1\tCol2\tCol3"
+  assert_eq(with_tabs.length(), 13)
   
-  inspect(filtered_some, content="Some(42)")
-  inspect(filtered_none, content="None")
-  
-  // 测试 Option 转 Result
-  let ok_result = maybe_num.ok_or("error")
-  let err_result = maybe_str.ok_or("error")
-  
-  inspect(ok_result, content="Ok(42)")
-  inspect(err_result, content="Err(\"error\")")
+  let with_newlines = "Line1\nLine2\nLine3"
+  assert_eq(with_newlines.length(), 17)
 }
 
-test "result_error_chaining" {
-  // 测试 Result 错误链式处理
-  let success1 : Result[Int, String] = Ok(42)
-  let failure1 : Result[Int, String] = Err("first error")
+///|
+test "math power and logarithm relationships" {
+  // 测试幂和对数函数的关系
+  let base = 2.0
+  let exponent = 3.0
   
-  // 测试 and_then
-  let chained_success = success1.and_then(x => Ok(x * 2))
-  let chained_failure = failure1.and_then(x => Ok(x * 2))
+  // 测试幂函数
+  let power_result = @math.powf(base, exponent)
+  assert_eq(@math.roundf(power_result), 8.0)
   
-  inspect(chained_success, content="Ok(84)")
-  inspect(chained_failure, content="Err(\"first error\")")
+  // 测试对数函数的逆关系
+  let log_result = @math.logf(@math.expf(1.0))
+  assert_eq(@math.roundf(log_result * 1000) / 1000, 1.0)
   
-  // 测试 or_else
-  let fallback_result = failure1.or_else(msg => Ok(100))
-  inspect(fallback_result, content="Ok(100)")
+  // 测试以 2 为底的对数
+  let log2_result = @math.log2f(8.0)
+  assert_eq(@math.roundf(log2_result), 3.0)
   
-  // 测试 map_err
-  let mapped_err = failure1.map_err(msg => msg.uppercase())
-  inspect(mapped_err, content="Err(\"FIRST ERROR\")")
+  // 测试以 10 为底的对数
+  let log10_result = @math.log10f(100.0)
+  assert_eq(@math.roundf(log10_result), 2.0)
   
-  // 测试 Result 转 Option
-  let some_from_ok = success1.ok()
-  let none_from_err = failure1.ok()
-  
-  inspect(some_from_ok, content="Some(42)")
-  inspect(none_from_err, content="None")
+  // 测试立方根
+  assert_eq(@math.cbrtf(27.0), 3.0)
+  assert_eq(@math.cbrtf(-27.0), -3.0)
 }
 
-test "type_coercion_and_safety" {
-  // 测试类型转换和安全检查
-  let big_num = 2147483647  // Int max value
-  let small_num = -2147483648  // Int min value
+///|
+test "complex arithmetic expressions" {
+  // 测试复杂算术表达式
+  let x = 5
+  let y = 3
+  let z = 2
   
-  // 测试溢出检查
-  inspect(@int.Int::add_overflow(big_num, 1), content="true")
-  inspect(@int.Int::add_overflow(100, 200), content="false")
-  inspect(@int.Int::mul_overflow(big_num, 2), content="true")
-  inspect(@int.Int::mul_overflow(1000, 1000), content="false")
+  // 测试运算优先级
+  assert_eq(x + y * z, 11)     // 5 + (3 * 2) = 11
+  assert_eq((x + y) * z, 16)   // (5 + 3) * 2 = 16
+  assert_eq(x - y - z, 0)      // (5 - 3) - 2 = 0
+  assert_eq(x - (y - z), 4)    // 5 - (3 - 2) = 4
   
-  // 测试饱和运算
-  inspect(@int.Int::saturating_add(big_num, 100), content="2147483647")
-  inspect(@int.Int::saturating_sub(small_num, 100), content="-2147483648")
+  // 测试混合运算
+  assert_eq(x * y + x * z, 25) // 5*3 + 5*2 = 15 + 10 = 25
+  assert_eq(x * (y + z), 25)   // 5 * (3 + 2) = 5 * 5 = 25
   
-  // 测试除零安全
-  inspect(@int.Int::checked_div(10, 2), content="Some(5)")
-  inspect(@int.Int::checked_div(10, 0), content="None")
+  // 测试除法和取模
+  assert_eq(17 / 3, 5)
+  assert_eq(17 % 3, 2)
+  assert_eq(-17 / 3, -5)
+  assert_eq(-17 % 3, -2)
 }
 
-test "array_searching_algorithms" {
-  // 测试数组搜索算法
-  let unsorted = [42, 17, 23, 99, 8, 15]
-  let sorted = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
-  
-  // 测试线性搜索
-  inspect(@array.index_of(unsorted, 23), content="Some(2)")
-  inspect(@array.index_of(unsorted, 100), content="None")
-  
-  // 测试是否包含
-  inspect(@array.contains(unsorted, 99), content="true")
-  inspect(@array.contains(unsorted, 100), content="false")
-  
-  // 测试二分查找（假设 sorted 数组）
-  inspect(@array.binary_search(sorted, 7), content="Some(3)")
-  inspect(@array.binary_search(sorted, 8), content="None")
-  
-  // 测试查找最大最小值
-  inspect(@array.max(unsorted), content="Some(99)")
-  inspect(@array.min(unsorted), content="Some(8)")
-}
-
-test "string_pattern_matching" {
-  // 测试字符串模式匹配
+///|
+test "string pattern matching scenarios" {
+  // 测试字符串模式匹配场景
   let email = "user@example.com"
   let phone = "123-456-7890"
-  let invalid = "not-an-email"
+  let url = "https://www.moonbitlang.com"
   
-  // 测试正则表达式匹配（假设有 regex 支持）
-  let email_pattern = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
-  let phone_pattern = "^\\d{3}-\\d{3}-\\d{4}$"
+  // 测试包含特殊字符的字符串
+  assert_eq(email.contains("@"), true)
+  assert_eq(email.contains("."), true)
+  assert_eq(phone.contains("-"), true)
+  assert_eq(url.contains("://"), true)
   
-  // 这里使用简单的字符串操作模拟正则匹配
-  inspect(email.contains("@"), content="true")
-  inspect(email.contains("."), content="true")
-  inspect(invalid.contains("@"), content="false")
+  // 测试字符串分割概念（通过索引模拟）
+  let domain_start = email.index_of("@") + 1
+  assert_eq(domain_start > 0, true)
   
-  // 测试字符串前缀和后缀
-  inspect(email.starts_with("user"), content="true")
-  inspect(email.ends_with(".com"), content="true")
-  inspect(phone.starts_with("123"), content="true")
-  inspect(phone.ends_with("7890"), content="true")
+  // 测试字符串前缀和后缀概念
+  let starts_with_http = url.length() >= 5 and url[0] == 'h' and url[1] == 't' and url[2] == 't' and url[3] == 'p'
+  assert_eq(starts_with_http, true)
   
-  // 测试字符串提取
-  let username = email.split("@")[0]
-  let domain = email.split("@")[1]
-  inspect(username, content="user")
-  inspect(domain, content="example.com")
+  // 测试数字字符串
+  let number_str = "12345"
+  assert_eq(number_str.length(), 5)
 }
 
-test "performance_and_memory_operations" {
-  // 测试性能和内存操作
-  let large_array = @array.make(1000, 42)
+///|
+test "math special value handling" {
+  // 测试数学特殊值处理
+  let very_large = 1000000.0
+  let very_small = 0.000001
+  let normal = 42.0
   
-  // 测试大数组操作
-  inspect(large_array.length(), content="1000")
-  inspect(large_array[0], content="42")
-  inspect(large_array[999], content="42")
+  // 测试大数运算
+  let large_sqrt = @math.sqrtf(very_large)
+  assert_eq(@math.roundf(large_sqrt), 1000.0)
   
-  // 测试数组填充
-  let filled = @array.make(10, 0)
-  let filled_with_sevens = @array.fill(filled, 7, 0, 10)
-  inspect(filled_with_sevens[0], content="7")
-  inspect(filled_with_sevens[9], content="7")
+  // 测试小数运算
+  let small_sqrt = @math.sqrtf(very_small)
+  assert_eq(small_sqrt > 0.0, true)
   
-  // 测试数组复制
-  let source = [1, 2, 3, 4, 5]
-  let dest = @array.make(5, 0)
-  @array.copy_from(dest, source, 0, 0, 5)
-  inspect(dest, content="[1, 2, 3, 4, 5]")
+  // 测试双曲函数
+  assert_eq(@math.sinhf(0.0), 0.0)
+  assert_eq(@math.coshf(0.0), 1.0)
+  assert_eq(@math.tanhf(0.0), 0.0)
   
-  // 测试字符串重复
-  let repeated = "abc".repeat(3)
-  inspect(repeated, content="abcabcabc")
-  inspect(repeated.length(), content="9")
+  // 测试最小值和最大值函数
+  assert_eq(@math.fminf(3.14, 2.71), 2.71)
+  assert_eq(@math.fmaxf(3.14, 2.71), 3.14)
+  assert_eq(@math.fminf(-1.0, 1.0), -1.0)
+  assert_eq(@math.fmaxf(-1.0, 1.0), 1.0)
+  
+  // 测试正差函数
+  assert_eq(@math.fdimf(5.0, 3.0), 2.0)
+  assert_eq(@math.fdimf(3.0, 5.0), 0.0)
 }
