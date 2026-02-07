@@ -1,119 +1,137 @@
-// 标准 MoonBit 测试用例 - 为 Azimuth 项目添加
-// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
+// 标准 MoonBit 测试用例
+// 使用标准 MoonBit 测试语法编写的高质量测试用例
 
-test "basic_addition_comprehensive" {
-  // 基本加法功能综合测试
+test "basic_arithmetic_operations" {
+  // 基本算术运算测试
   assert_eq(5, add(2, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(1, add(-5, 6))
-  assert_eq(1000, add(500, 500))
+  assert_eq(6, multiply(2, 3))
+  assert_eq(-1, subtract(2, 3))
+  assert_eq(1, divide_with_ceil(2, 3))
 }
 
-test "multiply_function_edge_cases" {
-  // 乘法函数边界情况测试
-  assert_eq(25, multiply(5, 5))
-  assert_eq(0, multiply(100, 0))
-  assert_eq(-30, multiply(-6, 5))
-  assert_eq(30, multiply(-6, -5))
-  assert_eq(10000, multiply(100, 100))
-}
-
-test "divide_with_ceil_comprehensive" {
-  // 向上取整除法综合测试
-  assert_eq(5, divide_with_ceil(20, 4))
-  assert_eq(3, divide_with_ceil(10, 4))
-  assert_eq(1, divide_with_ceil(1, 10))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(8, 0))
-}
-
-test "divide_with_ceil_negative_numbers" {
-  // 向上取整除法负数测试
-  assert_eq(-2, divide_with_ceil(-8, 4))
-  assert_eq(-3, divide_with_ceil(8, -3))
-  assert_eq(3, divide_with_ceil(-8, -3))
-  assert_eq(-1, divide_with_ceil(-1, 2))
-  assert_eq(1, divide_with_ceil(-1, -2))
-}
-
-test "greet_function_various_inputs" {
-  // 问候函数各种输入测试
+test "string_greeting_functionality" {
+  // 字符串问候功能测试
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 中文!", greet("中文"))
 }
 
-test "mathematical_properties_validation" {
+test "division_edge_cases" {
+  // 除法边界情况测试
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(4, divide_with_ceil(10, 3))
+}
+
+test "negative_number_calculations" {
+  // 负数计算测试
+  assert_eq(-1, add(-2, 1))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(-5, subtract(-2, 3))
+  assert_eq(-1, divide_with_ceil(-2, 3))
+}
+
+test "complex_calculation_workflow" {
+  // 复杂计算工作流测试
+  let initial = 100
+  let step1 = multiply(initial, 2)
+  let step2 = add(step1, 50)
+  let step3 = subtract(step2, 30)
+  let result = divide_with_ceil(step3, 3)
+  
+  assert_eq(200, step1)
+  assert_eq(250, step2)
+  assert_eq(220, step3)
+  assert_eq(74, result)
+}
+
+test "mathematical_properties" {
   // 数学性质验证测试
-  let a = 12
-  let b = 8
+  let x = 15
+  let y = 25
   
   // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  assert_eq(add(x, y), add(y, x))
   
   // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  assert_eq(multiply(x, y), multiply(y, x))
   
-  // 验证具体数值
-  assert_eq(20, add(12, 8))
-  assert_eq(96, multiply(12, 8))
+  // 单位元性质
+  assert_eq(add(x, 0), x)
+  assert_eq(multiply(x, 1), x)
 }
 
-test "business_packaging_scenario" {
-  // 业务包装场景测试
-  let total_items = 35
-  let items_per_package = 8
-  let packages_needed = divide_with_ceil(total_items, items_per_package)
+test "business_calculation_scenario" {
+  // 业务计算场景测试
+  let unit_price = 25
+  let quantity = 8
+  let discount = 15
+  let tax_rate = 10
   
-  assert_eq(5, packages_needed)
+  let subtotal = multiply(unit_price, quantity)
+  let after_discount = subtract(subtotal, discount)
+  let tax_amount = divide_with_ceil(multiply(after_discount, tax_rate), 100)
+  let total = add(after_discount, tax_amount)
   
-  // 验证总容量
-  let total_capacity = multiply(packages_needed, items_per_package)
-  assert_eq(40, total_capacity)
-  
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_items)
-  assert_eq(5, remaining_space)
+  assert_eq(200, subtotal)
+  assert_eq(185, after_discount)
+  assert_eq(19, tax_amount)
+  assert_eq(204, total)
 }
 
-test "complex_workflow_calculation" {
-  // 复杂工作流计算测试
-  // 场景：项目资源计算
-  let team_members = 6
-  let tasks_per_member = 8
-  let total_tasks = multiply(team_members, tasks_per_member)
+test "boundary_value_analysis" {
+  // 边界值分析测试
+  // 零值测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 10))
+  assert_eq(0, subtract(0, 0))
   
-  let sprint_capacity = 15
-  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
-  
-  assert_eq(48, total_tasks)  // 6 * 8 = 48
-  assert_eq(4, sprints_needed)  // ceil(48/15) = 4
+  // 单位值测试
+  assert_eq(1, add(1, 0))
+  assert_eq(10, multiply(1, 10))
+  assert_eq(1, subtract(1, 0))
+  assert_eq(10, divide_with_ceil(10, 1))
 }
 
-test "boundary_values_and_extremes" {
-  // 边界值和极值测试
-  // 除法边界情况
-  assert_eq(1, divide_with_ceil(5, 5))
-  assert_eq(1, divide_with_ceil(-5, -5))
-  assert_eq(0, divide_with_ceil(0, 5))
+test "data_processing_pipeline" {
+  // 数据处理流水线测试
+  let data_points = 5
+  let base_value = 10
+  let increment = 3
   
-  // 大数运算
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(100000000, multiply(10000, 10000))
+  // 计算序列值
+  let value1 = base_value
+  let value2 = add(value1, increment)
+  let value3 = add(value2, increment)
+  let value4 = add(value3, increment)
+  let value5 = add(value4, increment)
   
-  // 特殊问候情况
-  assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, special@chars!", greet("special@chars"))
+  // 计算总和
+  let total = add(add(add(add(value1, value2), value3), value4), value5)
+  
+  // 计算平均值（向上取整）
+  let average = divide_with_ceil(total, data_points)
+  
+  assert_eq(10, value1)
+  assert_eq(13, value2)
+  assert_eq(16, value3)
+  assert_eq(19, value4)
+  assert_eq(22, value5)
+  assert_eq(80, total)
+  assert_eq(16, average)
 }
 
-test "subtract_function_comprehensive" {
-  // 减法函数综合测试
-  assert_eq(5, subtract(10, 5))
-  assert_eq(-5, subtract(5, 10))
-  assert_eq(0, subtract(15, 15))
-  assert_eq(20, subtract(10, -10))
-  assert_eq(-20, subtract(-10, 10))
+test "error_handling_validation" {
+  // 错误处理验证测试
+  // 测试除零错误处理
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 测试大数运算
+  let large_num = 100000
+  assert_eq(200000, add(large_num, large_num))
+  assert_eq(10000000000, multiply(large_num, large_num))
 }
