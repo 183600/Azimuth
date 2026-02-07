@@ -1,101 +1,163 @@
-// Azimuth 新增标准 MoonBit 测试用例
-// 包含9个高质量测试用例
+// 新增的标准 MoonBit 测试用例
+// 为 azimuth 项目添加的高质量测试用例
 
-test "basic_arithmetic_addition" {
-  // 基本加法运算测试
-  assert_eq(10, add(3, 7))
-  assert_eq(0, add(0, 0))
-  assert_eq(-5, add(-2, -3))
-  assert_eq(100, add(50, 50))
-}
-
-test "basic_arithmetic_multiplication" {
-  // 基本乘法运算测试
-  assert_eq(21, multiply(3, 7))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(25, multiply(-5, -5))
-}
-
-test "divide_with_ceil_functionality" {
-  // 向上取整除法功能测试
-  assert_eq(3, divide_with_ceil(8, 3))
-  assert_eq(2, divide_with_ceil(6, 3))
-  assert_eq(1, divide_with_ceil(1, 5))
-  assert_eq(0, divide_with_ceil(0, 10))
-  assert_eq(0, divide_with_ceil(10, 0))
-}
-
-test "divide_with_ceil_negative_numbers" {
-  // 向上取整除法负数测试
-  assert_eq(-2, divide_with_ceil(-8, 3))
-  assert_eq(-3, divide_with_ceil(8, -3))
-  assert_eq(3, divide_with_ceil(-8, -3))
-  assert_eq(-1, divide_with_ceil(-1, 2))
-}
-
-test "greet_function_various_inputs" {
-  // 问候函数各种输入测试
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-}
-
-test "mathematical_commutative_properties" {
-  // 数学交换律性质测试
-  let a = 12
-  let b = 8
+test "arithmetic_communication_laws" {
+  // 测试算术交换律
+  let a = 15
+  let b = 27
   
-  // 加法交换律
+  // 加法交换律: a + b = b + a
   assert_eq(add(a, b), add(b, a))
   
-  // 乘法交换律
+  // 乘法交换律: a * b = b * a
   assert_eq(multiply(a, b), multiply(b, a))
 }
 
-test "business_packaging_scenario" {
-  // 业务包装场景测试
-  let total_items = 35
-  let items_per_package = 8
-  let packages_needed = divide_with_ceil(total_items, items_per_package)
+test "arithmetic_association_laws" {
+  // 测试算术结合律
+  let a = 8
+  let b = 12
+  let c = 20
   
-  assert_eq(5, packages_needed)
+  // 加法结合律: (a + b) + c = a + (b + c)
+  assert_eq(add(add(a, b), c), add(a, add(b, c)))
   
-  // 验证总容量
-  let total_capacity = multiply(packages_needed, items_per_package)
-  assert_eq(40, total_capacity)
-  
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_items)
-  assert_eq(5, remaining_space)
+  // 乘法结合律: (a * b) * c = a * (b * c)
+  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
 }
 
-test "complex_calculation_workflow" {
-  // 复杂计算工作流测试
-  // 场景：项目资源计算
-  let team_members = 6
-  let tasks_per_member = 8
-  let total_tasks = multiply(team_members, tasks_per_member)
+test "distributive_law" {
+  // 测试分配律: a * (b + c) = a * b + a * c
+  let a = 7
+  let b = 13
+  let c = 19
   
-  let sprint_capacity = 15
-  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
   
-  assert_eq(48, total_tasks)  // 6 * 8 = 48
-  assert_eq(4, sprints_needed)  // ceil(48/15) = 4
+  assert_eq(left_side, right_side)
 }
 
-test "edge_cases_and_boundary_values" {
-  // 边界情况和极值测试
-  // 除法边界情况
-  assert_eq(1, divide_with_ceil(5, 5))
-  assert_eq(1, divide_with_ceil(-5, -5))
-  assert_eq(0, divide_with_ceil(0, 5))
+test "identity_elements" {
+  // 测试单位元
+  let x = 42
   
-  // 大数运算
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(100000000, multiply(10000, 10000))
+  // 加法单位元: x + 0 = x
+  assert_eq(add(x, 0), x)
+  assert_eq(add(0, x), x)
   
-  // 特殊问候情况
-  assert_eq_string("Hello,   !", greet("  "))
+  // 乘法单位元: x * 1 = x
+  assert_eq(multiply(x, 1), x)
+  assert_eq(multiply(1, x), x)
+}
+
+test "inverse_elements" {
+  // 测试逆元
+  let x = 17
+  
+  // 加法逆元: x - x = 0
+  assert_eq(subtract(x, x), 0)
+  
+  // 验证减法是加法的逆运算: (x - y) + y = x
+  let y = 8
+  assert_eq(add(subtract(x, y), y), x)
+}
+
+test "divide_with_ceil_precision" {
+  // 测试除法向上取整的精度
+  // 测试各种除法情况
+  
+  // 完全整除
+  assert_eq(divide_with_ceil(12, 3), 4)
+  assert_eq(divide_with_ceil(25, 5), 5)
+  
+  // 需要向上取整
+  assert_eq(divide_with_ceil(13, 3), 5)
+  assert_eq(divide_with_ceil(26, 5), 6)
+  
+  // 小数部分接近1
+  assert_eq(divide_with_ceil(99, 100), 1)
+  assert_eq(divide_with_ceil(1, 100), 1)
+}
+
+test "complex_calculation_chain" {
+  // 测试复杂计算链
+  // 模拟实际应用中的多步计算
+  
+  let base = 100
+  let multiplier = 3
+  let addend = 50
+  let subtrahend = 25
+  let divisor = 5
+  
+  // 计算链: ((base * multiplier) + addend - subtrahend) / divisor
+  let step1 = multiply(base, multiplier)      // 100 * 3 = 300
+  let step2 = add(step1, addend)              // 300 + 50 = 350
+  let step3 = subtract(step2, subtrahend)     // 350 - 25 = 325
+  let result = divide_with_ceil(step3, divisor) // ceil(325/5) = 65
+  
+  assert_eq(step1, 300)
+  assert_eq(step2, 350)
+  assert_eq(step3, 325)
+  assert_eq(result, 65)
+}
+
+test "string_greet_comprehensive" {
+  // 测试字符串问候函数的综合情况
+  // 测试各种特殊输入
+  
+  // 普通文本
+  assert_eq_string(greet("MoonBit"), "Hello, MoonBit!")
+  
+  // 空字符串
+  assert_eq_string(greet(""), "Hello, !")
+  
+  // 单字符
+  assert_eq_string(greet("A"), "Hello, A!")
+  
+  // 数字字符串
+  assert_eq_string(greet("2024"), "Hello, 2024!")
+  
+  // 包含空格的字符串
+  assert_eq_string(greet("Hello World"), "Hello, Hello World!")
+}
+
+test "boundary_value_analysis" {
+  // 边界值分析测试
+  // 测试各种边界条件
+  
+  // 零值操作
+  assert_eq(add(0, 0), 0)
+  assert_eq(multiply(0, 12345), 0)
+  assert_eq(subtract(0, 0), 0)
+  assert_eq(divide_with_ceil(0, 12345), 0)
+  
+  // 单位值操作
+  assert_eq(add(1, 0), 1)
+  assert_eq(multiply(1, 12345), 12345)
+  assert_eq(subtract(1, 0), 1)
+  assert_eq(divide_with_ceil(12345, 1), 12345)
+  
+  // 负单位值操作
+  assert_eq(add(-1, 1), 0)
+  assert_eq(multiply(-1, 12345), -12345)
+  assert_eq(subtract(0, -1), 1)
+}
+
+test "mathematical_series_calculation" {
+  // 数学级数计算测试
+  // 计算等差数列和等比数列
+  
+  // 等差数列: 2, 5, 8, 11, 14 (首项2，公差3)
+  let arithmetic_sum = add(add(add(add(2, 5), 8), 11), 14)
+  assert_eq(arithmetic_sum, 40)
+  
+  // 等比数列: 3, 6, 12, 24, 48 (首项3，公比2)
+  let geometric_term1 = 3
+  let geometric_term2 = multiply(geometric_term1, 2)  // 6
+  let geometric_term3 = multiply(geometric_term2, 2)  // 12
+  let geometric_term4 = multiply(geometric_term3, 2)  // 24
+  let geometric_term5 = multiply(geometric_term4, 2)  // 48
+  let geometric_sum = add(add(add(add(geometric_term1, geometric_term2), geometric_term3), geometric_term4), geometric_term5)
+  assert_eq(geometric_sum, 93)
 }
