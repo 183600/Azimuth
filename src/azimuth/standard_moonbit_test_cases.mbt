@@ -1,192 +1,78 @@
-// 标准 MoonBit 测试用例集合
-// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
+// 标准 MoonBit 测试用例
+// 测试 azimuth 库的核心功能
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  // 验证: 2 + 3 = 5
-  let _ = 2 + 3
-  
-  // 验证: 10 - 4 = 6
-  let _ = 10 - 4
-  
-  // 验证: 7 * 8 = 56
-  let _ = 7 * 8
-  
-  // 验证: 20 / 4 = 5
-  let _ = 20 / 4
-  
-  // 验证: 17 % 5 = 2
-  let _ = 17 % 5
+test "add_function_basic" {
+  // 测试基本加法功能
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-1, add(-3, 2))
 }
 
-test "negative_number_operations" {
-  // 负数运算测试
-  // 验证: -5 + 3 = -2
-  let _ = -5 + 3
-  
-  // 验证: -10 * 2 = -20
-  let _ = -10 * 2
-  
-  // 验证: -15 / 3 = -5
-  let _ = -15 / 3
-  
-  // 验证: -8 % 3 = -2
-  let _ = -8 % 3
-  
-  // 验证: -7 - (-3) = -4
-  let _ = -7 - (-3)
+test "multiply_function_basic" {
+  // 测试基本乘法功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-15, multiply(-3, 5))
 }
 
-test "boolean_logic_operations" {
-  // 布尔逻辑运算测试
-  // 验证: true && true = true
-  let _ = true && true
-  
-  // 验证: true && false = false
-  let _ = true && false
-  
-  // 验证: false || false = false
-  let _ = false || false
-  
-  // 验证: true || false = true
-  let _ = true || false
-  
-  // 验证: !true = false
-  let _ = !true
-  
-  // 验证: !false = true
-  let _ = !false
+test "subtract_function_basic" {
+  // 测试基本减法功能
+  assert_eq(7, subtract(10, 3))
+  assert_eq(-7, subtract(3, 10))
+  assert_eq(0, subtract(5, 5))
 }
 
-test "string_manipulation" {
-  // 字符串操作测试
-  // 验证: "Hello" = "Hello"
-  let _ = "Hello"
-  
-  // 验证: "" = ""
-  let _ = ""
-  
-  // 验证: "MoonBit" = "MoonBit"
-  let _ = "MoonBit"
-  
-  // 验证: "Hello, " + "World!" = "Hello, World!"
-  let _ = "Hello, " + "World!"
-  
-  // 验证: "123" = "123"
-  let _ = "123"
+test "divide_with_ceil_function" {
+  // 测试向上取整除法功能
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(10, 0))
 }
 
-test "comparison_operations" {
-  // 比较操作测试
-  // 验证: 3 < 5 = true
-  let _ = 3 < 5
-  
-  // 验证: 10 > 7 = true
-  let _ = 10 > 7
-  
-  // 验证: 5 <= 5 = true
-  let _ = 5 <= 5
-  
-  // 验证: 8 >= 8 = true
-  let _ = 8 >= 8
-  
-  // 验证: 4 == 4 = true
-  let _ = 4 == 4
-  
-  // 验证: 3 != 5 = true
-  let _ = 3 != 5
+test "greet_function_basic" {
+  // 测试问候函数基本功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
 }
 
-test "complex_mathematical_expressions" {
-  // 复杂数学表达式测试
-  // 验证: (2 + 3) * 4 = 20
-  let _ = (2 + 3) * 4
-  
-  // 验证: 10 * (5 + 3) = 80
-  let _ = 10 * (5 + 3)
-  
-  // 验证: 2 * 3 + 4 * 5 = 26
-  let _ = 2 * 3 + 4 * 5
-  
-  // 验证: 100 / (5 * 4) = 5
-  let _ = 100 / (5 * 4)
-  
-  // 验证: (15 - 5) * (8 / 2) = 40
-  let _ = (15 - 5) * (8 / 2)
+test "complex_calculation" {
+  // 测试复合计算
+  let a = 5
+  let b = 3
+  let result = add(multiply(a, b), subtract(a, b))
+  assert_eq(17, result)  // 5*3 + (5-3) = 15 + 2 = 17
 }
 
-test "sequential_computations" {
-  // 连续计算测试
-  let initial = 10
-  let step1 = initial + 15      // 25
-  let step2 = step1 * 2        // 50
-  let step3 = step2 / 10       // 5
-  let step4 = step3 + 7        // 12
+test "mathematical_properties" {
+  // 测试数学性质
+  let x = 7
+  let y = 4
   
-  // 验证最终结果: step4 = 12
-  let _ = step4
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
+  
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
+  
+  // 加法单位元
+  assert_eq(add(x, 0), x)
 }
 
-test "boundary_value_testing" {
-  // 边界值测试
-  // 验证: 0 + 0 = 0
-  let _ = 0 + 0
+test "edge_cases" {
+  // 测试边界情况
+  // 测试负数运算
+  assert_eq(-8, add(-5, -3))
+  assert_eq(15, multiply(-3, -5))
   
-  // 验证: 0 * 100 = 0
-  let _ = 0 * 100
-  
-  // 验证: 100 * 0 = 0
-  let _ = 100 * 0
-  
-  // 验证: 0 / 5 = 0
-  let _ = 0 / 5
-  
-  // 验证: 1 - 1 = 0
-  let _ = 1 - 1
-  
-  // 验证: -0 = 0
-  let _ = -0
+  // 测试零值
+  assert_eq(0, multiply(0, 100))
+  assert_eq(100, subtract(100, 0))
 }
 
-test "character_operations" {
-  // 字符操作测试
-  // 验证: 'a'.to_string() = "a"
-  let _ = 'a'.to_string()
-  
-  // 验证: 'Z'.to_string() = "Z"
-  let _ = 'Z'.to_string()
-  
-  // 验证: '5'.to_string() = "5"
-  let _ = '5'.to_string()
-  
-  // 验证: '@'.to_string() = "@"
-  let _ = '@'.to_string()
-  
-  // 字符比较测试
-  // 验证: 'a' < 'b' = true
-  let _ = 'a' < 'b'
-  
-  // 验证: 'A' < 'a' = true
-  let _ = 'A' < 'a'
-  
-  // 验证: '0' < '9' = true
-  let _ = '0' < '9'
-}
-
-test "mixed_type_operations" {
-  // 混合类型操作测试
-  let num = 42
-  let str_num = num.to_string()
-  // 验证: str_num = "42"
-  let _ = str_num
-  
-  let char_digit = '7'
-  let char_str = char_digit.to_string()
-  // 验证: char_str = "7"
-  let _ = char_str
-  
-  // 组合操作
-  // 验证: 5 + 3 * 2 = 11
-  let result = 5 + 3 * 2
-  let _ = result
+test "string_operations_edge" {
+  // 测试字符串操作边界情况
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, A!", greet("A"))
 }
