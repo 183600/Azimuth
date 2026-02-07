@@ -47,6 +47,8 @@
     "additional_standard_moonbit_tests.mbt",
     "user_defined_comprehensive_tests.mbt",
     "simple_standard_tests.mbt",
+    "my_simple_test.mbt",
+    "working_test.mbt",
     "comprehensive_azimuth_tests.mbt",
     "simple_azimuth_test.mbt",
     "moonbit_standard_tests.mbt",
