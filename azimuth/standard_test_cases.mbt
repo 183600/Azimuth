@@ -104,3 +104,59 @@ test "boundary_values_and_edge_cases" {
   assert_eq_string("Hello,   !", greet("  "))
   assert_eq_string("Hello, special@chars!", greet("special@chars"))
 }
+
+// 新增的测试用例
+test "enhanced_mathematical_operations" {
+  // 增强数学运算测试
+  assert_eq(15, add(7, 8))
+  assert_eq(-15, add(-7, -8))
+  assert_eq(1, add(-5, 6))
+  
+  assert_eq(56, multiply(7, 8))
+  assert_eq(-56, multiply(-7, 8))
+  assert_eq(56, multiply(-7, -8))
+  
+  assert_eq(3, divide_with_ceil(25, 8))
+  assert_eq(-3, divide_with_ceil(-25, 8))
+  assert_eq(4, divide_with_ceil(25, -8))
+}
+
+test "real_world_inventory_management" {
+  // 真实世界库存管理测试
+  let total_products = 157
+  let box_capacity = 24
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  
+  assert_eq(7, boxes_needed)
+  
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(168, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(11, remaining_space)
+}
+
+test "complex_business_workflow" {
+  // 复杂业务工作流测试
+  // 场景：项目预算计算
+  let team_members = 8
+  let hourly_rate = 50
+  let hours_per_day = 8
+  let project_days = 15
+  
+  // 计算总工时
+  let total_hours = multiply(team_members, multiply(hours_per_day, project_days))
+  
+  // 计算总预算
+  let total_budget = multiply(total_hours, hourly_rate)
+  
+  // 计算需要的支付周期（每周期支付不超过10000）
+  let payment_cycle_limit = 10000
+  let payment_cycles = divide_with_ceil(total_budget, payment_cycle_limit)
+  
+  assert_eq(960, total_hours)  // 8 * 8 * 15 = 960
+  assert_eq(48000, total_budget)  // 960 * 50 = 48000
+  assert_eq(5, payment_cycles)  // ceil(48000/10000) = 5
+}
