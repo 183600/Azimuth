@@ -377,11 +377,11 @@
     "standard_moonbit_test_suite.mbt",
       "standard_test_cases.mbt",
       "standard_test_cases.mbt",
-      "azimuth_professional_tests.mbt",
-      "enhanced_practical_test_cases.mbt",
-      ""azimuth_additional_comprehensive_tests.mbt",
-  "simple_new_test_cases.mbt""  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],
-  "files": [
+            "azimuth_professional_tests.mbt",
+          "enhanced_practical_test_cases.mbt",
+          ""azimuth_additional_comprehensive_tests.mbt",
+        "simple_new_test_cases.mbt"",
+          "azimuth_high_quality_enhanced_tests.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],  "files": [
     "new_enhanced_test_suite.mbt",
     "self_contained_test.mbt",
     "comprehensive_enhanced_tests.mbt",
