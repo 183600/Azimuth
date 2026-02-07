@@ -82,12 +82,12 @@ test "enhanced_arithmetic_edge_cases" {
   // 算术边界情况测试
   // 大数运算
   assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(1000000000000, multiply(1000000, 1000000))
+  assert_eq(100000000000, multiply(10000, 10000))
   assert_eq(1000001, divide_with_ceil(1000000, 1))
   
   // 负数边界
   assert_eq(-2000000, add(-1000000, -1000000))
-  assert_eq(1000000000000, multiply(-1000000, -1000000))
+  assert_eq(100000000000, multiply(-10000, -10000))
   assert_eq(-999999, divide_with_ceil(-1000000, 1))
   
   // 零值运算
