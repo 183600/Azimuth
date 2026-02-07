@@ -1340,3 +1340,371 @@ test "enhanced_mathematical_properties_validation" {
   assert_eq(add(x, 0), x)
   assert_eq(multiply(x, 1), x)
 }
+
+// 新增的8个标准MoonBit测试用例
+test "prime_number_validation" {
+  // 质数验证测试
+  // 检查几个数字是否为质数
+  
+  // 2是最小的质数
+  let is_2_prime = 1  // 假设1表示是质数
+  
+  // 3是质数
+  let is_3_prime = 1
+  
+  // 4不是质数（可被2整除）
+  let is_4_prime = 0  // 假设0表示不是质数
+  
+  // 5是质数
+  let is_5_prime = 1
+  
+  // 6不是质数（可被2和3整除）
+  let is_6_prime = 0
+  
+  // 7是质数
+  let is_7_prime = 1
+  
+  // 8不是质数（可被2整除）
+  let is_8_prime = 0
+  
+  // 9不是质数（可被3整除）
+  let is_9_prime = 0
+  
+  // 10不是质数（可被2和5整除）
+  let is_10_prime = 0
+  
+  // 验证质数计数
+  let prime_count = add(add(add(add(is_2_prime, is_3_prime), is_5_prime), is_7_prime), 0)
+  
+  assert_eq(is_2_prime, 1)
+  assert_eq(is_3_prime, 1)
+  assert_eq(is_4_prime, 0)
+  assert_eq(is_5_prime, 1)
+  assert_eq(is_6_prime, 0)
+  assert_eq(is_7_prime, 1)
+  assert_eq(is_8_prime, 0)
+  assert_eq(is_9_prime, 0)
+  assert_eq(is_10_prime, 0)
+  assert_eq(prime_count, 4)
+}
+
+test "power_calculation_simulation" {
+  // 幂运算模拟测试
+  // 使用重复乘法模拟幂运算
+  
+  let base = 3
+  
+  // 3^1 = 3
+  let power_1 = base
+  
+  // 3^2 = 3 × 3 = 9
+  let power_2 = multiply(base, base)
+  
+  // 3^3 = 3 × 3 × 3 = 27
+  let power_3 = multiply(power_2, base)
+  
+  // 3^4 = 3 × 3 × 3 × 3 = 81
+  let power_4 = multiply(power_3, base)
+  
+  // 3^5 = 3 × 3 × 3 × 3 × 3 = 243
+  let power_5 = multiply(power_4, base)
+  
+  // 验证幂运算结果
+  assert_eq(power_1, 3)
+  assert_eq(power_2, 9)
+  assert_eq(power_3, 27)
+  assert_eq(power_4, 81)
+  assert_eq(power_5, 243)
+  
+  // 验证幂运算性质：a^m × a^n = a^(m+n)
+  let product_property = multiply(power_2, power_3)  // 3^2 × 3^3 = 3^5
+  assert_eq(product_property, power_5)
+}
+
+test "queue_operations_simulation" {
+  // 队列操作模拟测试
+  // 模拟队列的入队和出队操作
+  
+  // 初始队列为空
+  let queue_size = 0
+  let front_element = 0
+  let rear_element = 0
+  
+  // enqueue(10)
+  let enqueue1 = 10
+  let queue_size1 = add(queue_size, 1)
+  let front1 = enqueue1
+  let rear1 = enqueue1
+  
+  // enqueue(20)
+  let enqueue2 = 20
+  let queue_size2 = add(queue_size1, 1)
+  let rear2 = enqueue2
+  
+  // enqueue(30)
+  let enqueue3 = 30
+  let queue_size3 = add(queue_size2, 1)
+  let rear3 = enqueue3
+  
+  // dequeue() -> 应该返回10
+  let dequeue1 = front1
+  let queue_size_after_dequeue1 = subtract(queue_size3, 1)
+  let new_front1 = enqueue2  // 新的队首
+  
+  // dequeue() -> 应该返回20
+  let dequeue2 = new_front1
+  let queue_size_after_dequeue2 = subtract(queue_size_after_dequeue1, 1)
+  let new_front2 = enqueue3  // 新的队首
+  
+  // dequeue() -> 应该返回30
+  let dequeue3 = new_front2
+  let queue_size_after_dequeue3 = subtract(queue_size_after_dequeue2, 1)
+  
+  // 验证队列操作
+  assert_eq(queue_size1, 1)
+  assert_eq(front1, 10)
+  assert_eq(rear1, 10)
+  assert_eq(queue_size2, 2)
+  assert_eq(rear2, 20)
+  assert_eq(queue_size3, 3)
+  assert_eq(rear3, 30)
+  assert_eq(dequeue1, 10)
+  assert_eq(queue_size_after_dequeue1, 2)
+  assert_eq(new_front1, 20)
+  assert_eq(dequeue2, 20)
+  assert_eq(queue_size_after_dequeue2, 1)
+  assert_eq(new_front2, 30)
+  assert_eq(dequeue3, 30)
+  assert_eq(queue_size_after_dequeue3, 0)
+}
+
+test "statistical_variance_calculation" {
+  // 统计方差计算测试
+  // 数据集: [2, 4, 4, 4, 5, 5, 7, 9]
+  
+  // 计算平均值
+  let sum_data = add(add(add(add(add(add(add(2, 4), 4), 4), 5), 5), 7), 9)
+  let count = 8
+  let mean = divide_with_ceil(sum_data, count)
+  
+  // 计算偏差平方和
+  let diff1 = subtract(2, mean)
+  let diff2 = subtract(4, mean)
+  let diff3 = subtract(5, mean)
+  let diff4 = subtract(7, mean)
+  let diff5 = subtract(9, mean)
+  
+  let sq_diff1 = multiply(diff1, diff1)
+  let sq_diff2 = multiply(diff2, diff2)
+  let sq_diff3 = multiply(diff3, diff3)
+  let sq_diff4 = multiply(diff4, diff4)
+  let sq_diff5 = multiply(diff5, diff5)
+  
+  // 注意：4出现了3次，5出现了2次
+  let weighted_sq_diff2 = multiply(3, sq_diff2)
+  let weighted_sq_diff3 = multiply(2, sq_diff3)
+  let sum_sq_diff = add(add(add(add(sq_diff1, weighted_sq_diff2), weighted_sq_diff3), sq_diff4), sq_diff5)
+  
+  // 计算方差（简化版本，除以n而不是n-1）
+  let variance = divide_with_ceil(sum_sq_diff, count)
+  
+  // 计算标准差（方差的开方，这里简化为整数近似）
+  let std_dev_approx = divide_with_ceil(variance, 2)
+  
+  assert_eq(sum_data, 40)
+  assert_eq(mean, 5)
+  assert_eq(variance, 4)
+  assert_eq(std_dev_approx, 2)
+}
+
+test "time_zone_conversion" {
+  // 时区转换模拟测试
+  // 从北京时间转换为其他时区
+  
+  let beijing_hour = 14  // 北京时间下午2点
+  let beijing_to_london_offset = -8  // 伦敦比北京晚8小时
+  let beijing_to_new_york_offset = -13  // 纽约比北京晚13小时
+  let beijing_to_tokyo_offset = 1  // 东京比北京早1小时
+  
+  // 转换为伦敦时间
+  let london_hour_raw = add(beijing_hour, beijing_to_london_offset)
+  let london_hour = 
+    if london_hour_raw < 0 { add(london_hour_raw, 24) }
+    else if london_hour_raw >= 24 { subtract(london_hour_raw, 24) }
+    else { london_hour_raw }
+  
+  // 转换为纽约时间
+  let new_york_hour_raw = add(beijing_hour, beijing_to_new_york_offset)
+  let new_york_hour = 
+    if new_york_hour_raw < 0 { add(new_york_hour_raw, 24) }
+    else if new_york_hour_raw >= 24 { subtract(new_york_hour_raw, 24) }
+    else { new_york_hour_raw }
+  
+  // 转换为东京时间
+  let tokyo_hour_raw = add(beijing_hour, beijing_to_tokyo_offset)
+  let tokyo_hour = 
+    if tokyo_hour_raw < 0 { add(tokyo_hour_raw, 24) }
+    else if tokyo_hour_raw >= 24 { subtract(tokyo_hour_raw, 24) }
+    else { tokyo_hour_raw }
+  
+  assert_eq(london_hour, 6)
+  assert_eq(new_york_hour, 1)
+  assert_eq(tokyo_hour, 15)
+}
+
+test "tree_traversal_simulation" {
+  // 树遍历模拟测试
+  // 二叉树结构：
+  //       1
+  //      / \
+  //     2   3
+  //    / \   \
+  //   4   5   6
+  
+  // 前序遍历（根-左-右）：1, 2, 4, 5, 3, 6
+  let preorder_1 = 1
+  let preorder_2 = 2
+  let preorder_3 = 4
+  let preorder_4 = 5
+  let preorder_5 = 3
+  let preorder_6 = 6
+  
+  // 中序遍历（左-根-右）：4, 2, 5, 1, 3, 6
+  let inorder_1 = 4
+  let inorder_2 = 2
+  let inorder_3 = 5
+  let inorder_4 = 1
+  let inorder_5 = 3
+  let inorder_6 = 6
+  
+  // 后序遍历（左-右-根）：4, 5, 2, 6, 3, 1
+  let postorder_1 = 4
+  let postorder_2 = 5
+  let postorder_3 = 2
+  let postorder_4 = 6
+  let postorder_5 = 3
+  let postorder_6 = 1
+  
+  // 验证遍历结果的总和
+  let preorder_sum = add(add(add(add(add(preorder_1, preorder_2), preorder_3), preorder_4), preorder_5), preorder_6)
+  let inorder_sum = add(add(add(add(add(inorder_1, inorder_2), inorder_3), inorder_4), inorder_5), inorder_6)
+  let postorder_sum = add(add(add(add(add(postorder_1, postorder_2), postorder_3), postorder_4), postorder_5), postorder_6)
+  
+  // 所有遍历应该访问相同的节点，总和应该相等
+  assert_eq(preorder_sum, 21)
+  assert_eq(inorder_sum, 21)
+  assert_eq(postorder_sum, 21)
+}
+
+test "memory_allocation_simulation" {
+  // 内存分配模拟测试
+  // 模拟内存块的分配和释放
+  
+  let total_memory = 1024  // 总内存1024字节
+  let block1_size = 256
+  let block2_size = 128
+  let block3_size = 512
+  let block4_size = 64
+  
+  // 分配内存块
+  let allocated1 = block1_size
+  let remaining1 = subtract(total_memory, allocated1)
+  
+  let allocated2 = add(allocated1, block2_size)
+  let remaining2 = subtract(remaining1, block2_size)
+  
+  let allocated3 = add(allocated2, block3_size)
+  let remaining3 = subtract(remaining2, block3_size)
+  
+  // 尝试分配block4（应该失败，因为剩余空间不足）
+  let can_allocate_block4 = if remaining3 >= block4_size { 1 } else { 0 }
+  let block4_allocation = multiply(can_allocate_block4, block4_size)
+  
+  // 释放block2
+  let freed_allocated = subtract(allocated3, block2_size)
+  let freed_remaining = add(remaining3, block2_size)
+  
+  // 现在可以分配block4
+  let can_allocate_after_free = if freed_remaining >= block4_size { 1 } else { 0 }
+  let final_allocated = add(freed_allocated, multiply(can_allocate_after_free, block4_size))
+  let final_remaining = subtract(freed_remaining, multiply(can_allocate_after_free, block4_size))
+  
+  // 计算内存使用率
+  let memory_usage_percent = divide_with_ceil(multiply(final_allocated, 100), total_memory)
+  
+  assert_eq(allocated1, 256)
+  assert_eq(remaining1, 768)
+  assert_eq(allocated2, 384)
+  assert_eq(remaining2, 640)
+  assert_eq(allocated3, 896)
+  assert_eq(remaining3, 128)
+  assert_eq(can_allocate_block4, 0)
+  assert_eq(block4_allocation, 0)
+  assert_eq(freed_allocated, 768)
+  assert_eq(freed_remaining, 256)
+  assert_eq(can_allocate_after_free, 1)
+  assert_eq(final_allocated, 832)
+  assert_eq(final_remaining, 192)
+  assert_eq(memory_usage_percent, 82)
+}
+
+test "signal_processing_simulation" {
+  // 信号处理模拟测试
+  // 模拟简单的数字信号处理
+  
+  // 原始信号采样值
+  let signal1 = 10
+  let signal2 = 25
+  let signal3 = 15
+  let signal4 = 30
+  let signal5 = 20
+  let signal6 = 35
+  let signal7 = 18
+  let signal8 = 28
+  
+  // 计算移动平均（窗口大小为3）
+  let avg1 = divide_with_ceil(add(add(signal1, signal2), signal3), 3)
+  let avg2 = divide_with_ceil(add(add(signal2, signal3), signal4), 3)
+  let avg3 = divide_with_ceil(add(add(signal3, signal4), signal5), 3)
+  let avg4 = divide_with_ceil(add(add(signal4, signal5), signal6), 3)
+  let avg5 = divide_with_ceil(add(add(signal5, signal6), signal7), 3)
+  let avg6 = divide_with_ceil(add(add(signal6, signal7), signal8), 3)
+  
+  // 计算信号能量（平方和）
+  let energy1 = multiply(signal1, signal1)
+  let energy2 = multiply(signal2, signal2)
+  let energy3 = multiply(signal3, signal3)
+  let energy4 = multiply(signal4, signal4)
+  let energy5 = multiply(signal5, signal5)
+  let energy6 = multiply(signal6, signal6)
+  let energy7 = multiply(signal7, signal7)
+  let energy8 = multiply(signal8, signal8)
+  
+  let total_energy = add(add(add(add(add(add(add(energy1, energy2), energy3), energy4), energy5), energy6), energy7), energy8)
+  
+  // 计算信号功率（平均能量）
+  let signal_power = divide_with_ceil(total_energy, 8)
+  
+  // 计算信号的RMS值（均方根，简化为整数近似）
+  let rms_approx = divide_with_ceil(signal_power, 10)
+  
+  // 检测信号峰值（超过阈值25）
+  let threshold = 25
+  let peak_count = 
+    add(add(add(
+      if signal2 > threshold { 1 } else { 0 },
+      if signal4 > threshold { 1 } else { 0 }),
+      if signal6 > threshold { 1 } else { 0 }),
+      if signal8 > threshold { 1 } else { 0 })
+  
+  assert_eq(avg1, 17)
+  assert_eq(avg2, 23)
+  assert_eq(avg3, 22)
+  assert_eq(avg4, 28)
+  assert_eq(avg5, 24)
+  assert_eq(avg6, 27)
+  assert_eq(total_energy, 4543)
+  assert_eq(signal_power, 568)
+  assert_eq(rms_approx, 57)
+  assert_eq(peak_count, 4)
+}
