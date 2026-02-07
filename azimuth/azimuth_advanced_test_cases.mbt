@@ -1,261 +1,212 @@
-// Azimuth 高级测试用例 - 10个新的高质量 MoonBit 测试用例
-// 这些测试用例覆盖了更复杂的数学运算和真实世界应用场景
+// Azimuth 高级测试用例 - 10个标准 MoonBit 测试用例
+// 测试 azimuth 库的高级功能和边缘情况
 
-// 必要的函数定义（自包含测试）
-fn add(a : Int, b : Int) -> Int { a + b }
-fn multiply(a : Int, b : Int) -> Int { a * b }
-fn subtract(a : Int, b : Int) -> Int { a - b }
-fn divide_with_ceil(a : Int, b : Int) -> Int {
-  if b == 0 { 0 } else {
-    let quotient = a / b
-    let remainder = a % b
-    if remainder == 0 { quotient } else if a > 0 && b > 0 { quotient + 1 } else if a < 0 && b < 0 { quotient + 1 } else { quotient }
-  }
-}
-fn greet(name : String) -> String { "Hello, " + name + "!" }
-fn assert_eq(expected : Int, actual : Int) -> Unit { ()
-}
-fn assert_eq_string(expected : String, actual : String) -> Unit { ()
-}
-fn assert_true(condition : Bool) -> Unit { ()
+test "advanced_mathematical_distributive" {
+  // 测试数学分配律: a * (b + c) = a * b + a * c
+  let a = 6
+  let b = 4
+  let c = 3
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)  // 6*(4+3) = 6*4 + 6*3 = 42
 }
 
-test "mathematical_sequence_and_patterns" {
-  // 数学序列和模式测试
-  // 斐波那契数列前几项的计算
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = add(fib1, fib2)  // 2
-  let fib4 = add(fib2, fib3)  // 3
-  let fib5 = add(fib3, fib4)  // 5
+test "advanced_fibonacci_sequence" {
+  // 使用现有函数计算斐波那契数列的前几项
+  let fib1 = add(0, 1)  // F1 = 1
+  let fib2 = add(1, 1)  // F2 = 2
+  let fib3 = add(1, 2)  // F3 = 3
+  let fib4 = add(2, 3)  // F4 = 5
+  let fib5 = add(3, 5)  // F5 = 8
   
-  assert_eq(2, fib3)
-  assert_eq(3, fib4)
-  assert_eq(5, fib5)
-  
-  // 验证黄金比例近似值
-  let ratio = divide_with_ceil(multiply(fib5, 100), fib4)
-  assert_eq(167, ratio)  // 5/3 ≈ 1.67, 接近黄金比例
+  assert_eq(1, fib1)
+  assert_eq(2, fib2)
+  assert_eq(3, fib3)
+  assert_eq(5, fib4)
+  assert_eq(8, fib5)
 }
 
-test "iterative_calculation_simulation" {
-  // 迭代计算模拟测试
-  // 模拟计算阶乘：5! = 5×4×3×2×1 = 120
-  let n = 5
-  let result = 1
+test "advanced_resource_allocation" {
+  // 高级资源分配场景测试
+  let team_members = 15
+  let projects = 4
+  let tasks_per_project = 8
   
-  // 使用现有函数模拟迭代
-  let step1 = multiply(result, 5)  // 1×5 = 5
-  let step2 = multiply(step1, 4)   // 5×4 = 20
-  let step3 = multiply(step2, 3)   // 20×3 = 60
-  let step4 = multiply(step3, 2)   // 60×2 = 120
-  let step5 = multiply(step4, 1)   // 120×1 = 120
+  // 计算总任务数
+  let total_tasks = multiply(projects, tasks_per_project)
   
-  assert_eq(120, step5)
+  // 计算每人平均任务数
+  let tasks_per_person = divide_with_ceil(total_tasks, team_members)
   
-  // 验证阶乘的数学性质
-  assert_eq(120, multiply(5, 24))  // 5! = 5 × 4!
+  // 验证任务分配合理性
+  assert_eq(32, total_tasks)  // 4 * 8 = 32
+  assert_eq(3, tasks_per_person)  // ceil(32/15) = 3
+  
+  // 验证总处理能力
+  let total_capacity = multiply(team_members, tasks_per_person)
+  assert_eq(45, total_capacity)  // 15 * 3 = 45
+  
+  // 验证有足够的处理能力
+  assert_true(total_capacity >= total_tasks)
 }
 
-test "time_calculation_scenarios" {
-  // 时间计算场景测试
-  let total_minutes = 1537
+test "advanced_temperature_conversion" {
+  // 温度转换场景测试（简化版）
+  let fahrenheit_base = 32
   
-  // 转换为小时和分钟
-  let hours = divide_with_ceil(total_minutes, 60)
-  let remaining_minutes = subtract(total_minutes, multiply(hours - 1, 60))
+  // 模拟温度转换: F = C * 9/5 + 32
+  let celsius_100 = 100
+  let fahrenheit_100 = add(multiply(divide_with_ceil(multiply(celsius_100, 9), 5), 1), fahrenheit_base)
   
-  assert_eq(26, hours)  // ceil(1537/60) = 26
-  assert_eq(37, remaining_minutes)  // 1537 - 25×60 = 37
+  // 简化的转换测试
+  let celsius_neg_40 = -40
+  let fahrenheit_neg_40 = add(multiply(divide_with_ceil(multiply(celsius_neg_40, 9), 5), 1), fahrenheit_base)
   
-  // 计算工作日数（每天工作8小时）
-  let work_hours = hours
-  let work_days = divide_with_ceil(work_hours, 8)
-  assert_eq(4, work_days)  // ceil(26/8) = 4
+  assert_eq(212, fahrenheit_100)  // 100°C = 212°F
+  assert_eq(-40, fahrenheit_neg_40)  // -40°C = -40°F (特殊点)
 }
 
-test "geometric_calculations" {
-  // 几何计算测试
-  // 矩形面积和周长计算
+test "advanced_financial_compound_interest" {
+  // 复合利息计算测试（简化版）
+  let principal = 1000
+  let rate_percent = 5
+  
+  // 简化的复合利息计算
+  let year1_amount = add(principal, divide_with_ceil(multiply(principal, rate_percent), 100))
+  let year2_amount = add(year1_amount, divide_with_ceil(multiply(year1_amount, rate_percent), 100))
+  let year3_amount = add(year2_amount, divide_with_ceil(multiply(year2_amount, rate_percent), 100))
+  
+  assert_eq(1050, year1_amount)  // 1000 + 5% = 1050
+  assert_eq(1103, year2_amount)  // 1050 + 5% ≈ 1103 (向上取整)
+  assert_eq(1159, year3_amount)  // 1103 + 5% ≈ 1159 (向上取整)
+}
+
+test "advanced_string_processing" {
+  // 高级字符串处理测试
+  let name1 = "Alice"
+  let name2 = "Bob"
+  let name3 = "Charlie"
+  
+  // 测试不同长度和类型的名字
+  assert_eq_string("Hello, Alice!", greet(name1))
+  assert_eq_string("Hello, Bob!", greet(name2))
+  assert_eq_string("Hello, Charlie!", greet(name3))
+  
+  // 测试包含特殊字符的名字
+  let name_with_hyphen = "Mary-Jane"
+  let name_with_apostrophe = "O'Connor"
+  let name_with_space = "Jean Claude"
+  
+  assert_eq_string("Hello, Mary-Jane!", greet(name_with_hyphen))
+  assert_eq_string("Hello, O'Connor!", greet(name_with_apostrophe))
+  assert_eq_string("Hello, Jean Claude!", greet(name_with_space))
+}
+
+test "advanced_geometric_calculations" {
+  // 几何计算测试（简化版）
+  // 计算矩形的面积和周长
   let length = 8
   let width = 5
   
   let area = multiply(length, width)
   let perimeter = multiply(2, add(length, width))
   
-  assert_eq(40, area)      // 8×5 = 40
-  assert_eq(26, perimeter) // 2×(8+5) = 26
+  assert_eq(40, area)  // 8 * 5 = 40
+  assert_eq(26, perimeter)  // 2 * (8 + 5) = 26
   
-  // 计算可以容纳的小正方形数量
-  let small_square_side = 2
-  let squares_along_length = divide_with_ceil(length, small_square_side)
-  let squares_along_width = divide_with_ceil(width, small_square_side)
-  let total_squares = multiply(squares_along_length, squares_along_width)
+  // 计算需要多少个正方形瓷砖覆盖矩形
+  let tile_size = 3
+  let tiles_length = divide_with_ceil(length, tile_size)
+  let tiles_width = divide_with_ceil(width, tile_size)
+  let total_tiles = multiply(tiles_length, tiles_width)
   
-  assert_eq(4, squares_along_length)  // ceil(8/2) = 4
-  assert_eq(3, squares_along_width)   // ceil(5/2) = 3
-  assert_eq(12, total_squares)        // 4×3 = 12
+  assert_eq(3, tiles_length)  // ceil(8/3) = 3
+  assert_eq(2, tiles_width)   // ceil(5/3) = 2
+  assert_eq(6, total_tiles)   // 3 * 2 = 6
 }
 
-test "statistical_calculations" {
-  // 统计计算测试
-  // 计算平均值、总和和范围
-  let values = [12, 18, 24, 30, 36]
+test "advanced_time_calculations" {
+  // 时间计算测试
+  let hours_per_day = 24
+  let minutes_per_hour = 60
+  let seconds_per_minute = 60
   
-  // 计算总和
-  let sum = add(add(add(add(values[0], values[1]), values[2]), values[3]), values[4])
-  assert_eq(120, sum)
+  // 计算一天的总秒数
+  let seconds_per_day = multiply(hours_per_day, multiply(minutes_per_hour, seconds_per_minute))
+  assert_eq(86400, seconds_per_day)  // 24 * 60 * 60 = 86400
   
-  // 计算平均值
-  let count = 5
-  let average = divide_with_ceil(sum, count)
-  assert_eq(24, average)  // ceil(120/5) = 24
+  // 计算工作周的总小时数
+  let work_days_per_week = 5
+  let work_hours_per_day = 8
+  let weekly_work_hours = multiply(work_days_per_week, work_hours_per_day)
+  assert_eq(40, weekly_work_hours)  // 5 * 8 = 40
   
-  // 计算范围（最大值减去最小值）
-  let max_value = 36
-  let min_value = 12
-  let range = subtract(max_value, min_value)
-  assert_eq(24, range)
-  
-  // 验证标准差相关的计算
-  let variance_sum = add(add(add(add(
-    multiply(subtract(values[0], average), subtract(values[0], average)),
-    multiply(subtract(values[1], average), subtract(values[1], average))),
-    multiply(subtract(values[2], average), subtract(values[2], average))),
-    multiply(subtract(values[3], average), subtract(values[3], average))),
-    multiply(subtract(values[4], average), subtract(values[4], average)))
-  
-  assert_eq(360, variance_sum)
+  // 计算项目需要的周数
+  let project_hours = 120
+  let weeks_needed = divide_with_ceil(project_hours, weekly_work_hours)
+  assert_eq(3, weeks_needed)  // ceil(120/40) = 3
 }
 
-test "data_compression_simulation" {
-  // 数据压缩模拟测试
-  // 模拟简单的游程编码压缩
-  let original_data_length = 100
-  let compression_ratio = 4  // 4:1压缩比
-  let compressed_length = divide_with_ceil(original_data_length, compression_ratio)
+test "advanced_error_boundary_conditions" {
+  // 高级错误边界条件测试
+  // 测试极值运算
+  let max_int = 1000000
+  let min_int = -1000000
   
-  assert_eq(25, compressed_length)  // ceil(100/4) = 25
+  // 测试大数运算
+  assert_eq(2000000, add(max_int, max_int))
+  assert_eq(0, add(max_int, min_int))
+  assert_eq(-2000000, add(min_int, min_int))
   
-  // 计算节省的存储空间
-  let saved_space = subtract(original_data_length, compressed_length)
-  assert_eq(75, saved_space)
+  // 测试除法的边界情况
+  assert_eq(1000000, divide_with_ceil(max_int, 1))
+  assert_eq(1, divide_with_ceil(max_int, max_int))
+  assert_eq(2, divide_with_ceil(max_int, divide_with_ceil(max_int, 2)))
   
-  // 计算压缩百分比
-  let compression_percentage = divide_with_ceil(multiply(saved_space, 100), original_data_length)
-  assert_eq(75, compression_percentage)  // 75%压缩率
-  
-  // 验证解压缩后的数据完整性
-  let decompressed_length = multiply(compressed_length, compression_ratio)
-  assert_true(decompressed_length >= original_data_length)
+  // 测试零的各种情况
+  assert_eq(0, multiply(0, max_int))
+  assert_eq(0, multiply(0, min_int))
+  assert_eq(0, divide_with_ceil(0, max_int))
+  assert_eq(0, divide_with_ceil(0, min_int))
+  assert_eq(0, divide_with_ceil(0, 0))
 }
 
-test "cryptography_basics" {
-  // 密码学基础测试
-  // 简单的凯撒密码实现
-  let message_length = 13
-  let shift_value = 3
+test "advanced_complex_workflow_integration" {
+  // 复杂工作流集成测试
+  // 场景：电子商务订单处理
   
-  // 计算加密后的位置
-  let encrypted_position = add(message_length, shift_value)
-  assert_eq(16, encrypted_position)
+  let order_items = 47
+  let items_per_box = 12
+  let boxes_per_pallet = 8
+  let cost_per_item = 15
+  let shipping_cost_per_box = 25
   
-  // 模拟字母表循环（26个字母）
-  let alphabet_size = 26
-  let wrapped_position = subtract(encrypted_position, alphabet_size)
-  assert_true(wrapped_position < alphabet_size)
+  // 计算需要的箱子数
+  let boxes_needed = divide_with_ceil(order_items, items_per_box)
+  assert_eq(4, boxes_needed)  // ceil(47/12) = 4
   
-  // 计算解密位置
-  let decrypted_position = subtract(wrapped_position, shift_value)
-  let wrapped_decrypt = add(decrypted_position, alphabet_size)
-  assert_eq(13, wrapped_decrypt)  // 恢复到原始位置
-}
-
-test "graphics_processing_calculations" {
-  // 图形处理计算测试
-  // 图像分辨率和像素计算
-  let image_width = 1920
-  let image_height = 1080
+  // 计算需要的托盘数
+  let pallets_needed = divide_with_ceil(boxes_needed, boxes_per_pallet)
+  assert_eq(1, pallets_needed)  // ceil(4/8) = 1
   
-  // 计算总像素数
-  let total_pixels = multiply(image_width, image_height)
-  assert_eq(2073600, total_pixels)
+  // 计算物品总成本
+  let items_cost = multiply(order_items, cost_per_item)
+  assert_eq(705, items_cost)  // 47 * 15 = 705
   
-  // 计算图像大小（假设每个像素4字节）
-  let bytes_per_pixel = 4
-  let image_size_bytes = multiply(total_pixels, bytes_per_pixel)
-  assert_eq(8294400, image_size_bytes)
+  // 计算总运输成本
+  let total_shipping_cost = multiply(boxes_needed, shipping_cost_per_box)
+  assert_eq(100, total_shipping_cost)  // 4 * 25 = 100
   
-  // 转换为千字节
-  let kb_size = divide_with_ceil(image_size_bytes, 1024)
-  assert_eq(8100, kb_size)  // ceil(8294400/1024) = 8100
+  // 计算订单总成本
+  let total_order_cost = add(items_cost, total_shipping_cost)
+  assert_eq(805, total_order_cost)  // 705 + 100 = 805
   
-  // 计算缩略图大小（缩小4倍）
-  let scale_factor = 4
-  let thumb_width = divide_with_ceil(image_width, scale_factor)
-  let thumb_height = divide_with_ceil(image_height, scale_factor)
-  let thumb_pixels = multiply(thumb_width, thumb_height)
+  // 计算每个箱子的平均物品数
+  let avg_items_per_box = divide_with_ceil(order_items, boxes_needed)
+  assert_eq(12, avg_items_per_box)  // ceil(47/4) = 12
   
-  assert_eq(480, thumb_width)   // ceil(1920/4) = 480
-  assert_eq(270, thumb_height)  // ceil(1080/4) = 270
-  assert_eq(129600, thumb_pixels) // 480×270 = 129600
-}
-
-test "network_calculation_scenarios" {
-  // 网络计算场景测试
-  // 数据包传输计算
-  let data_size = 10000  // 10KB数据
-  let packet_size = 1500  // 每个包1500字节
-  let packets_needed = divide_with_ceil(data_size, packet_size)
-  
-  assert_eq(7, packets_needed)  // ceil(10000/1500) = 7
-  
-  // 计算总开销（每个包20字节头部）
-  let header_size = 20
-  let total_overhead = multiply(packets_needed, header_size)
-  assert_eq(140, total_overhead)
-  
-  // 计算总传输量
-  let total_transmitted = add(data_size, total_overhead)
-  assert_eq(10140, total_transmitted)
-  
-  // 计算传输效率
-  let efficiency = divide_with_ceil(multiply(data_size, 100), total_transmitted)
-  assert_eq(99, efficiency)  // floor(1000000/10140) = 98%，向上取整为99%
-  
-  // 计算在网络延迟下的传输时间
-  let bandwidth = 1000  // 1000字节/秒
-  let transmission_time = divide_with_ceil(total_transmitted, bandwidth)
-  assert_eq(11, transmission_time)  // ceil(10140/1000) = 11秒
-}
-
-test "scientific_computing_basics" {
-  // 科学计算基础测试
-  // 温度转换计算
-  let celsius_temp = 25
-  let fahrenheit_temp = add(multiply(divide_with_ceil(multiply(celsius_temp, 9), 5), 32), 0)
-  
-  // 简化的摄氏到华氏度转换：F = (C × 9/5) + 32
-  let conversion_step1 = multiply(celsius_temp, 9)     // 25×9 = 225
-  let conversion_step2 = divide_with_ceil(conversion_step1, 5)  // ceil(225/5) = 45
-  let final_fahrenheit = add(conversion_step2, 32)     // 45 + 32 = 77
-  
-  assert_eq(77, final_fahrenheit)
-  
-  // 计算化学反应中的摩尔数
-  let mass = 50  // 50克
-  let molar_mass = 18  // 18克/摩尔（水）
-  let moles = divide_with_ceil(mass, molar_mass)
-  
-  assert_eq(3, moles)  // ceil(50/18) = 3
-  
-  // 计算溶液浓度
-  let solution_volume = 500  // 500毫升
-  let concentration = divide_with_ceil(multiply(moles, 1000), solution_volume)
-  assert_eq(6, concentration)  // ceil(3000/500) = 6 摩尔/升
-  
-  // 验证稀释计算
-  let target_concentration = 2  // 目标浓度2摩尔/升
-  let final_volume = divide_with_ceil(multiply(moles, 1000), target_concentration)
-  assert_eq(1500, final_volume)  // ceil(3000/2) = 1500毫升
+  // 验证总容量
+  let total_box_capacity = multiply(boxes_needed, items_per_box)
+  let unused_space = subtract(total_box_capacity, order_items)
+  assert_eq(1, unused_space)  // (4*12) - 47 = 1
 }
