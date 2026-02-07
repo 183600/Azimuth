@@ -1,7 +1,6 @@
-// Azimuth 综合新测试用例
-// 包含10个标准 MoonBit 测试用例，覆盖各种场景
+// 新测试文件 - 包含10个标准 MoonBit 测试用例
 
-test "azimuth_mathematical_identities" {
+test "mathematical_identities_test" {
   // 数学恒等式测试
   let x = 42
   
@@ -19,7 +18,7 @@ test "azimuth_mathematical_identities" {
   assert_eq(x, subtract(x, 0))
 }
 
-test "azimuth_divide_with_ceil_precision" {
+test "divide_with_ceil_precision_test" {
   // 向上取整除法精度测试
   assert_eq(1, divide_with_ceil(1, 2))
   assert_eq(2, divide_with_ceil(3, 2))
@@ -28,7 +27,7 @@ test "azimuth_divide_with_ceil_precision" {
   assert_eq(5, divide_with_ceil(9, 2))
 }
 
-test "azimuth_large_number_operations" {
+test "large_number_operations_test" {
   // 大数运算测试
   assert_eq(2000000, add(1000000, 1000000))
   assert_eq(1000000, multiply(1000, 1000))
@@ -36,7 +35,7 @@ test "azimuth_large_number_operations" {
   assert_eq(1001, divide_with_ceil(1000000, 999))
 }
 
-test "azimuth_negative_number_comprehensive" {
+test "negative_number_comprehensive_test" {
   // 负数综合测试
   assert_eq(-10, add(-5, -5))
   assert_eq(0, add(-5, 5))
@@ -49,7 +48,7 @@ test "azimuth_negative_number_comprehensive" {
   assert_eq(10, subtract(5, -5))
 }
 
-test "azimuth_business_resource_calculation" {
+test "business_resource_calculation_test" {
   // 业务资源计算测试
   let employees = 15
   let projects_per_employee = 4
@@ -66,7 +65,7 @@ test "azimuth_business_resource_calculation" {
   assert_eq(9, quarters_needed)     // ceil(180/20) = 9
 }
 
-test "azimuth_string_handling_edge_cases" {
+test "string_handling_edge_cases_test" {
   // 字符串处理边界情况测试
   assert_eq_string("Hello, single!", greet("single"))
   assert_eq_string("Hello, ALLCAPS!", greet("ALLCAPS"))
@@ -75,7 +74,7 @@ test "azimuth_string_handling_edge_cases" {
   assert_eq_string("Hello, space at end !", greet("space at end "))
 }
 
-test "azimuth_complex_calculation_workflow" {
+test "complex_calculation_workflow_test" {
   // 复杂计算工作流测试
   let initial_value = 10
   
@@ -94,7 +93,7 @@ test "azimuth_complex_calculation_workflow" {
   assert_eq(2, final_result)
 }
 
-test "azimuth_boundary_value_analysis" {
+test "boundary_value_analysis_test" {
   // 边界值分析测试
   // 最小边界值
   assert_eq(1, divide_with_ceil(1, 1000000))
@@ -110,7 +109,7 @@ test "azimuth_boundary_value_analysis" {
   assert_eq(2, divide_with_ceil(1000001, 1000000))
 }
 
-test "azimuth_error_handling_robustness" {
+test "error_handling_robustness_test" {
   // 错误处理健壮性测试
   // 除零情况的各种测试
   assert_eq(0, divide_with_ceil(1, 0))
@@ -120,7 +119,7 @@ test "azimuth_error_handling_robustness" {
   assert_eq(0, divide_with_ceil(-999999, 0))
 }
 
-test "azimuth_real_world_inventory_management" {
+test "real_world_inventory_management_test" {
   // 真实世界库存管理测试
   let product_types = 8
   let items_per_type = 125
