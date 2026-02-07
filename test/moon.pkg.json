@@ -6,6 +6,8 @@
     "moonbitlang/core/test"
   ],
   "test": [
+    "simple_test_check.mbt",
+    "new_basic_core_tests.mbt",
     "additional_enhanced_tests.mbt",
     "simple_new_test_file.mbt",
     "standard_concise_tests.mbt",
