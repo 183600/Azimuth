@@ -1,4 +1,4 @@
-// Azimuth 项目最终测试用例
+// Azimuth 项目简洁测试用例
 // 使用标准 MoonBit 测试语法，包含8个高质量测试用例
 
 test "basic_addition_functionality" {
