@@ -18947,3 +18947,106 @@ test "standard_boundary_comprehensive" {
   assert_eq_string("Hello,     !", greet("     "))
   assert_eq_string("Hello, symbols#$%!", greet("symbols#$%"))
 }
+
+// 新增的10个标准MoonBit测试用例
+test "standard_enhanced_addition" {
+  // 基本加法功能测试
+  assert_eq(8, add(3, 5))
+  assert_eq(0, add(0, 0))
+  assert_eq(-2, add(-3, 1))
+  assert_eq(100, add(50, 50))
+}
+
+test "standard_enhanced_multiplication" {
+  // 基本乘法功能测试
+  assert_eq(12, multiply(3, 4))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-15, multiply(-3, 5))
+  assert_eq(25, multiply(-5, -5))
+}
+
+test "standard_enhanced_divide_ceil" {
+  // 向上取整除法测试
+  assert_eq(3, divide_with_ceil(8, 3))
+  assert_eq(2, divide_with_ceil(6, 3))
+  assert_eq(1, divide_with_ceil(1, 5))
+  assert_eq(0, divide_with_ceil(0, 10))
+  assert_eq(0, divide_with_ceil(5, 0))
+}
+
+test "standard_enhanced_divide_negative" {
+  // 向上取整除法负数测试
+  assert_eq(-2, divide_with_ceil(-8, 3))
+  assert_eq(-3, divide_with_ceil(8, -3))
+  assert_eq(3, divide_with_ceil(-8, -3))
+  assert_eq(-1, divide_with_ceil(-1, 2))
+}
+
+test "standard_enhanced_greet" {
+  // 问候函数测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+}
+
+test "standard_enhanced_subtract" {
+  // 减法函数测试
+  assert_eq(3, subtract(8, 5))
+  assert_eq(-3, subtract(5, 8))
+  assert_eq(0, subtract(10, 10))
+  assert_eq(15, subtract(5, -10))
+}
+
+test "standard_enhanced_commutative" {
+  // 数学交换律测试
+  let a = 7
+  let b = 13
+  
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+}
+
+test "standard_enhanced_packaging" {
+  // 包装计算场景测试
+  let total_items = 25
+  let items_per_package = 6
+  let packages_needed = divide_with_ceil(total_items, items_per_package)
+  
+  assert_eq(5, packages_needed)
+  
+  // 验证总容量
+  let total_capacity = multiply(packages_needed, items_per_package)
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(5, remaining_space)
+}
+
+test "standard_enhanced_workflow" {
+  // 复杂工作流计算测试
+  let team_members = 4
+  let tasks_per_member = 8
+  let total_tasks = multiply(team_members, tasks_per_member)
+  
+  let sprint_capacity = 15
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  
+  assert_eq(32, total_tasks)  // 4 * 8 = 32
+  assert_eq(3, sprints_needed)  // ceil(32/15) = 3
+}
+
+test "standard_enhanced_boundary" {
+  // 边界情况测试
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(0, divide_with_ceil(0, 5))
+  
+  // 大数运算
+  assert_eq(2000, add(1000, 1000))
+  assert_eq(1000000, multiply(1000, 1000))
+  
+  // 特殊问候情况
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, special@chars!", greet("special@chars"))
+}
