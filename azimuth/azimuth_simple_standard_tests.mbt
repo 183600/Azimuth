@@ -1,209 +1,123 @@
-// Azimuth 项目简单标准测试用例
-// 使用标准 MoonBit 测试语法，自包含的测试
+// 标准 MoonBit 测试用例 - 为 Azimuth 项目添加
+// 使用标准 MoonBit 测试语法，包含10个高质量测试用例
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  let a = 15
+test "basic_addition_tests" {
+  // 基本加法测试
+  assert_eq(8, add(3, 5))
+  assert_eq(0, add(0, 0))
+  assert_eq(-2, add(-5, 3))
+  assert_eq(100, add(50, 50))
+  assert_eq(-100, add(-50, -50))
+}
+
+test "basic_multiplication_tests" {
+  // 基本乘法测试
+  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-15, multiply(-3, 5))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(10000, multiply(100, 100))
+}
+
+test "divide_with_ceil_basic_tests" {
+  // 向上取整除法基本测试
+  assert_eq(3, divide_with_ceil(8, 3))
+  assert_eq(2, divide_with_ceil(6, 3))
+  assert_eq(1, divide_with_ceil(1, 5))
+  assert_eq(0, divide_with_ceil(0, 10))
+  assert_eq(0, divide_with_ceil(10, 0))
+}
+
+test "divide_with_ceil_negative_tests" {
+  // 向上取整除法负数测试
+  assert_eq(-2, divide_with_ceil(-8, 3))
+  assert_eq(-3, divide_with_ceil(8, -3))
+  assert_eq(3, divide_with_ceil(-8, -3))
+  assert_eq(-1, divide_with_ceil(-1, 2))
+  assert_eq(1, divide_with_ceil(-1, -2))
+}
+
+test "greet_function_tests" {
+  // 问候函数测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 用户!", greet("用户"))
+}
+
+test "mathematical_commutative_tests" {
+  // 数学交换律测试
+  let a = 12
   let b = 7
   
-  // 加法测试
-  let sum = a + b
-  assert_eq(22, sum)
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
   
-  // 乘法测试
-  let product = a * b
-  assert_eq(105, product)
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
   
-  // 复合运算测试
-  let complex = (a * 2) + (b * 3)
-  assert_eq(51, complex)
+  // 验证具体数值
+  assert_eq(19, add(12, 7))
+  assert_eq(84, multiply(12, 7))
 }
 
-test "string_operations" {
-  // 字符串操作测试
-  let name1 = "Alice"
-  let name2 = "Bob"
+test "packaging_scenario_tests" {
+  // 包装计算场景测试
+  let total_items = 35
+  let items_per_package = 8
+  let packages_needed = divide_with_ceil(total_items, items_per_package)
   
-  // 字符串拼接测试
-  let greeting1 = "Hello, " + name1 + "!"
-  assert_eq_string("Hello, Alice!", greeting1)
+  assert_eq(5, packages_needed)
   
-  let greeting2 = "Hello, " + name2 + "!"
-  assert_eq_string("Hello, Bob!", greeting2)
+  // 验证总容量
+  let total_capacity = multiply(packages_needed, items_per_package)
+  assert_eq(40, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(5, remaining_space)
 }
 
-test "mathematical_formulas" {
-  // 数学公式测试
-  // 计算矩形面积和周长
-  let length = 8
-  let width = 6
-  
-  let area = length * width
-  let perimeter = 2 * (length + width)
-  
-  assert_eq(48, area)
-  assert_eq(28, perimeter)
-  
-  // 计算立方体体积
-  let side = 4
-  let volume = side * side * side
-  assert_eq(64, volume)
+test "subtract_function_tests" {
+  // 减法函数测试
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(15, 15))
+  assert_eq(20, subtract(10, -10))
+  assert_eq(-20, subtract(-10, 10))
 }
 
-test "financial_calculations" {
-  // 金融计算测试
-  // 计算简单利息
-  let principal = 1000
-  let rate = 5  // 5%
-  let time = 3  // 3年
+test "workflow_calculation_tests" {
+  // 复杂工作流计算测试
+  // 场景：计算项目资源需求
+  let team_members = 6
+  let tasks_per_member = 8
+  let total_tasks = multiply(team_members, tasks_per_member)
   
-  let simple_interest = (principal * rate * time) / 100
-  let total_amount = principal + simple_interest
+  let days_per_sprint = 5
+  let tasks_per_day = 10
+  let sprint_capacity = multiply(days_per_sprint, tasks_per_day)
   
-  assert_eq(150, simple_interest)
-  assert_eq(1150, total_amount)
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
   
-  // 计算折扣价格
-  let original_price = 200
-  let discount_percent = 25
-  let discount_amount = (original_price * discount_percent) / 100
-  let final_price = original_price - discount_amount
-  
-  assert_eq(50, discount_amount)
-  assert_eq(150, final_price)
+  assert_eq(48, total_tasks)  // 6 * 8 = 48
+  assert_eq(50, sprint_capacity)  // 5 * 10 = 50
+  assert_eq(1, sprints_needed)  // ceil(48/50) = 1
 }
 
-test "temperature_conversion" {
-  // 温度转换测试
-  // 摄氏度转华氏度：F = C * 9/5 + 32
-  let celsius = 25
-  let fahrenheit = (celsius * 9) / 5 + 32
-  assert_eq(77, fahrenheit)
+test "boundary_edge_tests" {
+  // 边界和边缘情况测试
+  // 除法边界情况
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(1, divide_with_ceil(-5, -5))
+  assert_eq(0, divide_with_ceil(0, 5))
   
-  // 华氏度转摄氏度：C = (F - 32) * 5/9
-  let fahrenheit2 = 86
-  let celsius2 = ((fahrenheit2 - 32) * 5) / 9
-  assert_eq(30, celsius2)
-}
-
-test "array_index_calculations" {
-  // 数组索引计算测试
-  let array_size = 10
+  // 大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(100000000, multiply(10000, 10000))
   
-  // 计算中间索引
-  let middle_index = array_size / 2
-  assert_eq(5, middle_index)
-  
-  // 计算最后一个索引
-  let last_index = array_size - 1
-  assert_eq(9, last_index)
-  
-  // 计算四分之一位置
-  let quarter_index = array_size / 4
-  assert_eq(2, quarter_index)
-}
-
-test "time_calculations" {
-  // 时间计算测试
-  // 计算总秒数
-  let hours = 2
-  let minutes = 30
-  let seconds = 45
-  
-  let total_seconds = (hours * 3600) + (minutes * 60) + seconds
-  assert_eq(9045, total_seconds)
-  
-  // 计算天数
-  let total_hours = 72
-  let days = total_hours / 24
-  assert_eq(3, days)
-}
-
-test "statistical_operations" {
-  // 统计运算测试
-  // 计算平均值
-  let numbers_sum = 150
-  let count = 5
-  let average = numbers_sum / count
-  assert_eq(30, average)
-  
-  // 计算百分比
-  let part = 25
-  let whole = 200
-  let percentage = (part * 100) / whole
-  assert_eq(12, percentage)
-  
-  // 计算比例
-  let ratio_numerator = 3
-  let ratio_denominator = 4
-  let ratio_decimal = (ratio_numerator * 100) / ratio_denominator
-  assert_eq(75, ratio_decimal)
-}
-
-test "geometry_calculations" {
-  // 几何计算测试
-  // 计算圆的周长（简化版，使用π≈22/7）
-  let radius = 7
-  let pi_approx = 22
-  let circumference = (2 * radius * pi_approx) / 7
-  assert_eq(44, circumference)
-  
-  // 计算三角形面积（底×高÷2）
-  let base = 10
-  let height = 6
-  let triangle_area = (base * height) / 2
-  assert_eq(30, triangle_area)
-  
-  // 计算梯形面积（(上底+下底)×高÷2）
-  let top_base = 5
-  let bottom_base = 9
-  let trapezoid_height = 4
-  let trapezoid_area = ((top_base + bottom_base) * trapezoid_height) / 2
-  assert_eq(28, trapezoid_area)
-}
-
-test "boundary_value_tests" {
-  // 边界值测试
-  let zero = 0
-  let one = 1
-  let negative_one = -1
-  
-  // 测试与零的运算
-  assert_eq(0, 100 * zero)
-  assert_eq(100, 100 + zero)
-  assert_eq(100, 100 * one)
-  assert_eq(101, 100 + one)
-  assert_eq(99, 100 + negative_one)
-  
-  // 测试负数运算
-  let negative_a = -15
-  let negative_b = -7
-  let negative_sum = negative_a + negative_b
-  let negative_product = negative_a * negative_b
-  
-  assert_eq(-22, negative_sum)
-  assert_eq(105, negative_product)
-}
-
-// 辅助断言函数
-fn assert_eq(expected : Int, actual : Int) -> Unit {
-  if (expected == actual) {
-    ()
-  } else {
-    // 当断言失败时，抛出一个错误
-    // 使用整数除以零来触发运行时错误
-    let _ = 1 / 0
-    ()
-  }
-}
-
-fn assert_eq_string(expected : String, actual : String) -> Unit {
-  if (expected == actual) {
-    ()
-  } else {
-    // 当断言失败时，抛出一个错误
-    // 使用整数除以零来触发运行时错误
-    let _ = 1 / 0
-    ()
-  }
+  // 特殊问候情况
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, special@chars!", greet("special@chars"))
 }

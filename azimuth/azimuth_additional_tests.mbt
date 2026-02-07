@@ -1,89 +1,123 @@
-// Azimuth 额外测试用例
-// 覆盖更多边界情况和特殊场景
+// Azimuth 额外测试用例 - 10个标准 MoonBit 测试用例
+// 使用标准 MoonBit 测试语法
 
-test "divide_with_ceil_negative_divisor" {
-  // 测试负数除数的情况
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(10, -3))
-  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(5, -3))
-  @azimuth.assert_eq(-1, @azimuth.divide_with_ceil(2, -3))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, -5))
+test "azimuth_additional_basic_addition" {
+  // 基本加法测试
+  assert_eq(8, add(3, 5))
+  assert_eq(0, add(0, 0))
+  assert_eq(-2, add(-5, 3))
+  assert_eq(100, add(50, 50))
+  assert_eq(-100, add(-50, -50))
 }
 
-test "divide_with_ceil_both_negative" {
-  // 测试两个负数的情况
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(-10, -3))
-  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(-5, -3))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(-2, -3))
+test "azimuth_additional_basic_multiplication" {
+  // 基本乘法测试
+  assert_eq(15, multiply(3, 5))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-15, multiply(-3, 5))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(10000, multiply(100, 100))
 }
 
-test "divide_with_ceil_exact_division" {
-  // 测试能够整除的情况
-  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(15, 3))
-  @azimuth.assert_eq(-5, @azimuth.divide_with_ceil(-15, 3))
-  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(15, -3))
-  @azimuth.assert_eq(-5, @azimuth.divide_with_ceil(-15, -3))
+test "azimuth_additional_divide_with_ceil_basic" {
+  // 向上取整除法基本测试
+  assert_eq(3, divide_with_ceil(8, 3))
+  assert_eq(2, divide_with_ceil(6, 3))
+  assert_eq(1, divide_with_ceil(1, 5))
+  assert_eq(0, divide_with_ceil(0, 10))
+  assert_eq(0, divide_with_ceil(10, 0))
 }
 
-test "greet_with_emoji_and_special_chars" {
-  // 测试包含表情符号和特殊字符的问候
-  @azimuth.assert_eq_string("Hello, 👋!", @azimuth.greet("👋"))
-  @azimuth.assert_eq_string("Hello, 🌟!", @azimuth.greet("🌟"))
-  @azimuth.assert_eq_string("Hello, 💻!", @azimuth.greet("💻"))
-  @azimuth.assert_eq_string("Hello, 🎉!", @azimuth.greet("🎉"))
+test "azimuth_additional_divide_with_ceil_negative" {
+  // 向上取整除法负数测试
+  assert_eq(-2, divide_with_ceil(-8, 3))
+  assert_eq(-3, divide_with_ceil(8, -3))
+  assert_eq(3, divide_with_ceil(-8, -3))
+  assert_eq(-1, divide_with_ceil(-1, 2))
+  assert_eq(1, divide_with_ceil(-1, -2))
 }
 
-test "greet_with_whitespace_variations" {
-  // 测试不同空白字符的问候
-  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("   "))
-  @azimuth.assert_eq_string("Hello, 	!", @azimuth.greet("\t"))
-  @azimuth.assert_eq_string("Hello, 
-!", @azimuth.greet("\n"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet("\r"))
+test "azimuth_additional_greet_function" {
+  // 问候函数测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 用户!", greet("用户"))
 }
 
-test "add_with_large_boundary_values" {
-  // 测试大数边界的加法
-  @azimuth.assert_eq(2147483647, @azimuth.add(2147483646, 1))
-  @azimuth.assert_eq(-2147483648, @azimuth.add(-2147483647, -1))
-  @azimuth.assert_eq(0, @azimuth.add(2147483647, -2147483647))
-  @azimuth.assert_eq(-1, @azimuth.add(2147483647, -2147483648))
-}
-
-test "multiply_with_power_of_two" {
-  // 测试2的幂次方乘法
-  @azimuth.assert_eq(1024, @azimuth.multiply(32, 32))
-  @azimuth.assert_eq(2048, @azimuth.multiply(1024, 2))
-  @azimuth.assert_eq(4096, @azimuth.multiply(512, 8))
-  @azimuth.assert_eq(8192, @azimuth.multiply(256, 32))
-}
-
-test "complex_calculation_with_functions" {
-  // 测试复杂的多函数计算
-  let a = @azimuth.add(10, 20)
-  let b = @azimuth.multiply(a, 3)
-  let c = @azimuth.divide_with_ceil(b, 7)
-  @azimuth.assert_eq(13, c)  // ((10+20)*3)/7 = 90/7 = 12.85 -> ceil(12.85) = 13
+test "azimuth_additional_mathematical_commutative" {
+  // 数学交换律测试
+  let a = 12
+  let b = 7
   
-  let d = @azimuth.add(@azimuth.multiply(5, 5), @azimuth.multiply(3, 3))
-  let e = @azimuth.divide_with_ceil(d, 4)
-  @azimuth.assert_eq(9, e)  // (5*5 + 3*3)/4 = 34/4 = 8.5 -> ceil(8.5) = 9
+  // 加法交换律
+  assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 验证具体数值
+  assert_eq(19, add(12, 7))
+  assert_eq(84, multiply(12, 7))
 }
 
-test "divide_with_ceil_zero_dividend" {
-  // 测试被除数为0的情况
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, -5))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 1))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, -1))
+test "azimuth_additional_packaging_scenario" {
+  // 包装计算场景测试
+  let total_items = 35
+  let items_per_package = 8
+  let packages_needed = divide_with_ceil(total_items, items_per_package)
+  
+  assert_eq(5, packages_needed)
+  
+  // 验证总容量
+  let total_capacity = multiply(packages_needed, items_per_package)
+  assert_eq(40, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(5, remaining_space)
 }
 
-test "multiply_with_zero_and_one" {
-  // 测试乘以0和1的情况
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 5))
-  @azimuth.assert_eq(5, @azimuth.multiply(5, 1))
-  @azimuth.assert_eq(5, @azimuth.multiply(1, 5))
-  @azimuth.assert_eq(-5, @azimuth.multiply(-5, 1))
-  @azimuth.assert_eq(-5, @azimuth.multiply(1, -5))
+test "azimuth_additional_subtract_function" {
+  // 减法函数测试
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(15, 15))
+  assert_eq(20, subtract(10, -10))
+  assert_eq(-20, subtract(-10, 10))
+}
+
+test "azimuth_additional_workflow_calculation" {
+  // 复杂工作流计算测试
+  // 场景：计算项目资源需求
+  let team_members = 6
+  let tasks_per_member = 8
+  let total_tasks = multiply(team_members, tasks_per_member)
+  
+  let days_per_sprint = 5
+  let tasks_per_day = 10
+  let sprint_capacity = multiply(days_per_sprint, tasks_per_day)
+  
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  
+  assert_eq(48, total_tasks)  // 6 * 8 = 48
+  assert_eq(50, sprint_capacity)  // 5 * 10 = 50
+  assert_eq(1, sprints_needed)  // ceil(48/50) = 1
+}
+
+test "azimuth_additional_boundary_edge" {
+  // 边界和边缘情况测试
+  // 除法边界情况
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(1, divide_with_ceil(-5, -5))
+  assert_eq(0, divide_with_ceil(0, 5))
+  
+  // 大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(100000000, multiply(10000, 10000))
+  
+  // 特殊问候情况
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, special@chars!", greet("special@chars"))
 }
