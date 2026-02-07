@@ -14,6 +14,7 @@
     "moonbitlang/core/int"
   ],
   "test": [
+    "standard_moonbit_test_cases.mbt",
     "azimuth_simple_new_tests.mbt",
     "azimuth_new_core_tests.mbt",
     "azimuth_enhanced_quality_tests.mbt",
