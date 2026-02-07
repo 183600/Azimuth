@@ -1,9 +1,6 @@
 // Azimuth 增强质量测试用例
 // 10个高质量标准 MoonBit 测试用例
 
-// 导入必要的函数
-use azimuth.lib.{add, multiply, subtract, divide_with_ceil, greet, assert_eq, assert_eq_string}
-
 test "type_conversion_edge_cases" {
   // 类型转换边界情况测试
   // 测试数值在不同运算中的类型行为
