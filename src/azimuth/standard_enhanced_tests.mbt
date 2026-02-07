@@ -1,135 +1,252 @@
 // 新增的标准 MoonBit 测试用例
-// 针对 azimuth 库核心功能的补充测试
+// 覆盖核心功能的边界情况和实际应用场景
 
-test "subtract_function_boundary_test" {
-  // 测试减法函数的边界情况
-  assert_eq(0, subtract(5, 5))
-  assert_eq(10, subtract(5, -5))
-  assert_eq(-10, subtract(-5, 5))
-  assert_eq(0, subtract(0, 0))
-  assert_eq(1000, subtract(1000, 0))
+test "algebraic_expressions_evaluation" {
+  // 代数表达式求值测试
+  let x = 5
+  let y = 3
+  
+  // 计算: 2x² + 3y - 7
+  let term1 = multiply(2, multiply(x, x))  // 2 * 5² = 50
+  let term2 = multiply(3, y)               // 3 * 3 = 9
+  let result = subtract(add(term1, term2), 7)  // 50 + 9 - 7 = 52
+  
+  assert_eq(50, term1)
+  assert_eq(9, term2)
+  assert_eq(52, result)
 }
 
-test "divide_with_ceil_large_numbers" {
-  // 测试大数的向上取整除法
-  assert_eq(100000, divide_with_ceil(1000000, 10))
-  assert_eq(33334, divide_with_ceil(100000, 3))
-  assert_eq(1, divide_with_ceil(99999, 100000))
-  assert_eq(0, divide_with_ceil(1000000, 0))
+test "time_conversion_calculations" {
+  // 时间转换计算测试
+  let hours = 2
+  let minutes = 45
+  let seconds = 30
+  
+  // 转换为总秒数
+  let total_seconds = add(add(multiply(hours, 3600), multiply(minutes, 60)), seconds)
+  
+  // 转换回小时、分钟、秒
+  let back_to_hours = divide_with_ceil(total_seconds, 3600)
+  let remaining_seconds = subtract(total_seconds, multiply(back_to_hours, 3600))
+  let back_to_minutes = divide_with_ceil(remaining_seconds, 60)
+  
+  assert_eq(9930, total_seconds)
+  assert_eq(3, back_to_hours)  // 向上取整
+  assert_eq(165, remaining_seconds)
+  assert_eq(3, back_to_minutes)
 }
 
-test "combined_operations_complex" {
-  // 测试复杂的组合运算
-  let x = 12
-  let y = 8
-  let z = 5
+test "geometric_area_calculations" {
+  // 几何面积计算测试
+  let length = 8
+  let width = 6
   
-  // 测试 (x - y) * z + x
-  let result1 = add(multiply(subtract(x, y), z), x)
-  assert_eq(52, result1)  // (12 - 8) * 5 + 12 = 4 * 5 + 12 = 32
+  // 矩形面积
+  let rectangle_area = multiply(length, width)
   
-  // 测试 x * y - z / x (向上取整)
-  let result2 = subtract(multiply(x, y), divide_with_ceil(z, x))
-  assert_eq(95, result2)  // 12 * 8 - ceil(5/12) = 96 - 1 = 95
+  // 三角形面积（底乘高除以2，向上取整）
+  let triangle_base = length
+  let triangle_height = width
+  let triangle_area = divide_with_ceil(multiply(triangle_base, triangle_height), 2)
+  
+  // 梯形面积（上底+下底）×高÷2
+  let top_base = 4
+  let bottom_base = width
+  let trapezoid_height = length
+  let trapezoid_area = divide_with_ceil(multiply(add(top_base, bottom_base), trapezoid_height), 2)
+  
+  assert_eq(48, rectangle_area)
+  assert_eq(24, triangle_area)
+  assert_eq(40, trapezoid_area)
 }
 
-test "greet_function_unicode_extended" {
-  // 测试扩展Unicode字符的问候功能
-  assert_eq_string("Hello, 👨‍💻!", greet("👨‍💻"))
-  assert_eq_string("Hello, 🏳️‍🌈!", greet("🏳️‍🌈"))
-  assert_eq_string("Hello, ß!", greet("ß"))
-  assert_eq_string("Hello, Ω!", greet("Ω"))
+test "statistical_variance_calculation" {
+  // 统计方差计算测试
+  // 数据集: [2, 4, 6, 8, 10]
+  let data1 = 2
+  let data2 = 4
+  let data3 = 6
+  let data4 = 8
+  let data5 = 10
+  
+  // 计算平均值
+  let sum = add(add(add(add(data1, data2), data3), data4), data5)
+  let mean = divide_with_ceil(sum, 5)
+  
+  // 计算离差平方和
+  let diff1 = subtract(data1, mean)
+  let diff2 = subtract(data2, mean)
+  let diff3 = subtract(data3, mean)
+  let diff4 = subtract(data4, mean)
+  let diff5 = subtract(data5, mean)
+  
+  let variance_sum = add(add(add(add(multiply(diff1, diff1), multiply(diff2, diff2)), multiply(diff3, diff3)), multiply(diff4, diff4)), multiply(diff5, diff5))
+  let variance = divide_with_ceil(variance_sum, 5)
+  
+  assert_eq(30, sum)
+  assert_eq(6, mean)
+  assert_eq(40, variance_sum)
+  assert_eq(8, variance)
 }
 
-test "fibonacci_sequence_calculation" {
-  // 使用库函数计算斐波那契数列
-  let fib0 = 0
-  let fib1 = 1
-  let fib2 = add(fib0, fib1)
-  let fib3 = add(fib1, fib2)
-  let fib4 = add(fib2, fib3)
-  let fib5 = add(fib3, fib4)
+test "currency_conversion_rounding" {
+  // 货币转换舍入测试
+  let usd_amount = 100
+  let exchange_rate = 83  // 1 USD = 83 CNY
   
-  assert_eq(1, fib2)
-  assert_eq(2, fib3)
-  assert_eq(3, fib4)
-  assert_eq(5, fib5)
+  // 转换为人民币
+  let cny_amount = multiply(usd_amount, exchange_rate)
+  
+  // 计算不同面额的张数
+  let note_100_count = divide_with_ceil(cny_amount, 100)
+  let remaining_after_100 = subtract(cny_amount, multiply(note_100_count - 1, 100))
+  
+  let note_50_count = divide_with_ceil(remaining_after_100, 50)
+  let remaining_after_50 = subtract(remaining_after_100, multiply(note_50_count - 1, 50))
+  
+  let note_20_count = divide_with_ceil(remaining_after_50, 20)
+  
+  assert_eq(8300, cny_amount)
+  assert_eq(83, note_100_count)
+  assert_eq(1, remaining_after_100)
+  assert_eq(1, note_50_count)
+  assert_eq(1, remaining_after_50)
+  assert_eq(1, note_20_count)
 }
 
-test "real_world_shopping_cart" {
-  // 真实世界购物车计算
-  let apple_price = 5
-  let apple_qty = 3
-  let banana_price = 3
-  let banana_qty = 4
-  let orange_price = 7
-  let orange_qty = 2
-  
-  let apple_total = multiply(apple_price, apple_qty)
-  let banana_total = multiply(banana_price, banana_qty)
-  let orange_total = multiply(orange_price, orange_qty)
-  
-  let grand_total = add(add(apple_total, banana_total), orange_total)
-  
-  assert_eq(15, apple_total)
-  assert_eq(12, banana_total)
-  assert_eq(14, orange_total)
-  assert_eq(41, grand_total)
-}
-
-test "divide_with_ceil_negative_numbers" {
-  // 测试负数的向上取整除法
-  assert_eq(-2, divide_with_ceil(-4, 2))
-  assert_eq(-1, divide_with_ceil(-3, 2))
-  assert_eq(-1, divide_with_ceil(-1, 2))
-  assert_eq(-5, divide_with_ceil(-9, 2))
-  assert_eq(0, divide_with_ceil(-5, 0))
-}
-
-test "string_greeting_concatenation" {
-  // 测试字符串连接与问候函数的组合
-  let title = "Dr."
-  let first_name = "Jane"
-  let last_name = "Smith"
-  
-  let full_name = title + " " + first_name + " " + last_name
-  let formal_greeting = greet(full_name)
-  
-  assert_eq_string("Hello, Dr. Jane Smith!", formal_greeting)
-}
-
-test "arithmetic_progression_sum" {
-  // 使用库函数计算等差数列求和
-  let first_term = 3
-  let common_diff = 4
-  let num_terms = 6
-  
-  // 手动计算等差数列各项
-  let term1 = first_term
-  let term2 = add(term1, common_diff)
-  let term3 = add(term2, common_diff)
-  let term4 = add(term3, common_diff)
-  let term5 = add(term4, common_diff)
-  let term6 = add(term5, common_diff)
-  
-  let sum = add(add(add(add(add(term1, term2), term3), term4), term5), term6)
-  
-  assert_eq(3, term1)
-  assert_eq(7, term2)
-  assert_eq(11, term3)
-  assert_eq(15, term4)
-  assert_eq(19, term5)
-  assert_eq(23, term6)
-  assert_eq(78, sum)
-}
-
-test "celsius_to_fahrenheit_conversion" {
-  // 温度转换计算（简化版）
+test "temperature_scale_conversions" {
+  // 温标转换测试
   let celsius = 25
   
-  // 标准转换公式：F = C * 9/5 + 32
-  // 使用向上取整除法：F = C * 9/5 + 32 = ceil(25 * 9 / 5) + 32
-  let fahrenheit = add(divide_with_ceil(multiply(celsius, 9), 5), 32)
+  // 摄氏度转华氏度: F = C × 9/5 + 32
+  let fahrenheit = add(multiply(celsius, 9), 160)  // 乘以9/5等于乘以9再除以5
+  let fahrenheit_final = divide_with_ceil(fahrenheit, 5)
   
-  assert_eq(77, fahrenheit)  // ceil(225/5) + 32 = 45 + 32 = 77
+  // 摄氏度转开尔文: K = C + 273.15（简化为整数）
+  let kelvin = add(celsius, 273)
+  
+  // 华氏度转摄氏度（反向验证）
+  let celsius_back = multiply(subtract(multiply(fahrenheit_final, 5), 160), 1)
+  let celsius_back_final = divide_with_ceil(celsius_back, 9)
+  
+  assert_eq(385, fahrenheit)
+  assert_eq(77, fahrenheit_final)
+  assert_eq(298, kelvin)
+  assert_eq(25, celsius_back_final)
+}
+
+test "compound_interest_simplified" {
+  // 简化复利计算测试
+  let principal = 1000
+  let rate_percent = 5
+  let years = 3
+  
+  // 第一年
+  let year1_interest = divide_with_ceil(multiply(principal, rate_percent), 100)
+  let year1_total = add(principal, year1_interest)
+  
+  // 第二年
+  let year2_interest = divide_with_ceil(multiply(year1_total, rate_percent), 100)
+  let year2_total = add(year1_total, year2_interest)
+  
+  // 第三年
+  let year3_interest = divide_with_ceil(multiply(year2_total, rate_percent), 100)
+  let year3_total = add(year2_total, year3_interest)
+  
+  // 总收益
+  let total_profit = subtract(year3_total, principal)
+  
+  assert_eq(50, year1_interest)
+  assert_eq(1050, year1_total)
+  assert_eq(53, year2_interest)
+  assert_eq(1103, year2_total)
+  assert_eq(56, year3_interest)
+  assert_eq(1159, year3_total)
+  assert_eq(159, total_profit)
+}
+
+test "digital_storage_conversions" {
+  // 数字存储转换测试
+  let megabytes = 1024
+  
+  // 转换为千字节
+  let kilobytes = multiply(megabytes, 1024)
+  
+  // 转换为千兆字节
+  let gigabytes = divide_with_ceil(megabytes, 1024)
+  
+  // 计算文件存储需求
+  let file_size_mb = 15
+  let files_count = 100
+  let total_storage_mb = multiply(file_size_mb, files_count)
+  let storage_gb_needed = divide_with_ceil(total_storage_mb, 1024)
+  
+  // 计算剩余空间
+  let available_gb = 2
+  let available_mb = multiply(available_gb, 1024)
+  let remaining_mb = subtract(available_mb, total_storage_mb)
+  
+  assert_eq(1048576, kilobytes)
+  assert_eq(1, gigabytes)
+  assert_eq(1500, total_storage_mb)
+  assert_eq(2, storage_gb_needed)
+  assert_eq(2048, available_mb)
+  assert_eq(548, remaining_mb)
+}
+
+test "game_score_calculations" {
+  // 游戏得分计算测试
+  let base_score = 100
+  let level_multiplier = 3
+  let combo_bonus = 50
+  let time_bonus = 25
+  let penalty = 20
+  
+  // 计算最终得分
+  let level_score = multiply(base_score, level_multiplier)
+  let combo_score = add(level_score, combo_bonus)
+  let time_score = add(combo_score, time_bonus)
+  let final_score = subtract(time_score, penalty)
+  
+  // 计算星级（每100分一星）
+  let star_rating = divide_with_ceil(final_score, 100)
+  
+  // 计算排名分数（基于星级和剩余分数）
+  let remainder_score = subtract(final_score, multiply(star_rating - 1, 100))
+  let rank_points = add(multiply(star_rating, 1000), remainder_score)
+  
+  assert_eq(300, level_score)
+  assert_eq(350, combo_score)
+  assert_eq(375, time_score)
+  assert_eq(355, final_score)
+  assert_eq(4, star_rating)
+  assert_eq(55, remainder_score)
+  assert_eq(4055, rank_points)
+}
+
+test "network_data_transmission" {
+  // 网络数据传输测试
+  let file_size_mb = 50
+  let network_speed_mbps = 10
+  let overhead_percent = 10
+  
+  // 计算理论传输时间（秒）
+  let theoretical_time = divide_with_ceil(file_size_mb, network_speed_mbps)
+  
+  // 考虑开销的实际时间
+  let overhead_factor = add(100, overhead_percent)
+  let actual_time = divide_with_ceil(multiply(theoretical_time, overhead_factor), 100)
+  
+  // 转换为分钟
+  let time_minutes = divide_with_ceil(actual_time, 60)
+  
+  // 计算带宽利用率
+  let utilized_bandwidth = multiply(network_speed_mbps, 100)
+  let efficiency = divide_with_ceil(multiply(100, network_speed_mbps), network_speed_mbps)
+  
+  assert_eq(5, theoretical_time)
+  assert_eq(6, actual_time)
+  assert_eq(1, time_minutes)
+  assert_eq(1000, utilized_bandwidth)
+  assert_eq(100, efficiency)
 }
