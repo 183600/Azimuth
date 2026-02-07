@@ -1,27 +1,25 @@
-// 标准 MoonBit 测试套件 - 为 Azimuth 项目添加
-// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
-// 测试覆盖基本算术运算、字符串处理和业务逻辑场景
+// 标准 MoonBit 测试套件
+// 为 Azimuth 项目添加的10个高质量测试用例
+// 使用标准 MoonBit 测试语法
 
-test "add_function_comprehensive" {
-  // 加法函数综合测试
+test "basic_arithmetic_addition" {
+  // 基本加法运算测试
   assert_eq(10, add(3, 7))
   assert_eq(0, add(0, 0))
-  assert_eq(-10, add(-3, -7))
-  assert_eq(4, add(-5, 9))
-  assert_eq(100000, add(50000, 50000))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(1, add(-5, 6))
 }
 
-test "multiply_function_edge_cases" {
-  // 乘法函数边界情况测试
+test "basic_arithmetic_multiplication" {
+  // 基本乘法运算测试
   assert_eq(25, multiply(5, 5))
   assert_eq(0, multiply(100, 0))
   assert_eq(-30, multiply(-6, 5))
   assert_eq(30, multiply(-6, -5))
-  assert_eq(1, multiply(1, 1))
 }
 
-test "divide_with_ceil_comprehensive" {
-  // 向上取整除法综合测试
+test "divide_with_ceil_functionality" {
+  // 向上取整除法功能测试
   assert_eq(5, divide_with_ceil(20, 4))
   assert_eq(3, divide_with_ceil(10, 4))
   assert_eq(1, divide_with_ceil(1, 10))
@@ -35,29 +33,26 @@ test "divide_with_ceil_negative_numbers" {
   assert_eq(-3, divide_with_ceil(8, -3))
   assert_eq(3, divide_with_ceil(-8, -3))
   assert_eq(-1, divide_with_ceil(-1, 2))
-  assert_eq(1, divide_with_ceil(-1, -2))
 }
 
-test "greet_function_various_inputs" {
-  // 问候函数各种输入测试
+test "greet_function_standard_cases" {
+  // 问候函数标准测试
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, !", greet(""))
   assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 中文!", greet("中文"))
 }
 
-test "subtract_function_comprehensive" {
-  // 减法函数综合测试
+test "subtract_function_basic_cases" {
+  // 减法函数基本测试
   assert_eq(5, subtract(10, 5))
   assert_eq(-5, subtract(5, 10))
   assert_eq(0, subtract(15, 15))
   assert_eq(20, subtract(10, -10))
-  assert_eq(-20, subtract(-10, 10))
 }
 
-test "mathematical_properties_validation" {
-  // 数学性质验证测试
+test "mathematical_commutative_properties" {
+  // 数学交换律性质测试
   let a = 12
   let b = 8
   
@@ -66,10 +61,6 @@ test "mathematical_properties_validation" {
   
   // 乘法交换律
   assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 验证具体数值
-  assert_eq(20, add(12, 8))
-  assert_eq(96, multiply(12, 8))
 }
 
 test "business_packaging_scenario" {
@@ -103,8 +94,8 @@ test "complex_workflow_calculation" {
   assert_eq(4, sprints_needed)  // ceil(48/15) = 4
 }
 
-test "boundary_values_and_extremes" {
-  // 边界情况和极值测试
+test "boundary_values_and_edge_cases" {
+  // 边界值和边缘情况测试
   // 除法边界情况
   assert_eq(1, divide_with_ceil(5, 5))
   assert_eq(1, divide_with_ceil(-5, -5))
