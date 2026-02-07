@@ -514,3 +514,98 @@ test "Case conversion with non-letters" {
   assert_eq('a'.to_ascii_uppercase(), 'A')
   assert_eq('z'.to_ascii_uppercase(), 'Z')
 }
+
+///|
+test "Unicode character categories comprehensive" {
+  // Test various Unicode categories
+  let chinese_char = '中'
+  let arabic_char = 'ا'
+  let russian_char = 'Я'
+  let emoji = '😀'
+  let currency = '€'
+  let math_symbol = '∑'
+  let combining_mark = '\u{0301}'  // Combining acute accent
+  
+  // Test Unicode properties
+  assert_true(chinese_char.is_printable())
+  assert_true(arabic_char.is_printable())
+  assert_true(russian_char.is_printable())
+  assert_true(emoji.is_printable())
+  assert_true(currency.is_printable())
+  assert_true(math_symbol.is_printable())
+  
+  // Test non-ASCII characters are not ASCII-specific
+  assert_false(chinese_char.is_ascii())
+  assert_false(arabic_char.is_ascii())
+  assert_false(russian_char.is_ascii())
+  assert_false(emoji.is_ascii())
+  assert_false(currency.is_ascii())
+  assert_false(math_symbol.is_ascii())
+}
+
+///|
+test "Unicode edge cases and special characters" {
+  // Test zero-width characters
+  let zero_width_space = '\u{200B}'
+  let zero_width_joiner = '\u{200D}'
+  let zero_width_non_joiner = '\u{200C}'
+  
+  assert_false(zero_width_space.is_printable())
+  assert_false(zero_width_joiner.is_printable())
+  assert_false(zero_width_non_joiner.is_printable())
+  
+  // Test directional characters
+  let left_to_right_mark = '\u{200E}'
+  let right_to_left_mark = '\u{200F}'
+  
+  assert_false(left_to_right_mark.is_printable())
+  assert_false(right_to_left_mark.is_printable())
+  
+  // Test various Unicode spaces
+  let em_space = '\u{2003}'
+  let en_space = '\u{2002}'
+  let thin_space = '\u{2009}'
+  
+  assert_true(em_space.is_whitespace())
+  assert_true(en_space.is_whitespace())
+  assert_true(thin_space.is_whitespace())
+}
+
+///|
+test "Character code points and encoding" {
+  // Test various Unicode code points
+  assert_eq('A'.to_int(), 65)
+  assert_eq('a'.to_int(), 97)
+  assert_eq('0'.to_int(), 48)
+  assert_eq('中'.to_int(), 20013)
+  assert_eq('😀'.to_int(), 128512)
+  
+  // Test character creation from code points
+  assert_eq(65.to_char(), 'A')
+  assert_eq(97.to_char(), 'a')
+  assert_eq(48.to_char(), '0')
+  assert_eq(20013.to_char(), '中')
+  assert_eq(128512.to_char(), '😀')
+  
+  // Test boundary code points
+  assert_eq(0.to_char(), '\u{0000}')
+  assert_eq(0x10FFFF.to_char(), '\u{10FFFF}')
+}
+
+///|
+test "Character comparison and ordering" {
+  // Test character ordering
+  assert_true('A' < 'B')
+  assert_true('a' < 'b')
+  assert_true('0' < '1')
+  assert_true('A' < 'a')  // Uppercase comes before lowercase
+  assert_true('Z' < 'a')  // All uppercase come before lowercase
+  
+  // Test Unicode character ordering
+  assert_true('中' < '国')
+  assert_true('😀' < '😁')
+  
+  // Test equality with same visual but different Unicode
+  assert_false('A' == 'Ａ')  // Latin A vs Fullwidth Latin A
+  assert_false('1' == '１')  // Latin 1 vs Fullwidth Latin 1
+}

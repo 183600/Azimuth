@@ -189,3 +189,101 @@ test "string slicing operations" {
   inspect(text.slice(8, 19), content="Programming")
   inspect(text.slice(0, text.length()), content="MoonBit Programming")
 }
+
+///|
+test "string Unicode handling comprehensive" {
+  // Test Unicode strings
+  let chinese = "中文测试"
+  let emoji = "🚀🌟💻"
+  let mixed = "Hello 世界 🌍"
+  
+  // Test Unicode string length
+  inspect(chinese.length(), content="4")
+  inspect(emoji.length(), content="3")
+  inspect(mixed.length(), content="9")
+  
+  // Test Unicode character access
+  inspect(chinese[0], content="'中'")
+  inspect(emoji[1], content="'🌟'")
+  inspect(mixed[6], content="'世'")
+  
+  // Test Unicode slicing
+  inspect(chinese.slice(0, 2), content="中文")
+  inspect(emoji.slice(1, 2), content="🌟")
+  inspect(mixed.slice(6, 8), content="世界")
+}
+
+///|
+test "string advanced searching and manipulation" {
+  let text = "The quick brown fox jumps over the lazy dog"
+  
+  // Test multiple occurrences
+  inspect(text.count("o"), content="4")
+  inspect(text.count("e"), content="3")
+  inspect(text.count("z"), content="1")
+  inspect(text.count("x"), content="0")
+  
+  // Test find first occurrence
+  inspect(text.find("quick"), content="4")
+  inspect(text.find("fox"), content="16")
+  inspect(text.find("dog"), content="40")
+  inspect(text.find("cat"), content="-1")
+  
+  // Test replace operations
+  inspect(text.replace("fox", "cat"), content="The quick brown cat jumps over the lazy dog")
+  inspect(text.replace("o", "0"), content="The quick br0wn f0x jumps 0ver the lazy d0g")
+}
+
+///|
+test "string edge cases and special characters" {
+  // Test empty string operations
+  let empty = ""
+  inspect(empty.length(), content="0")
+  inspect(empty.slice(0, 0), content="")
+  inspect(empty.contains(""), content="true")
+  inspect(empty.starts_with(""), content="true")
+  inspect(empty.ends_with(""), content="true")
+  
+  // Test single character strings
+  let single = "a"
+  inspect(single.length(), content="1")
+  inspect(single[0], content="'a'")
+  inspect(single.slice(0, 1), content="a")
+  
+  // Test whitespace strings
+  let spaces = "   "
+  let tabs = "\t\t"
+  let newlines = "\n\n"
+  let mixed_whitespace = " \t\n\r"
+  
+  inspect(spaces.trim(), content="")
+  inspect(tabs.trim(), content="")
+  inspect(newlines.trim(), content="")
+  inspect(mixed_whitespace.trim(), content="")
+}
+
+///|
+test "string performance and memory considerations" {
+  // Test large string operations
+  let large = "a" * 1000  // String with 1000 'a' characters
+  inspect(large.length(), content="1000")
+  inspect(large.slice(0, 10), content="aaaaaaaaaa")
+  inspect(large.slice(990, 1000), content="aaaaaaaaaa")
+  
+  // Test repeated concatenation
+  let mut result = ""
+  for i = 0; i < 100; i = i + 1 {
+    result = result + "x"
+  }
+  inspect(result.length(), content="100")
+  inspect(result.contains("xxxx"), content="true")
+  
+  // Test string interning considerations
+  let str1 = "hello"
+  let str2 = "hello"
+  let str3 = "he" + "llo"
+  
+  // Test equality (may or may not be same object)
+  assert_eq(str1, str2)
+  assert_eq(str1, str3)
+}

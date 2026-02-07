@@ -122,3 +122,80 @@ test "math special values" {
   assert_true(@math.log(0.0) == neg_inf)
   assert_true(@math.abs(neg_inf) == inf)
 }
+
+///|
+test "math trigonometric functions precision" {
+  // Test sine function
+  assert_true(@math.sin(0.0).is_close(0.0))
+  assert_true(@math.sin(@math.pi / 2.0).is_close(1.0))
+  assert_true(@math.sin(@math.pi).is_close(0.0))
+  assert_true(@math.sin(3.0 * @math.pi / 2.0).is_close(-1.0))
+  
+  // Test cosine function
+  assert_true(@math.cos(0.0).is_close(1.0))
+  assert_true(@math.cos(@math.pi / 2.0).is_close(0.0))
+  assert_true(@math.cos(@math.pi).is_close(-1.0))
+  assert_true(@math.cos(3.0 * @math.pi / 2.0).is_close(0.0))
+  
+  // Test tangent function
+  assert_true(@math.tan(0.0).is_close(0.0))
+  assert_true(@math.tan(@math.pi / 4.0).is_close(1.0))
+}
+
+///|
+test "math exponential and logarithmic functions" {
+  // Test exponential function
+  assert_true(@math.exp(0.0).is_close(1.0))
+  assert_true(@math.exp(1.0).is_close(@math.e))
+  assert_true(@math.exp(-1.0).is_close(1.0 / @math.e))
+  
+  // Test natural logarithm
+  assert_true(@math.log(1.0).is_close(0.0))
+  assert_true(@math.log(@math.e).is_close(1.0))
+  assert_true(@math.log(1.0 / @math.e).is_close(-1.0))
+  
+  // Test base-10 logarithm
+  assert_true(@math.log10(1.0).is_close(0.0))
+  assert_true(@math.log10(10.0).is_close(1.0))
+  assert_true(@math.log10(100.0).is_close(2.0))
+  
+  // Test base-2 logarithm
+  assert_true(@math.log2(1.0).is_close(0.0))
+  assert_true(@math.log2(2.0).is_close(1.0))
+  assert_true(@math.log2(8.0).is_close(3.0))
+}
+
+///|
+test "math hyperbolic functions" {
+  // Test hyperbolic sine
+  assert_true(@math.sinh(0.0).is_close(0.0))
+  assert_true(@math.sinh(1.0).is_close((@math.e - 1.0 / @math.e) / 2.0))
+  
+  // Test hyperbolic cosine
+  assert_true(@math.cosh(0.0).is_close(1.0))
+  assert_true(@math.cosh(1.0).is_close((@math.e + 1.0 / @math.e) / 2.0))
+  
+  // Test hyperbolic tangent
+  assert_true(@math.tanh(0.0).is_close(0.0))
+  assert_true(@math.tanh(1.0) < 1.0)
+  assert_true(@math.tanh(-1.0) > -1.0)
+}
+
+///|
+test "math floating point comparison and precision" {
+  // Test floating point equality with tolerance
+  let a = 0.1 + 0.2
+  let b = 0.3
+  assert_false(a == b)  // Direct comparison fails
+  assert_true(a.is_close(b))  // Close comparison succeeds
+  
+  // Test very small numbers
+  let epsilon = 1.0e-10
+  assert_true((1.0 + epsilon).is_close(1.0, rel_tol=1.0e-9))
+  assert_false((1.0 + epsilon).is_close(1.0, rel_tol=1.0e-11))
+  
+  // Test very large numbers
+  let large = 1.0e10
+  assert_true((large + 1.0).is_close(large, rel_tol=1.0e-10))
+  assert_false((large + 1.0).is_close(large, rel_tol=1.0e-11))
+}

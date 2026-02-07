@@ -199,3 +199,52 @@ test "int mixed operations precedence" {
   assert_eq(5 | 3 + 2, 5 | 5)
   assert_eq(5 & 3 << 1, 5 & 6)
 }
+
+///|
+test "int overflow behavior comprehensive" {
+  // Test addition overflow
+  assert_eq(@int.max_value + 1, @int.min_value)
+  assert_eq(@int.min_value - 1, @int.max_value)
+  
+  // Test multiplication overflow
+  assert_eq(@int.max_value * 2, -2)
+  assert_eq((@int.max_value / 2) * 2, @int.max_value - 1)
+  
+  // Test subtraction overflow
+  assert_eq(@int.min_value - @int.max_value, 1)
+  assert_eq(0 - @int.min_value, @int.min_value)
+}
+
+///|
+test "int bit manipulation advanced" {
+  // Test bit counting and manipulation
+  assert_eq(0.bit_count(), 0)
+  assert_eq(1.bit_count(), 1)
+  assert_eq(15.bit_count(), 4)  // 0b1111
+  assert_eq(16.bit_count(), 1)  // 0b10000
+  
+  // Test leading zeros
+  assert_eq(0.leading_zeros(), 32)
+  assert_eq(1.leading_zeros(), 31)
+  assert_eq(@int.max_value.leading_zeros(), 0)
+  
+  // Test trailing zeros
+  assert_eq(0.trailing_zeros(), 32)
+  assert_eq(1.trailing_zeros(), 0)
+  assert_eq(8.trailing_zeros(), 3)
+}
+
+///|
+test "int sign extension and bitwise operations" {
+  // Test sign extension in right shifts
+  assert_eq(-1 >> 1, -1)
+  assert_eq(-2 >> 1, -1)
+  assert_eq(-4 >> 2, -1)
+  assert_eq(-8 >> 3, -1)
+  
+  // Test bitwise NOT boundaries
+  assert_eq(~@int.max_value, @int.min_value)
+  assert_eq(~@int.min_value, @int.max_value)
+  assert_eq(~0, -1)
+  assert_eq(~-1, 0)
+}
