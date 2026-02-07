@@ -1,242 +1,137 @@
-// Azimuth 项目新增标准 MoonBit 测试用例
-// 包含8个高质量测试用例，使用标准 MoonBit 测试语法
+// Azimuth 项目综合新测试用例
+// 使用标准 MoonBit 测试语法编写的8个高质量测试用例
 
-test "arithmetc_sequence_summation" {
-  // 等差数列求和测试
-  // 计算 1 + 4 + 7 + 10 + 13 的和
-  let a1 = 1
-  let d = 3
-  let n = 5
+test "complex_arithmetic_expressions" {
+  // 复杂算术表达式测试
+  let a = 12
+  let b = 8
+  let c = 5
   
-  // 逐项计算
-  let a2 = add(a1, d)           // 1 + 3 = 4
-  let a3 = add(a2, d)           // 4 + 3 = 7
-  let a4 = add(a3, d)           // 7 + 3 = 10
-  let a5 = add(a4, d)           // 10 + 3 = 13
-  
-  // 求和
-  let sum = add(add(add(add(a1, a2), a3), a4), a5)
-  
-  // 验证结果
-  assert_eq(a2, 4)
-  assert_eq(a3, 7)
-  assert_eq(a4, 10)
-  assert_eq(a5, 13)
-  assert_eq(sum, 35)
+  // 测试复合运算
+  assert_eq(100, multiply(add(a, b), subtract(c, 1)))
+  assert_eq(21, add(multiply(a, b), c))
+  assert_eq(3, divide_with_ceil(subtract(a, b), c))
+  assert_eq(16, multiply(divide_with_ceil(a, b), c))
 }
 
-test "geometric_sequence_properties" {
-  // 等比数列性质测试
-  // 计算 2, 6, 18, 54 的性质
-  let first = 2
-  let ratio = 3
-  
-  // 生成等比数列
-  let second = multiply(first, ratio)      // 2 * 3 = 6
-  let third = multiply(second, ratio)      // 6 * 3 = 18
-  let fourth = multiply(third, ratio)      // 18 * 3 = 54
-  
-  // 验证等比性质
-  let ratio_check1 = divide_with_ceil(second, first)   // 6 / 2 = 3
-  let ratio_check2 = divide_with_ceil(third, second)   // 18 / 6 = 3
-  let ratio_check3 = divide_with_ceil(fourth, third)   // 54 / 18 = 3
-  
-  assert_eq(second, 6)
-  assert_eq(third, 18)
-  assert_eq(fourth, 54)
-  assert_eq(ratio_check1, 3)
-  assert_eq(ratio_check2, 3)
-  assert_eq(ratio_check3, 3)
-}
-
-test "temperature_conversion_validation" {
-  // 温度转换验证测试
-  // 摄氏度转华氏度：F = C × 9/5 + 32
-  
-  let celsius_freezing = 0    // 冰点
-  let celsius_boiling = 100   // 沸点
-  let celsius_room = 20       // 室温
-  
-  // 转换为华氏度
-  let fahrenheit_freezing_step1 = multiply(celsius_freezing, 9)
-  let fahrenheit_freezing_step2 = divide_with_ceil(fahrenheit_freezing_step1, 5)
-  let fahrenheit_freezing = add(fahrenheit_freezing_step2, 32)
-  
-  let fahrenheit_boiling_step1 = multiply(celsius_boiling, 9)
-  let fahrenheit_boiling_step2 = divide_with_ceil(fahrenheit_boiling_step1, 5)
-  let fahrenheit_boiling = add(fahrenheit_boiling_step2, 32)
-  
-  let fahrenheit_room_step1 = multiply(celsius_room, 9)
-  let fahrenheit_room_step2 = divide_with_ceil(fahrenheit_room_step1, 5)
-  let fahrenheit_room = add(fahrenheit_room_step2, 32)
-  
-  assert_eq(fahrenheit_freezing, 32)
-  assert_eq(fahrenheit_boiling, 212)
-  assert_eq(fahrenheit_room, 68)
-}
-
-test "financial_compound_interest" {
-  // 金融复利计算测试
-  let principal = 1000
-  let rate_percent = 8
+test "financial_calculations" {
+  // 金融计算测试
+  let principal = 10000
+  let rate = 5
   let years = 3
   
-  // 第一年
-  let year1_interest = divide_with_ceil(multiply(principal, rate_percent), 100)
-  let year1_balance = add(principal, year1_interest)
+  // 计算复利
+  let year1 = add(principal, divide_with_ceil(multiply(principal, rate), 100))
+  let year2 = add(year1, divide_with_ceil(multiply(year1, rate), 100))
+  let year3 = add(year2, divide_with_ceil(multiply(year2, rate), 100))
   
-  // 第二年
-  let year2_interest = divide_with_ceil(multiply(year1_balance, rate_percent), 100)
-  let year2_balance = add(year1_balance, year2_interest)
-  
-  // 第三年
-  let year3_interest = divide_with_ceil(multiply(year2_balance, rate_percent), 100)
-  let year3_balance = add(year2_balance, year3_interest)
-  
-  // 计算总收益
-  let total_profit = subtract(year3_balance, principal)
-  
-  assert_eq(year1_balance, 1080)
-  assert_eq(year2_balance, 1166)
-  assert_eq(year3_balance, 1259)
-  assert_eq(total_profit, 259)
+  assert_eq(10500, year1)
+  assert_eq(11025, year2)
+  assert_eq(11576, year3)
 }
 
-test "inventory_optimization" {
-  // 库存优化算法测试
-  let demand_forecast = 450
-  let lead_time_days = 7
-  let daily_usage = 15
-  let safety_stock_days = 3
+test "scientific_computations" {
+  // 科学计算测试
+  let mass = 50
+  let velocity = 20
+  let height = 100
   
-  // 计算安全库存
-  let safety_stock = multiply(daily_usage, safety_stock_days)
+  // 计算动能 (1/2 * m * v²)
+  let kinetic_energy = divide_with_ceil(multiply(mass, multiply(velocity, velocity)), 2)
   
-  // 计算在途库存
-  let in_transit_stock = multiply(daily_usage, lead_time_days)
+  // 计算势能 (m * g * h)，其中 g = 10
+  let potential_energy = multiply(mass, multiply(10, height))
   
-  // 计算再订货点
-  let reorder_point = add(safety_stock, in_transit_stock)
+  // 计算总能量
+  let total_energy = add(kinetic_energy, potential_energy)
   
-  // 计算经济订货量（简化版）
-  let eoq = divide_with_ceil(demand_forecast, 12)
-  
-  // 验证库存不会断货
-  let coverage_days = divide_with_ceil(reorder_point, daily_usage)
-  
-  assert_eq(safety_stock, 45)
-  assert_eq(in_transit_stock, 105)
-  assert_eq(reorder_point, 150)
-  assert_eq(eoq, 38)
-  assert_eq(coverage_days, 10)
+  assert_eq(10000, kinetic_energy)
+  assert_eq(50000, potential_energy)
+  assert_eq(60000, total_energy)
 }
 
-test "binary_number_operations" {
-  // 二进制数操作测试
-  // 模拟二进制数 10110 (22) 的操作
-  
-  let decimal_value = 22
-  
-  // 分解为二进制位
-  let bit4 = multiply(1, 16)  // 2^4 = 16
-  let bit2 = multiply(1, 4)   // 2^2 = 4
-  let bit1 = multiply(1, 2)   // 2^1 = 2
-  let bit0 = multiply(0, 1)   // 2^0 = 1 (未设置)
-  
-  // 重新组合验证
-  let reconstructed = add(add(add(bit4, bit2), bit1), bit0)
-  
-  // 计算设置位的数量
-  let set_bits = add(add(1, 1), 1)  // bit4, bit2, bit1 被设置
-  
-  // 左移操作模拟 (22 << 2 = 88)
-  let left_shift = multiply(decimal_value, 4)
-  
-  // 右移操作模拟 (22 >> 2 = 5)
-  let right_shift = divide_with_ceil(decimal_value, 4)
-  
-  assert_eq(reconstructed, 22)
-  assert_eq(set_bits, 3)
-  assert_eq(left_shift, 88)
-  assert_eq(right_shift, 6)
+test "string_processing_edge_cases" {
+  // 字符串处理边界情况测试
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, A!", greet("A"))
+  assert_eq_string("Hello, 12345!", greet("12345"))
+  assert_eq_string("Hello, Special@#$!", greet("Special@#$"))
+  assert_eq_string("Hello,   spaced   !", greet("   spaced   "))
 }
 
-test "game_score_system" {
-  // 游戏评分系统测试
-  let base_score = 50
-  let level_bonus = 20
-  let combo_multiplier = 3
-  let time_bonus = 15
-  let penalty_deduction = 8
+test "algorithm_complexity_simulation" {
+  // 算法复杂度模拟测试
+  let n = 100
   
-  // 计算基础得分
-  let basic_score = add(base_score, level_bonus)
+  // O(1) 常数时间
+  assert_eq(42, add(20, 22))
   
-  // 应用连击倍数
-  let combo_score = multiply(basic_score, combo_multiplier)
+  // O(n) 线性时间模拟
+  let linear_sum = multiply(n, add(n, 1))
+  let linear_result = divide_with_ceil(linear_sum, 2)
   
-  // 添加时间奖励
-  let time_score = add(combo_score, time_bonus)
+  // O(n²) 二次时间模拟
+  let quadratic_result = multiply(n, n)
   
-  // 减去惩罚
-  let final_score = subtract(time_score, penalty_deduction)
-  
-  // 计算星级（每50分一星）
-  let star_rating = divide_with_ceil(final_score, 50)
-  
-  // 计算剩余分数
-  let remainder_score = subtract(final_score, multiply(star_rating - 1, 50))
-  
-  assert_eq(basic_score, 70)
-  assert_eq(combo_score, 210)
-  assert_eq(time_score, 225)
-  assert_eq(final_score, 217)
-  assert_eq(star_rating, 5)
-  assert_eq(remainder_score, 17)
+  assert_eq(5050, linear_result)
+  assert_eq(10000, quadratic_result)
 }
 
 test "data_structure_operations" {
   // 数据结构操作模拟测试
-  // 模拟队列操作：入队、出队、查看队首
-  
-  // 初始队列为空
+  // 模拟队列操作
   let queue_size = 0
-  let front_element = 0
-  
-  // 入队操作
   let enqueue1 = 10
-  let queue_size1 = add(queue_size, 1)
-  let front1 = enqueue1
-  
   let enqueue2 = 20
-  let queue_size2 = add(queue_size1, 1)
-  let front2 = front1  // 队首不变
-  
   let enqueue3 = 30
-  let queue_size3 = add(queue_size2, 1)
-  let front3 = front2  // 队首不变
   
-  // 出队操作
-  let dequeue1 = front3
-  let queue_size_after_dequeue1 = subtract(queue_size3, 1)
-  let new_front1 = enqueue2  // 新的队首
+  let size_after_enqueues = add(add(add(queue_size, 1), 1), 1)
+  let dequeue1 = enqueue1
+  let size_after_dequeue1 = subtract(size_after_enqueues, 1)
   
-  // 再次出队
-  let dequeue2 = new_front1
-  let queue_size_after_dequeue2 = subtract(queue_size_after_dequeue1, 1)
-  let new_front2 = enqueue3  // 新的队首
+  assert_eq(3, size_after_enqueues)
+  assert_eq(10, dequeue1)
+  assert_eq(2, size_after_dequeue1)
+}
+
+test "error_boundary_conditions" {
+  // 错误边界条件测试
+  // 测试除法的各种边界情况
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 10))
+  assert_eq(0, divide_with_ceil(0, -10))
   
-  // 验证队列操作
-  assert_eq(queue_size1, 1)
-  assert_eq(front1, 10)
-  assert_eq(queue_size2, 2)
-  assert_eq(front2, 10)
-  assert_eq(queue_size3, 3)
-  assert_eq(front3, 10)
-  assert_eq(dequeue1, 10)
-  assert_eq(queue_size_after_dequeue1, 2)
-  assert_eq(new_front1, 20)
-  assert_eq(dequeue2, 20)
-  assert_eq(queue_size_after_dequeue2, 1)
-  assert_eq(new_front2, 30)
+  // 测试大数运算
+  let large_num = 100000
+  assert_eq(200000, add(large_num, large_num))
+  assert_eq(33334, divide_with_ceil(large_num, 3))
+}
+
+test "mathematical_series_calculations" {
+  // 数学级数计算测试
+  // 计算等差数列前n项和
+  let first_term = 3
+  let common_diff = 2
+  let n_terms = 10
+  
+  // 等差数列第n项
+  let nth_term = add(first_term, multiply(common_diff, subtract(n_terms, 1)))
+  
+  // 前n项和
+  let series_sum = divide_with_ceil(multiply(n_terms, add(first_term, nth_term)), 2)
+  
+  // 计算等比数列前n项和 (简化版)
+  let geo_first = 2
+  let geo_ratio = 3
+  let geo_n = 5
+  
+  let geo_nth = multiply(geo_first, multiply(geo_ratio, subtract(geo_n, 1)))
+  let geo_sum = add(geo_first, geo_nth)
+  
+  assert_eq(21, nth_term)
+  assert_eq(120, series_sum)
+  assert_eq(48, geo_nth)
+  assert_eq(50, geo_sum)
 }
