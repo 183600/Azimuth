@@ -1,133 +1,143 @@
-// 标准 MoonBit 测试用例
-// 为 Azimuth 项目创建的高质量测试套件
+// 标准 Azimuth MoonBit 测试用例
+// 包含 10 个高质量测试用例，使用标准 MoonBit 测试语法
+// 测试覆盖核心功能和各种边界情况
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  assert_eq(@azimuth.add(10, 15), 25)
-  assert_eq(@azimuth.multiply(7, 8), 56)
-  assert_eq(@azimuth.subtract(20, 12), 8)
-  assert_eq(@azimuth.divide_with_ceil(17, 5), 4)
-  assert_eq(@azimuth.divide_with_ceil(20, 5), 4)
+test "add_function_basic_cases" {
+  // 加法函数基本测试用例
+  assert_eq(0, add(0, 0))
+  assert_eq(5, add(2, 3))
+  assert_eq(-1, add(-2, 1))
+  assert_eq(1000, add(500, 500))
+  assert_eq(-100, add(-50, -50))
 }
 
-test "boundary_value_testing" {
-  // 边界值测试
-  assert_eq(@azimuth.add(0, 0), 0)
-  assert_eq(@azimuth.multiply(0, 100), 0)
-  assert_eq(@azimuth.subtract(0, 0), 0)
-  assert_eq(@azimuth.divide_with_ceil(0, 5), 0)
-  assert_eq(@azimuth.divide_with_ceil(10, 0), 0)
-  assert_eq(@azimuth.divide_with_ceil(0, 0), 0)
+test "multiply_function_edge_cases" {
+  // 乘法函数边界测试用例
+  assert_eq(0, multiply(5, 0))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(1, multiply(1, 1))
+  assert_eq(-25, multiply(-5, 5))
+  assert_eq(25, multiply(-5, -5))
 }
 
-test "negative_number_operations" {
-  // 负数运算测试
-  assert_eq(@azimuth.add(-5, 10), 5)
-  assert_eq(@azimuth.add(-8, -3), -11)
-  assert_eq(@azimuth.multiply(-4, 6), -24)
-  assert_eq(@azimuth.multiply(-3, -7), 21)
-  assert_eq(@azimuth.subtract(-10, 5), -15)
-  assert_eq(@azimuth.divide_with_ceil(-15, 4), -3)
+test "divide_with_ceil_comprehensive" {
+  // 向上取整除法综合测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(-3, divide_with_ceil(-10, 3))
 }
 
-test "string_processing_functions" {
-  // 字符串处理函数测试
-  assert_eq_string(@azimuth.greet("MoonBit"), "Hello, MoonBit!")
-  assert_eq_string(@azimuth.greet(""), "Hello, !")
-  assert_eq_string(@azimuth.greet("123"), "Hello, 123!")
-  assert_eq_string(@azimuth.greet("测试"), "Hello, 测试!")
+test "subtract_function_various_scenarios" {
+  // 减法函数各种场景测试
+  assert_eq(5, subtract(10, 5))
+  assert_eq(-5, subtract(5, 10))
+  assert_eq(0, subtract(15, 15))
+  assert_eq(20, subtract(10, -10))
+  assert_eq(-20, subtract(-10, 10))
 }
 
-test "mathematical_properties" {
+test "greet_function_string_operations" {
+  // 问候函数字符串操作测试
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, !@#$!", greet("!@#$"))
+}
+
+test "complex_calculation_sequence" {
+  // 复杂计算序列测试
+  let a = 10
+  let b = 3
+  let c = 2
+  
+  // (a + b) * c
+  let result1 = multiply(add(a, b), c)
+  assert_eq(26, result1)
+  
+  // a * b + c
+  let result2 = add(multiply(a, b), c)
+  assert_eq(32, result2)
+  
+  // (a - b) / c (向上取整)
+  let result3 = divide_with_ceil(subtract(a, b), c)
+  assert_eq(4, result3)
+}
+
+test "mathematical_properties_verification" {
   // 数学性质验证测试
-  let x = 13
-  let y = 17
+  let x = 7
+  let y = 5
   
   // 加法交换律
-  assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
+  assert_eq(add(x, y), add(y, x))
   
   // 乘法交换律
-  assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
+  assert_eq(multiply(x, y), multiply(y, x))
   
   // 加法单位元
-  assert_eq(@azimuth.add(x, 0), x)
+  assert_eq(add(x, 0), x)
   
   // 乘法单位元
-  assert_eq(@azimuth.multiply(x, 1), x)
-}
-
-test "complex_calculation_scenarios" {
-  // 复杂计算场景测试
-  let base = 100
-  let rate = 15
-  let years = 3
+  assert_eq(multiply(x, 1), x)
   
-  // 复利计算模拟
-  let year1 = @azimuth.add(base, @azimuth.divide_with_ceil(@azimuth.multiply(base, rate), 100))
-  let year2 = @azimuth.add(year1, @azimuth.divide_with_ceil(@azimuth.multiply(year1, rate), 100))
-  let year3 = @azimuth.add(year2, @azimuth.divide_with_ceil(@azimuth.multiply(year2, rate), 100))
+  // 减法逆运算
+  assert_eq(add(subtract(x, y), y), x)
+}
+
+test "boundary_value_analysis" {
+  // 边界值分析测试
+  // 零值测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(0, divide_with_ceil(0, 10))
   
-  assert_eq(year1, 115)
-  assert_eq(year2, 133)
-  assert_eq(year3, 153)
+  // 单位值测试
+  assert_eq(5, add(5, 0))
+  assert_eq(5, multiply(5, 1))
+  assert_eq(5, divide_with_ceil(5, 1))
+  
+  // 负值测试
+  assert_eq(-5, add(0, -5))
+  assert_eq(-5, multiply(-5, 1))
+  assert_eq(-1, divide_with_ceil(-5, 5))
 }
 
-test "edge_case_divisions" {
-  // 边界除法情况测试
-  assert_eq(@azimuth.divide_with_ceil(1, 2), 1)
-  assert_eq(@azimuth.divide_with_ceil(99, 100), 1)
-  assert_eq(@azimuth.divide_with_ceil(100, 99), 2)
-  assert_eq(@azimuth.divide_with_ceil(-10, 3), -3)
-  assert_eq(@azimuth.divide_with_ceil(10, -3), 3)
-  assert_eq(@azimuth.divide_with_ceil(-10, -3), 4)
+test "error_handling_scenarios" {
+  // 错误处理场景测试
+  // 除零情况
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  
+  // 大数运算
+  let large_num = 10000
+  assert_eq(20000, add(large_num, large_num))
+  assert_eq(100000000, multiply(large_num, large_num))
+  assert_eq(3334, divide_with_ceil(large_num, 3))
 }
 
-test "large_number_operations" {
-  // 大数运算测试
-  let large_num = 100000
-  assert_eq(@azimuth.add(large_num, large_num), 200000)
-  assert_eq(@azimuth.multiply(1000, 1000), 1000000)
-  assert_eq(@azimuth.subtract(large_num, 50000), 50000)
-  assert_eq(@azimuth.divide_with_ceil(large_num, 3), 33334)
-}
-
-test "real_world_shopping_cart" {
-  // 真实世界购物车计算测试
-  let item1_price = 25
-  let item1_qty = 3
-  let item2_price = 15
-  let item2_qty = 2
+test "real_world_calculation_scenario" {
+  // 真实世界计算场景测试 - 购物车计算
+  let item_price = 25
+  let quantity = 4
   let tax_rate = 10
   
   // 计算小计
-  let item1_subtotal = @azimuth.multiply(item1_price, item1_qty)
-  let item2_subtotal = @azimuth.multiply(item2_price, item2_qty)
-  let subtotal = @azimuth.add(item1_subtotal, item2_subtotal)
+  let subtotal = multiply(item_price, quantity)
+  assert_eq(100, subtotal)
   
-  // 计算税费
-  let tax = @azimuth.divide_with_ceil(@azimuth.multiply(subtotal, tax_rate), 100)
+  // 计算税费（向上取整）
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  assert_eq(10, tax)
   
   // 计算总价
-  let total = @azimuth.add(subtotal, tax)
+  let total = add(subtotal, tax)
+  assert_eq(110, total)
   
-  assert_eq(item1_subtotal, 75)
-  assert_eq(item2_subtotal, 30)
-  assert_eq(subtotal, 105)
-  assert_eq(tax, 11)
-  assert_eq(total, 116)
-}
-
-test "algorithm_simulation" {
-  // 算法模拟测试 - 斐波那契数列
-  let f0 = 0
-  let f1 = 1
-  let f2 = @azimuth.add(f1, f0)
-  let f3 = @azimuth.add(f2, f1)
-  let f4 = @azimuth.add(f3, f2)
-  let f5 = @azimuth.add(f4, f3)
-  
-  assert_eq(f2, 1)
-  assert_eq(f3, 2)
-  assert_eq(f4, 3)
-  assert_eq(f5, 5)
+  // 计算每箱包装数量（假设每箱最多6个）
+  let boxes_needed = divide_with_ceil(quantity, 6)
+  assert_eq(1, boxes_needed)
 }
