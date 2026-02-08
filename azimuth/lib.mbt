@@ -19690,3 +19690,138 @@ test "error_division_by_zero_handling" {
   assert_eq(-4, negative_divisor)
   assert_eq(4, both_negative)
 }
+
+// 新增的10个高质量MoonBit测试用例
+test "enhanced_add_comprehensive" {
+  // 综合加法测试，包括正数、负数和零
+  assert_eq(100, add(75, 25))
+  assert_eq(0, add(0, 0))
+  assert_eq(-50, add(-25, -25))
+  assert_eq(30, add(-20, 50))
+  assert_eq(-10, add(40, -50))
+}
+
+test "enhanced_multiply_edge_cases" {
+  // 乘法边缘情况测试
+  assert_eq(0, multiply(0, 9999))
+  assert_eq(9999, multiply(1, 9999))
+  assert_eq(-9999, multiply(-1, 9999))
+  assert_eq(1000000, multiply(1000, 1000))
+  assert_eq(1000000, multiply(-1000, -1000))
+}
+
+test "enhanced_divide_ceil_precision" {
+  // 向上取整除法精度测试
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(100, divide_with_ceil(9999, 100))
+  assert_eq(10000, divide_with_ceil(10000, 1))
+  assert_eq(33334, divide_with_ceil(100000, 3))
+  assert_eq(0, divide_with_ceil(0, 1000))
+}
+
+test "enhanced_greet_unicode_support" {
+  // 问候函数 Unicode 支持测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+}
+
+test "enhanced_subtract_comprehensive" {
+  // 综合减法测试
+  assert_eq(50, subtract(100, 50))
+  assert_eq(-50, subtract(50, 100))
+  assert_eq(0, subtract(100, 100))
+  assert_eq(200, subtract(100, -100))
+  assert_eq(-200, subtract(-100, 100))
+}
+
+test "enhanced_mathematical_laws" {
+  // 数学定律验证测试
+  let a = 15
+  let b = 25
+  let c = 10
+  
+  // 交换律验证
+  assert_eq(add(a, b), add(b, a))
+  assert_eq(multiply(a, b), multiply(b, a))
+  
+  // 结合律验证
+  assert_eq(add(add(a, b), c), add(a, add(b, c)))
+  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
+  
+  // 分配律验证
+  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
+}
+
+test "enhanced_resource_allocation" {
+  // 资源分配场景测试
+  let total_tasks = 87
+  let team_members = 8
+  let tasks_per_member = divide_with_ceil(total_tasks, team_members)
+  
+  assert_eq(11, tasks_per_member)
+  
+  // 验证总容量
+  let total_capacity = multiply(tasks_per_member, team_members)
+  assert_eq(88, total_capacity)
+  
+  // 验证剩余容量
+  let remaining_capacity = subtract(total_capacity, total_tasks)
+  assert_eq(1, remaining_capacity)
+}
+
+test "enhanced_financial_calculation" {
+  // 金融计算场景测试
+  let items = 47
+  let price_per_item = 13
+  let total_cost = multiply(items, price_per_item)
+  
+  assert_eq(611, total_cost)
+  
+  // 计算每箱容量和需要的箱数
+  let box_capacity = 12
+  let boxes_needed = divide_with_ceil(items, box_capacity)
+  assert_eq(4, boxes_needed)
+  
+  // 计算每箱平均成本
+  let cost_per_box = divide_with_ceil(total_cost, boxes_needed)
+  assert_eq(153, cost_per_box)
+}
+
+test "enhanced_time_management" {
+  // 时间管理场景测试
+  let total_hours = 153
+  let work_days = divide_with_ceil(total_hours, 8)
+  
+  assert_eq(20, work_days)
+  
+  // 计算工作周数
+  let work_weeks = divide_with_ceil(work_days, 5)
+  assert_eq(4, work_weeks)
+  
+  // 验证总工作日容量
+  let total_day_capacity = multiply(work_weeks, 5)
+  assert_eq(20, total_day_capacity)
+  
+  // 验证剩余工作日
+  let remaining_days = subtract(total_day_capacity, work_days)
+  assert_eq(0, remaining_days)
+}
+
+test "enhanced_error_boundary" {
+  // 错误边界测试
+  // 除零处理
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 极值测试
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(0, subtract(1000000, 1000000))
+  
+  // 空字符串和特殊字符
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, \t\n!", greet("\t\n"))
+}
