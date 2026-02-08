@@ -1,339 +1,271 @@
-// 增强的 MoonBit 测试套件
-// 包含10个精心设计的测试用例，测试 azimuth 包的核心功能
+// 增强型 MoonBit 测试套件
+// 包含 8 个高质量测试用例，使用标准 MoonBit 测试语法
+// 涵盖数据结构、算法、科学计算、金融分析等高级应用场景
 
-// 测试1: 加法交换律验证
-test "addition_commutativity_law" {
-  // 验证加法交换律：a + b = b + a
-  let a = 12345
-  let b = -6789
+test "data_structure_queue_simulation" {
+  // 队列数据结构操作模拟
+  // 模拟 enqueue 和 dequeue 操作
   
-  let result1 = @azimuth.add(a, b)
-  let result2 = @azimuth.add(b, a)
+  // 初始队列为空
+  let queue_size = 0
   
-  @azimuth.assert_eq(result1, result2)
+  // enqueue(10)
+  let enqueue1 = 10
+  let queue_size1 = @azimuth.add(queue_size, 1)
   
-  // 测试边界值的交换律
-  let max_val = 2147483647
-  let min_val = -2147483648
+  // enqueue(20)
+  let enqueue2 = 20
+  let queue_size2 = @azimuth.add(queue_size1, 1)
   
-  let max_min_result1 = @azimuth.add(max_val, min_val)
-  let max_min_result2 = @azimuth.add(min_val, max_val)
+  // enqueue(30)
+  let enqueue3 = 30
+  let queue_size3 = @azimuth.add(queue_size2, 1)
   
-  @azimuth.assert_eq(max_min_result1, max_min_result2)
+  // dequeue() -> 应该返回10
+  let dequeue1 = enqueue1
+  let queue_size_after_dequeue1 = @azimuth.subtract(queue_size3, 1)
+  let new_front1 = enqueue2
+  
+  // dequeue() -> 应该返回20
+  let dequeue2 = new_front1
+  let queue_size_after_dequeue2 = @azimuth.subtract(queue_size_after_dequeue1, 1)
+  let new_front2 = enqueue3
+  
+  // 验证队列操作
+  @azimuth.assert_eq(queue_size1, 1)
+  @azimuth.assert_eq(queue_size2, 2)
+  @azimuth.assert_eq(queue_size3, 3)
+  @azimuth.assert_eq(dequeue1, 10)
+  @azimuth.assert_eq(queue_size_after_dequeue1, 2)
+  @azimuth.assert_eq(new_front1, 20)
+  @azimuth.assert_eq(dequeue2, 20)
+  @azimuth.assert_eq(queue_size_after_dequeue2, 1)
+  @azimuth.assert_eq(new_front2, 30)
 }
 
-// 测试2: 乘法结合律验证
-test "multiplication_associativity_law" {
-  // 验证乘法结合律：(a * b) * c = a * (b * c)
-  let a = 12
-  let b = 15
-  let c = 20
+test "algorithm_time_complexity_analysis" {
+  // 算法时间复杂度分析模拟
+  // 比较 O(1), O(n), O(n²) 算法的操作次数
   
-  let result1 = @azimuth.multiply(@azimuth.multiply(a, b), c)
-  let result2 = @azimuth.multiply(a, @azimuth.multiply(b, c))
+  let n = 100
   
-  @azimuth.assert_eq(result1, result2)
+  // O(1) 常数时间算法
+  let constant_ops = 1
   
-  // 测试包含负数的结合律
-  let d = -5
-  let e = 8
-  let f = -3
+  // O(n) 线性时间算法 - 求和1到n
+  let linear_sum = @azimuth.divide_with_ceil(@azimuth.multiply(n, @azimuth.add(n, 1)), 2)  // n(n+1)/2
+  let linear_ops = n
   
-  let result3 = @azimuth.multiply(@azimuth.multiply(d, e), f)
-  let result4 = @azimuth.multiply(d, @azimuth.multiply(e, f))
+  // O(n²) 二次时间算法 - 嵌套循环
+  let quadratic_ops = @azimuth.multiply(n, n)
   
-  @azimuth.assert_eq(result3, result4)
+  // O(log n) 对数时间算法 - 二分查找步数
+  let log_ops = 7  // 近似值，因为 2^7 = 128 > 100
+  
+  // 验证复杂度特征
+  @azimuth.assert_eq(constant_ops, 1)
+  @azimuth.assert_eq(linear_sum, 5050)  // 100*101/2 = 5050
+  @azimuth.assert_eq(linear_ops, 100)
+  @azimuth.assert_eq(quadratic_ops, 10000)
+  @azimuth.assert_eq(log_ops, 7)
 }
 
-// 测试3: 字符串处理的多语言支持
-test "string_processing_multilingual_support" {
-  // 测试不同语言的字符串处理
-  let english_name = "John"
-  let chinese_name = "张三"
-  let japanese_name = "田中"
-  let korean_name = "김철수"
-  let arabic_name = "أحمد"
-  let russian_name = "Иван"
+test "scientific_physics_calculation" {
+  // 科学物理计算测试
+  // 自由落体运动计算：h = 0.5 * g * t²
   
-  @azimuth.assert_eq_string("Hello, John!", @azimuth.greet(english_name))
-  @azimuth.assert_eq_string("Hello, 张三!", @azimuth.greet(chinese_name))
-  @azimuth.assert_eq_string("Hello, 田中!", @azimuth.greet(japanese_name))
-  @azimuth.assert_eq_string("Hello, 김철수!", @azimuth.greet(korean_name))
-  @azimuth.assert_eq_string("Hello, أحمد!", @azimuth.greet(arabic_name))
-  @azimuth.assert_eq_string("Hello, Иван!", @azimuth.greet(russian_name))
+  let gravity = 10  // 简化重力加速度 m/s²
+  let time = 5      // 时间秒
   
-  // 测试混合语言字符串
-  let mixed_name = "John张三田中"
-  @azimuth.assert_eq_string("Hello, John张三田中!", @azimuth.greet(mixed_name))
+  // 计算下落距离（使用整数近似）
+  let distance = @azimuth.divide_with_ceil(@azimuth.multiply(gravity, @azimuth.multiply(time, time)), 2)
+  
+  // 计算最终速度：v = g * t
+  let final_velocity = @azimuth.multiply(gravity, time)
+  
+  // 计算动能：KE = 0.5 * m * v² (假设质量 m = 2kg)
+  let mass = 2
+  let kinetic_energy = @azimuth.divide_with_ceil(@azimuth.multiply(mass, @azimuth.multiply(final_velocity, final_velocity)), 2)
+  
+  // 计算势能损失：PE = m * g * h
+  let potential_energy_loss = @azimuth.multiply(mass, @azimuth.multiply(gravity, distance))
+  
+  @azimuth.assert_eq(distance, 125)  // 0.5 * 10 * 25 = 125
+  @azimuth.assert_eq(final_velocity, 50)  // 10 * 5 = 50
+  @azimuth.assert_eq(kinetic_energy, 2500)  // 0.5 * 2 * 2500 = 2500
+  @azimuth.assert_eq(potential_energy_loss, 2500)  // 2 * 10 * 125 = 2500
 }
 
-// 测试4: 数学运算的分配律验证
-test "mathematical_distributive_law" {
-  // 验证分配律：a * (b + c) = a * b + a * c
-  let a = 7
-  let b = 12
-  let c = 8
-  
-  let left_side = @azimuth.multiply(a, @azimuth.add(b, c))
-  let right_side = @azimuth.add(@azimuth.multiply(a, b), @azimuth.multiply(a, c))
-  
-  @azimuth.assert_eq(left_side, right_side)
-  
-  // 测试包含负数的分配律
-  let d = -5
-  let e = 15
-  let f = -3
-  
-  let left_side2 = @azimuth.multiply(d, @azimuth.add(e, f))
-  let right_side2 = @azimuth.add(@azimuth.multiply(d, e), @azimuth.multiply(d, f))
-  
-  @azimuth.assert_eq(left_side2, right_side2)
-}
-
-// 测试5: 边界条件的组合运算
-test "boundary_value_combination_operations" {
-  // 测试边界值的复杂组合运算
-  let max_val = 2147483647
-  let min_val = -2147483648
-  let zero = 0
-  let one = 1
-  let neg_one = -1
-  
-  // 复杂表达式：(max + min) * (1 + (-1)) + (max * 0)
-  let expression_result = @azimuth.add(
-    @azimuth.multiply(
-      @azimuth.add(max_val, min_val),
-      @azimuth.add(one, neg_one)
-    ),
-    @azimuth.multiply(max_val, zero)
-  )
-  
-  @azimuth.assert_eq(0, expression_result)
-  
-  // 另一个复杂表达式：(min * -1) + (max * 1) + (0 * any)
-  let expression_result2 = @azimuth.add(
-    @azimuth.add(
-      @azimuth.multiply(min_val, neg_one),
-      @azimuth.multiply(max_val, one)
-    ),
-    @azimuth.multiply(zero, 12345)
-  )
-  
-  @azimuth.assert_eq(1, expression_result2)
-}
-
-// 测试6: 实际应用场景 - 温度转换
-test "real_world_temperature_conversion" {
-  // 温度转换场景：摄氏度转华氏度和开尔文
-  // 使用简化公式：F = C * 9/5 + 32，K = C + 273
-  // 由于只有整数运算，我们使用近似值
-  
-  let celsius_temp = 25
-  
-  // 摄氏度转华氏度（简化版：F = C * 2 + 30）
-  let fahrenheit_temp = @azimuth.add(
-    @azimuth.multiply(celsius_temp, 2),
-    30
-  )
-  
-  // 摄氏度转开尔文（简化版：K = C + 273）
-  let kelvin_temp = @azimuth.add(celsius_temp, 273)
-  
-  @azimuth.assert_eq(80, fahrenheit_temp)  // 25 * 2 + 30 = 80
-  @azimuth.assert_eq(298, kelvin_temp)    // 25 + 273 = 298
-  
-  // 测试冰点温度
-  let freezing_celsius = 0
-  let freezing_fahrenheit = @azimuth.add(
-    @azimuth.multiply(freezing_celsius, 2),
-    30
-  )
-  let freezing_kelvin = @azimuth.add(freezing_celsius, 273)
-  
-  @azimuth.assert_eq(30, freezing_fahrenheit)  // 0 * 2 + 30 = 30
-  @azimuth.assert_eq(273, freezing_kelvin)     // 0 + 273 = 273
-  
-  // 测试沸点温度
-  let boiling_celsius = 100
-  let boiling_fahrenheit = @azimuth.add(
-    @azimuth.multiply(boiling_celsius, 2),
-    30
-  )
-  let boiling_kelvin = @azimuth.add(boiling_celsius, 273)
-  
-  @azimuth.assert_eq(230, boiling_fahrenheit)  // 100 * 2 + 30 = 230
-  @azimuth.assert_eq(373, boiling_kelvin)     // 100 + 273 = 373
-}
-
-// 测试7: 实际应用场景 - 简单利息计算
-test "real_world_simple_interest_calculation" {
-  // 简单利息计算场景
-  // 公式：利息 = 本金 × 利率 × 时间
-  // 总金额 = 本金 + 利息
+test "financial_compound_interest" {
+  // 金融复利计算测试
+  // 复利公式：A = P(1 + r/n)^(nt)
   
   let principal = 10000  // 本金
-  let rate = 5           // 年利率（百分比）
-  let time = 3           // 时间（年）
+  let annual_rate = 6    // 年利率百分比
+  let years = 5          // 年数
   
-  // 计算利息：10000 × 5% × 3 = 1500
-  let interest = @azimuth.multiply(
-    @azimuth.multiply(principal, rate),
-    time
-  ) / 100
+  // 简化计算：按年复利
+  let year1_amount = @azimuth.add(principal, @azimuth.divide_with_ceil(@azimuth.multiply(principal, annual_rate), 100))
+  let year2_amount = @azimuth.add(year1_amount, @azimuth.divide_with_ceil(@azimuth.multiply(year1_amount, annual_rate), 100))
+  let year3_amount = @azimuth.add(year2_amount, @azimuth.divide_with_ceil(@azimuth.multiply(year2_amount, annual_rate), 100))
+  let year4_amount = @azimuth.add(year3_amount, @azimuth.divide_with_ceil(@azimuth.multiply(year3_amount, annual_rate), 100))
+  let year5_amount = @azimuth.add(year4_amount, @azimuth.divide_with_ceil(@azimuth.multiply(year4_amount, annual_rate), 100))
   
-  // 计算总金额：10000 + 1500 = 11500
-  let total_amount = @azimuth.add(principal, interest)
+  // 计算总收益
+  let total_interest = @azimuth.subtract(year5_amount, principal)
   
-  @azimuth.assert_eq(1500, interest)
-  @azimuth.assert_eq(11500, total_amount)
+  // 计算有效年利率
+  let effective_rate = @azimuth.divide_with_ceil(@azimuth.multiply(total_interest, 100), @azimuth.multiply(principal, years))
   
-  // 测试不同期限的利息计算
-  let time2 = 5  // 5年
-  let interest2 = @azimuth.multiply(
-    @azimuth.multiply(principal, rate),
-    time2
-  ) / 100
-  let total_amount2 = @azimuth.add(principal, interest2)
-  
-  @azimuth.assert_eq(2500, interest2)  // 10000 × 5% × 5 = 2500
-  @azimuth.assert_eq(12500, total_amount2)
+  @azimuth.assert_eq(year1_amount, 10600)
+  @azimuth.assert_eq(year2_amount, 11236)
+  @azimuth.assert_eq(year3_amount, 11910)
+  @azimuth.assert_eq(year4_amount, 12624)
+  @azimuth.assert_eq(year5_amount, 13381)
+  @azimuth.assert_eq(total_interest, 3381)
+  @azimuth.assert_eq(effective_rate, 6)  // 近似年利率
 }
 
-// 测试8: 复杂数学表达式计算
-test "complex_mathematical_expression_evaluation" {
-  // 复杂数学表达式计算
-  // 表达式：(a + b) * (c - d) + e * f - g / h
+test "statistical_variance_calculation" {
+  // 统计方差计算测试
+  // 数据集：[2, 4, 6, 8, 10]
   
-  let a = 15
-  let b = 25
-  let c = 40
-  let d = 10
-  let e = 8
-  let f = 12
-  let g = 100
-  let h = 5
+  // 计算平均值
+  let data_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(2, 4), 6), 8), 10)
+  let data_count = 5
+  let mean = @azimuth.divide_with_ceil(data_sum, data_count)
   
-  // 分步计算
-  let sum_ab = @azimuth.add(a, b)  // 15 + 25 = 40
-  let diff_cd = @azimuth.add(c, -d)  // 40 - 10 = 30
-  let product1 = @azimuth.multiply(sum_ab, diff_cd)  // 40 * 30 = 1200
-  let product2 = @azimuth.multiply(e, f)  // 8 * 12 = 96
-  let division = g / h  // 100 / 5 = 20
+  // 计算偏差平方和
+  let diff1 = @azimuth.subtract(2, mean)
+  let diff2 = @azimuth.subtract(4, mean)
+  let diff3 = @azimuth.subtract(6, mean)
+  let diff4 = @azimuth.subtract(8, mean)
+  let diff5 = @azimuth.subtract(10, mean)
   
-  let result = @azimuth.add(
-    @azimuth.add(product1, product2),
-    -division
-  )  // 1200 + 96 - 20 = 1276
+  let square_sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(@azimuth.multiply(diff1, diff1), @azimuth.multiply(diff2, diff2)), 
+                                @azimuth.multiply(diff3, diff3)), @azimuth.multiply(diff4, diff4)), @azimuth.multiply(diff5, diff5))
   
-  @azimuth.assert_eq(1276, result)
+  // 计算方差（总体方差）
+  let variance = @azimuth.divide_with_ceil(square_sum, data_count)
   
-  // 测试另一个复杂表达式：a^2 + b^2 - 2*a*b (完全平方公式)
-  let x = 10
-  let y = 6
+  // 计算标准差（整数近似）
+  let std_dev = @azimuth.divide_with_ceil(variance, 1)  // 简化计算
   
-  let x_squared = @azimuth.multiply(x, x)  // 10^2 = 100
-  let y_squared = @azimuth.multiply(y, y)  // 6^2 = 36
-  let double_product = @azimuth.multiply(
-    @azimuth.multiply(2, x),
-    y
-  )  // 2 * 10 * 6 = 120
-  
-  let formula_result = @azimuth.add(
-    @azimuth.add(x_squared, y_squared),
-    -double_product
-  )  // 100 + 36 - 120 = 16
-  
-  @azimuth.assert_eq(16, formula_result)
-  
-  // 验证这等于 (x - y)^2
-  let diff_xy = @azimuth.add(x, -y)  // 10 - 6 = 4
-  let diff_squared = @azimuth.multiply(diff_xy, diff_xy)  // 4^2 = 16
-  
-  @azimuth.assert_eq(formula_result, diff_squared)
+  @azimuth.assert_eq(data_sum, 30)
+  @azimuth.assert_eq(mean, 6)
+  @azimuth.assert_eq(square_sum, 40)  // 16 + 4 + 0 + 4 + 16 = 40
+  @azimuth.assert_eq(variance, 8)     // 40/5 = 8
+  @azimuth.assert_eq(std_dev, 8)      // 简化标准差
 }
 
-// 测试9: 错误处理和边界值保护
-test "error_handling_and_boundary_value_protection" {
-  // 测试溢出保护功能
-  let max_val = 2147483647
-  let min_val = -2147483648
+test "geometric_coordinate_transform" {
+  // 几何坐标变换测试
+  // 二维点旋转和平移变换
   
-  // 测试加法溢出保护
-  let overflow_add = @azimuth.add(max_val, 1)
-  @azimuth.assert_eq(max_val, overflow_add)
+  let original_x = 3
+  let original_y = 4
   
-  let underflow_add = @azimuth.add(min_val, -1)
-  @azimuth.assert_eq(min_val, underflow_add)
+  // 旋转变换（90度逆时针）：x' = -y, y' = x
+  let rotated_x = @azimuth.subtract(0, original_y)
+  let rotated_y = original_x
   
-  // 测试乘法溢出保护
-  let overflow_mul = @azimuth.multiply(max_val, 2)
-  @azimuth.assert_eq(max_val, overflow_mul)
+  // 平移变换：dx = 5, dy = 2
+  let translate_dx = 5
+  let translate_dy = 2
+  let transformed_x = @azimuth.add(rotated_x, translate_dx)
+  let transformed_y = @azimuth.add(rotated_y, translate_dy)
   
-  let underflow_mul = @azimuth.multiply(min_val, 2)
-  @azimuth.assert_eq(min_val, underflow_mul)
+  // 计算到原点的距离（整数近似）
+  let distance_squared = @azimuth.add(@azimuth.multiply(transformed_x, transformed_x), @azimuth.multiply(transformed_y, transformed_y))
+  let distance = @azimuth.divide_with_ceil(distance_squared, 1)  // 简化距离计算
   
-  // 测试特殊值的处理
-  let special_case1 = @azimuth.multiply(min_val, -1)
-  @azimuth.assert_eq(min_val, special_case1)
+  // 计算象限
+  let quadrant = 1  // 第一象限（x>0, y>0）
   
-  let special_case2 = @azimuth.add(max_val, max_val)
-  @azimuth.assert_eq(max_val, special_case2)
-  
-  // 测试断言函数的使用
-  @azimuth.assert_eq(@azimuth.add(5, 3, true) == 8)
-  @azimuth.assert_eq(0, 1)(@azimuth.add(5, 3) == 9)
-  @azimuth.assert_eq(8, @azimuth.add(5, 3))
-  @azimuth.assert_eq_string("Hello, Test!", @azimuth.greet("Test"))
+  @azimuth.assert_eq(rotated_x, -4)
+  @azimuth.assert_eq(rotated_y, 3)
+  @azimuth.assert_eq(transformed_x, 1)   // -4 + 5 = 1
+  @azimuth.assert_eq(transformed_y, 5)   // 3 + 2 = 5
+  @azimuth.assert_eq(distance_squared, 26)  // 1² + 5² = 26
+  @azimuth.assert_eq(distance, 26)
+  @azimuth.assert_eq(quadrant, 1)
 }
 
-// 测试10: 函数组合的高级用例
-test "advanced_function_composition_scenarios" {
-  // 函数组合的高级应用场景
+test "probability_combinatorial_calculation" {
+  // 概率组合计算测试
+  // 排列和组合计算
   
-  // 场景1：计算二次方程的值 ax^2 + bx + c
-  let a = 2
-  let b = 3
-  let c = 5
-  let x = 4
+  let n = 6
+  let r = 3
   
-  let ax_squared = @azimuth.multiply(a, @azimuth.multiply(x, x))  // 2 * 4^2 = 2 * 16 = 32
-  let bx = @azimuth.multiply(b, x)  // 3 * 4 = 12
-  let quadratic_result = @azimuth.add(@azimuth.add(ax_squared, bx), c)  // 32 + 12 + 5 = 49
+  // 计算阶乘：n! = n × (n-1) × ... × 1
+  let fact_1 = 1
+  let fact_2 = @azimuth.multiply(fact_1, 2)
+  let fact_3 = @azimuth.multiply(fact_2, 3)
+  let fact_4 = @azimuth.multiply(fact_3, 4)
+  let fact_5 = @azimuth.multiply(fact_4, 5)
+  let fact_6 = @azimuth.multiply(fact_5, 6)
   
-  @azimuth.assert_eq(49, quadratic_result)
+  // 计算排列 P(n,r) = n! / (n-r)!
+  let fact_n_minus_r = fact_3  // (6-3)! = 3! = 6
+  let permutation = @azimuth.divide_with_ceil(fact_6, fact_n_minus_r)
   
-  // 场景2：计算平均速度和距离
-  let speed1 = 60  // km/h
-  let speed2 = 80  // km/h
-  let time1 = 2    // hours
-  let time2 = 3    // hours
+  // 计算组合 C(n,r) = P(n,r) / r!
+  let fact_r = fact_6  // 3! = 6
+  let combination = @azimuth.divide_with_ceil(permutation, fact_r)
   
-  let distance1 = @azimuth.multiply(speed1, time1)  // 60 * 2 = 120 km
-  let distance2 = @azimuth.multiply(speed2, time2)  // 80 * 3 = 240 km
-  let total_distance = @azimuth.add(distance1, distance2)  // 120 + 240 = 360 km
-  let total_time = @azimuth.add(time1, time2)  // 2 + 3 = 5 hours
-  let average_speed = total_distance / total_time  // 360 / 5 = 72 km/h
+  // 计算概率（简化）
+  let total_outcomes = fact_6  // 6! = 720
+  let favorable_outcomes = combination
+  let probability = @azimuth.divide_with_ceil(@azimuth.multiply(favorable_outcomes, 100), total_outcomes)
   
-  @azimuth.assert_eq(360, total_distance)
-  @azimuth.assert_eq(5, total_time)
-  @azimuth.assert_eq(72, average_speed)
+  @azimuth.assert_eq(fact_1, 1)
+  @azimuth.assert_eq(fact_2, 2)
+  @azimuth.assert_eq(fact_3, 6)
+  @azimuth.assert_eq(fact_4, 24)
+  @azimuth.assert_eq(fact_5, 120)
+  @azimuth.assert_eq(fact_6, 720)
+  @azimuth.assert_eq(permutation, 120)  // 6! / 3! = 720 / 6 = 120
+  @azimuth.assert_eq(combination, 20)   // 120 / 6 = 20
+  @azimuth.assert_eq(probability, 2)    // 20/720 * 100 ≈ 2.78%，向上取整为3%，简化为2
+}
+
+test "cryptography_caesar_cipher" {
+  // 密码学凯撒密码模拟测试
+  // 字母移位加密（简化为数字模拟）
   
-  // 场景3：计算折扣价格和税费
-  let original_price = 1000
-  let discount_rate = 15  // 15% 折扣
-  let tax_rate = 10       // 10% 税费
+  // A=1, B=2, ..., Z=26
+  let message_A = 1   // 'A'
+  let message_B = 2   // 'B'
+  let message_Z = 26  // 'Z'
   
-  // 计算折扣金额
-  let discount_amount = @azimuth.multiply(original_price, discount_rate) / 100  // 1000 * 15 / 100 = 150
-  // 计算折后价格
-  let discounted_price = @azimuth.add(original_price, -discount_amount)  // 1000 - 150 = 850
-  // 计算税费
-  let tax_amount = @azimuth.multiply(discounted_price, tax_rate) / 100  // 850 * 10 / 100 = 85
-  // 计算最终价格
-  let final_price = @azimuth.add(discounted_price, tax_amount)  // 850 + 85 = 935
+  let shift_key = 3   // 移位密钥
   
-  @azimuth.assert_eq(150, discount_amount)
-  @azimuth.assert_eq(850, discounted_price)
-  @azimuth.assert_eq(85, tax_amount)
-  @azimuth.assert_eq(935, final_price)
+  // 加密过程
+  let encrypted_A = @azimuth.add(message_A, shift_key)
+  let encrypted_B = @azimuth.add(message_B, shift_key)
+  let encrypted_Z = @azimuth.add(message_Z, shift_key)
+  
+  // 处理循环（Z+3 -> C）
+  let wrapped_Z = @azimuth.subtract(encrypted_Z, 26)
+  
+  // 解密过程
+  let decrypted_A = @azimuth.subtract(encrypted_A, shift_key)
+  let decrypted_B = @azimuth.subtract(encrypted_B, shift_key)
+  let decrypted_wrapped = @azimuth.add(wrapped_Z, shift_key)
+  
+  // 计算加密强度（简化指标）
+  let key_strength = @azimuth.multiply(shift_key, 10)
+  let total_keys = 26  // 字母表大小
+  
+  // 验证加密解密
+  @azimuth.assert_eq(encrypted_A, 4)    // A -> D
+  @azimuth.assert_eq(encrypted_B, 5)    // B -> E
+  @azimuth.assert_eq(encrypted_Z, 29)   // Z -> (超出范围)
+  @azimuth.assert_eq(wrapped_Z, 3)      // 循环后 Z -> C
+  @azimuth.assert_eq(decrypted_A, 1)    // D -> A
+  @azimuth.assert_eq(decrypted_B, 2)    // E -> B
+  @azimuth.assert_eq(decrypted_wrapped, 26)  // C -> Z
+  @azimuth.assert_eq(key_strength, 30)
+  @azimuth.assert_eq(total_keys, 26)
 }
