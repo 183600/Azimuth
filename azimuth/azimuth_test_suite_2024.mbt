@@ -1,4 +1,4 @@
-// Azimuth 标准测试用例 - 新增
+// Azimuth 标准测试用例 - 2024版
 // 使用标准 MoonBit 测试语法，包含8个高质量测试用例
 
 test "basic_arithmetic_addition" {
