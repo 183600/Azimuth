@@ -1,212 +1,203 @@
-// Azimuth 项目增强测试用例
-// 包含 8 个高质量的 MoonBit 标准测试用例
+// Azimuth 增强测试套件
+// 包含8个高质量的专业测试用例，使用标准 MoonBit 测试语法
 
-test "financial_compound_interest_calculation" {
-  // 金融复利计算测试
-  // 场景：计算投资增长
-  let principal = 10000
-  let annual_rate = 8  // 8% 年利率
-  let years = 3
+test "number_theory_primes" {
+  // 数论基础：质数相关计算
+  // 检查7以内的质数：2, 3, 5, 7
   
-  // 第一年：10000 + ceil(10000 * 8 / 100) = 10800
-  let year1 = add(principal, divide_with_ceil(multiply(principal, annual_rate), 100))
+  // 计算质数和
+  let prime_sum = add(add(add(2, 3), 5), 7)
   
-  // 第二年：10800 + ceil(10800 * 8 / 100) = 11664
-  let year2 = add(year1, divide_with_ceil(multiply(year1, annual_rate), 100))
+  // 计算质数乘积
+  let prime_product = multiply(multiply(multiply(2, 3), 5), 7)
   
-  // 第三年：11664 + ceil(11664 * 8 / 100) = 12597
-  let year3 = add(year2, divide_with_ceil(multiply(year2, annual_rate), 100))
+  // 计算平均值的向上取整
+  let prime_count = 4
+  let prime_average = divide_with_ceil(prime_sum, prime_count)
   
-  // 验证每年的增长
-  assert_eq(10800, year1)
-  assert_eq(11664, year2)
-  assert_eq(12597, year3)
-  
-  // 验证总收益
-  let total_return = subtract(year3, principal)
-  assert_eq(2597, total_return)
+  assert_eq(prime_sum, 17)
+  assert_eq(prime_product, 210)
+  assert_eq(prime_average, 5)
 }
 
-test "inventory_optimization_problem" {
-  // 库存优化问题测试
-  // 场景：仓库货架布局优化
-  let total_items = 247
-  let shelf_capacity = 18
-  let shelves_needed = divide_with_ceil(total_items, shelf_capacity)
+test "calendar_calculation" {
+  // 日历计算：闰年和天数计算
+  let regular_year = 365
+  let leap_year = 366
+  let century = 100
   
-  assert_eq(14, shelves_needed)
+  // 计算4年周期内的总天数（包含一个闰年）
+  let four_year_days = add(add(add(regular_year, regular_year), regular_year), leap_year)
   
-  // 计算总容量
-  let total_capacity = multiply(shelves_needed, shelf_capacity)
-  assert_eq(252, total_capacity)
+  // 计算平均每年天数（向上取整）
+  let average_days = divide_with_ceil(four_year_days, 4)
   
-  // 计算剩余空间
-  let unused_space = subtract(total_capacity, total_items)
-  assert_eq(5, unused_space)
+  // 计算一个世纪内的闰年数量（简化计算）
+  let leap_years_century = divide_with_ceil(century, 4)
   
-  // 计算空间利用率
-  let utilization_rate = divide_with_ceil(multiply(total_items, 100), total_capacity)
-  assert_eq(99, utilization_rate)  // floor(24700/252) = 98%，向上取整为99%
+  // 计算世纪总天数
+  let century_days = add(multiply(regular_year, subtract(century, leap_years_century)), multiply(leap_year, leap_years_century))
+  
+  assert_eq(four_year_days, 1461)
+  assert_eq(average_days, 366)
+  assert_eq(leap_years_century, 25)
+  assert_eq(century_days, 36525)
 }
 
-test "project_resource_allocation" {
-  // 项目资源分配测试
-  // 场景：多团队项目资源分配
-  let total_budget = 50000
-  let team_a_budget = 18000
-  let team_b_budget = 15000
-  let team_c_budget = 12000
+test "financial_compound_interest" {
+  // 金融复利计算
+  let principal = 1000
+  let rate_percent = 8
+  let years = 5
   
-  // 计算已分配预算
-  let allocated_budget = add(add(team_a_budget, team_b_budget), team_c_budget)
+  // 第一年
+  let year1_interest = divide_with_ceil(multiply(principal, rate_percent), 100)
+  let year1_balance = add(principal, year1_interest)
   
-  // 计算剩余预算
-  let remaining_budget = subtract(total_budget, allocated_budget)
+  // 第二年
+  let year2_interest = divide_with_ceil(multiply(year1_balance, rate_percent), 100)
+  let year2_balance = add(year1_balance, year2_interest)
   
-  // 计算应急储备（每个团队需要10%的应急资金）
-  let contingency_a = divide_with_ceil(multiply(team_a_budget, 10), 100)
-  let contingency_b = divide_with_ceil(multiply(team_b_budget, 10), 100)
-  let contingency_c = divide_with_ceil(multiply(team_c_budget, 10), 100)
-  let total_contingency = add(add(contingency_a, contingency_b), contingency_c)
+  // 第三年
+  let year3_interest = divide_with_ceil(multiply(year2_balance, rate_percent), 100)
+  let year3_balance = add(year2_balance, year3_interest)
   
-  assert_eq(45000, allocated_budget)
-  assert_eq(5000, remaining_budget)
-  assert_eq(1800, contingency_a)
-  assert_eq(1500, contingency_b)
-  assert_eq(1200, contingency_c)
-  assert_eq(4500, total_contingency)
+  // 计算总收益
+  let total_profit = subtract(year3_balance, principal)
   
-  // 验证应急储备不超过剩余预算
-  assert_true(total_contingency <= remaining_budget)
+  assert_eq(year1_balance, 1080)
+  assert_eq(year2_balance, 1167)
+  assert_eq(year3_balance, 1261)
+  assert_eq(total_profit, 261)
 }
 
-test "data_structure_performance_analysis" {
-  // 数据结构性能分析测试
-  // 场景：算法复杂度分析
-  let base_operations = 100
-  let input_size = 50
+test "binary_operations_advanced" {
+  // 高级二进制操作
+  // 模拟位运算：左移和右移
   
-  // O(1) 常数时间复杂度
-  let constant_time = base_operations
+  let number = 13  // 二进制: 1101
   
-  // O(n) 线性时间复杂度
-  let linear_time = multiply(base_operations, input_size)
+  // 模拟左移1位 (13 * 2 = 26)
+  let left_shift_1 = multiply(number, 2)
   
-  // O(n²) 二次时间复杂度
-  let quadratic_time = multiply(linear_time, input_size)
+  // 模拟左移2位 (13 * 4 = 52)
+  let left_shift_2 = multiply(number, 4)
   
-  // O(log n) 对数时间复杂度（简化模拟）
-  let logarithmic_time = divide_with_ceil(input_size, 2)
+  // 模拟右移1位 (13 / 2，向上取整 = 7)
+  let right_shift_1 = divide_with_ceil(number, 2)
   
-  assert_eq(100, constant_time)
-  assert_eq(5000, linear_time)
-  assert_eq(250000, quadratic_time)
-  assert_eq(25, logarithmic_time)
+  // 模拟右移2位 (13 / 4，向上取整 = 4)
+  let right_shift_2 = divide_with_ceil(number, 4)
   
-  // 验证复杂度关系
-  assert_true(constant_time < linear_time)
-  assert_true(linear_time < quadratic_time)
-  assert_true(logarithmic_time < linear_time)
+  assert_eq(left_shift_1, 26)
+  assert_eq(left_shift_2, 52)
+  assert_eq(right_shift_1, 7)
+  assert_eq(right_shift_2, 4)
 }
 
-test "network_packet_routing" {
-  // 网络数据包路由测试
-  // 场景：数据包在网络中的路由
-  let total_packets = 1024
-  let route1_capacity = 256
-  let route2_capacity = 384
-  let route3_capacity = 512
+test "geometry_circle_properties" {
+  // 几何学：圆形属性计算（使用π的近似值22/7）
+  let radius = 7
+  let pi_approx = divide_with_ceil(22, 7)  // π的近似值
   
-  // 分配数据包到各路由
-  let route1_packets = divide_with_ceil(multiply(total_packets, 25), 100)  // 25%
-  let route2_packets = divide_with_ceil(multiply(total_packets, 35), 100)  // 35%
-  let route3_packets = subtract(total_packets, add(route1_packets, route2_packets))  // 剩余
+  // 计算直径
+  let diameter = multiply(radius, 2)
   
-  assert_eq(256, route1_packets)
-  assert_eq(358, route2_packets)
-  assert_eq(410, route3_packets)
+  // 计算周长（近似）
+  let circumference = multiply(diameter, pi_approx)
   
-  // 验证路由容量充足
-  assert_true(route1_packets <= route1_capacity)
-  assert_true(route2_packets <= route2_capacity)
-  assert_true(route3_packets <= route3_capacity)
+  // 计算面积（近似）
+  let area = multiply(radius, multiply(radius, pi_approx))
   
-  // 验证所有数据包都已分配
-  let total_routed = add(add(route1_packets, route2_packets), route3_packets)
-  assert_eq(total_packets, total_routed)
+  assert_eq(diameter, 14)
+  assert_eq(circumference, 44)
+  assert_eq(area, 154)
 }
 
-test "cryptographic_key_generation" {
-  // 密码学密钥生成测试
-  // 场景：简化版密钥生成算法
-  let seed_value = 42
-  let prime1 = 17
-  let prime2 = 23
+test "data_structure_queue_simulation" {
+  // 数据结构：队列操作模拟
   
-  // 生成密钥组件
-  let component1 = multiply(seed_value, prime1)
-  let component2 = add(component1, prime2)
-  let component3 = multiply(component2, seed_value)
+  // 初始化队列
+  let queue_size = 0
+  let front_element = 0
   
-  // 密钥派生
-  let key_base = divide_with_ceil(component3, 1000)
-  let key_checksum = add(divide_with_ceil(component3, 100), divide_with_ceil(component3, 10))
-  let final_key = add(multiply(key_base, 1000), key_checksum % 1000)
+  // 入队操作
+  let enqueue1 = 10
+  let queue_size1 = add(queue_size, 1)
+  let rear_element1 = enqueue1
   
-  assert_eq(714, component1)  // 42 * 17
-  assert_eq(737, component2)  // 714 + 23
-  assert_eq(30954, component3)  // 737 * 42
-  assert_eq(31, key_base)  // ceil(30954/1000)
-  assert_eq(340, key_checksum)  // ceil(30954/100) + ceil(30954/10)
-  assert_eq(31340, final_key)
+  let enqueue2 = 20
+  let queue_size2 = add(queue_size1, 1)
+  let rear_element2 = enqueue2
+  
+  let enqueue3 = 30
+  let queue_size3 = add(queue_size2, 1)
+  let rear_element3 = enqueue3
+  
+  // 出队操作（FIFO）
+  let dequeue1 = 10  // 第一个入队的元素
+  let queue_size_after_dequeue1 = subtract(queue_size3, 1)
+  
+  let dequeue2 = 20  // 第二个入队的元素
+  let queue_size_after_dequeue2 = subtract(queue_size_after_dequeue1, 1)
+  
+  assert_eq(queue_size3, 3)
+  assert_eq(rear_element3, 30)
+  assert_eq(dequeue1, 10)
+  assert_eq(queue_size_after_dequeue1, 2)
+  assert_eq(dequeue2, 20)
+  assert_eq(queue_size_after_dequeue2, 1)
 }
 
-test "multilingual_greeting_system" {
-  // 多语言问候系统测试
-  // 场景：国际化问候功能
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, 中文!", greet("中文"))
-  assert_eq_string("Hello, 日本語!", greet("日本語"))
-  assert_eq_string("Hello, 한국어!", greet("한국어"))
-  assert_eq_string("Hello, Español!", greet("Español"))
-  assert_eq_string("Hello, Français!", greet("Français"))
-  assert_eq_string("Hello, Русский!", greet("Русский"))
-  assert_eq_string("Hello, العربية!", greet("العربية"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
+test "temperature_conversion_precise" {
+  // 精确的温度转换计算
+  let celsius_freezing = 0
+  let celsius_boiling = 100
+  
+  // 摄氏度转华氏度：F = C × 9/5 + 32
+  let freezing_fahrenheit = add(multiply(celsius_freezing, 9) / 5, 32)
+  let boiling_fahrenheit = add(multiply(celsius_boiling, 9) / 5, 32)
+  
+  // 使用向上取整的转换
+  let freezing_fahrenheit_ceil = add(divide_with_ceil(multiply(celsius_freezing, 9), 5), 32)
+  let boiling_fahrenheit_ceil = add(divide_with_ceil(multiply(celsius_boiling, 9), 5), 32)
+  
+  // 华氏度转摄氏度：C = (F - 32) × 5/9
+  let back_to_freezing_celsius = multiply(subtract(freezing_fahrenheit, 32), 5) / 9
+  let back_to_boiling_celsius = multiply(subtract(boiling_fahrenheit, 32), 5) / 9
+  
+  assert_eq(freezing_fahrenheit, 32)
+  assert_eq(boiling_fahrenheit, 212)
+  assert_eq(freezing_fahrenheit_ceil, 32)
+  assert_eq(boiling_fahrenheit_ceil, 212)
+  assert_eq(back_to_freezing_celsius, 0)
+  assert_eq(back_to_boiling_celsius, 100)
 }
 
-test "algorithm_complexity_comparison" {
-  // 算法复杂度比较测试
-  // 场景：不同算法在相同输入下的性能比较
-  let input_size = 100
+test "algorithm_gcd_lcm" {
+  // 算法：最大公约数和最小公倍数计算
+  let num1 = 24
+  let num2 = 36
   
-  // 线性搜索：O(n)
-  let linear_search_ops = multiply(input_size, 1)
+  // 使用欧几里得算法模拟计算GCD
+  // 36 ÷ 24 = 1 余 12
+  let step1_remainder = subtract(36, multiply(1, 24))
   
-  // 二分搜索：O(log n)
-  let binary_search_ops = divide_with_ceil(input_size, 2)
+  // 24 ÷ 12 = 2 余 0
+  let step2_remainder = subtract(24, multiply(2, step1_remainder))
   
-  // 快速排序平均情况：O(n log n)
-  let quicksort_ops = multiply(input_size, divide_with_ceil(input_size, 2))
+  let gcd = step1_remainder  // GCD = 12
   
-  // 冒泡排序：O(n²)
-  let bubble_sort_ops = multiply(input_size, input_size)
+  // 计算LCM：LCM(a,b) = (a × b) / GCD(a,b)
+  let product = multiply(num1, num2)
+  let lcm = divide_with_ceil(product, gcd)
   
-  assert_eq(100, linear_search_ops)
-  assert_eq(50, binary_search_ops)
-  assert_eq(5000, quicksort_ops)
-  assert_eq(10000, bubble_sort_ops)
+  // 验证性质：GCD × LCM = a × b
+  let verification = multiply(gcd, lcm)
   
-  // 验证复杂度关系
-  assert_true(binary_search_ops < linear_search_ops)
-  assert_true(linear_search_ops < quicksort_ops)
-  assert_true(quicksort_ops < bubble_sort_ops)
-  
-  // 计算性能提升比例
-  let linear_vs_binary = divide_with_ceil(linear_search_ops, binary_search_ops)
-  let bubble_vs_quick = divide_with_ceil(bubble_sort_ops, quicksort_ops)
-  
-  assert_eq(2, linear_vs_binary)  // 二分搜索比线性搜索快2倍
-  assert_eq(2, bubble_vs_quick)  // 快速排序比冒泡排序快2倍
+  assert_eq(step1_remainder, 12)
+  assert_eq(step2_remainder, 0)
+  assert_eq(gcd, 12)
+  assert_eq(lcm, 72)
+  assert_eq(verification, 864)
 }

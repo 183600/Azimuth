@@ -728,4 +728,5 @@
     "azimuth_standard_comprehensive_tests.mbt",
     "azimuth_high_quality_test_suite.mbt",
     "test/simple_user_test.mbt",
-    "test/my_custom_test.mbt"                                                                                                                                           ]}
+    "test/my_custom_test.mbt",
+    "azimuth_new_test_collection.mbt"                                                                                                                                           ]}

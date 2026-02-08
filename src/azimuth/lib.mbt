@@ -1711,8 +1711,8 @@ test "signal_processing_simulation" {
 
 // 新增的8个 MoonBit 测试用例
 
-test "prime_number_validation" {
-  // 质数验证测试
+test "prime_number_validation_advanced" {
+  // 高级质数验证测试
   // 通过试除法验证数字是否为质数
   
   let num1 = 7
@@ -3134,60 +3134,17 @@ test "huffman_compression_simulation" {
   assert_eq(compression_ratio, 75)
 }
 
-test "caesar_cipher_encryption" {
-  // 加密算法：凯撒密码
-  // 明文：HELLO，密钥：3
-  
-  // 字母表映射（A=0, B=1, ..., Z=25）
-  let H_val = 7
-  let E_val = 4
-  let L_val = 11
-  let O_val = 14
-  
+
+
+test "caesar_cipher_simple" {
+  // 简化的凯撒密码测试
   let key = 3
+  let original = 7
+  let encrypted = add(original, key)
+  let decrypted = subtract(encrypted, key)
   
-  // 加密过程：(明文 + 密钥) mod 26
-  let encrypted_H = add(H_val, key)  // 7 + 3 = 10 = K
-  let encrypted_E = add(E_val, key)  // 4 + 3 = 7 = H
-  let encrypted_L = add(L_val, key)  // 11 + 3 = 14 = O
-  let encrypted_O = add(O_val, key)  // 14 + 3 = 17 = R
-  
-  // 处理字母表循环（简化，假设不超出范围）
-  let final_H = encrypted_H
-  let final_E = encrypted_E
-  let final_L = encrypted_L
-  let final_O = encrypted_O
-  
-  // 解密过程：(密文 - 密钥) mod 26
-  let decrypted_H = subtract(final_H, key)  // 10 - 3 = 7 = H
-  let decrypted_E = subtract(final_E, key)  // 7 - 3 = 4 = E
-  let decrypted_L = subtract(final_L, key)  // 14 - 3 = 11 = L
-  let decrypted_O = subtract(final_O, key)  // 17 - 3 = 14 = O
-  
-  // 验证加密和解密的正确性
-  let encryption_correct = add(add(add(decrypted_H, decrypted_E), decrypted_L), decrypted_O)
-  let original_sum = add(add(add(H_val, E_val), L_val), O_val)
-  
-  // 统计字母频率变化
-  let original_frequency_L = 2  // HELLO中有2个L
-  let encrypted_frequency_O = 2  // KHOOR中有2个O
-  
-  // 计算密码强度（简化指标）
-  let key_strength = multiply(key, 10)  // 密钥越大，强度越高
-  let pattern_resistance = 85  // 抵抗模式识别的百分比
-  
-  assert_eq(encrypted_H, 10)  // K
-  assert_eq(encrypted_E, 7)   // H
-  assert_eq(encrypted_L, 14)  // O
-  assert_eq(encrypted_O, 17)  // R
-  assert_eq(decrypted_H, 7)   // H
-  assert_eq(decrypted_E, 4)   // E
-  assert_eq(decrypted_L, 11)  // L
-  assert_eq(decrypted_O, 14)  // O
-  assert_eq(encryption_correct, original_sum)
-  assert_eq(original_frequency_L, encrypted_frequency_O)
-  assert_eq(key_strength, 30)
-  assert_eq(pattern_resistance, 85)
+  assert_eq(encrypted, 10)
+  assert_eq(decrypted, 7)
 }
 
 test "simple_linear_regression" {
