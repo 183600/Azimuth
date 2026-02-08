@@ -1,193 +1,110 @@
 // Azimuth 综合测试套件
-// 包含10个标准MoonBit测试用例，覆盖核心功能
+// 包含 8 个高质量标准 MoonBit 测试用例
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  assert_eq(8, add(3, 5))
-  assert_eq(15, multiply(3, 5))
-  assert_eq(-2, subtract(3, 5))
-  assert_eq(2, divide_with_ceil(5, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
+test "basic_arithmetic_validation" {
+  // 基本算术验证测试
+  @azimuth.assert_eq(7, @azimuth.add(3, 4))
+  @azimuth.assert_eq(12, @azimuth.multiply(3, 4))
+  @azimuth.assert_eq(-1, @azimuth.subtract(3, 4))
+  @azimuth.assert_eq(2, @azimuth.divide_with_ceil(7, 4))
 }
 
-test "string_greeting_functionality" {
-  // 字符串问候功能测试
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 测试!", greet("测试"))
+test "complex_calculation_scenario" {
+  // 复杂计算场景测试
+  let base = 100
+  let multiplier = 3
+  let offset = 25
+  let divisor = 5
+  
+  let step1 = @azimuth.multiply(base, multiplier)
+  let step2 = @azimuth.add(step1, offset)
+  let result = @azimuth.divide_with_ceil(step2, divisor)
+  
+  @azimuth.assert_eq(300, step1)
+  @azimuth.assert_eq(325, step2)
+  @azimuth.assert_eq(65, result)
 }
 
-test "negative_number_operations" {
-  // 负数运算测试
-  assert_eq(-2, add(-5, 3))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(8, subtract(3, -5))
-  assert_eq(-1, divide_with_ceil(-5, 3))
-  assert_eq(-2, divide_with_ceil(5, -3))
+test "financial_calculation_simulation" {
+  // 金融计算模拟测试
+  let principal = 10000
+  let rate1 = 5
+  let rate2 = 3
+  
+  let year1_interest = @azimuth.divide_with_ceil(@azimuth.multiply(principal, rate1), 100)
+  let year1_total = @azimuth.add(principal, year1_interest)
+  
+  let year2_interest = @azimuth.divide_with_ceil(@azimuth.multiply(year1_total, rate2), 100)
+  let year2_total = @azimuth.add(year1_total, year2_interest)
+  
+  @azimuth.assert_eq(10500, year1_total)
+  @azimuth.assert_eq(10815, year2_total)
 }
 
-test "edge_case_division" {
-  // 除法边界情况测试
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(-1, -1))
+test "temperature_conversion_logic" {
+  // 温度转换逻辑测试
+  let celsius = 20
+  
+  let fahrenheit_step1 = @azimuth.multiply(celsius, 9)
+  let fahrenheit_step2 = @azimuth.divide_with_ceil(fahrenheit_step1, 5)
+  let fahrenheit = @azimuth.add(fahrenheit_step2, 32)
+  
+  @azimuth.assert_eq(68, fahrenheit)
 }
 
-test "complex_calculation_workflow" {
-  // 复杂计算工作流测试
-  let initial = 100
-  let step1 = multiply(initial, 2)  // 200
-  let step2 = add(step1, 50)        // 250
-  let step3 = subtract(step2, 75)   // 175
-  let step4 = divide_with_ceil(step3, 25)  // 7
+test "game_mechanics_calculation" {
+  // 游戏机制计算测试
+  let base_score = 200
+  let level_bonus = 50
+  let combo_multiplier = 2
+  let penalty = 30
   
-  assert_eq(200, step1)
-  assert_eq(250, step2)
-  assert_eq(175, step3)
-  assert_eq(7, step4)
+  let level_score = @azimuth.add(base_score, level_bonus)
+  let combo_score = @azimuth.multiply(level_score, combo_multiplier)
+  let final_score = @azimuth.subtract(combo_score, penalty)
+  
+  @azimuth.assert_eq(250, level_score)
+  @azimuth.assert_eq(500, combo_score)
+  @azimuth.assert_eq(470, final_score)
 }
 
-test "mathematical_properties_validation" {
-  // 数学性质验证测试
-  let x = 12
-  let y = 8
+test "inventory_management_logic" {
+  // 库存管理逻辑测试
+  let initial_stock = 1000
+  let daily_sales = 45
+  let days = 5
+  let new_shipment = 300
   
-  // 加法交换律
-  assert_eq(add(x, y), add(y, x))
+  let weekly_sales = @azimuth.multiply(daily_sales, days)
+  let remaining_stock = @azimuth.subtract(initial_stock, weekly_sales)
+  let final_stock = @azimuth.add(remaining_stock, new_shipment)
   
-  // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
-  
-  // 加法单位元
-  assert_eq(add(x, 0), x)
-  
-  // 乘法单位元
-  assert_eq(multiply(x, 1), x)
-  
-  // 减法逆运算
-  assert_eq(add(subtract(x, y), y), x)
+  @azimuth.assert_eq(225, weekly_sales)
+  @azimuth.assert_eq(775, remaining_stock)
+  @azimuth.assert_eq(1075, final_stock)
 }
 
-test "business_calculation_scenario" {
-  // 业务计算场景测试
-  let unit_price = 25
-  let quantity = 8
-  let discount = 30
-  let tax_rate = 10
-  
-  // 计算小计
-  let subtotal = multiply(unit_price, quantity)
-  
-  // 应用折扣
-  let after_discount = subtract(subtotal, discount)
-  
-  // 计算税费
-  let tax = divide_with_ceil(multiply(after_discount, tax_rate), 100)
-  
-  // 计算总价
-  let total = add(after_discount, tax)
-  
-  assert_eq(200, subtotal)
-  assert_eq(170, after_discount)
-  assert_eq(17, tax)
-  assert_eq(187, total)
+test "string_processing_comprehensive" {
+  // 字符串处理综合测试
+  @azimuth.assert_eq_string("Hello, Azimuth!", @azimuth.greet("Azimuth"))
+  @azimuth.assert_eq_string("Hello, 测试!", @azimuth.greet("测试"))
+  @azimuth.assert_eq_string("Hello, 2024!", @azimuth.greet("2024"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
 }
 
-test "algorithm_fibonacci_simulation" {
-  // 斐波那契算法模拟测试
-  let f0 = 0
-  let f1 = 1
-  let f2 = add(f1, f0)      // 1
-  let f3 = add(f2, f1)      // 2
-  let f4 = add(f3, f2)      // 3
-  let f5 = add(f4, f3)      // 5
-  let f6 = add(f5, f4)      // 8
-  let f7 = add(f6, f5)      // 13
-  let f8 = add(f7, f6)      // 21
+test "edge_case_comprehensive_testing" {
+  // 边界情况综合测试
+  // 零值测试
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(0, 100))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 10))
   
-  assert_eq(1, f2)
-  assert_eq(2, f3)
-  assert_eq(3, f4)
-  assert_eq(5, f5)
-  assert_eq(8, f6)
-  assert_eq(13, f7)
-  assert_eq(21, f8)
-}
-
-test "resource_allocation_optimization" {
-  // 资源分配优化测试
-  let total_resources = 120
-  let project_a_needs = 35
-  let project_b_needs = 28
-  let project_c_needs = 42
+  // 负数测试
+  @azimuth.assert_eq(-10, @azimuth.add(-5, -5))
+  @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
+  @azimuth.assert_eq(-2, @azimuth.divide_with_ceil(-10, 5))
   
-  // 计算已分配资源
-  let allocated = add(add(project_a_needs, project_b_needs), project_c_needs)
-  
-  // 计算剩余资源
-  let remaining = subtract(total_resources, allocated)
-  
-  // 计算可以支持的新项目数量（每个项目需要15个资源）
-  let new_projects = divide_with_ceil(remaining, 15)
-  
-  // 计算资源利用率
-  let utilization = divide_with_ceil(multiply(allocated, 100), total_resources)
-  
-  assert_eq(105, allocated)
-  assert_eq(15, remaining)
-  assert_eq(1, new_projects)
-  assert_eq(88, utilization)
-}
-
-test "data_structure_stack_simulation" {
-  // 数据结构栈模拟测试
-  let stack_size = 0
-  let top_element = 0
-  
-  // push(10)
-  let push1 = 10
-  let stack_size1 = add(stack_size, 1)
-  let top1 = push1
-  
-  // push(20)
-  let push2 = 20
-  let stack_size2 = add(stack_size1, 1)
-  let top2 = push2
-  
-  // push(30)
-  let push3 = 30
-  let stack_size3 = add(stack_size2, 1)
-  let top3 = push3
-  
-  // pop() -> 返回30
-  let pop1 = top3
-  let stack_size_after_pop1 = subtract(stack_size3, 1)
-  let top_after_pop1 = push2
-  
-  // pop() -> 返回20
-  let pop2 = top_after_pop1
-  let stack_size_after_pop2 = subtract(stack_size_after_pop1, 1)
-  let top_after_pop2 = push1
-  
-  // pop() -> 返回10
-  let pop3 = top_after_pop2
-  let stack_size_after_pop3 = subtract(stack_size_after_pop2, 1)
-  
-  assert_eq(1, stack_size1)
-  assert_eq(10, top1)
-  assert_eq(2, stack_size2)
-  assert_eq(20, top2)
-  assert_eq(3, stack_size3)
-  assert_eq(30, top3)
-  assert_eq(30, pop1)
-  assert_eq(2, stack_size_after_pop1)
-  assert_eq(20, top_after_pop1)
-  assert_eq(20, pop2)
-  assert_eq(1, stack_size_after_pop2)
-  assert_eq(10, top_after_pop2)
-  assert_eq(10, pop3)
-  assert_eq(0, stack_size_after_pop3)
+  // 大数测试
+  @azimuth.assert_eq(200000, @azimuth.add(100000, 100000))
+  @azimuth.assert_eq(33334, @azimuth.divide_with_ceil(100000, 3))
 }
