@@ -1,209 +1,286 @@
-// Azimuth 项目新增标准 MoonBit 测试用例
-// 包含8个高质量测试用例，使用标准 MoonBit 测试语法
+// 新增的标准 MoonBit 测试用例
+// 为 Azimuth 项目添加 10 个高质量测试用例
 
-test "azimuth_angle_calculation" {
-  // 方位角计算测试
-  // 模拟计算从正北方向顺时针旋转的角度
+test "azimuth_navigation_calculation" {
+  // Azimuth 导航计算测试
+  // 模拟方位角计算中的基本运算
   
-  let north = 0
-  let east = 90
-  let south = 180
-  let west = 270
+  let current_azimuth = 45  // 当前方位角
+  let adjustment = 30       // 调整角度
+  let full_circle = 360     // 完整圆周角度
   
-  // 计算东北方向的角度
-  let northeast_angle = divide_with_ceil(add(north, east), 2)
+  // 计算新的方位角
+  let new_azimuth_raw = add(current_azimuth, adjustment)  // 45 + 30 = 75
   
-  // 计算东南方向的角度
-  let southeast_angle = divide_with_ceil(add(east, south), 2)
+  // 确保方位角在 0-360 范围内
+  let normalized_azimuth = new_azimuth_raw % full_circle
   
-  // 计算西南方向的角度
-  let southwest_angle = divide_with_ceil(add(south, west), 2)
+  // 计算反向方位角
+  let opposite_azimuth = add(normalized_azimuth, 180) % full_circle
   
-  // 计算西北方向的角度
-  let northwest_angle = divide_with_ceil(add(south, west), 2)
-  
-  assert_eq(northeast_angle, 45)
-  assert_eq(southeast_angle, 135)
-  assert_eq(southwest_angle, 225)
-  assert_eq(northwest_angle, 225)
+  assert_eq(75, new_azimuth_raw)
+  assert_eq(75, normalized_azimuth)
+  assert_eq(255, opposite_azimuth)
 }
 
-test "azimuth_coordinate_conversion" {
-  // 方位坐标转换测试
+test "coordinate_system_conversion" {
+  // 坐标系统转换测试
   // 模拟极坐标到直角坐标的转换
   
   let radius = 10
-  let angle_degrees = 45
+  let angle_degrees = 60
+  let angle_factor = divide_with_ceil(multiply(angle_degrees, 100), 173)  // 简化的角度因子
   
-  // 简化的坐标转换（使用整数近似）
-  let x_approx = divide_with_ceil(multiply(radius, 707), 1000)  // cos(45°) ≈ 0.707
-  let y_approx = divide_with_ceil(multiply(radius, 707), 1000)  // sin(45°) ≈ 0.707
+  // 计算直角坐标 (简化计算)
+  let x_coord = divide_with_ceil(multiply(radius, angle_factor), 100)
+  let y_coord = divide_with_ceil(multiply(radius, 80), 100)  // 简化的sin60近似
   
-  // 计算到原点的距离（验证）
-  let distance_approx = divide_with_ceil(multiply(add(x_approx, y_approx), 707), 1000)
+  // 计算到原点的距离
+  let distance = divide_with_ceil(add(multiply(x_coord, x_coord), multiply(y_coord, y_coord)), radius)
   
-  assert_eq(x_approx, 8)
-  assert_eq(y_approx, 8)
-  assert_eq(distance_approx, 12)
+  assert_eq(6, x_coord)
+  assert_eq(8, y_coord)
+  assert_eq(10, distance)
 }
 
-test "azimuth_bearing_calculation" {
-  // 方位角计算测试
-  // 模拟计算两点之间的方位角
+test "azimuth_precision_validation" {
+  // Azimuth 精度验证测试
+  // 测试方位角计算的精度要求
   
-  let point1_x = 0
-  let point1_y = 0
-  let point2_x = 3
-  let point2_y = 4
+  let precise_azimuth = 123
+  let measurement_error = 2
+  let tolerance_threshold = 5
   
-  // 计算坐标差
-  let delta_x = subtract(point2_x, point1_x)
-  let delta_y = subtract(point2_y, point1_y)
+  // 计算误差范围
+  let upper_bound = add(precise_azimuth, measurement_error)
+  let lower_bound = subtract(precise_azimuth, measurement_error)
+  let error_range = subtract(upper_bound, lower_bound)
   
-  // 计算距离（勾股定理简化）
-  let distance_squared = add(multiply(delta_x, delta_x), multiply(delta_y, delta_y))
-  let distance = divide_with_ceil(distance_squared, 5)  // 简化开方运算
+  // 验证误差是否在容差范围内
+  let is_within_tolerance = error_range <= tolerance_threshold * 2
   
-  // 计算方位角（简化）
-  let bearing = divide_with_ceil(multiply(delta_y, 90), distance)
+  // 计算精度百分比
+  let precision_percentage = divide_with_ceil(multiply(subtract(tolerance_threshold, measurement_error), 100), tolerance_threshold)
   
-  assert_eq(delta_x, 3)
-  assert_eq(delta_y, 4)
-  assert_eq(distance_squared, 25)
-  assert_eq(distance, 5)
-  assert_eq(bearing, 72)
+  assert_eq(125, upper_bound)
+  assert_eq(121, lower_bound)
+  assert_eq(4, error_range)
+  assert_eq(60, precision_percentage)
 }
 
-test "azimuth_sun_position" {
-  // 太阳方位角计算测试
-  // 模拟太阳在一天中的位置变化
+test "solar_azimuth_tracking" {
+  // 太阳方位角跟踪测试
+  // 模拟太阳位置计算
   
-  let sunrise_hour = 6
-  let sunset_hour = 18
-  let noon_hour = 12
-  let current_hour = 9
+  let sunrise_azimuth = 90   // 日出方位角
+  let sunset_azimuth = 270   // 日落方位角
+  let solar_noon_offset = 180 // 正午偏移
   
-  // 计算日出到正午的时间
-  let morning_duration = subtract(noon_hour, sunrise_hour)
+  // 计算太阳轨迹
+  let morning_position = add(sunrise_azimuth, 45)  // 上午位置
+  let noon_position = add(sunrise_azimuth, solar_noon_offset)  // 正午位置
+  let afternoon_position = subtract(sunset_azimuth, 45)  // 下午位置
   
-  // 计算正午到日落的时间
-  let afternoon_duration = subtract(sunset_hour, noon_hour)
+  // 计算日照时长比例
+  let day_arc = subtract(sunset_azimuth, sunrise_azimuth)
+  let coverage_percentage = divide_with_ceil(multiply(day_arc, 100), 360)
   
-  // 计算当前时刻在上午的位置比例
-  let morning_progress = subtract(current_hour, sunrise_hour)
-  let morning_ratio = divide_with_ceil(multiply(morning_progress, 100), morning_duration)
-  
-  // 计算太阳方位角（简化）
-  let sun_azimuth = divide_with_ceil(multiply(morning_ratio, 180), 100)
-  
-  assert_eq(morning_duration, 6)
-  assert_eq(afternoon_duration, 6)
-  assert_eq(morning_progress, 3)
-  assert_eq(morning_ratio, 50)
-  assert_eq(sun_azimuth, 90)
+  assert_eq(135, morning_position)
+  assert_eq(270, noon_position)
+  assert_eq(225, afternoon_position)
+  assert_eq(50, coverage_percentage)
 }
 
-test "azimuth_navigation_triangle" {
-  // 导航三角计算测试
-  // 模拟导航中的三角计算
+test "compass_calibration_algorithm" {
+  // 指南针校准算法测试
+  // 模拟磁偏角校准过程
   
-  let side_a = 30
-  let side_b = 40
-  let angle_c = 90  // 直角
+  let magnetic_reading = 85    // 磁力计读数
+  let magnetic_declination = 5 // 磁偏角
+  let calibration_factor = 2   // 校准因子
   
-  // 计算斜边（勾股定理）
-  let side_c_squared = add(multiply(side_a, side_a), multiply(side_b, side_b))
-  let side_c = divide_with_ceil(side_c_squared, 5)  // 简化开方
+  // 应用磁偏角校正
+  let corrected_reading = add(magnetic_reading, magnetic_declination)
   
-  // 计算角度A（简化）
-  let angle_a = divide_with_ceil(multiply(side_a, 90), side_c)
+  // 应用校准因子
+  let calibrated_reading = divide_with_ceil(multiply(corrected_reading, calibration_factor), 1)
   
-  // 计算角度B（简化）
-  let angle_b = subtract(180, add(angle_a, angle_c))
+  // 计算校准偏差
+  let calibration_error = subtract(calibrated_reading, multiply(corrected_reading, calibration_factor))
+  let error_tolerance = divide_with_ceil(multiply(calibration_error, 100), calibrated_reading)
   
-  assert_eq(side_c_squared, 2500)
-  assert_eq(side_c, 500)
-  assert_eq(angle_a, 6)
-  assert_eq(angle_b, 84)
+  assert_eq(90, corrected_reading)
+  assert_eq(180, calibrated_reading)
+  assert_eq(0, error_tolerance)
 }
 
-test "azimuth_compass_rose" {
-  // 罗盘方位测试
-  // 模拟32方位罗盘的方向计算
+test "azimuth_interpolation" {
+  // 方位角插值测试
+  // 在两个已知方位角之间进行插值
   
-  let total_directions = 32
-  let circle_degrees = 360
+  let start_azimuth = 30
+  let end_azimuth = 90
+  let interpolation_steps = 3
   
-  // 计算每个方位的角度间隔
-  let angle_step = divide_with_ceil(circle_degrees, total_directions)
+  // 计算插值步长
+  let step_size = divide_with_ceil(subtract(end_azimuth, start_azimuth), interpolation_steps)
   
-  // 计算主要方位的角度
-  let n_angle = multiply(0, angle_step)
-  let ne_angle = multiply(4, angle_step)
-  let e_angle = multiply(8, angle_step)
-  let se_angle = multiply(12, angle_step)
-  let s_angle = multiply(16, angle_step)
-  let sw_angle = multiply(20, angle_step)
-  let w_angle = multiply(24, angle_step)
-  let nw_angle = multiply(28, angle_step)
+  // 计算中间点
+  let midpoint1 = add(start_azimuth, step_size)
+  let midpoint2 = add(midpoint1, step_size)
+  let midpoint3 = add(midpoint2, step_size)
   
-  assert_eq(angle_step, 12)
-  assert_eq(n_angle, 0)
-  assert_eq(ne_angle, 48)
-  assert_eq(e_angle, 96)
-  assert_eq(se_angle, 144)
-  assert_eq(s_angle, 192)
-  assert_eq(sw_angle, 240)
-  assert_eq(w_angle, 288)
-  assert_eq(nw_angle, 336)
+  // 验证插值精度
+  let total_interpolated_distance = subtract(midpoint3, start_azimuth)
+  let expected_distance = subtract(end_azimuth, start_azimuth)
+  let interpolation_accuracy = divide_with_ceil(multiply(total_interpolated_distance, 100), expected_distance)
+  
+  assert_eq(20, step_size)
+  assert_eq(50, midpoint1)
+  assert_eq(70, midpoint2)
+  assert_eq(90, midpoint3)
+  assert_eq(100, interpolation_accuracy)
 }
 
-test "azimuth_magnetic_declination" {
-  // 磁偏角计算测试
-  // 模拟磁偏角对方位角的影响
+test "azimuth_error_correction" {
+  // 方位角误差校正测试
+  // 模拟系统误差的校正过程
   
-  let true_azimuth = 45
-  let magnetic_declination = 5  // 东偏5度
+  let measured_azimuth = 92
+  let reference_azimuth = 90
+  let systematic_error = subtract(measured_azimuth, reference_azimuth)
   
-  // 计算磁方位角
-  let magnetic_azimuth = add(true_azimuth, magnetic_declination)
+  // 测量多个点以确定误差模式
+  let measurement1 = add(reference_azimuth, systematic_error)
+  let measurement2 = add(add(reference_azimuth, 45), systematic_error)
+  let measurement3 = add(add(reference_azimuth, 90), systematic_error)
   
-  // 计算反向磁方位角
-  let reverse_magnetic = subtract(magnetic_azimuth, 180)
-  if reverse_magnetic < 0 {
-    reverse_magnetic = add(reverse_magnetic, 360)
-  }
+  // 计算校正后的方位角
+  let corrected1 = subtract(measurement1, systematic_error)
+  let corrected2 = subtract(measurement2, systematic_error)
+  let corrected3 = subtract(measurement3, systematic_error)
   
-  // 计算真方位角（从磁方位角反推）
-  let calculated_true = subtract(magnetic_azimuth, magnetic_declination)
+  // 验证校正精度
+  let correction_diff = if (corrected1 >= reference_azimuth) { subtract(corrected1, reference_azimuth) } else { subtract(reference_azimuth, corrected1) }
+  let correction_accuracy = divide_with_ceil(multiply(correction_diff, 100), 1)
   
-  assert_eq(magnetic_azimuth, 50)
-  assert_eq(reverse_magnetic, -130)
-  assert_eq(calculated_true, 45)
+  assert_eq(2, systematic_error)
+  assert_eq(92, measurement1)
+  assert_eq(137, measurement2)
+  assert_eq(182, measurement3)
+  assert_eq(90, corrected1)
+  assert_eq(135, corrected2)
+  assert_eq(180, corrected3)
+  assert_eq(0, correction_accuracy)
 }
 
-test "azimuth_course_correction" {
-  // 航向修正计算测试
-  // 模拟航行中的航向修正
+test "azimuth_circular_statistics" {
+  // 方位角循环统计测试
+  // 处理方位角的循环性质
   
-  let intended_course = 90  // 计划航向：正东
-  let current_heading = 85  // 当前航向：偏北5度
-  let wind_drift = 3        // 风压差：偏南3度
+  let azimuth1 = 350
+  let azimuth2 = 10
+  let azimuth3 = 180
   
-  // 计算航向误差
-  let heading_error = subtract(intended_course, current_heading)
+  // 计算方位角之间的最短距离
+  let distance1_2 = subtract(azimuth2, azimuth1) % 360
+  let shortest_distance1_2 = if (distance1_2 > 180) { 360 - distance1_2 } else { distance1_2 }
   
-  // 计算修正后的航向
-  let corrected_heading = add(current_heading, heading_error)
+  let distance2_3 = subtract(azimuth3, azimuth2) % 360
+  let shortest_distance2_3 = if (distance2_3 > 180) { 360 - distance2_3 } else { distance2_3 }
   
-  // 考虑风压差的最终航向
-  let final_heading = subtract(corrected_heading, wind_drift)
+  let distance3_1 = subtract(azimuth1, azimuth3) % 360
+  let shortest_distance3_1 = if (distance3_1 > 180) { 360 - distance3_1 } else { distance3_1 }
   
-  // 计算需要转向的角度
-  let turn_angle = subtract(final_heading, current_heading)
+  // 计算平均方位角
+  let sum_distances = add(add(shortest_distance1_2, shortest_distance2_3), shortest_distance3_1)
+  let mean_distance = divide_with_ceil(sum_distances, 3)
   
-  assert_eq(heading_error, 5)
-  assert_eq(corrected_heading, 90)
-  assert_eq(final_heading, 87)
-  assert_eq(turn_angle, 2)
+  assert_eq(20, distance1_2)
+  assert_eq(20, shortest_distance1_2)
+  assert_eq(170, distance2_3)
+  assert_eq(170, shortest_distance2_3)
+  assert_eq(170, distance3_1)
+  assert_eq(170, shortest_distance3_1)
+  assert_eq(120, mean_distance)
+}
+
+test "azimuth_batch_processing" {
+  // 方位角批量处理测试
+  // 模拟批量方位角数据的处理
+  
+  let batch_size = 5
+  let base_azimuth = 45
+  let increment = 15
+  
+  // 生成批量数据
+  let azimuth1 = base_azimuth
+  let azimuth2 = add(base_azimuth, increment)
+  let azimuth3 = add(azimuth2, increment)
+  let azimuth4 = add(azimuth3, increment)
+  let azimuth5 = add(azimuth4, increment)
+  
+  // 计算批量统计
+  let sum_azimuths = add(add(add(add(azimuth1, azimuth2), azimuth3), azimuth4), azimuth5)
+  let mean_azimuth = divide_with_ceil(sum_azimuths, batch_size)
+  
+  // 计算方差
+  let variance_sum = add(add(add(add(
+    multiply(subtract(azimuth1, mean_azimuth), subtract(azimuth1, mean_azimuth)),
+    multiply(subtract(azimuth2, mean_azimuth), subtract(azimuth2, mean_azimuth))),
+    multiply(subtract(azimuth3, mean_azimuth), subtract(azimuth3, mean_azimuth))),
+    multiply(subtract(azimuth4, mean_azimuth), subtract(azimuth4, mean_azimuth))),
+    multiply(subtract(azimuth5, mean_azimuth), subtract(azimuth5, mean_azimuth)))
+  
+  let variance = divide_with_ceil(variance_sum, batch_size)
+  
+  assert_eq(45, azimuth1)
+  assert_eq(60, azimuth2)
+  assert_eq(75, azimuth3)
+  assert_eq(90, azimuth4)
+  assert_eq(105, azimuth5)
+  assert_eq(375, sum_azimuths)
+  assert_eq(75, mean_azimuth)
+  assert_eq(150, variance)
+}
+
+test "azimuth_optimization_algorithm" {
+  // 方位角优化算法测试
+  // 模拟方位角优化过程
+  
+  let target_azimuth = 90
+  let current_azimuth = 45
+  let optimization_steps = 4
+  let convergence_threshold = 2
+  
+  // 优化过程
+  let step1_adjustment = divide_with_ceil(subtract(target_azimuth, current_azimuth), optimization_steps)
+  let step1_position = add(current_azimuth, step1_adjustment)
+  
+  let step2_adjustment = divide_with_ceil(subtract(target_azimuth, step1_position), optimization_steps - 1)
+  let step2_position = add(step1_position, step2_adjustment)
+  
+  let step3_adjustment = divide_with_ceil(subtract(target_azimuth, step2_position), optimization_steps - 2)
+  let step3_position = add(step2_position, step3_adjustment)
+  
+  let step4_adjustment = divide_with_ceil(subtract(target_azimuth, step3_position), optimization_steps - 3)
+  let step4_position = add(step3_position, step4_adjustment)
+  
+  // 计算最终误差
+  let final_error = if (step4_position >= target_azimuth) { subtract(step4_position, target_azimuth) } else { subtract(target_azimuth, step4_position) }
+  let is_converged = final_error <= convergence_threshold
+  
+  // 计算优化效率
+  let optimization_efficiency = divide_with_ceil(multiply(subtract(100, multiply(final_error, 10)), 1), 1)
+  
+  assert_eq(11, step1_adjustment)
+  assert_eq(56, step1_position)
+  assert_eq(17, step2_adjustment)
+  assert_eq(73, step2_position)
+  assert_eq(17, step3_adjustment)
+  assert_eq(90, step3_position)
+  assert_eq(0, step4_adjustment)
+  assert_eq(90, step4_position)
+  assert_eq(0, final_error)
+  assert_eq(100, optimization_efficiency)
 }
