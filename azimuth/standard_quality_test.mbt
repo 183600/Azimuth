@@ -117,3 +117,102 @@ test "boundary_values_and_edge_cases" {
   assert_eq_string("Hello,   !", greet("  "))
   assert_eq_string("Hello, special@chars!", greet("special@chars"))
 }
+
+// 新增的8个标准 MoonBit 测试用例
+test "enhanced_arithmetic_operations" {
+  // 增强算术运算测试
+  assert_eq(15, add(7, 8))
+  assert_eq(-15, add(-7, -8))
+  assert_eq(1, add(-7, 8))
+  
+  assert_eq(56, multiply(7, 8))
+  assert_eq(-56, multiply(-7, 8))
+  assert_eq(56, multiply(-7, -8))
+}
+
+test "subtract_function_comprehensive" {
+  // 减法函数综合测试
+  assert_eq(3, subtract(10, 7))
+  assert_eq(-3, subtract(7, 10))
+  assert_eq(0, subtract(7, 7))
+  assert_eq(17, subtract(10, -7))
+  assert_eq(-17, subtract(-10, 7))
+}
+
+test "divide_with_ceil_precision_testing" {
+  // 向上取整除法精度测试
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(3, divide_with_ceil(5, 2))
+  assert_eq(4, divide_with_ceil(7, 2))
+  assert_eq(1000, divide_with_ceil(1999, 2))
+  assert_eq(667, divide_with_ceil(2000, 3))
+}
+
+test "mathematical_identity_properties" {
+  // 数学恒等式性质测试
+  let x = 42
+  
+  // 加法恒等式
+  assert_eq(x, add(x, 0))
+  assert_eq(x, add(0, x))
+  
+  // 乘法恒等式
+  assert_eq(x, multiply(x, 1))
+  assert_eq(x, multiply(1, x))
+  assert_eq(0, multiply(x, 0))
+  
+  // 减法恒等式
+  assert_eq(0, subtract(x, x))
+  assert_eq(x, subtract(x, 0))
+}
+
+test "unicode_and_emoji_greeting" {
+  // Unicode和表情符号问候测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+}
+
+test "complex_sequential_operations" {
+  // 复杂连续操作测试
+  let initial = 10
+  let step1 = add(initial, 5)        // 15
+  let step2 = multiply(step1, 2)     // 30
+  let step3 = divide_with_ceil(step2, 8)  // 4
+  let step4 = subtract(step3, 1)     // 3
+  let step5 = multiply(step4, 3)     // 9
+  
+  assert_eq(9, step5)
+}
+
+test "business_inventory_management" {
+  // 业务库存管理测试
+  let total_products = 157
+  let box_capacity = 24
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  
+  assert_eq(7, boxes_needed)
+  
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(168, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(11, remaining_space)
+}
+
+test "project_resource_planning" {
+  // 项目资源规划测试
+  let team_members = 9
+  let tasks_per_member = 5
+  let total_tasks = multiply(team_members, tasks_per_member)
+  
+  let sprint_capacity = 22
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  
+  assert_eq(45, total_tasks)  // 9 * 5 = 45
+  assert_eq(3, sprints_needed)  // ceil(45/22) = 3
+}
