@@ -1,77 +1,49 @@
 // 标准 MoonBit 测试套件
-// 包含8个高质量测试用例，使用标准 MoonBit 测试语法
+// 包含 8 个高质量测试用例，使用标准 MoonBit 测试语法
 
-test "add_function_basic_cases" {
-  // 测试 add 函数的基本情况
-  assert_eq(add(2, 3), 5)
-  assert_eq(add(0, 0), 0)
-  assert_eq(add(-2, 3), 1)
-  assert_eq(add(10, -5), 5)
-  assert_eq(add(-3, -4), -7)
-}
-
-test "multiply_function_comprehensive" {
-  // 测试 multiply 函数的综合情况
-  assert_eq(multiply(3, 4), 12)
-  assert_eq(multiply(0, 100), 0)
-  assert_eq(multiply(-2, 5), -10)
-  assert_eq(multiply(2, -5), -10)
-  assert_eq(multiply(-2, -5), 10)
-  assert_eq(multiply(1, 50), 50)
-}
-
-test "subtract_function_edge_cases" {
-  // 测试 subtract 函数的边界情况
-  assert_eq(subtract(10, 3), 7)
-  assert_eq(subtract(3, 10), -7)
-  assert_eq(subtract(0, 0), 0)
-  assert_eq(subtract(5, -3), 8)
-  assert_eq(subtract(-5, 3), -8)
-  assert_eq(subtract(-5, -3), -2)
-}
-
-test "divide_with_ceil_function_behavior" {
-  // 测试 divide_with_ceil 函数的行为
+test "basic_arithmetic_operations" {
+  // 基本算术运算测试
+  assert_eq(add(5, 3), 8)
+  assert_eq(multiply(4, 6), 24)
+  assert_eq(subtract(10, 7), 3)
   assert_eq(divide_with_ceil(10, 3), 4)
   assert_eq(divide_with_ceil(9, 3), 3)
-  assert_eq(divide_with_ceil(1, 5), 1)
-  assert_eq(divide_with_ceil(0, 10), 0)
+}
+
+test "string_greeting_functionality" {
+  // 字符串问候功能测试
+  assert_eq_string(greet("World"), "Hello, World!")
+  assert_eq_string(greet("MoonBit"), "Hello, MoonBit!")
+  assert_eq_string(greet(""), "Hello, !")
+  assert_eq_string(greet("中文"), "Hello, 中文!")
+}
+
+test "division_edge_cases" {
+  // 除法边界情况测试
+  assert_eq(divide_with_ceil(0, 5), 0)
+  assert_eq(divide_with_ceil(0, 1), 0)
+  assert_eq(divide_with_ceil(0, 0), 0)
   assert_eq(divide_with_ceil(10, 0), 0)
   assert_eq(divide_with_ceil(-10, 3), -3)
   assert_eq(divide_with_ceil(10, -3), 3)
   assert_eq(divide_with_ceil(-10, -3), 4)
 }
 
-test "greet_function_various_inputs" {
-  // 测试 greet 函数的各种输入
-  assert_eq_string(greet("World"), "Hello, World!")
-  assert_eq_string(greet("MoonBit"), "Hello, MoonBit!")
-  assert_eq_string(greet(""), "Hello, !")
-  assert_eq_string(greet("123"), "Hello, 123!")
-  assert_eq_string(greet("!@#"), "Hello, !@#!")
+test "negative_number_operations" {
+  // 负数运算测试
+  assert_eq(add(-5, 3), -2)
+  assert_eq(add(5, -3), 2)
+  assert_eq(add(-5, -3), -8)
+  assert_eq(multiply(-4, 6), -24)
+  assert_eq(multiply(4, -6), -24)
+  assert_eq(multiply(-4, -6), 24)
+  assert_eq(subtract(-10, 7), -17)
+  assert_eq(subtract(10, -7), 17)
+  assert_eq(subtract(-10, -7), -3)
 }
 
-test "complex_arithmetic_operations" {
-  // 测试复合算术运算
-  let a = 5
-  let b = 3
-  let c = 2
-  
-  // (a + b) * c
-  let result1 = multiply(add(a, b), c)
-  assert_eq(result1, 16)
-  
-  // a * b + c
-  let result2 = add(multiply(a, b), c)
-  assert_eq(result2, 17)
-  
-  // (a - b) / c (向上取整)
-  let result3 = divide_with_ceil(subtract(a, b), c)
-  assert_eq(result3, 1)
-}
-
-test "mathematical_properties_validation" {
-  // 测试数学性质验证
+test "mathematical_properties" {
+  // 数学性质验证测试
   let x = 7
   let y = 3
   
@@ -91,8 +63,27 @@ test "mathematical_properties_validation" {
   assert_eq(add(subtract(x, y), y), x)
 }
 
+test "complex_calculation_sequence" {
+  // 复杂计算序列测试
+  let a = 5
+  let b = 3
+  let c = 2
+  
+  // (a + b) * c
+  let result1 = multiply(add(a, b), c)
+  assert_eq(result1, 16)
+  
+  // a * b + c
+  let result2 = add(multiply(a, b), c)
+  assert_eq(result2, 17)
+  
+  // (a - b) / c (向上取整)
+  let result3 = divide_with_ceil(subtract(a, b), c)
+  assert_eq(result3, 1)
+}
+
 test "boundary_value_analysis" {
-  // 测试边界值分析
+  // 边界值分析测试
   // 测试零值
   assert_eq(add(0, 0), 0)
   assert_eq(multiply(0, 5), 0)
@@ -108,4 +99,23 @@ test "boundary_value_analysis" {
   assert_eq(add(-1, 1), 0)
   assert_eq(multiply(-1, 5), -5)
   assert_eq(subtract(0, -1), 1)
+}
+
+test "practical_application_scenario" {
+  // 实际应用场景测试：购物车计算
+  let item_price = 25
+  let quantity = 3
+  let tax_rate = 10
+  
+  // 计算小计
+  let subtotal = multiply(item_price, quantity)
+  assert_eq(subtotal, 75)
+  
+  // 计算税费（向上取整）
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  assert_eq(tax, 8)
+  
+  // 计算总价
+  let total = add(subtotal, tax)
+  assert_eq(total, 83)
 }
