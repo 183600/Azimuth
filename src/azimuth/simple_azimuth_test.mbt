@@ -1,7 +1,4 @@
-// 简单的 Azimuth 测试
-// 使用标准 MoonBit 测试语法编写的测试用例
-
-test "simple_addition" {
-  // 测试加法函数
-  assert_eq(5, add(2, 3))
+// 简单的测试文件
+test "simple_test" {
+  azimuth::assert_eq(5, azimuth::add(2, 3))
 }

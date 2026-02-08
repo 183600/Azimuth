@@ -1,170 +1,188 @@
-// 标准 Azimuth 测试套件 - 10个高质量 MoonBit 测试用例
-// 覆盖核心功能和各种测试场景
+// 标准 MoonBit 测试用例
+// 为 Azimuth 项目创建的高质量测试套件
+// 包含 10 个测试用例，覆盖核心功能
 
-test "basic_arithmetic_operations" {
-  // 基本算术运算测试
-  // 测试加法、乘法、减法的基本功能
+test "azimuth_basic_arithmetic_operations" {
+  // 测试 Azimuth 库的基本算术运算
   assert_eq(8, add(3, 5))
   assert_eq(15, multiply(3, 5))
   assert_eq(-2, subtract(3, 5))
-  assert_eq(10, add(-3, 13))
-  assert_eq(-15, multiply(-3, 5))
+  assert_eq(2, divide_with_ceil(5, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
 }
 
-test "boundary_values_and_extremes" {
-  // 边界值和极值测试
-  // 测试零值、大数和边界情况
-  assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(5, subtract(5, 0))
-  assert_eq(1000000, multiply(1000, 1000))
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(0, divide_with_ceil(0, 100))
-}
-
-test "negative_number_handling" {
-  // 负数处理测试
-  // 验证函数对负数的正确处理
-  assert_eq(-8, add(-3, -5))
-  assert_eq(15, multiply(-3, -5))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(2, subtract(-3, -5))
-  assert_eq(-2, divide_with_ceil(-8, 3))
-  assert_eq(3, divide_with_ceil(-8, -3))
-}
-
-test "string_processing_and_greeting" {
-  // 字符串处理和问候功能测试
-  // 测试问候函数的各种输入情况
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 世界!", greet("世界"))
-  assert_eq_string("Hello,   !", greet("  "))
-}
-
-test "mathematical_properties_validation" {
-  // 数学性质验证测试
-  // 验证基本的数学定律和性质
-  let a = 12
-  let b = 7
+test "azimuth_division_with_ceil_precision" {
+  // 测试向上取整除法的精度
+  // 正数除法
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(2, divide_with_ceil(4, 2))
+  assert_eq(1, divide_with_ceil(1, 100))
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
-  
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 加法结合律
-  let c = 5
-  assert_eq(add(add(a, b), c), add(a, add(b, c)))
-  
-  // 乘法结合律
-  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
-}
-
-test "business_logic_packaging_scenario" {
-  // 业务逻辑：包装场景测试
-  // 模拟实际业务中的物品包装计算
-  let total_items = 47
-  let items_per_package = 8
-  let packages_needed = divide_with_ceil(total_items, items_per_package)
-  
-  assert_eq(6, packages_needed)
-  
-  // 验证总容量
-  let total_capacity = multiply(packages_needed, items_per_package)
-  assert_eq(48, total_capacity)
-  
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_items)
-  assert_eq(1, remaining_space)
-}
-
-test "complex_calculation_pipeline" {
-  // 复杂计算流水线测试
-  // 测试多个函数组合使用的复杂计算场景
-  let base_value = 15
-  let multiplier = 4
-  let divisor = 7
-  let adjustment = 3
-  
-  // 计算流程：((base * multiplier) / divisor) + adjustment
-  let step1 = multiply(base_value, multiplier)
-  let step2 = divide_with_ceil(step1, divisor)
-  let final_result = add(step2, adjustment)
-  
-  // 验证：ceil(15*4/7) + 3 = ceil(60/7) + 3 = 9 + 3 = 12
-  assert_eq(12, final_result)
-}
-
-test "error_handling_and_edge_cases" {
-  // 错误处理和边缘情况测试
-  // 测试除零错误和各种异常情况
+  // 边界情况
+  assert_eq(0, divide_with_ceil(0, 10))
   assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
   assert_eq(0, divide_with_ceil(0, 0))
   
-  // 测试极值除法
-  assert_eq(1, divide_with_ceil(1, 1000000))
-  assert_eq(1000000, divide_with_ceil(1000000, 1))
-  
-  // 测试负数除法边界
-  assert_eq(-1, divide_with_ceil(-1, 2))
-  assert_eq(1, divide_with_ceil(-1, -2))
+  // 负数除法
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(3, divide_with_ceil(-10, -3))
+  assert_eq(-4, divide_with_ceil(10, -3))
 }
 
-test "resource_allocation_optimization" {
-  // 资源分配优化测试
-  // 模拟资源分配和优化问题的计算
-  let total_resources = 100
-  let teams = 3
-  let min_resources_per_team = divide_with_ceil(total_resources, teams)
-  
-  assert_eq(34, min_resources_per_team)
-  
-  // 验证分配结果
-  let allocated_total = multiply(min_resources_per_team, teams)
-  assert_eq(102, allocated_total)
-  
-  // 计算资源利用率百分比
-  let utilization_percentage = divide_with_ceil(multiply(total_resources, 100), allocated_total)
-  assert_eq(98, utilization_percentage)
+test "azimuth_string_functionality" {
+  // 测试字符串功能
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 测试!", greet("测试"))
 }
 
-test "real_world_event_planning" {
-  // 真实世界活动规划测试
-  // 模拟活动座位安排和资源规划的复杂场景
-  let participants = 87
-  let tables_available = 10
-  let chairs_per_table = 10
-  let budget_per_chair = 25
-  let total_budget = 3000
+test "azimuth_negative_number_operations" {
+  // 测试负数运算
+  assert_eq(-2, add(-5, 3))
+  assert_eq(2, add(5, -3))
+  assert_eq(-8, add(-5, -3))
   
-  // 计算需要的桌子数量
-  let tables_needed = divide_with_ceil(participants, chairs_per_table)
-  assert_eq(9, tables_needed)
+  assert_eq(-15, multiply(-3, 5))
+  assert_eq(-15, multiply(3, -5))
+  assert_eq(15, multiply(-3, -5))
   
-  // 验证桌子是否足够
-  assert_true(tables_needed <= tables_available)
+  assert_eq(-8, subtract(-3, 5))
+  assert_eq(8, subtract(3, -5))
+  assert_eq(2, subtract(-3, -5))
+}
+
+test "azimuth_mathematical_properties" {
+  // 测试数学性质
+  let x = 12
+  let y = 7
   
-  // 计算总座位数
-  let total_seats = multiply(tables_needed, chairs_per_table)
-  assert_eq(90, total_seats)
+  // 加法交换律
+  assert_eq(add(x, y), add(y, x))
   
-  // 计算剩余座位
-  let remaining_seats = subtract(total_seats, participants)
-  assert_eq(3, remaining_seats)
+  // 乘法交换律
+  assert_eq(multiply(x, y), multiply(y, x))
   
-  // 计算总成本
-  let total_cost = multiply(total_seats, budget_per_chair)
-  assert_eq(2250, total_cost)
+  // 加法单位元
+  assert_eq(add(x, 0), x)
   
-  // 验证预算充足
-  assert_true(total_cost <= total_budget)
+  // 乘法单位元
+  assert_eq(multiply(x, 1), x)
   
-  // 计算剩余预算
-  let remaining_budget = subtract(total_budget, total_cost)
-  assert_eq(750, remaining_budget)
+  // 减法逆运算
+  assert_eq(add(subtract(x, y), y), x)
+}
+
+test "azimuth_complex_calculation_scenario" {
+  // 测试复杂计算场景
+  // 模拟购物车计算
+  let item1_price = 25
+  let item1_qty = 3
+  let item2_price = 15
+  let item2_qty = 2
+  
+  // 计算小计
+  let subtotal1 = multiply(item1_price, item1_qty)
+  let subtotal2 = multiply(item2_price, item2_qty)
+  let total = add(subtotal1, subtotal2)
+  
+  // 计算税费（10%，向上取整）
+  let tax = divide_with_ceil(multiply(total, 10), 100)
+  let final_total = add(total, tax)
+  
+  assert_eq(75, subtotal1)
+  assert_eq(30, subtotal2)
+  assert_eq(105, total)
+  assert_eq(11, tax)
+  assert_eq(116, final_total)
+}
+
+test "azimuth_boundary_value_analysis" {
+  // 测试边界值分析
+  // 零值测试
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 100))
+  assert_eq(0, subtract(0, 0))
+  assert_eq(0, divide_with_ceil(0, 10))
+  
+  // 单位值测试
+  assert_eq(1, add(1, 0))
+  assert_eq(100, multiply(1, 100))
+  assert_eq(1, subtract(1, 0))
+  assert_eq(100, divide_with_ceil(100, 1))
+  
+  // 负单位值测试
+  assert_eq(0, add(-1, 1))
+  assert_eq(-100, multiply(-1, 100))
+  assert_eq(1, subtract(0, -1))
+}
+
+test "azimuth_large_number_operations" {
+  // 测试大数运算
+  let large_num = 100000
+  
+  assert_eq(200000, add(large_num, large_num))
+  assert_eq(10000000000, multiply(large_num, large_num))
+  assert_eq(0, subtract(large_num, large_num))
+  assert_eq(33334, divide_with_ceil(large_num, 3))
+  
+  // 测试大数与负数的运算
+  assert_eq(99999, add(large_num, -1))
+  assert_eq(-100000, multiply(large_num, -1))
+  assert_eq(100001, subtract(large_num, -1))
+}
+
+test "azimuth_fibonacci_sequence_calculation" {
+  // 测试斐波那契数列计算
+  // 使用基本运算模拟递归计算
+  
+  // F(0) = 0, F(1) = 1
+  let f0 = 0
+  let f1 = 1
+  
+  // F(2) = F(1) + F(0) = 1 + 0 = 1
+  let f2 = add(f1, f0)
+  
+  // F(3) = F(2) + F(1) = 1 + 1 = 2
+  let f3 = add(f2, f1)
+  
+  // F(4) = F(3) + F(2) = 2 + 1 = 3
+  let f4 = add(f3, f2)
+  
+  // F(5) = F(4) + F(3) = 3 + 2 = 5
+  let f5 = add(f4, f3)
+  
+  // F(6) = F(5) + F(4) = 5 + 3 = 8
+  let f6 = add(f5, f4)
+  
+  assert_eq(1, f2)
+  assert_eq(2, f3)
+  assert_eq(3, f4)
+  assert_eq(5, f5)
+  assert_eq(8, f6)
+}
+
+test "azimuth_temperature_conversion" {
+  // 测试温度转换计算
+  let celsius = 25
+  
+  // 摄氏度转华氏度：F = C × 9/5 + 32
+  let fahrenheit_step1 = multiply(celsius, 9)
+  let fahrenheit_step2 = divide_with_ceil(fahrenheit_step1, 5)
+  let fahrenheit = add(fahrenheit_step2, 32)
+  
+  // 华氏度转开尔文：K = (F - 32) × 5/9 + 273.15
+  // 简化计算，使用整数近似
+  let kelvin_step1 = subtract(fahrenheit, 32)
+  let kelvin_step2 = multiply(kelvin_step1, 5)
+  let kelvin_step3 = divide_with_ceil(kelvin_step2, 9)
+  let kelvin = add(kelvin_step3, 273)
+  
+  assert_eq(77, fahrenheit)
+  assert_eq(298, kelvin)
+  
+  // 验证转换的一致性（简化验证）
+  let celsius_back = divide_with_ceil(multiply(subtract(kelvin, 273), 9), 5)
+  assert_eq(25, celsius_back)
 }
