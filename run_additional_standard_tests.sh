@@ -6,7 +6,7 @@ echo "Running azimuth additional standard tests..."
 # 设置路径
 PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
 CORE_PATH="$PROJECT_ROOT/core"
-AZIMUTH_PATH="$PROJECT_ROOT/src/azimuth"
+AZIMUTH_PATH="$PROJECT_ROOT/azimuth"
 
 # 编译 azimuth 包
 echo "Compiling azimuth package..."
