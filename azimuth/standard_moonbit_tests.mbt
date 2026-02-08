@@ -1,74 +1,72 @@
-// 标准 MoonBit 测试用例
-// 为 Azimuth 项目添加的10个高质量测试用例
+// 标准 MoonBit 测试用例 - 为 Azimuth 项目添加
+// 使用标准 MoonBit 测试语法，包含10个高质量测试用例
 
-test "add_function_comprehensive" {
-  // 加法函数综合测试
-  assert_eq(10, add(3, 7))
-  assert_eq(0, add(0, 0))
-  assert_eq(-10, add(-3, -7))
-  assert_eq(4, add(-5, 9))
-  assert_eq(100000, add(50000, 50000))
+test "basic_addition_comprehensive" {
+  // 基本加法综合测试
+  inspect(add(3, 5), content="8")
+  inspect(add(0, 0), content="0")
+  inspect(add(-5, 3), content="-2")
+  inspect(add(50, 50), content="100")
+  inspect(add(-50, -50), content="-100")
 }
 
-test "multiply_function_edge_cases" {
-  // 乘法函数边界情况测试
-  assert_eq(25, multiply(5, 5))
-  assert_eq(0, multiply(100, 0))
-  assert_eq(-30, multiply(-6, 5))
-  assert_eq(30, multiply(-6, -5))
-  assert_eq(1, multiply(1, 1000000))
+test "basic_multiplication_comprehensive" {
+  // 基本乘法综合测试
+  inspect(multiply(3, 5), content="15")
+  inspect(multiply(5, 0), content="0")
+  inspect(multiply(-3, 5), content="-15")
+  inspect(multiply(-3, -5), content="15")
+  inspect(multiply(100, 100), content="10000")
 }
 
-test "divide_with_ceil_functionality" {
-  // 向上取整除法功能测试
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 10))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(8, 0))
+test "divide_with_ceil_comprehensive" {
+  // 向上取整除法综合测试
+  inspect(divide_with_ceil(8, 3), content="3")
+  inspect(divide_with_ceil(6, 3), content="2")
+  inspect(divide_with_ceil(1, 5), content="1")
+  inspect(divide_with_ceil(0, 10), content="0")
+  inspect(divide_with_ceil(10, 0), content="0")
 }
 
 test "divide_with_ceil_negative_numbers" {
   // 向上取整除法负数测试
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-4, divide_with_ceil(10, -3))
-  assert_eq(4, divide_with_ceil(-10, -3))
-  assert_eq(-1, divide_with_ceil(-1, 2))
-  assert_eq(1, divide_with_ceil(-1, -2))
+  inspect(divide_with_ceil(-8, 3), content="-2")
+  inspect(divide_with_ceil(8, -3), content="-3")
+  inspect(divide_with_ceil(-8, -3), content="3")
+  inspect(divide_with_ceil(-1, 2), content="-1")
+  inspect(divide_with_ceil(-1, -2), content="1")
 }
 
 test "greet_function_various_inputs" {
   // 问候函数各种输入测试
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 中文!", greet("中文"))
+  inspect(greet("MoonBit"), content="Hello, MoonBit!")
+  inspect(greet("World"), content="Hello, World!")
+  inspect(greet(""), content="Hello, !")
+  inspect(greet("123"), content="Hello, 123!")
+  inspect(greet("中文"), content="Hello, 中文!")
 }
 
-test "subtract_function_validation" {
-  // 减法函数验证测试
-  assert_eq(5, subtract(10, 5))
-  assert_eq(-5, subtract(5, 10))
-  assert_eq(0, subtract(15, 15))
-  assert_eq(20, subtract(10, -10))
-  assert_eq(-20, subtract(-10, 10))
+test "subtract_function_comprehensive" {
+  // 减法函数综合测试
+  inspect(subtract(10, 5), content="5")
+  inspect(subtract(5, 10), content="-5")
+  inspect(subtract(15, 15), content="0")
+  inspect(subtract(10, -10), content="20")
+  inspect(subtract(-10, 10), content="-20")
 }
 
-test "mathematical_properties_verification" {
+test "mathematical_properties_validation" {
   // 数学性质验证测试
   let a = 12
-  let b = 8
+  let b = 7
   
   // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  inspect(add(a, b), content="19")
+  inspect(add(b, a), content="19")
   
   // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 验证具体数值
-  assert_eq(20, add(12, 8))
-  assert_eq(96, multiply(12, 8))
+  inspect(multiply(a, b), content="84")
+  inspect(multiply(b, a), content="84")
 }
 
 test "business_packaging_scenario" {
@@ -77,43 +75,47 @@ test "business_packaging_scenario" {
   let items_per_package = 8
   let packages_needed = divide_with_ceil(total_items, items_per_package)
   
-  assert_eq(5, packages_needed)
+  inspect(packages_needed, content="5")
   
   // 验证总容量
   let total_capacity = multiply(packages_needed, items_per_package)
-  assert_eq(40, total_capacity)
+  inspect(total_capacity, content="40")
   
   // 验证剩余空间
   let remaining_space = subtract(total_capacity, total_items)
-  assert_eq(5, remaining_space)
+  inspect(remaining_space, content="5")
 }
 
 test "complex_workflow_calculation" {
   // 复杂工作流计算测试
-  // 场景：项目资源计算
+  // 场景：计算项目资源需求
   let team_members = 6
   let tasks_per_member = 8
   let total_tasks = multiply(team_members, tasks_per_member)
   
-  let sprint_capacity = 15
+  let days_per_sprint = 5
+  let tasks_per_day = 10
+  let sprint_capacity = multiply(days_per_sprint, tasks_per_day)
+  
   let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
   
-  assert_eq(48, total_tasks)  // 6 * 8 = 48
-  assert_eq(4, sprints_needed)  // ceil(48/15) = 4
+  inspect(total_tasks, content="48")  // 6 * 8 = 48
+  inspect(sprint_capacity, content="50")  // 5 * 10 = 50
+  inspect(sprints_needed, content="1")  // ceil(48/50) = 1
 }
 
-test "boundary_values_and_special_cases" {
-  // 边界值和特殊情况测试
+test "boundary_edge_cases" {
+  // 边界和边缘情况测试
   // 除法边界情况
-  assert_eq(1, divide_with_ceil(5, 5))
-  assert_eq(1, divide_with_ceil(-5, -5))
-  assert_eq(0, divide_with_ceil(0, 5))
+  inspect(divide_with_ceil(5, 5), content="1")
+  inspect(divide_with_ceil(-5, -5), content="1")
+  inspect(divide_with_ceil(0, 5), content="0")
   
   // 大数运算
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(100000000, multiply(10000, 10000))
+  inspect(add(1000000, 1000000), content="2000000")
+  inspect(multiply(10000, 10000), content="100000000")
   
   // 特殊问候情况
-  assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, special@chars!", greet("special@chars"))
+  inspect(greet("  "), content="Hello,   !")
+  inspect(greet("special@chars"), content="Hello, special@chars!")
 }
