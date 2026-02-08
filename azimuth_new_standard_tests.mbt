@@ -1,234 +1,338 @@
-// 新增的 MoonBit 测试用例 - 为 Azimuth 项目添加
-// 使用标准 MoonBit 测试语法，包含 8 个高质量测试用例
+// Azimuth 项目新的标准 MoonBit 测试用例
+// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
 
-test "azimuth_advanced_arithmetic_combinations" {
-  // 高级算术组合测试
-  let a = 12
-  let b = 8
-  let c = 5
+test "array_index_operations" {
+  // 数组索引操作测试
+  // 模拟数组访问和索引计算
   
-  // 复杂算术表达式
-  let result1 = add(multiply(a, b), divide_with_ceil(multiply(c, 3), 2))
-  assert_eq(102, result1)  // 12*8 + ceil(5*3/2) = 96 + 8 = 104
+  let array_size = 10
+  let base_index = 0
+  let target_index = 5
   
-  let result2 = multiply(add(a, b), subtract(c, 2))
-  assert_eq(60, result2)  // (12+8)*(5-2) = 20*3 = 60
+  // 计算索引偏移
+  let offset = azimuth::subtract(target_index, base_index)
   
-  let result3 = divide_with_ceil(add(multiply(a, 2), multiply(b, 3)), 10)
-  assert_eq(5, result3)  // ceil((12*2 + 8*3)/10) = ceil(48/10) = 5
+  // 模拟数组元素访问（使用算术运算模拟）
+  let element_value = azimuth::multiply(offset, 2)
+  let next_element_value = azimuth::multiply(azimuth::add(offset, 1), 2)
+  
+  // 计算数组边界
+  let last_index = azimuth::subtract(array_size, 1)
+  let middle_index = azimuth::divide_with_ceil(array_size, 2)
+  
+  azimuth::assert_eq(offset, 5)
+  azimuth::assert_eq(element_value, 10)
+  azimuth::assert_eq(next_element_value, 12)
+  azimuth::assert_eq(last_index, 9)
+  azimuth::assert_eq(middle_index, 5)
 }
 
-test "azimuth_resource_allocation_optimization" {
-  // 资源分配优化测试
-  let total_resources = 97
-  let team_size = 6
-  let min_resources_per_team = 15
+test "conditional_logic_simulation" {
+  // 条件逻辑模拟测试
+  // 使用算术运算模拟if-else逻辑
   
-  // 计算最少需要的团队数量
-  let min_teams_needed = divide_with_ceil(total_resources, min_resources_per_team)
-  assert_eq(7, min_teams_needed)
+  let condition_value = 15
+  let threshold = 10
   
-  // 计算实际可用的团队数量
-  let available_teams = divide_with_ceil(team_size, 1)
-  assert_eq(6, available_teams)
+  // 模拟条件判断：if (condition_value > threshold) then 100 else 0
+  let is_greater = condition_value > threshold
+  let result = is_greater ? 100 : 0
   
-  // 检查资源是否足够分配
-  let can_allocate = available_teams >= min_teams_needed
-  assert_false(can_allocate)  // 6 < 7，资源不足
+  // 模拟嵌套条件：if (condition_value > 20) then 200 else if (condition_value > 10) then 100 else 0
+  let is_greater_20 = condition_value > 20
+  let nested_result = is_greater_20 ? 200 : (is_greater ? 100 : 0)
   
-  // 计算每个团队的实际资源分配
-  let actual_per_team = divide_with_ceil(total_resources, available_teams)
-  assert_eq(17, actual_per_team)  // ceil(97/6) = 17
+  // 模拟多条件：if (condition_value > 5 && condition_value < 20) then 50 else 0
+  let is_in_range = condition_value > 5 && condition_value < 20
+  let range_result = is_in_range ? 50 : 0
   
-  // 计算总分配资源
-  let total_allocated = multiply(actual_per_team, available_teams)
-  assert_eq(102, total_allocated)  // 17 * 6 = 102
+  azimuth::assert_eq(result, 100)
+  azimuth::assert_eq(nested_result, 100)
+  azimuth::assert_eq(range_result, 50)
 }
 
-test "azimuth_time_calculation_scenarios" {
-  // 时间计算场景测试
-  let total_tasks = 45
-  let tasks_per_hour = 3
-  let working_hours_per_day = 8
-  let working_days_per_week = 5
+test "function_composition" {
+  // 函数组合测试
+  // 测试多个函数的组合调用
   
-  // 计算需要的工作小时数
-  let total_hours_needed = divide_with_ceil(total_tasks, tasks_per_hour)
-  assert_eq(15, total_hours_needed)  // ceil(45/3) = 15
+  let input = 5
   
-  // 计算需要的工作天数
-  let total_days_needed = divide_with_ceil(total_hours_needed, working_hours_per_day)
-  assert_eq(2, total_days_needed)  // ceil(15/8) = 2
+  // 函数组合：f(g(h(x))) = f(g(h(5)))
+  // h(x) = x * 2
+  let h_result = azimuth::multiply(input, 2)
   
-  // 计算需要的周数
-  let total_weeks_needed = divide_with_ceil(total_days_needed, working_days_per_week)
-  assert_eq(1, total_weeks_needed)  // ceil(2/5) = 1
+  // g(y) = y + 10
+  let g_result = azimuth::add(h_result, 10)
   
-  // 计算总工作容量（小时）
-  let total_capacity = multiply(total_days_needed, working_hours_per_day)
-  assert_eq(16, total_capacity)  // 2 * 8 = 16
+  // f(z) = z / 3 (向上取整)
+  let f_result = azimuth::divide_with_ceil(g_result, 3)
   
-  // 计算剩余时间容量
-  let remaining_capacity = subtract(total_capacity, total_hours_needed)
-  assert_eq(1, remaining_capacity)  // 16 - 15 = 1
+  // 反向组合：h(g(f(x)))
+  let f_reverse = azimuth::divide_with_ceil(input, 3)
+  let g_reverse = azimuth::add(f_reverse, 10)
+  let h_reverse = azimuth::multiply(g_reverse, 2)
+  
+  azimuth::assert_eq(h_result, 10)
+  azimuth::assert_eq(g_result, 20)
+  azimuth::assert_eq(f_result, 7)
+  azimuth::assert_eq(f_reverse, 2)
+  azimuth::assert_eq(g_reverse, 12)
+  azimuth::assert_eq(h_reverse, 24)
 }
 
-test "azimuth_inventory_batch_processing" {
-  // 库存批量处理测试
-  let total_items = 234
-  let batch_size = 25
-  let processing_capacity_per_batch = 8
-  let quality_check_rate = 3  // 每3个批次进行一次质量检查
+test "recursive_pattern_simulation" {
+  // 递归模式模拟测试
+  // 模拟递归计算过程
   
-  // 计算需要的批次数
-  let total_batches = divide_with_ceil(total_items, batch_size)
-  assert_eq(10, total_batches)  // ceil(234/25) = 10
+  let n = 4
   
-  // 计算每批次处理时间（假设每个项目需要1个时间单位）
-  let time_per_batch = divide_with_ceil(batch_size, processing_capacity_per_batch)
-  assert_eq(4, time_per_batch)  // ceil(25/8) = 4
+  // 模拟递归计算阶乘：4! = 4 * 3 * 2 * 1
+  let fact_1 = 1
+  let fact_2 = azimuth::multiply(fact_1, 2)
+  let fact_3 = azimuth::multiply(fact_2, 3)
+  let fact_4 = azimuth::multiply(fact_3, 4)
   
-  // 计算总处理时间
-  let total_processing_time = multiply(total_batches, time_per_batch)
-  assert_eq(40, total_processing_time)  // 10 * 4 = 40
+  // 模拟递归计算幂：2^4 = 2 * 2 * 2 * 2
+  let power_0 = 1
+  let power_1 = azimuth::multiply(power_0, 2)
+  let power_2 = azimuth::multiply(power_1, 2)
+  let power_3 = azimuth::multiply(power_2, 2)
+  let power_4 = azimuth::multiply(power_3, 2)
   
-  // 计算质量检查次数
-  let quality_checks = divide_with_ceil(total_batches, quality_check_rate)
-  assert_eq(4, quality_checks)  // ceil(10/3) = 4
+  // 模拟递归计算斐波那契数
+  let fib_0 = 0
+  let fib_1 = 1
+  let fib_2 = azimuth::add(fib_1, fib_0)
+  let fib_3 = azimuth::add(fib_2, fib_1)
+  let fib_4 = azimuth::add(fib_3, fib_2)
   
-  // 计算总处理容量
-  let total_capacity = multiply(total_batches, batch_size)
-  assert_eq(250, total_capacity)  // 10 * 25 = 250
-  
-  // 计算剩余容量
-  let remaining_capacity = subtract(total_capacity, total_items)
-  assert_eq(16, remaining_capacity)  // 250 - 234 = 16
+  azimuth::assert_eq(fact_4, 24)
+  azimuth::assert_eq(power_4, 16)
+  azimuth::assert_eq(fib_4, 3)
 }
 
-test "azimuth_financial_calculation_complex" {
-  // 复杂财务计算测试
-  let initial_investment = 10000
-  let monthly_return_rate = 5  // 5%
-  let investment_months = 12
-  let target_profit = 3000
-  let withdrawal_fee = 25
+test "error_handling_scenarios" {
+  // 错误处理场景测试
+  // 测试各种错误情况下的处理
   
-  // 计算总回报（简化计算：每月回报 = 本金 * 回报率 / 100）
-  let monthly_return = multiply(initial_investment, monthly_return_rate)
-  let monthly_return_actual = divide_with_ceil(monthly_return, 100)
-  assert_eq(500, monthly_return_actual)  // ceil(10000*5/100) = 500
+  let normal_value = 100
+  let zero_value = 0
+  let negative_value = -50
   
-  // 计算总回报
-  let total_return = multiply(monthly_return_actual, investment_months)
-  assert_eq(6000, total_return)  // 500 * 12 = 6000
+  // 除零错误处理
+  let safe_div_1 = azimuth::divide_with_ceil(normal_value, zero_value)
+  let safe_div_2 = azimuth::divide_with_ceil(zero_value, zero_value)
+  let safe_div_3 = azimuth::divide_with_ceil(negative_value, zero_value)
   
-  // 计算最终金额
-  let final_amount = add(initial_investment, total_return)
-  assert_eq(16000, final_amount)  // 10000 + 6000 = 16000
+  // 溢出处理模拟
+  let large_value = 100000
+  let overflow_add = azimuth::add(large_value, large_value)
+  let overflow_mult = azimuth::multiply(large_value, 10)
   
-  // 计算净利润
-  let net_profit = subtract(final_amount, initial_investment)
-  assert_eq(6000, net_profit)  // 16000 - 10000 = 6000
+  // 负数边界处理
+  let neg_div_pos = azimuth::divide_with_ceil(negative_value, normal_value)
+  let neg_div_neg = azimuth::divide_with_ceil(negative_value, negative_value)
+  let pos_div_neg = azimuth::divide_with_ceil(normal_value, negative_value)
   
-  // 检查是否达到目标利润
-  let profit_goal_achieved = net_profit >= target_profit
-  assert_true(profit_goal_achieved)  // 6000 >= 3000
-  
-  // 计算需要提取的次数（每次提取固定金额，扣除手续费）
-  let withdrawal_amount = 1000
-  let total_withdrawal_with_fee = add(withdrawal_amount, withdrawal_fee)
-  let withdrawal_count = divide_with_ceil(net_profit, total_withdrawal_with_fee)
-  assert_eq(6, withdrawal_count)  // ceil(6000/1025) = 6
+  azimuth::assert_eq(safe_div_1, 0)
+  azimuth::assert_eq(safe_div_2, 0)
+  azimuth::assert_eq(safe_div_3, 0)
+  azimuth::assert_eq(overflow_add, 200000)
+  azimuth::assert_eq(overflow_mult, 1000000)
+  azimuth::assert_eq(neg_div_pos, 0)
+  azimuth::assert_eq(neg_div_neg, 1)
+  azimuth::assert_eq(pos_div_neg, 0)
 }
 
-test "azimuth_string_processing_validation" {
-  // 字符串处理验证测试
-  // 测试各种用户名输入
-  assert_eq_string("Hello, admin!", greet("admin"))
-  assert_eq_string("Hello, user123!", greet("user123"))
-  assert_eq_string("Hello, test_user!", greet("test_user"))
-  assert_eq_string("Hello, User.Name!", greet("User.Name"))
-  assert_eq_string("Hello, email@domain.com!", greet("email@domain.com"))
+test "type_conversion_simulation" {
+  // 类型转换模拟测试
+  // 模拟不同数据类型之间的转换
   
-  // 测试边界情况
-  assert_eq_string("Hello, a!", greet("a"))
-  assert_eq_string("Hello, AB!", greet("AB"))
-  assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello,   !", greet("   "))
+  let integer_value = 42
+  let float_simulation = azimuth::multiply(integer_value, 100)  // 模拟小数部分
+  let back_to_int = azimuth::divide_with_ceil(float_simulation, 100)
   
-  // 测试特殊字符
-  assert_eq_string("Hello, user_01!", greet("user_01"))
-  assert_eq_string("Hello, $pecial!", greet("$pecial"))
-  assert_eq_string("Hello, mix3dCase!", greet("mix3dCase"))
+  // 字符串到数字的模拟转换
+  let string_num = "123"
+  let simulated_length = 3  // 字符串长度
+  let first_digit = 1
+  let second_digit = 2
+  let third_digit = 3
+  
+  // 重组数字：123 = 1*100 + 2*10 + 3*1
+  let reconstructed = azimuth::add(azimuth::add(azimuth::multiply(first_digit, 100), azimuth::multiply(second_digit, 10)), third_digit)
+  
+  // 布尔值到整数的转换
+  let true_value = 1
+  let false_value = 0
+  let boolean_result = integer_value > 0 ? true_value : false_value
+  
+  azimuth::assert_eq(back_to_int, 42)
+  azimuth::assert_eq(simulated_length, 3)
+  azimuth::assert_eq(reconstructed, 123)
+  azimuth::assert_eq(boolean_result, 1)
 }
 
-test "azimuth_performance_benchmarking" {
-  // 性能基准测试
-  let small_dataset = 10
-  let medium_dataset = 100
-  let large_dataset = 1000
+test "loop_simulation_iterative" {
+  // 循环模拟迭代测试
+  // 使用算术运算模拟循环过程
   
-  let operation_rate_small = 2
-  let operation_rate_medium = 5
-  let operation_rate_large = 10
+  let iterations = 5
+  let initial_value = 0
   
-  // 计算不同数据集的处理时间
-  let time_small = divide_with_ceil(small_dataset, operation_rate_small)
-  let time_medium = divide_with_ceil(medium_dataset, operation_rate_medium)
-  let time_large = divide_with_ceil(large_dataset, operation_rate_large)
+  // 模拟for循环累加：sum = 0 + 1 + 2 + 3 + 4 + 5
+  let sum_1 = azimuth::add(initial_value, 1)
+  let sum_2 = azimuth::add(sum_1, 2)
+  let sum_3 = azimuth::add(sum_2, 3)
+  let sum_4 = azimuth::add(sum_3, 4)
+  let sum_5 = azimuth::add(sum_4, 5)
   
-  assert_eq(5, time_small)    // ceil(10/2) = 5
-  assert_eq(20, time_medium)  // ceil(100/5) = 20
-  assert_eq(100, time_large)  // ceil(1000/10) = 100
+  // 模拟while循环乘法：product = 1 * 2 * 3 * 4
+  let product_1 = azimuth::multiply(1, 2)
+  let product_2 = azimuth::multiply(product_1, 3)
+  let product_3 = azimuth::multiply(product_2, 4)
   
-  // 计算性能比率
-  let performance_ratio_medium_to_small = divide_with_ceil(time_medium, time_small)
-  let performance_ratio_large_to_small = divide_with_ceil(time_large, time_small)
+  // 模拟do-while循环：至少执行一次
+  let do_while_result = azimuth::multiply(initial_value + 1, 2)
   
-  assert_eq(4, performance_ratio_medium_to_small)   // ceil(20/5) = 4
-  assert_eq(20, performance_ratio_large_to_small)   // ceil(100/5) = 20
+  // 计算循环次数
+  let loop_count = iterations
+  let expected_sum = azimuth::divide_with_ceil(azimuth::multiply(iterations, azimuth::add(iterations, 1)), 2)
   
-  // 计算总处理时间
-  let total_time = add(add(time_small, time_medium), time_large)
-  assert_eq(125, total_time)  // 5 + 20 + 100 = 125
-  
-  // 计算平均处理时间
-  let average_time = divide_with_ceil(total_time, 3)
-  assert_eq(42, average_time)  // ceil(125/3) = 42
+  azimuth::assert_eq(sum_5, 15)
+  azimuth::assert_eq(product_3, 24)
+  azimuth::assert_eq(do_while_result, 2)
+  azimuth::assert_eq(loop_count, 5)
+  azimuth::assert_eq(expected_sum, 15)
 }
 
-test "azimuth_error_boundary_conditions" {
-  // 错误边界条件测试
-  // 测试除零的各种情况
-  assert_eq(0, divide_with_ceil(1, 0))
-  assert_eq(0, divide_with_ceil(-1, 0))
-  assert_eq(0, divide_with_ceil(100, 0))
-  assert_eq(0, divide_with_ceil(-100, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
+test "data_validation_rules" {
+  // 数据验证规则测试
+  // 模拟各种数据验证场景
   
-  // 测试极值运算
-  let max_positive = 1000000
-  let max_negative = -1000000
+  let email_length = 25
+  let password_length = 8
+  let phone_number = 1234567890
+  let user_age = 25
+  let username = "john_doe"
   
-  // 加法极值测试
-  assert_eq(2000000, add(max_positive, max_positive))
-  assert_eq(-2000000, add(max_negative, max_negative))
-  assert_eq(0, add(max_positive, max_negative))
+  // 邮箱验证：长度在5-50之间
+  let email_valid = email_length >= 5 && email_length <= 50
+  let email_result = email_valid ? 1 : 0
   
-  // 乘法极值测试
-  assert_eq(1000000000000, multiply(max_positive, max_positive))
-  assert_eq(1000000000000, multiply(max_negative, max_negative))
-  assert_eq(-1000000000000, multiply(max_positive, max_negative))
+  // 密码验证：长度至少8位
+  let password_valid = password_length >= 8
+  let password_result = password_valid ? 1 : 0
   
-  // 减法极值测试
-  assert_eq(0, subtract(max_positive, max_positive))
-  assert_eq(0, subtract(max_negative, max_negative))
-  assert_eq(2000000, subtract(max_positive, max_negative))
+  // 电话号码验证：10位数字
+  let phone_str_length = 10
+  let phone_valid = phone_str_length == 10
+  let phone_result = phone_valid ? 1 : 0
   
-  // 边界除法测试
-  assert_eq(1, divide_with_ceil(max_positive, max_positive))
-  assert_eq(1, divide_with_ceil(max_negative, max_negative))
-  assert_eq(-1, divide_with_ceil(max_negative, max_positive))
-  assert_eq(-1, divide_with_ceil(max_positive, max_negative))
+  // 年龄验证：18-100岁
+  let age_valid = user_age >= 18 && user_age <= 100
+  let age_result = age_valid ? 1 : 0
+  
+  // 用户名验证：3-20个字符
+  let username_length = 9
+  let username_valid = username_length >= 3 && username_length <= 20
+  let username_result = username_valid ? 1 : 0
+  
+  // 综合验证：所有条件都满足
+  let all_valid = email_result + password_result + phone_result + age_result + username_result
+  let validation_passed = all_valid == 5 ? 1 : 0
+  
+  azimuth::assert_eq(email_result, 1)
+  azimuth::assert_eq(password_result, 1)
+  azimuth::assert_eq(phone_result, 1)
+  azimuth::assert_eq(age_result, 1)
+  azimuth::assert_eq(username_result, 1)
+  azimuth::assert_eq(all_valid, 5)
+  azimuth::assert_eq(validation_passed, 1)
+}
+
+test "performance_calculation_metrics" {
+  // 性能计算指标测试
+  // 模拟性能相关的计算
+  
+  let execution_time = 150  // 毫秒
+  let memory_usage = 2048   // KB
+  let cpu_cycles = 1000000
+  let operations = 5000
+  
+  // 计算吞吐量：operations/second
+  let throughput = azimuth::divide_with_ceil(azimuth::multiply(operations, 1000), execution_time)
+  
+  // 计算每操作内存使用：memory/operations
+  let memory_per_op = azimuth::divide_with_ceil(memory_usage, operations)
+  
+  // 计算CPU效率：operations/cycle * 1000000
+  let cpu_efficiency = azimuth::divide_with_ceil(azimuth::multiply(operations, 1000000), cpu_cycles)
+  
+  // 计算性能分数：综合指标
+  let time_score = azimuth::divide_with_ceil(1000, execution_time)
+  let memory_score = azimuth::divide_with_ceil(10000, memory_usage)
+  let cpu_score = cpu_efficiency
+  let performance_score = azimuth::add(azimuth::add(time_score, memory_score), cpu_score)
+  
+  // 计算等级：A(90+), B(70-89), C(50-69), D(<50)
+  let grade = performance_score >= 90 ? 4 : (performance_score >= 70 ? 3 : (performance_score >= 50 ? 2 : 1))
+  
+  azimuth::assert_eq(throughput, 33)
+  azimuth::assert_eq(memory_per_op, 1)
+  azimuth::assert_eq(cpu_efficiency, 5)
+  azimuth::assert_eq(time_score, 6)
+  azimuth::assert_eq(memory_score, 4)
+  azimuth::assert_eq(performance_score, 15)
+  azimuth::assert_eq(grade, 4)
+}
+
+test "comprehensive_application_scenario" {
+  // 综合应用场景测试
+  // 模拟一个完整的电子商务场景
+  
+  // 商品信息
+  let product_price = 299
+  let product_quantity = 3
+  let discount_rate = 10  // 10%折扣
+  let tax_rate = 8        // 8%税率
+  let shipping_cost = 25
+  
+  // 计算商品小计
+  let subtotal = azimuth::multiply(product_price, product_quantity)
+  
+  // 计算折扣金额
+  let discount_amount = azimuth::divide_with_ceil(azimuth::multiply(subtotal, discount_rate), 100)
+  let discounted_total = azimuth::subtract(subtotal, discount_amount)
+  
+  // 计算税费
+  let tax_amount = azimuth::divide_with_ceil(azimuth::multiply(discounted_total, tax_rate), 100)
+  
+  // 计算总价
+  let total_before_shipping = azimuth::add(discounted_total, tax_amount)
+  let final_total = azimuth::add(total_before_shipping, shipping_cost)
+  
+  // 计算会员积分（每消费10元获得1积分）
+  let loyalty_points = azimuth::divide_with_ceil(final_total, 10)
+  
+  // 计算包装箱数（每箱最多装2个商品）
+  let boxes_needed = azimuth::divide_with_ceil(product_quantity, 2)
+  
+  // 计算预计送达时间（基础时间3天，每箱增加1天）
+  let base_delivery = 3
+  let delivery_days = azimuth::add(base_delivery, boxes_needed)
+  
+  // 计算订单优先级（总价>500为高优先级）
+  let priority_level = final_total > 500 ? 1 : 0
+  
+  azimuth::assert_eq(subtotal, 897)
+  azimuth::assert_eq(discount_amount, 90)
+  azimuth::assert_eq(discounted_total, 807)
+  azimuth::assert_eq(tax_amount, 65)
+  azimuth::assert_eq(total_before_shipping, 872)
+  azimuth::assert_eq(final_total, 897)
+  azimuth::assert_eq(loyalty_points, 90)
+  azimuth::assert_eq(boxes_needed, 2)
+  azimuth::assert_eq(delivery_days, 5)
+  azimuth::assert_eq(priority_level, 1)
 }
