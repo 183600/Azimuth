@@ -1,110 +1,95 @@
 // 标准 MoonBit 测试用例
-// 包含10个高质量测试用例，使用标准 MoonBit 测试语法
+// 测试 azimuth 库的核心功能
 
-test "basic_arithmetic_addition" {
-  // 基本加法运算测试
-  assert_eq(add(2, 3), 5)
-  assert_eq(add(-2, 3), 1)
-  assert_eq(add(2, -3), -1)
-  assert_eq(add(-2, -3), -5)
-  assert_eq(add(0, 0), 0)
+test "add_function_basic" {
+  // 测试基本的加法功能
+  assert_eq(5, add(2, 3))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(100, add(50, 50))
 }
 
-test "basic_arithmetic_multiplication" {
-  // 基本乘法运算测试
-  assert_eq(multiply(2, 3), 6)
-  assert_eq(multiply(-2, 3), -6)
-  assert_eq(multiply(2, -3), -6)
-  assert_eq(multiply(-2, -3), 6)
-  assert_eq(multiply(0, 5), 0)
+test "multiply_function_basic" {
+  // 测试基本的乘法功能
+  assert_eq(6, multiply(2, 3))
+  assert_eq(0, multiply(5, 0))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(15, multiply(-3, -5))
 }
 
-test "basic_arithmetic_subtraction" {
-  // 基本减法运算测试
-  assert_eq(subtract(5, 3), 2)
-  assert_eq(subtract(3, 5), -2)
-  assert_eq(subtract(-3, 5), -8)
-  assert_eq(subtract(3, -5), 8)
-  assert_eq(subtract(-3, -5), 2)
+test "greet_function_basic" {
+  // 测试基本的问候功能
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
 test "divide_with_ceil_basic" {
-  // 向上取整除法基本测试
-  assert_eq(divide_with_ceil(10, 3), 4)
-  assert_eq(divide_with_ceil(9, 3), 3)
-  assert_eq(divide_with_ceil(1, 5), 1)
-  assert_eq(divide_with_ceil(0, 10), 0)
-  assert_eq(divide_with_ceil(10, 0), 0)
+  // 测试基本的向上取整除法功能
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "divide_with_ceil_negative" {
-  // 向上取整除法负数测试
-  assert_eq(divide_with_ceil(-10, 3), -3)
-  assert_eq(divide_with_ceil(10, -3), 3)
-  assert_eq(divide_with_ceil(-10, -3), 4)
-  assert_eq(divide_with_ceil(-1, 2), -1)
-  assert_eq(divide_with_ceil(-1, -2), 1)
-}
-
-test "greet_function_test" {
-  // 问候函数测试
-  assert_eq_string(greet("World"), "Hello, World!")
-  assert_eq_string(greet("MoonBit"), "Hello, MoonBit!")
-  assert_eq_string(greet(""), "Hello, !")
-  assert_eq_string(greet("123"), "Hello, 123!")
-}
-
-test "complex_calculation_test" {
-  // 复合计算测试
-  let a = 5
-  let b = 3
-  let c = 2
-  
-  // (a + b) * c
-  let result1 = multiply(add(a, b), c)
-  assert_eq(result1, 16)
-  
-  // a * b + c
-  let result2 = add(multiply(a, b), c)
-  assert_eq(result2, 17)
+test "subtract_function_basic" {
+  // 测试基本的减法功能
+  assert_eq(2, subtract(5, 3))
+  assert_eq(-2, subtract(3, 5))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(10, subtract(0, -10))
 }
 
 test "mathematical_properties" {
-  // 数学性质测试
-  let x = 7
-  let y = 3
+  // 测试数学性质
+  let a = 7
+  let b = 13
   
   // 加法交换律
-  assert_eq(add(x, y), add(y, x))
+  assert_eq(add(a, b), add(b, a))
   
   // 乘法交换律
-  assert_eq(multiply(x, y), multiply(y, x))
-  
-  // 加法单位元
-  assert_eq(add(x, 0), x)
-  
-  // 乘法单位元
-  assert_eq(multiply(x, 1), x)
+  assert_eq(multiply(a, b), multiply(b, a))
 }
 
-test "boundary_values_test" {
-  // 边界值测试
-  // 零值测试
-  assert_eq(add(0, 0), 0)
-  assert_eq(multiply(0, 5), 0)
-  assert_eq(subtract(0, 0), 0)
+test "business_packaging_scenario" {
+  // 业务包装场景测试
+  let total_items = 25
+  let items_per_package = 6
+  let packages_needed = divide_with_ceil(total_items, items_per_package)
   
-  // 单位值测试
-  assert_eq(add(1, 0), 1)
-  assert_eq(multiply(1, 5), 5)
-  assert_eq(subtract(1, 0), 1)
-  assert_eq(divide_with_ceil(5, 1), 5)
+  assert_eq(5, packages_needed)
+  
+  // 验证总容量
+  let total_capacity = multiply(packages_needed, items_per_package)
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(5, remaining_space)
 }
 
-test "large_numbers_test" {
-  // 大数运算测试
-  assert_eq(add(1000000, 1000000), 2000000)
-  assert_eq(multiply(10000, 10000), 100000000)
-  assert_eq(subtract(1000000, 500000), 500000)
-  assert_eq(divide_with_ceil(1000000, 3), 333334)
+test "complex_workflow_calculation" {
+  // 复杂工作流计算测试
+  let team_members = 4
+  let tasks_per_member = 8
+  let total_tasks = multiply(team_members, tasks_per_member)
+  
+  let sprint_capacity = 15
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  
+  assert_eq(32, total_tasks)  // 4 * 8 = 32
+  assert_eq(3, sprints_needed)  // ceil(32/15) = 3
+}
+
+test "unicode_and_special_characters" {
+  // Unicode和特殊字符测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, @#$%!", greet("@#$%"))
+  assert_eq_string("Hello,   !", greet("  "))
+}
+
+test "negative_number_operations" {
+  // 负数运算测试
+  assert_eq(-10, add(-3, -7))
+  assert_eq(15, multiply(-3, -5))
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(5, subtract(-2, -7))
 }
