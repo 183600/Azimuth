@@ -19172,3 +19172,114 @@ test "standard_boundary_edge_cases" {
   inspect(greet("  "), content="Hello,   !")
   inspect(greet("special@chars"), content="Hello, special@chars!")
 }
+
+// 新增的标准 MoonBit 测试用例 - 10个高质量测试用例
+test "new_add_function_comprehensive" {
+  // 加法函数综合测试
+  inspect(add(8, 7), content="15")
+  inspect(add(0, 0), content="0")
+  inspect(add(-10, 5), content="-5")
+  inspect(add(100, 200), content="300")
+  inspect(add(-50, -30), content="-80")
+}
+
+test "new_multiply_function_edge_cases" {
+  // 乘法函数边界情况测试
+  inspect(multiply(7, 8), content="56")
+  inspect(multiply(15, 0), content="0")
+  inspect(multiply(-4, 9), content="-36")
+  inspect(multiply(-6, -7), content="42")
+  inspect(multiply(25, 40), content="1000")
+}
+
+test "new_divide_with_ceil_precision" {
+  // 向上取整除法精度测试
+  inspect(divide_with_ceil(15, 4), content="4")
+  inspect(divide_with_ceil(16, 4), content="4")
+  inspect(divide_with_ceil(17, 4), content="5")
+  inspect(divide_with_ceil(1, 100), content="1")
+  inspect(divide_with_ceil(0, 100), content="0")
+}
+
+test "new_divide_with_ceil_negative_precision" {
+  // 向上取整除法负数精度测试
+  inspect(divide_with_ceil(-15, 4), content="-3")
+  inspect(divide_with_ceil(15, -4), content="-4")
+  inspect(divide_with_ceil(-15, -4), content="4")
+  inspect(divide_with_ceil(-1, 3), content="-1")
+  inspect(divide_with_ceil(1, -3), content="-1")
+}
+
+test "new_greet_function_international" {
+  // 问候函数国际化测试
+  inspect(greet("Universe"), content="Hello, Universe!")
+  inspect(greet("北京"), content="Hello, 北京!")
+  inspect(greet("São Paulo"), content="Hello, São Paulo!")
+  inspect(greet("🌟"), content="Hello, 🌟!")
+  inspect(greet("café"), content="Hello, café!")
+}
+
+test "new_subtract_function_edge_cases" {
+  // 减法函数边界情况测试
+  inspect(subtract(25, 10), content="15")
+  inspect(subtract(10, 25), content="-15")
+  inspect(subtract(0, 0), content="0")
+  inspect(subtract(20, -5), content="25")
+  inspect(subtract(-10, 5), content="-15")
+}
+
+test "new_mathematical_identities" {
+  // 数学恒等式测试
+  let x = 42
+  inspect(add(x, 0), content="42")
+  inspect(multiply(x, 1), content="42")
+  inspect(multiply(x, 0), content="0")
+  inspect(subtract(x, x), content="0")
+  inspect(multiply(x, -1), content="-42")
+}
+
+test "new_inventory_management_scenario" {
+  // 库存管理场景测试
+  let total_products = 157
+  let box_capacity = 24
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  
+  inspect(boxes_needed, content="7")
+  
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  inspect(total_capacity, content="168")
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_products)
+  inspect(remaining_space, content="11")
+}
+
+test "new_project_planning_workflow" {
+  // 项目规划工作流测试
+  let team_size = 8
+  let weeks_per_sprint = 3
+  let tasks_per_person_per_week = 5
+  let total_tasks = multiply(team_size, multiply(tasks_per_person_per_week, weeks_per_sprint))
+  
+  let sprint_capacity = 40
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  
+  inspect(total_tasks, content="120")
+  inspect(sprints_needed, content="3")
+}
+
+test "new_extreme_value_handling" {
+  // 极值处理测试
+  // 极小值测试
+  inspect(divide_with_ceil(1, 1), content="1")
+  inspect(multiply(1, 0), content="0")
+  
+  // 极大值测试
+  inspect(add(50000, 50000), content="100000")
+  inspect(multiply(1000, 1000), content="1000000")
+  
+  // 特殊字符串测试
+  inspect(greet(""), content="Hello, !")
+  inspect(greet("   "), content="Hello,    !")
+}
