@@ -1,213 +1,225 @@
 // Azimuth 项目增强测试套件
-// 包含实际应用场景的高质量测试用例
+// 包含 10 个高质量 MoonBit 测试用例
+// 使用标准 MoonBit 测试语法，覆盖多种实际应用场景
 
-test "ecommerce_inventory_management" {
-  // 电商库存管理测试
-  let initial_stock = 500
-  let daily_sales = 25
-  let restock_amount = 200
-  let days_to_simulate = 7
+test "financial_compound_interest" {
+  // 复利计算测试 - 银行存款场景
+  let principal = 10000
+  let rate = 5
+  let years = 3
   
-  // 计算一周销售量
-  let weekly_sales = @azimuth.multiply(daily_sales, days_to_simulate)
+  // 第一年
+  let year1_interest = divide_with_ceil(multiply(principal, rate), 100)
+  let year1_balance = add(principal, year1_interest)
   
-  // 计算补货后的库存
-  let after_sales = @azimuth.add(initial_stock, -weekly_sales)
-  let final_stock = @azimuth.add(after_sales, restock_amount)
+  // 第二年
+  let year2_interest = divide_with_ceil(multiply(year1_balance, rate), 100)
+  let year2_balance = add(year1_balance, year2_interest)
   
-  @azimuth.assert_eq(175, weekly_sales)
-  @azimuth.assert_eq(325, after_sales)
-  @azimuth.assert_eq(525, final_stock)
+  // 第三年
+  let year3_interest = divide_with_ceil(multiply(year2_balance, rate), 100)
+  let final_balance = add(year2_balance, year3_interest)
+  
+  let total_profit = subtract(final_balance, principal)
+  
+  assert_eq(10500, year1_balance)
+  assert_eq(11025, year2_balance)
+  assert_eq(11576, final_balance)
+  assert_eq(1576, total_profit)
 }
 
-test "cloud_storage_pricing" {
-  // 云存储定价计算测试
-  let base_storage_gb = 100
-  let additional_storage_gb = 50
-  let base_price_per_gb = 2
-  let additional_price_per_gb = 1
-  let monthly_fee = 10
+test "inventory_optimization" {
+  // 库存优化测试 - 零售场景
+  let monthly_demand = 450
+  let package_size = 24
+  let safety_stock = 50
   
-  // 计算基础存储费用
-  let base_cost = @azimuth.multiply(base_storage_gb, base_price_per_gb)
+  // 计算需要的包数
+  let packages_needed = divide_with_ceil(monthly_demand, package_size)
   
-  // 计算额外存储费用
-  let additional_cost = @azimuth.multiply(additional_storage_gb, additional_price_per_gb)
+  // 计算总库存
+  let total_inventory = add(multiply(packages_needed, package_size), safety_stock)
   
-  // 计算总费用
-  let total_cost = @azimuth.add(@azimuth.add(base_cost, additional_cost), monthly_fee)
+  // 计算过剩库存
+  let excess_inventory = subtract(total_inventory, add(monthly_demand, safety_stock))
   
-  @azimuth.assert_eq(200, base_cost)
-  @azimuth.assert_eq(50, additional_cost)
-  @azimuth.assert_eq(260, total_cost)
+  assert_eq(19, packages_needed)
+  assert_eq(506, total_inventory)
+  assert_eq(6, excess_inventory)
 }
 
-test "fitness_tracking_calculations" {
-  // 健身追踪计算测试
-  let steps_per_day = 8000
-  let calories_per_step = 0.04  // 简化为整数计算
-  let days_in_week = 7
-  let weekly_goal = 70000
+test "data_structure_array_operations" {
+  // 数据结构数组操作模拟
+  let array_length = 8
+  let element_size = 4
   
-  // 计算每周总步数
-  let weekly_steps = @azimuth.multiply(steps_per_day, days_in_week)
+  // 计算数组总大小
+  let total_size = multiply(array_length, element_size)
   
-  // 计算消耗的卡路里（简化为整数）
-  let calories_burned = weekly_steps * 4 / 100  // 0.04 = 4/100
+  // 模拟索引访问（第3个元素的偏移量）
+  let index = 2  // 0-based
+  let offset = multiply(index, element_size)
   
-  // 计算目标完成度
-  let goal_completion = weekly_steps / weekly_goal
+  // 计算剩余元素数量
+  let remaining_elements = subtract(array_length, add(index, 1))
   
-  @azimuth.assert_eq(56000, weekly_steps)
-  @azimuth.assert_eq(2240, calories_burned)
-  @azimuth.assert_eq(0, goal_completion)  // 整数除法
+  assert_eq(32, total_size)
+  assert_eq(8, offset)
+  assert_eq(5, remaining_elements)
 }
 
-test "travel_itinerary_budgeting" {
-  // 旅行行程预算测试
-  let flight_cost = 1200
-  let hotel_per_night = 150
-  let nights = 5
-  let daily_food_budget = 80
-  let activities_budget = 300
+test "time_zone_conversion" {
+  // 时区转换测试 - 国际应用场景
+  let local_time = 14  // 下午2点
+  let utc_offset = -8  // PST时区
+  let target_offset = 1  // CET时区
   
-  // 计算住宿费用
-  let hotel_total = @azimuth.multiply(hotel_per_night, nights)
+  // 转换为UTC时间
+  let utc_time = add(local_time, -utc_offset)
   
-  // 计算餐饮费用
-  let food_total = @azimuth.multiply(daily_food_budget, nights)
+  // 转换为目标时区
+  let target_time = add(utc_time, target_offset)
   
-  // 计算总预算
-  let total_budget = @azimuth.add(@azimuth.add(flight_cost, hotel_total), @azimuth.add(food_total, activities_budget))
+  // 处理24小时制
+  let adjusted_time = target_time
+  let final_time = subtract(adjusted_time, multiply(divide_with_ceil(adjusted_time, 24), 24))
   
-  @azimuth.assert_eq(750, hotel_total)
-  @azimuth.assert_eq(400, food_total)
-  @azimuth.assert_eq(2650, total_budget)
+  assert_eq(22, utc_time)
+  assert_eq(23, target_time)
+  assert_eq(23, final_time)
 }
 
-test "software_development_metrics" {
-  // 软件开发指标测试
-  let lines_of_code = 10000
-  let bugs_per_1000_lines = 2
-  let test_coverage_percent = 85
-  let code_review_hours = 20
+test "engineering_stress_calculation" {
+  // 工程压力计算测试
+  let force = 1000  // 牛顿
+  let area = 50     // 平方厘米
+  let safety_factor = 2
   
-  // 计算预期bug数量
-  let expected_bugs = @azimuth.divide_with_ceil(@azimuth.multiply(lines_of_code, bugs_per_1000_lines), 1000)
+  // 计算压力
+  let stress = divide_with_ceil(force, area)
   
-  // 计算测试覆盖的代码行数
-  let tested_lines = lines_of_code * test_coverage_percent / 100
+  // 计算最大安全压力
+  let max_safe_stress = multiply(stress, safety_factor)
   
-  // 计算每行代码的审查时间（分钟）
-  let review_time_per_line = @azimuth.divide_with_ceil(code_review_hours * 60, lines_of_code)
+  // 计算材料等级（每100单位一个等级）
+  let material_grade = divide_with_ceil(max_safe_stress, 100)
   
-  @azimuth.assert_eq(20, expected_bugs)
-  @azimuth.assert_eq(8500, tested_lines)
-  @azimuth.assert_eq(1, review_time_per_line)
+  assert_eq(20, stress)
+  assert_eq(40, max_safe_stress)
+  assert_eq(1, material_grade)
 }
 
-test "agriculture_crop_yield" {
-  // 农业作物产量预测测试
-  let field_hectares = 50
-  let yield_per_hectare = 8000  // kg
-  let moisture_loss_percent = 15
-  let processing_efficiency = 90
+test "game_physics_simulation" {
+  // 游戏物理模拟测试
+  let initial_velocity = 5
+  let gravity = -2
+  let time_steps = 4
   
-  // 计算总产量
-  let total_yield = @azimuth.multiply(field_hectares, yield_per_hectare)
+  // 模拟每秒的速度变化
+  let velocity1 = add(initial_velocity, multiply(gravity, 1))
+  let velocity2 = add(initial_velocity, multiply(gravity, 2))
+  let velocity3 = add(initial_velocity, multiply(gravity, 3))
+  let velocity4 = add(initial_velocity, multiply(gravity, 4))
   
-  // 计算水分损失后的产量
-  let after_moisture_loss = total_yield - (total_yield * moisture_loss_percent / 100)
+  // 计算总位移
+  let displacement = add(add(add(velocity1, velocity2), velocity3), velocity4)
   
-  // 计算最终可加工产量
-  let final_yield = after_moisture_loss * processing_efficiency / 100
-  
-  @azimuth.assert_eq(400000, total_yield)
-  @azimuth.assert_eq(340000, after_moisture_loss)
-  @azimuth.assert_eq(306000, final_yield)
+  assert_eq(3, velocity1)
+  assert_eq(1, velocity2)
+  assert_eq(-1, velocity3)
+  assert_eq(-3, velocity4)
+  assert_eq(0, displacement)
 }
 
-test "telecommunications_bandwidth" {
-  // 电信带宽计算测试
-  let users_per_tower = 1000
-  let data_per_user_mb = 500  // 每月MB
-  let towers_in_area = 5
-  let overhead_percent = 20
+test "network_bandwidth_calculation" {
+  // 网络带宽计算测试
+  let file_size = 2500  // KB
+  let network_speed = 500  // KB/s
+  let overhead_factor = 10  // 10% 开销
   
-  // 计算每塔总数据需求
-  let data_per_tower = @azimuth.multiply(users_per_tower, data_per_user_mb)
+  // 计算基础传输时间
+  let base_time = divide_with_ceil(file_size, network_speed)
   
-  // 计算区域总数据需求
-  let total_area_data = @azimuth.multiply(data_per_tower, towers_in_area)
+  // 计算开销时间
+  let overhead_time = divide_with_ceil(multiply(base_time, overhead_factor), 100)
   
-  // 计算包含开销的总带宽需求
-  let bandwidth_with_overhead = @azimuth.add(total_area_data, total_area_data * overhead_percent / 100)
+  // 计算总时间
+  let total_time = add(base_time, overhead_time)
   
-  @azimuth.assert_eq(500000, data_per_tower)
-  @azimuth.assert_eq(2500000, total_area_data)
-  @azimuth.assert_eq(3000000, bandwidth_with_overhead)
+  assert_eq(5, base_time)
+  assert_eq(1, overhead_time)
+  assert_eq(6, total_time)
 }
 
-test "educational_class_scheduling" {
-  // 教育课程排班测试
-  let students_per_class = 30
-  let total_students = 245
-  let periods_per_day = 6
-  let days_per_week = 5
+test "cooking_recipe_scaling" {
+  // 烹饪食谱缩放测试
+  let original_servings = 4
+  let target_servings = 7
+  let flour_per_serving = 150  // 克
+  let sugar_per_serving = 50   // 克
   
-  // 计算需要的班级数
-  let classes_needed = @azimuth.divide_with_ceil(total_students, students_per_class)
+  // 计算缩放因子
+  let scale_factor = divide_with_ceil(multiply(target_servings, 100), multiply(original_servings, 100))
   
-  // 计算每周总课时
-  let weekly_periods = @azimuth.multiply(periods_per_day, days_per_week)
+  // 计算新配方用量
+  let new_flour = multiply(flour_per_serving, target_servings)
+  let new_sugar = multiply(sugar_per_serving, target_servings)
   
-  // 计算每个班级的可用课时
-  let periods_per_class = weekly_periods / classes_needed
+  // 计算总重量
+  let total_weight = add(new_flour, new_sugar)
   
-  @azimuth.assert_eq(9, classes_needed)
-  @azimuth.assert_eq(30, weekly_periods)
-  @azimuth.assert_eq(3, periods_per_class)
+  assert_eq(1050, new_flour)
+  assert_eq(350, new_sugar)
+  assert_eq(1400, total_weight)
 }
 
-test "renewable_energy_production" {
-  // 可再生能源生产测试
-  let solar_panels = 100
-  let watts_per_panel = 300
-  let sunny_hours_per_day = 6
-  let efficiency_percent = 85
-  let days_in_month = 30
+test "energy_efficiency_analysis" {
+  // 能效分析测试
+  let power_consumption = 1200  // 瓦特
+  let operating_hours = 8      // 小时
+  let output_power = 900       // 瓦特
+  let days_in_month = 30       // 天
   
-  // 计算每小时峰值发电量
-  let peak_hourly_production = @azimuth.multiply(solar_panels, watts_per_panel)
+  // 计算日能耗
+  let daily_energy = multiply(power_consumption, operating_hours)
   
-  // 计算每日实际发电量
-  let daily_production = peak_hourly_production * sunny_hours_per_day * efficiency_percent / 100
+  // 计算月能耗
+  let monthly_energy = multiply(daily_energy, days_in_month)
   
-  // 计算月度总发电量
-  let monthly_production = @azimuth.multiply(daily_production, days_in_month)
+  // 计算效率
+  let efficiency = divide_with_ceil(multiply(output_power, 100), power_consumption)
   
-  @azimuth.assert_eq(30000, peak_hourly_production)
-  @azimuth.assert_eq(153000, daily_production)
-  @azimuth.assert_eq(4590000, monthly_production)
+  // 计算能量损失
+  let energy_loss = subtract(power_consumption, output_power)
+  
+  assert_eq(9600, daily_energy)
+  assert_eq(288000, monthly_energy)
+  assert_eq(75, efficiency)
+  assert_eq(300, energy_loss)
 }
 
-test "logistics_delivery_optimization" {
-  // 物流配送优化测试
-  let packages_per_truck = 200
-  let total_packages = 1750
-  let delivery_time_per_package = 5  // 分钟
-  let loading_time_per_truck = 120  // 分钟
+test "cryptographic_hash_simulation" {
+  // 密码学哈希模拟测试
+  let input_value = 12345
+  let prime_modulus = 997
+  let hash_constant = 31
   
-  // 计算需要的卡车数量
-  let trucks_needed = @azimuth.divide_with_ceil(total_packages, packages_per_truck)
+  // 简单哈希函数模拟
+  let step1 = multiply(input_value, hash_constant)
+  let step2 = add(step1, input_value)
+  let hash_result = step2 % prime_modulus
   
-  // 计算每辆卡车的配送时间
-  let delivery_time_per_truck = @azimuth.multiply(packages_per_truck, delivery_time_per_package)
+  // 二次哈希
+  let step3 = multiply(hash_result, hash_constant)
+  let final_hash = step3 % prime_modulus
   
-  // 计算总操作时间
-  let total_operation_time = @azimuth.add(delivery_time_per_truck, loading_time_per_truck)
+  // 验证哈希值范围
+  let hash_validity = divide_with_ceil(hash_result, prime_modulus)
   
-  @azimuth.assert_eq(9, trucks_needed)
-  @azimuth.assert_eq(1000, delivery_time_per_truck)
-  @azimuth.assert_eq(1120, total_operation_time)
+  assert_eq(383010, step1)
+  assert_eq(395355, step2)
+  assert_eq(367, hash_result)
+  assert_eq(11377, step3)
+  assert_eq(383, final_hash)
+  assert_eq(0, hash_validity)
 }
