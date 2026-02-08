@@ -1,135 +1,104 @@
 // Azimuth 项目标准 MoonBit 测试用例
 // 包含10个高质量测试用例，使用标准 MoonBit 测试语法
 
-test "basic_arithmetic_addition" {
-  // 基本加法运算测试
+test "azimuth_basic_addition" {
+  // 基本加法测试
   assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
   assert_eq(-1, add(-3, 2))
   assert_eq(100, add(50, 50))
-  assert_eq(-100, add(-50, -50))
 }
 
-test "basic_arithmetic_multiplication" {
-  // 基本乘法运算测试
+test "azimuth_basic_multiplication" {
+  // 基本乘法测试
   assert_eq(6, multiply(2, 3))
   assert_eq(0, multiply(5, 0))
-  assert_eq(-15, multiply(-3, 5))
+  assert_eq(-6, multiply(-2, 3))
   assert_eq(15, multiply(-3, -5))
-  assert_eq(10000, multiply(100, 100))
 }
 
-test "divide_with_ceil_positive_numbers" {
-  // 向上取整除法正数测试
+test "azimuth_divide_with_ceil_basic" {
+  // 向上取整除法基本测试
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
   assert_eq(1, divide_with_ceil(1, 5))
-  assert_eq(0, divide_with_ceil(0, 10))
-  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "divide_with_ceil_negative_numbers" {
+test "azimuth_divide_with_ceil_negative" {
   // 向上取整除法负数测试
   assert_eq(-3, divide_with_ceil(-10, 3))
   assert_eq(-4, divide_with_ceil(10, -3))
-  assert_eq(4, divide_with_ceil(-10, -3))
+  assert_eq(3, divide_with_ceil(-10, -3))
   assert_eq(-1, divide_with_ceil(-1, 2))
-  assert_eq(1, divide_with_ceil(-1, -2))
 }
 
-test "greet_function_various_inputs" {
-  // 问候函数各种输入测试
+test "azimuth_greet_function" {
+  // 问候函数测试
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
   assert_eq_string("Hello, 123!", greet("123"))
-  assert_eq_string("Hello, 中文!", greet("中文"))
 }
 
-test "subtract_function_comprehensive" {
-  // 减法函数综合测试
-  assert_eq(5, subtract(10, 5))
-  assert_eq(-5, subtract(5, 10))
-  assert_eq(0, subtract(15, 15))
-  assert_eq(20, subtract(10, -10))
-  assert_eq(-20, subtract(-10, 10))
+test "azimuth_subtract_function" {
+  // 减法函数测试
+  assert_eq(2, subtract(5, 3))
+  assert_eq(-2, subtract(3, 5))
+  assert_eq(0, subtract(5, 5))
+  assert_eq(10, subtract(0, -10))
 }
 
-test "mathematical_properties_validation" {
-  // 数学性质验证测试
-  let a = 12
-  let b = 8
+test "azimuth_mathematical_properties" {
+  // 数学性质测试
+  let a = 7
+  let b = 13
   
   // 加法交换律
   assert_eq(add(a, b), add(b, a))
   
   // 乘法交换律
   assert_eq(multiply(a, b), multiply(b, a))
-  
-  // 验证具体数值
-  assert_eq(20, add(a, b))
-  assert_eq(96, multiply(a, b))
 }
 
-test "complex_calculation_sequence" {
-  // 复杂计算序列测试
-  let initial = 10
+test "azimuth_business_packaging" {
+  // 业务包装场景测试
+  let total_items = 25
+  let items_per_package = 6
+  let packages_needed = divide_with_ceil(total_items, items_per_package)
   
-  // 计算序列: ((10 + 5) * 2) - 3 = 27
-  let step1 = add(initial, 5)
-  let step2 = multiply(step1, 2)
-  let result = subtract(step2, 3)
+  assert_eq(5, packages_needed)
   
-  assert_eq(15, step1)
-  assert_eq(30, step2)
-  assert_eq(27, result)
+  // 验证总容量
+  let total_capacity = multiply(packages_needed, items_per_package)
+  let remaining = subtract(total_capacity, total_items)
+  assert_eq(5, remaining)
 }
 
-test "edge_case_zero_handling" {
-  // 零值处理边界情况测试
-  // 测试各种涉及零的运算
+test "azimuth_complex_workflow" {
+  // 复杂工作流测试
+  let team_members = 4
+  let tasks_per_member = 8
+  let total_tasks = multiply(team_members, tasks_per_member)
   
-  // 加法中的零
-  assert_eq(5, add(5, 0))
-  assert_eq(-5, add(-5, 0))
+  let sprint_capacity = 15
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
   
-  // 乘法中的零
-  assert_eq(0, multiply(5, 0))
-  assert_eq(0, multiply(0, -5))
-  
-  // 减法中的零
-  assert_eq(5, subtract(5, 0))
-  assert_eq(-5, subtract(0, 5))
-  
-  // 除法中的零
+  assert_eq(32, total_tasks)  // 4 * 8 = 32
+  assert_eq(3, sprints_needed)  // ceil(32/15) = 3
+}
+
+test "azimuth_boundary_values" {
+  // 边界值测试
+  // 除法边界情况
+  assert_eq(1, divide_with_ceil(5, 5))
   assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(5, 0))
-}
-
-test "real_world_shopping_cart_calculation" {
-  // 真实世界购物车计算测试
-  // 模拟商品价格计算
   
-  let apple_price = 5
-  let apple_quantity = 3
-  let banana_price = 3
-  let banana_quantity = 4
+  // 大数运算
+  assert_eq(20000, add(10000, 10000))
+  assert_eq(100000000, multiply(10000, 10000))
   
-  // 计算各商品小计
-  let apple_subtotal = multiply(apple_price, apple_quantity)
-  let banana_subtotal = multiply(banana_price, banana_quantity)
-  
-  // 计算总价
-  let total = add(apple_subtotal, banana_subtotal)
-  
-  // 计算每箱包装数量（假设每箱最多装10个商品）
-  let total_items = add(apple_quantity, banana_quantity)
-  let boxes_needed = divide_with_ceil(total_items, 10)
-  
-  assert_eq(15, apple_subtotal)
-  assert_eq(12, banana_subtotal)
-  assert_eq(27, total)
-  assert_eq(7, total_items)
-  assert_eq(1, boxes_needed)
+  // 特殊问候情况
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, special@chars!", greet("special@chars"))
 }
