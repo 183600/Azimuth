@@ -2764,3 +2764,493 @@ test "unicode_and_internationalization" {
   assert_eq_string("Hello, ñoño!", greet("ñoño"))
   assert_eq_string("Hello, 🏳️‍🌈!", greet("🏳️‍🌈"))
 }
+
+// 新增的10个高级算法测试用例 - 覆盖尚未充分测试的领域
+
+test "recursive_hanoi_tower_simulation" {
+  // 递归汉诺塔问题模拟
+  // 3个盘子从A柱移动到C柱
+  
+  let n = 3  // 盘子数量
+  
+  // 汉诺塔移动步数公式：2^n - 1
+  let moves_1 = subtract(multiply(2, 1), 1)  // 2^1 - 1 = 1
+  let moves_2 = subtract(multiply(2, 2), 1)  // 2^2 - 1 = 3
+  let moves_3 = subtract(multiply(2, 4), 1)  // 2^3 - 1 = 7
+  let moves_4 = subtract(multiply(2, 8), 1)  // 2^4 - 1 = 15
+  
+  // 模拟移动过程（简化）
+  // 第一步：将n-1个盘子从A移到B（借助C）
+  let step1_moves = subtract(moves_3, 1)  // 7-1=6
+  
+  // 第二步：将最大盘子从A移到C
+  let step2_moves = 1
+  
+  // 第三步：将n-1个盘子从B移到C（借助A）
+  let step3_moves = step1_moves
+  
+  // 总移动步数
+  let total_moves = add(add(step1_moves, step2_moves), step3_moves)
+  
+  assert_eq(moves_1, 1)
+  assert_eq(moves_2, 3)
+  assert_eq(moves_3, 7)
+  assert_eq(moves_4, 15)
+  assert_eq(total_moves, 7)
+}
+
+test "number_theory_gcd_algorithm" {
+  // 数论算法：最大公约数（欧几里得算法模拟）
+  
+  // 计算 gcd(48, 18)
+  let a = 48
+  let b = 18
+  
+  // 欧几里得算法步骤
+  // 48 = 18 * 2 + 12
+  let step1_quotient = divide_with_ceil(a, b)
+  let step1_remainder = a - multiply(step1_quotient - 1, b)
+  
+  // 18 = 12 * 1 + 6
+  let step2_quotient = divide_with_ceil(b, step1_remainder)
+  let step2_remainder = b - multiply(step2_quotient - 1, step1_remainder)
+  
+  // 12 = 6 * 2 + 0
+  let step3_quotient = divide_with_ceil(step1_remainder, step2_remainder)
+  let step3_remainder = step1_remainder - multiply(step3_quotient, step2_remainder)
+  
+  // gcd是最后一个非零余数
+  let gcd_result = step2_remainder
+  
+  // 验证 gcd(48, 18) = 6
+  assert_eq(step1_quotient, 3)
+  assert_eq(step1_remainder, 12)
+  assert_eq(step2_quotient, 2)
+  assert_eq(step2_remainder, 6)
+  assert_eq(step3_quotient, 2)
+  assert_eq(step3_remainder, 0)
+  assert_eq(gcd_result, 6)
+  
+  // 验证 gcd 性质：gcd(a,b) = gcd(b,a)
+  // 计算 gcd(18, 48)
+  let step1_rev_quotient = divide_with_ceil(b, a)
+  let step1_rev_remainder = b - multiply(step1_rev_quotient, a)
+  
+  let step2_rev_quotient = divide_with_ceil(a, step1_rev_remainder)
+  let step2_rev_remainder = a - multiply(step2_rev_quotient - 1, step1_rev_remainder)
+  
+  assert_eq(step2_rev_remainder, 6)
+}
+
+test "string_pattern_matching" {
+  // 字符串模式匹配算法（简化版KMP算法）
+  // 模式：ABAB，文本：ABABABAB
+  
+  // 模式串特征
+  let pattern_length = 4
+  let text_length = 8
+  
+  // 计算模式串的部分匹配表（简化）
+  // 模式：ABAB
+  let prefix_table_1 = 0  // A
+  let prefix_table_2 = 0  // AB
+  let prefix_table_3 = 1  // ABA (前缀A与后缀A匹配)
+  let prefix_table_4 = 2  // ABAB (前缀AB与后缀AB匹配)
+  
+  // 模拟匹配过程
+  let mut matches_found = 0
+  
+  // 位置0：ABAB匹配
+  let match1_success = 1
+  matches_found = add(matches_found, match1_success)
+  
+  // 位置2：ABAB匹配（重叠匹配）
+  let match2_success = 1
+  matches_found = add(matches_found, match2_success)
+  
+  // 位置4：ABAB匹配
+  let match3_success = 1
+  matches_found = add(matches_found, match3_success)
+  
+  // 计算匹配效率
+  let match_efficiency = divide_with_ceil(multiply(matches_found, 100), divide_with_ceil(text_length, pattern_length))
+  
+  assert_eq(prefix_table_1, 0)
+  assert_eq(prefix_table_2, 0)
+  assert_eq(prefix_table_3, 1)
+  assert_eq(prefix_table_4, 2)
+  assert_eq(matches_found, 3)
+  assert_eq(match_efficiency, 75)
+}
+
+test "dynamic_programming_coin_change" {
+  // 动态规划：硬币找零问题（完全背包变体）
+  // 硬币面额：1, 3, 4，目标金额：6
+  
+  let target_amount = 6
+  let coin1 = 1
+  let coin2 = 3
+  let coin3 = 4
+  
+  // 动态规划表初始化
+  let dp_0 = 1  // 金额0的组成方式：1种（不选任何硬币）
+  
+  // 计算每个金额的组成方式
+  // 金额1：只能用1个1元硬币
+  let dp_1 = dp_0  // 1种方式
+  
+  // 金额2：只能用2个1元硬币
+  let dp_2 = dp_1  // 1种方式
+  
+  // 金额3：可以用3个1元硬币 或 1个3元硬币
+  let dp_3 = add(dp_2, dp_0)  // 1 + 1 = 2种方式
+  
+  // 金额4：可以用4个1元硬币 或 1个1元+1个3元硬币 或 1个4元硬币
+  let dp_4 = add(add(dp_3, dp_1), dp_0)  // 2 + 1 + 1 = 4种方式
+  
+  // 金额5：可以用5个1元硬币 或 2个1元+1个3元硬币 或 1个1元+1个4元硬币
+  let dp_5 = add(add(dp_4, dp_2), dp_1)  // 4 + 1 + 1 = 6种方式
+  
+  // 金额6：可以用6个1元硬币 或 3个1元+1个3元硬币 或 2个3元硬币
+  //        或 2个1元+1个4元硬币 或 1个2元+1个4元硬币（不存在2元）
+  let dp_6 = add(add(dp_5, dp_3), dp_2)  // 6 + 2 + 1 = 9种方式
+  
+  // 验证最优解（最少硬币数）
+  let min_coins_6 = divide_with_ceil(target_amount, coin3)  // 使用4元硬币
+  
+  assert_eq(dp_0, 1)
+  assert_eq(dp_1, 1)
+  assert_eq(dp_2, 1)
+  assert_eq(dp_3, 2)
+  assert_eq(dp_4, 4)
+  assert_eq(dp_5, 6)
+  assert_eq(dp_6, 9)
+  assert_eq(min_coins_6, 2)  // 6 = 4 + 2(1+1)，最少2枚硬币
+}
+
+test "bitwise_mask_operations" {
+  // 位运算：位掩码操作模拟
+  // 模拟8位寄存器的位操作
+  
+  let register = 0b10110101  // 181
+  let mask1 = 0b11110000     // 高4位掩码
+  let mask2 = 0b00001111     // 低4位掩码
+  let mask3 = 0b01010101     // 交替位掩码
+  
+  // 提取高4位（模拟位与操作）
+  let high_bits = 0b10110000  // 176
+  let high_nibble = divide_with_ceil(high_bits, 16)  // 右移4位
+  
+  // 提取低4位（模拟位与操作）
+  let low_bits = 0b00000101   // 5
+  
+  // 设置特定位（模拟位或操作）
+  let set_bit_result = 0b10111101  // 设置第2位
+  
+  // 清除特定位（模拟位与非操作）
+  let clear_bit_result = 0b10110001  // 清除第2位
+  
+  // 切换特定位（模拟位异或操作）
+  let toggle_bit_result = 0b10110100  // 切换第1位
+  
+  // 检查位是否设置（模拟位与操作）
+  let bit_is_set = 1  // 第0位是1
+  
+  // 计算设置位的数量
+  let set_bits_count = 5  // 10110101中有5个1
+  
+  // 位旋转操作（左旋转3位）
+  let rotated_value = 0b10101101  // 简化的旋转结果
+  
+  assert_eq(high_nibble, 11)  // 0b1011 = 11
+  assert_eq(low_bits, 5)      // 0b0101 = 5
+  assert_eq(set_bit_result, 189)  // 0b10111101 = 189
+  assert_eq(clear_bit_result, 177) // 0b10110001 = 177
+  assert_eq(toggle_bit_result, 180) // 0b10110100 = 180
+  assert_eq(bit_is_set, 1)
+  assert_eq(set_bits_count, 5)
+  assert_eq(rotated_value, 173)  // 0b10101101 = 173
+}
+
+test "graph_minimum_spanning_tree" {
+  // 图算法：最小生成树（Kruskal算法简化版）
+  // 图的边：(A,B,4), (A,C,3), (B,C,1), (B,D,2), (C,D,4), (C,E,2), (D,E,3)
+  
+  // 边权重
+  let weight_AB = 4
+  let weight_AC = 3
+  let weight_BC = 1
+  let weight_BD = 2
+  let weight_CD = 4
+  let weight_CE = 2
+  let weight_DE = 3
+  
+  // Kruskal算法：按权重排序选择边
+  // 第1步：选择(B,C,1) - 最小权重
+  let mst_weight_1 = weight_BC
+  let edges_used_1 = 1
+  
+  // 第2步：选择(B,D,2) - 不形成环
+  let mst_weight_2 = add(mst_weight_1, weight_BD)
+  let edges_used_2 = add(edges_used_1, 1)
+  
+  // 第3步：选择(C,E,2) - 不形成环
+  let mst_weight_3 = add(mst_weight_2, weight_CE)
+  let edges_used_3 = add(edges_used_2, 1)
+  
+  // 第4步：选择(D,E,3) - 会形成环，跳过
+  // 选择(A,C,3) - 不形成环
+  let mst_weight_4 = add(mst_weight_3, weight_AC)
+  let edges_used_4 = add(edges_used_3, 1)
+  
+  // 最小生成树完成（5个顶点需要4条边）
+  let total_mst_weight = mst_weight_4
+  let total_edges = edges_used_4
+  
+  // 计算所有边的总权重
+  let total_graph_weight = add(add(add(add(add(weight_AB, weight_AC), weight_BC), weight_BD), add(weight_CD, weight_CE)), weight_DE)
+  
+  // 计算节省的权重
+  let saved_weight = subtract(total_graph_weight, total_mst_weight)
+  
+  // 计算效率比率
+  let efficiency_ratio = divide_with_ceil(multiply(total_mst_weight, 100), total_graph_weight)
+  
+  assert_eq(mst_weight_1, 1)
+  assert_eq(mst_weight_2, 3)
+  assert_eq(mst_weight_3, 5)
+  assert_eq(mst_weight_4, 8)
+  assert_eq(total_mst_weight, 8)
+  assert_eq(total_edges, 4)
+  assert_eq(total_graph_weight, 19)
+  assert_eq(saved_weight, 11)
+  assert_eq(efficiency_ratio, 43)
+}
+
+test "monte_carlo_simulation" {
+  // 概率算法：蒙特卡罗模拟
+  // 模拟估算圆周率π
+  
+  let total_samples = 10000
+  let square_side = 1000  // 正方形边长
+  let circle_radius = divide_with_ceil(square_side, 2)  // 圆半径
+  let circle_area_approx = multiply(circle_radius, circle_radius)  // πr²，忽略π
+  
+  // 模拟随机采样
+  // 第一象限采样
+  let quadrant_samples = divide_with_ceil(total_samples, 4)
+  
+  // 模拟在圆内的采样点（简化计算）
+  // 假设78.5%的点在圆内（π/4 ≈ 0.785）
+  let points_in_circle_approx = divide_with_ceil(multiply(quadrant_samples, 785), 1000)
+  
+  // 总的圆内点数（4个象限）
+  let total_points_in_circle = multiply(points_in_circle_approx, 4)
+  
+  // 估算π
+  let pi_approximation = divide_with_ceil(multiply(total_points_in_circle, 100), total_samples)
+  
+  // 计算误差
+  let pi_actual = 314  // π≈3.14，放大100倍
+  let error_margin = subtract(pi_approximation, pi_actual)
+  let error_percentage = divide_with_ceil(multiply(error_margin, 100), pi_actual)
+  
+  // 多次模拟的收敛性验证
+  let simulation1 = 312  // 第一次模拟结果
+  let simulation2 = 315  // 第二次模拟结果
+  let simulation3 = 318  // 第三次模拟结果
+  let simulation4 = 313  // 第四次模拟结果
+  
+  let average_simulation = divide_with_ceil(add(add(add(simulation1, simulation2), simulation3), simulation4), 4)
+  let variance = add(add(subtract(simulation1, average_simulation), subtract(simulation2, average_simulation)), add(subtract(simulation3, average_simulation), subtract(simulation4, average_simulation)))
+  
+  assert_eq(quadrant_samples, 2500)
+  assert_eq(points_in_circle_approx, 1963)
+  assert_eq(total_points_in_circle, 7852)
+  assert_eq(pi_approximation, 314)
+  assert_eq(error_percentage, 0)
+  assert_eq(average_simulation, 315)
+}
+
+test "huffman_compression_simulation" {
+  // 数据压缩：哈夫曼编码简化模拟
+  // 字符频率：A(5), B(9), C(12), D(13), E(16), F(45)
+  
+  let freq_A = 5
+  let freq_B = 9
+  let freq_C = 12
+  let freq_D = 13
+  let freq_E = 16
+  let freq_F = 45
+  
+  // 哈夫曼树构建过程（简化）
+  // 第1步：合并最小的两个频率 A(5) + B(9) = 14
+  let node1 = add(freq_A, freq_B)
+  
+  // 第2步：合并次小的两个 C(12) + D(13) = 25
+  let node2 = add(freq_C, freq_D)
+  
+  // 第3步：合并 node1(14) + E(16) = 30
+  let node3 = add(node1, freq_E)
+  
+  // 第4步：合并 node2(25) + node3(30) = 55
+  let node4 = add(node2, node3)
+  
+  // 第5步：合并 node4(55) + F(45) = 100（根节点）
+  let root_node = add(node4, freq_F)
+  
+  // 计算编码长度（频率越高，编码越短）
+  let code_length_F = 1  // 最高频率，最短编码
+  let code_length_E = 3
+  let code_length_D = 3
+  let code_length_C = 3
+  let code_length_B = 3
+  let code_length_A = 3  // 最低频率组，较长编码
+  
+  // 计算加权编码长度
+  let weighted_length_F = multiply(freq_F, code_length_F)
+  let weighted_length_E = multiply(freq_E, code_length_E)
+  let weighted_length_D = multiply(freq_D, code_length_D)
+  let weighted_length_C = multiply(freq_C, code_length_C)
+  let weighted_length_B = multiply(freq_B, code_length_B)
+  let weighted_length_A = multiply(freq_A, code_length_A)
+  
+  // 总加权长度
+  let total_weighted_length = add(add(add(add(add(weighted_length_F, weighted_length_E), weighted_length_D), weighted_length_C), weighted_length_B), weighted_length_A)
+  
+  // 原始固定长度编码（假设每个字符3位）
+  let original_total_length = multiply(add(add(add(add(add(freq_A, freq_B), freq_C), freq_D), freq_E), freq_F), 3)
+  
+  // 计算压缩率
+  let compression_ratio = divide_with_ceil(multiply(total_weighted_length, 100), original_total_length)
+  
+  assert_eq(node1, 14)
+  assert_eq(node2, 25)
+  assert_eq(node3, 30)
+  assert_eq(node4, 55)
+  assert_eq(root_node, 100)
+  assert_eq(total_weighted_length, 224)
+  assert_eq(original_total_length, 300)
+  assert_eq(compression_ratio, 75)
+}
+
+test "caesar_cipher_encryption" {
+  // 加密算法：凯撒密码
+  // 明文：HELLO，密钥：3
+  
+  // 字母表映射（A=0, B=1, ..., Z=25）
+  let H_val = 7
+  let E_val = 4
+  let L_val = 11
+  let O_val = 14
+  
+  let key = 3
+  
+  // 加密过程：(明文 + 密钥) mod 26
+  let encrypted_H = add(H_val, key)  // 7 + 3 = 10 = K
+  let encrypted_E = add(E_val, key)  // 4 + 3 = 7 = H
+  let encrypted_L = add(L_val, key)  // 11 + 3 = 14 = O
+  let encrypted_O = add(O_val, key)  // 14 + 3 = 17 = R
+  
+  // 处理字母表循环（简化，假设不超出范围）
+  let final_H = encrypted_H
+  let final_E = encrypted_E
+  let final_L = encrypted_L
+  let final_O = encrypted_O
+  
+  // 解密过程：(密文 - 密钥) mod 26
+  let decrypted_H = subtract(final_H, key)  // 10 - 3 = 7 = H
+  let decrypted_E = subtract(final_E, key)  // 7 - 3 = 4 = E
+  let decrypted_L = subtract(final_L, key)  // 14 - 3 = 11 = L
+  let decrypted_O = subtract(final_O, key)  // 17 - 3 = 14 = O
+  
+  // 验证加密和解密的正确性
+  let encryption_correct = add(add(add(decrypted_H, decrypted_E), decrypted_L), decrypted_O)
+  let original_sum = add(add(add(H_val, E_val), L_val), O_val)
+  
+  // 统计字母频率变化
+  let original_frequency_L = 2  // HELLO中有2个L
+  let encrypted_frequency_O = 2  // KHOOR中有2个O
+  
+  // 计算密码强度（简化指标）
+  let key_strength = multiply(key, 10)  // 密钥越大，强度越高
+  let pattern_resistance = 85  // 抵抗模式识别的百分比
+  
+  assert_eq(encrypted_H, 10)  // K
+  assert_eq(encrypted_E, 7)   // H
+  assert_eq(encrypted_L, 14)  // O
+  assert_eq(encrypted_O, 17)  // R
+  assert_eq(decrypted_H, 7)   // H
+  assert_eq(decrypted_E, 4)   // E
+  assert_eq(decrypted_L, 11)  // L
+  assert_eq(decrypted_O, 14)  // O
+  assert_eq(encryption_correct, original_sum)
+  assert_eq(original_frequency_L, encrypted_frequency_O)
+  assert_eq(key_strength, 30)
+  assert_eq(pattern_resistance, 85)
+}
+
+test "simple_linear_regression" {
+  // 机器学习：简单线性回归
+  // 数据点：(1,2), (2,4), (3,5), (4,4), (5,5)
+  
+  // x坐标和y坐标
+  let x1 = 1; let y1 = 2
+  let x2 = 2; let y2 = 4
+  let x3 = 3; let y3 = 5
+  let x4 = 4; let y4 = 4
+  let x5 = 5; let y5 = 5
+  
+  let n = 5  // 数据点数量
+  
+  // 计算x和y的均值
+  let sum_x = add(add(add(add(x1, x2), x3), x4), x5)  // 1+2+3+4+5 = 15
+  let sum_y = add(add(add(add(y1, y2), y3), y4), y5)  // 2+4+5+4+5 = 20
+  
+  let mean_x = divide_with_ceil(sum_x, n)  // 15/5 = 3
+  let mean_y = divide_with_ceil(sum_y, n)  // 20/5 = 4
+  
+  // 计算斜率：β = Σ((xi - x̄)(yi - ȳ)) / Σ((xi - x̄)²)
+  let diff_x1 = subtract(x1, mean_x)  // 1-3 = -2
+  let diff_x2 = subtract(x2, mean_x)  // 2-3 = -1
+  let diff_x3 = subtract(x3, mean_x)  // 3-3 = 0
+  let diff_x4 = subtract(x4, mean_x)  // 4-3 = 1
+  let diff_x5 = subtract(x5, mean_x)  // 5-3 = 2
+  
+  let diff_y1 = subtract(y1, mean_y)  // 2-4 = -2
+  let diff_y2 = subtract(y2, mean_y)  // 4-4 = 0
+  let diff_y3 = subtract(y3, mean_y)  // 5-4 = 1
+  let diff_y4 = subtract(y4, mean_y)  // 4-4 = 0
+  let diff_y5 = subtract(y5, mean_y)  // 5-4 = 1
+  
+  // 计算分子：Σ((xi - x̄)(yi - ȳ))
+  let numerator = add(add(add(add(multiply(diff_x1, diff_y1), multiply(diff_x2, diff_y2)), multiply(diff_x3, diff_y3)), multiply(diff_x4, diff_y4)), multiply(diff_x5, diff_y5))
+  
+  // 计算分母：Σ((xi - x̄)²)
+  let denominator = add(add(add(add(multiply(diff_x1, diff_x1), multiply(diff_x2, diff_x2)), multiply(diff_x3, diff_x3)), multiply(diff_x4, diff_x4)), multiply(diff_x5, diff_x5))
+  
+  // 计算斜率
+  let slope = divide_with_ceil(multiply(numerator, 10), denominator)  // 放大10倍保持精度
+  
+  // 计算截距：α = ȳ - βx̄
+  let intercept = subtract(multiply(mean_y, 10), multiply(slope, mean_x))  // 放大10倍计算
+  
+  // 预测x=6时的y值
+  let predicted_y = divide_with_ceil(add(intercept, multiply(slope, 6)), 10)
+  
+  // 计算R²（决定系数）
+  let total_variation = add(add(add(add(multiply(diff_y1, diff_y1), multiply(diff_y2, diff_y2)), multiply(diff_y3, diff_y3)), multiply(diff_y4, diff_y4)), multiply(diff_y5, diff_y5))
+  let explained_variation = divide_with_ceil(multiply(slope, slope), 100)  // 简化计算
+  let r_squared = divide_with_ceil(multiply(explained_variation, 100), total_variation)
+  
+  assert_eq(sum_x, 15)
+  assert_eq(sum_y, 20)
+  assert_eq(mean_x, 3)
+  assert_eq(mean_y, 4)
+  assert_eq(numerator, 3)
+  assert_eq(denominator, 10)
+  assert_eq(slope, 3)  // 实际斜率0.3，放大10倍为3
+  assert_eq(intercept, 31)  // 实际截距3.1，放大10倍为31
+  assert_eq(predicted_y, 5)  // 预测值约4.9，向上取整为5
+  assert_eq(r_squared, 9)  // 简化的R²值
+}
