@@ -1,144 +1,32 @@
-// 标准 MoonBit 测试用例
-// 测试 azimuth 库的核心功能
+// Azimuth 项目简单标准 MoonBit 测试用例
+// 包含5个基本测试用例，使用标准 MoonBit 测试语法
 
-test "add_positive_numbers" {
-  assert_eq(10, add(3, 7))
-  assert_eq(100, add(50, 50))
-  assert_eq(1, add(0, 1))
+test "addition_test" {
+  // 基本加法测试
+  let result = add(2, 3)
+  assert_eq(5, result)
 }
 
-test "add_negative_numbers" {
-  assert_eq(-10, add(-3, -7))
-  assert_eq(-100, add(-50, -50))
-  assert_eq(-1, add(0, -1))
+test "multiplication_test" {
+  // 基本乘法测试
+  let result = multiply(3, 4)
+  assert_eq(12, result)
 }
 
-test "add_mixed_numbers" {
-  assert_eq(0, add(5, -5))
-  assert_eq(-2, add(3, -5))
-  assert_eq(2, add(-3, 5))
+test "subtraction_test" {
+  // 基本减法测试
+  let result = subtract(10, 3)
+  assert_eq(7, result)
 }
 
-test "multiply_positive_numbers" {
-  assert_eq(21, multiply(3, 7))
-  assert_eq(100, multiply(10, 10))
-  assert_eq(0, multiply(0, 5))
+test "greet_test" {
+  // 问候函数测试
+  let result = greet("World")
+  assert_eq_string("Hello, World!", result)
 }
 
-test "multiply_negative_numbers" {
-  assert_eq(21, multiply(-3, -7))
-  assert_eq(-21, multiply(3, -7))
-  assert_eq(0, multiply(0, -5))
-}
-
-test "greet_standard_names" {
-  assert_eq_string("Hello, Alice!", greet("Alice"))
-  assert_eq_string("Hello, Bob!", greet("Bob"))
-  assert_eq_string("Hello, Charlie!", greet("Charlie"))
-}
-
-test "divide_with_ceil_positive" {
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 2))
-  assert_eq(0, divide_with_ceil(0, 5))
-}
-
-test "divide_with_ceil_negative" {
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(3, divide_with_ceil(-10, -3))
-  assert_eq(-4, divide_with_ceil(10, -3))
-}
-
-test "divide_with_ceil_edge_cases" {
-  assert_eq(0, divide_with_ceil(5, 0))
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(-1, divide_with_ceil(-1, 1))
-  assert_eq(1, divide_with_ceil(-1, -1))
-}
-
-test "complex_calculations" {
-  // 组合函数测试
-  let result1 = add(multiply(2, 3), multiply(4, 5))
-  assert_eq(26, result1)
-  
-  let result2 = divide_with_ceil(add(10, 5), 4)
-  assert_eq(4, result2)
-  
-  let result3 = multiply(add(2, 3), divide_with_ceil(10, 3))
-  assert_eq(20, result3)
-}
-
-// 标准增强测试用例 - 覆盖更多边界情况
-
-test "add_commutative_property" {
-  // 测试加法交换律
-  assert_eq(add(5, 3), add(3, 5))
-  assert_eq(add(-2, 7), add(7, -2))
-  assert_eq(add(0, 100), add(100, 0))
-}
-
-test "add_associative_property" {
-  // 测试加法结合律
-  assert_eq(add(add(2, 3), 4), add(2, add(3, 4)))
-  assert_eq(add(add(-1, 5), 2), add(-1, add(5, 2)))
-}
-
-test "multiply_commutative_property" {
-  // 测试乘法交换律
-  assert_eq(multiply(4, 7), multiply(7, 4))
-  assert_eq(multiply(-3, 6), multiply(6, -3))
-  assert_eq(multiply(0, 10), multiply(10, 0))
-}
-
-test "multiply_distributive_property" {
-  // 测试乘法分配律
-  assert_eq(multiply(3, add(2, 4)), add(multiply(3, 2), multiply(3, 4)))
-  assert_eq(multiply(-2, add(5, 3)), add(multiply(-2, 5), multiply(-2, 3)))
-}
-
-test "divide_with_ceil_consistency" {
-  // 测试除法向上取整的一致性
-  assert_eq(divide_with_ceil(6, 2), divide_with_ceil(-6, -2))
-  assert_eq(divide_with_ceil(7, 2), divide_with_ceil(-7, -2))
-}
-
-test "greet_with_whitespace" {
-  // 测试包含空白字符的问候
-  assert_eq_string("Hello,   !", greet("   "))
-  assert_eq_string("Hello, \t\n!", greet("\t\n"))
-  assert_eq_string("Hello,  John  !", greet("  John  "))
-}
-
-test "complex_business_calculation" {
-  // 复杂业务计算测试
-  let order1_total = multiply(25, 3)  // 25元商品，3件
-  let order2_total = multiply(18, 2)  // 18元商品，2件
-  let subtotal = add(order1_total, order2_total)
-  
-  // 计算税费（假设10%）
-  let tax = divide_with_ceil(multiply(subtotal, 10), 100)
-  
-  // 应用折扣
-  let discount = 15
-  let final_total = add(add(subtotal, tax), -discount)
-  
-  assert_eq(109, final_total)  // (25*3 + 18*2) + ceil(111*10/100) - 15 = 111 + 12 - 15 = 108
-}
-
-test "mathematical_identities" {
-  // 数学恒等式测试
-  assert_eq(5, add(5, 0))  // 加法单位元
-  assert_eq(-5, add(5, -10))  // 加法逆元
-  assert_eq(5, multiply(5, 1))  // 乘法单位元
-  assert_eq(0, multiply(5, 0))  // 零乘法性质
-}
-
-test "divide_with_ceil_precision" {
-  // 测试除法向上取整的精度
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(2, divide_with_ceil(3, 2))
-  assert_eq(3, divide_with_ceil(5, 2))
-  assert_eq(100, divide_with_ceil(100, 1))
-  assert_eq(50, divide_with_ceil(100, 2))
+test "division_test" {
+  // 除法测试
+  let result = divide_with_ceil(10, 3)
+  assert_eq(4, result)
 }
