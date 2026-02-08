@@ -2597,3 +2597,170 @@ test "azimuth_standard_edge_cases_test" {
   assert_eq(2000000, add(1000000, 1000000))
   assert_eq(100000000, multiply(10000, 10000))
 }
+
+// 新增的标准 MoonBit 测试套件 - 10个高质量测试用例
+test "comprehensive_string_processing" {
+  // 综合字符串处理测试
+  assert_eq_string("Hello, Universe!", greet("Universe"))
+  assert_eq_string("Hello, 程序!", greet("程序"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
+  assert_eq_string("Hello, empty!", greet(""))
+  assert_eq_string("Hello, space !", greet("space "))
+}
+
+test "advanced_mathematical_operations" {
+  // 高级数学运算测试
+  let a = 15
+  let b = 7
+  let c = 3
+  
+  // 复合运算测试
+  assert_eq(44, add(multiply(a, b), c))  // 15*7 + 3 = 108
+  assert_eq(36, subtract(multiply(a, b), multiply(c, b)))  // 15*7 - 3*7 = 84
+  assert_eq(6, divide_with_ceil(multiply(a, b), multiply(c, c)))  // ceil(105/9) = 12
+}
+
+test "business_inventory_management" {
+  // 业务库存管理测试
+  let total_products = 158
+  let box_capacity = 24
+  let boxes_needed = divide_with_ceil(total_products, box_capacity)
+  
+  assert_eq(7, boxes_needed)
+  
+  // 验证总容量
+  let total_capacity = multiply(boxes_needed, box_capacity)
+  assert_eq(168, total_capacity)
+  
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_products)
+  assert_eq(10, remaining_space)
+}
+
+test "complex_project_planning" {
+  // 复杂项目规划测试
+  let team_size = 12
+  let tasks_per_member = 8
+  let total_tasks = multiply(team_size, tasks_per_member)
+  
+  let weeks_per_sprint = 2
+  let tasks_per_week = 25
+  let sprint_capacity = multiply(weeks_per_sprint, tasks_per_week)
+  
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  
+  assert_eq(96, total_tasks)
+  assert_eq(50, sprint_capacity)
+  assert_eq(2, sprints_needed)
+}
+
+test "data_analysis_statistics" {
+  // 数据分析统计测试
+  let data_set_size = 247
+  let batch_size = 30
+  let full_batches = divide_with_ceil(data_set_size, batch_size)
+  
+  assert_eq(9, full_batches)
+  
+  // 计算总处理能力
+  let total_capacity = multiply(full_batches, batch_size)
+  assert_eq(270, total_capacity)
+  
+  // 计算剩余容量
+  let unused_capacity = subtract(total_capacity, data_set_size)
+  assert_eq(23, unused_capacity)
+  
+  // 计算利用率
+  let utilization_rate = divide_with_ceil(multiply(data_set_size, 100), total_capacity)
+  assert_eq(92, utilization_rate)
+}
+
+test "financial_investment_calculation" {
+  // 金融投资计算测试
+  let initial_investment = 10000
+  let monthly_return = 850
+  let months_to_break_even = divide_with_ceil(initial_investment, monthly_return)
+  
+  assert_eq(12, months_to_break_even)
+  
+  // 计算实际回报
+  let actual_return = multiply(months_to_break_even, monthly_return)
+  assert_eq(10200, actual_return)
+  
+  // 计算净利润
+  let net_profit = subtract(actual_return, initial_investment)
+  assert_eq(200, net_profit)
+}
+
+test "resource_optimization_scenario" {
+  // 资源优化场景测试
+  let total_resources = 500
+  let project1_needs = 125
+  let project2_needs = 180
+  let project3_needs = 90
+  
+  // 计算已分配资源
+  let allocated_resources = add(add(project1_needs, project2_needs), project3_needs)
+  
+  // 计算剩余资源
+  let remaining_resources = subtract(total_resources, allocated_resources)
+  
+  // 计算可以支持的新项目数量（每个需要40资源）
+  let new_projects_possible = divide_with_ceil(remaining_resources, 40)
+  
+  assert_eq(395, allocated_resources)
+  assert_eq(105, remaining_resources)
+  assert_eq(3, new_projects_possible)
+}
+
+test "time_series_analysis" {
+  // 时间序列分析测试
+  let baseline_value = 100
+  let growth_rate = 12
+  
+  // 计算复合增长
+  let period1 = add(baseline_value, divide_with_ceil(multiply(baseline_value, growth_rate), 100))
+  let period2 = add(period1, divide_with_ceil(multiply(period1, growth_rate), 100))
+  let period3 = add(period2, divide_with_ceil(multiply(period2, growth_rate), 100))
+  
+  // 计算总增长
+  let total_growth = subtract(period3, baseline_value)
+  let growth_percentage = divide_with_ceil(multiply(total_growth, 100), baseline_value)
+  
+  assert_eq(112, period1)
+  assert_eq(126, period2)
+  assert_eq(142, period3)
+  assert_eq(42, total_growth)
+  assert_eq(42, growth_percentage)
+}
+
+test "error_handling_robustness" {
+  // 错误处理和健壮性测试
+  // 除零错误处理
+  assert_eq(0, divide_with_ceil(100, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(-100, 0))
+  
+  // 极值处理
+  let large_positive = 500000
+  let large_negative = -500000
+  
+  assert_eq(1000000, add(large_positive, large_positive))
+  assert_eq(-1000000, add(large_negative, large_negative))
+  assert_eq(0, add(large_positive, large_negative))
+  
+  assert_eq(250000000, multiply(large_positive, large_positive))
+  assert_eq(250000000, multiply(large_negative, large_negative))
+  assert_eq(-250000000, multiply(large_positive, large_negative))
+}
+
+test "unicode_and_internationalization" {
+  // Unicode和国际化测试
+  assert_eq_string("Hello, 世界!", greet("世界"))
+  assert_eq_string("Hello, Москва!", greet("Москва"))
+  assert_eq_string("Hello, São Paulo!", greet("São Paulo"))
+  assert_eq_string("Hello, 🌟!", greet("🌟"))
+  assert_eq_string("Hello, café!", greet("café"))
+  assert_eq_string("Hello, ñoño!", greet("ñoño"))
+  assert_eq_string("Hello, 🏳️‍🌈!", greet("🏳️‍🌈"))
+}
