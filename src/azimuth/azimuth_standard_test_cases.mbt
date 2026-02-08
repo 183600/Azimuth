@@ -1,61 +1,76 @@
-// Azimuth 项目标准 MoonBit 测试用例
-// 包含 8 个高质量测试用例，使用标准 MoonBit 测试语法
+// Azimuth 项目标准测试用例
+// 包含10个高质量的 MoonBit 测试用例
 
-test "basic_arithmetic_operations" {
-  // 测试基本算术运算
-  assert_eq(8, add(5, 3))
-  assert_eq(15, multiply(3, 5))
-  assert_eq(7, subtract(10, 3))
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
+test "add_function_basic_cases" {
+  // 测试 add 函数的基本情况
+  assert_eq(add(2, 3), 5)
+  assert_eq(add(0, 0), 0)
+  assert_eq(add(-2, 3), 1)
+  assert_eq(add(100, 200), 300)
+  assert_eq(add(-50, -30), -80)
 }
 
-test "string_operations_basic" {
-  // 测试基本字符串操作
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 123!", greet("123"))
+test "multiply_function_comprehensive" {
+  // 测试 multiply 函数的综合情况
+  assert_eq(multiply(3, 4), 12)
+  assert_eq(multiply(0, 100), 0)
+  assert_eq(multiply(-2, 5), -10)
+  assert_eq(multiply(-3, -4), 12)
+  assert_eq(multiply(10, 10), 100)
 }
 
-test "division_edge_cases" {
-  // 测试除法边界情况
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(0, 1))
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(4, divide_with_ceil(-10, -3))
+test "subtract_function_edge_cases" {
+  // 测试 subtract 函数的边界情况
+  assert_eq(subtract(10, 5), 5)
+  assert_eq(subtract(5, 10), -5)
+  assert_eq(subtract(0, 0), 0)
+  assert_eq(subtract(-5, -10), 5)
+  assert_eq(subtract(100, 100), 0)
 }
 
-test "negative_number_operations" {
-  // 测试负数运算
-  assert_eq(-2, add(-5, 3))
-  assert_eq(2, add(5, -3))
-  assert_eq(-8, add(-5, -3))
-  assert_eq(-24, multiply(-4, 6))
-  assert_eq(24, multiply(-4, -6))
-  assert_eq(-17, subtract(-10, 7))
+test "divide_with_ceil_function_various_cases" {
+  // 测试 divide_with_ceil 函数的各种情况
+  assert_eq(divide_with_ceil(10, 3), 4)
+  assert_eq(divide_with_ceil(9, 3), 3)
+  assert_eq(divide_with_ceil(0, 5), 0)
+  assert_eq(divide_with_ceil(5, 0), 0)
+  assert_eq(divide_with_ceil(-10, 3), -3)
+  assert_eq(divide_with_ceil(10, -3), 3)
+  assert_eq(divide_with_ceil(-10, -3), 4)
 }
 
-test "complex_calculation_pipeline" {
-  // 测试复杂计算流水线
-  let initial = 100
-  let step1 = multiply(initial, 3)  // 300
-  let step2 = add(step1, 15)        // 315
-  let step3 = subtract(step2, 2)    // 313
-  let step4 = divide_with_ceil(step3, 4)  // 79
+test "greet_function_different_inputs" {
+  // 测试 greet 函数的不同输入
+  assert_eq_string(greet("MoonBit"), "Hello, MoonBit!")
+  assert_eq_string(greet("World"), "Hello, World!")
+  assert_eq_string(greet(""), "Hello, !")
+  assert_eq_string(greet("123"), "Hello, 123!")
+  assert_eq_string(greet("测试"), "Hello, 测试!")
+}
+
+test "complex_arithmetic_operations" {
+  // 测试复杂的算术运算组合
+  let a = 10
+  let b = 5
+  let c = 2
   
-  assert_eq(300, step1)
-  assert_eq(315, step2)
-  assert_eq(313, step3)
-  assert_eq(79, step4)
+  // (a + b) * c
+  let result1 = multiply(add(a, b), c)
+  assert_eq(result1, 30)
+  
+  // a * b + c
+  let result2 = add(multiply(a, b), c)
+  assert_eq(result2, 52)
+  
+  // (a - b) / c (向上取整)
+  let result3 = divide_with_ceil(subtract(a, b), c)
+  assert_eq(result3, 3)
 }
 
 test "mathematical_properties" {
   // 测试数学性质
-  let x = 12
-  let y = 8
+  let x = 7
+  let y = 3
   
   // 加法交换律
   assert_eq(add(x, y), add(y, x))
@@ -70,48 +85,64 @@ test "mathematical_properties" {
   assert_eq(multiply(x, 1), x)
 }
 
-test "boundary_value_analysis" {
-  // 测试边界值分析
-  // 零值测试
-  assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(0, subtract(0, 0))
+test "boundary_value_testing" {
+  // 边界值测试
+  // 测试零值
+  assert_eq(add(0, 0), 0)
+  assert_eq(multiply(0, 5), 0)
+  assert_eq(subtract(0, 0), 0)
   
-  // 单位值测试
-  assert_eq(1, add(1, 0))
-  assert_eq(5, multiply(1, 5))
-  assert_eq(1, subtract(1, 0))
-  assert_eq(5, divide_with_ceil(5, 1))
+  // 测试单位值
+  assert_eq(add(1, 0), 1)
+  assert_eq(multiply(1, 5), 5)
+  assert_eq(subtract(1, 0), 1)
+  assert_eq(divide_with_ceil(5, 1), 5)
   
-  // 负一测试
-  assert_eq(0, add(-1, 1))
-  assert_eq(-5, multiply(-1, 5))
-  assert_eq(1, subtract(0, -1))
+  // 测试负一
+  assert_eq(add(-1, 1), 0)
+  assert_eq(multiply(-1, 5), -5)
+  assert_eq(subtract(0, -1), 1)
 }
 
-test "practical_application_scenario" {
-  // 测试实际应用场景：购物车计算
+test "practical_calculation_scenario" {
+  // 实际计算场景测试
+  // 模拟购物车计算
   let item1_price = 25
-  let item1_qty = 3
+  let item1_quantity = 3
   let item2_price = 15
-  let item2_qty = 2
+  let item2_quantity = 2
   
-  // 计算小计
-  let subtotal1 = multiply(item1_price, item1_qty)  // 75
-  let subtotal2 = multiply(item2_price, item2_qty)  // 30
+  // 计算各商品小计
+  let item1_total = multiply(item1_price, item1_quantity)
+  let item2_total = multiply(item2_price, item2_quantity)
   
-  // 计算总价
-  let total = add(subtotal1, subtotal2)  // 105
+  // 计算总计
+  let subtotal = add(item1_total, item2_total)
   
   // 计算税费（10%，向上取整）
-  let tax = divide_with_ceil(multiply(total, 10), 100)  // 11
+  let tax = divide_with_ceil(multiply(subtotal, 10), 100)
   
-  // 计算最终金额
-  let grand_total = add(total, tax)  // 116
+  // 计算总价
+  let total = add(subtotal, tax)
   
-  assert_eq(75, subtotal1)
-  assert_eq(30, subtotal2)
-  assert_eq(105, total)
-  assert_eq(11, tax)
-  assert_eq(116, grand_total)
+  assert_eq(item1_total, 75)
+  assert_eq(item2_total, 30)
+  assert_eq(subtotal, 105)
+  assert_eq(tax, 11)
+  assert_eq(total, 116)
+}
+
+test "error_handling_and_validation" {
+  // 错误处理和验证测试
+  // 测试除零处理
+  assert_eq(divide_with_ceil(10, 0), 0)
+  assert_eq(divide_with_ceil(0, 0), 0)
+  assert_eq(divide_with_ceil(-10, 0), 0)
+  
+  // 测试大数运算
+  let large_num = 100000
+  assert_eq(add(large_num, large_num), 200000)
+  assert_eq(multiply(large_num, 2), 200000)
+  assert_eq(subtract(large_num, 50000), 50000)
+  assert_eq(divide_with_ceil(large_num, 3), 33334)
 }
