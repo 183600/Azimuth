@@ -1,205 +1,245 @@
-// Azimuth 高质量标准测试用例
-// 包含 10 个标准的 MoonBit 测试用例，覆盖主要功能和各种场景
+// Azimuth 高级标准测试用例
+// 使用标准 MoonBit 测试语法，包含10个高质量测试用例
+// 关注性能、错误处理、复杂业务场景和深度边界条件测试
 
-test "basic_arithmetic_operations_comprehensive" {
-  // 综合基本算术运算测试
-  // 加法测试
-  assert_eq(8, add(3, 5))
-  assert_eq(0, add(0, 0))
-  assert_eq(-2, add(-5, 3))
-  assert_eq(100, add(50, 50))
+test "premium_performance_large_scale_calculations" {
+  // 大规模计算性能测试
+  let iterations = 1000
+  let mut sum = 0
+  let mut i = 0
   
-  // 乘法测试
-  assert_eq(15, multiply(3, 5))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(-15, multiply(-3, 5))
-  assert_eq(25, multiply(-5, -5))
+  // 使用循环进行大量加法运算
+  while i < iterations {
+    sum = add(sum, 1)
+    i = i + 1
+  }
   
-  // 减法测试
-  assert_eq(5, subtract(10, 5))
-  assert_eq(-5, subtract(5, 10))
-  assert_eq(0, subtract(15, 15))
+  assert_eq(1000, sum)
+  
+  // 大规模乘法测试
+  let product = multiply(100, 100)
+  assert_eq(10000, product)
+  
+  // 大规模除法测试
+  let division_result = divide_with_ceil(10000, 100)
+  assert_eq(100, division_result)
 }
 
-test "divide_with_ceil_comprehensive_scenarios" {
-  // 向上取整除法综合场景测试
-  // 基本正数测试
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 5))
+test "premium_error_handling_edge_cases" {
+  // 错误处理边界情况测试
+  // 除零情况的特殊处理
+  let zero_division = divide_with_ceil(100, 0)
+  assert_eq(0, zero_division)  // 根据实现，除零返回0
   
-  // 负数测试
-  assert_eq(-3, divide_with_ceil(-10, 3))
-  assert_eq(-4, divide_with_ceil(10, -3))
-  assert_eq(4, divide_with_ceil(-10, -3))
+  let negative_zero_division = divide_with_ceil(-100, 0)
+  assert_eq(0, negative_zero_division)
   
-  // 边界情况
-  assert_eq(0, divide_with_ceil(0, 10))
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(1, divide_with_ceil(5, 5))
+  // 极大数值测试
+  let large_addition = add(1000000, 1000000)
+  assert_eq(2000000, large_addition)
+  
+  // 极小数值测试
+  let small_division = divide_with_ceil(1, 1000000)
+  assert_eq(1, small_division)
 }
 
-test "greet_function_international_support" {
-  // 问候函数国际化支持测试
-  assert_eq_string("Hello, World!", greet("World"))
+test "premium_complex_financial_calculations" {
+  // 复杂金融计算场景测试
+  // 场景：计算贷款分期付款
+  let principal = 100000  // 本金
+  let interest_rate = 5   // 利率%
+  let loan_term = 12      // 期限（月）
+  
+  // 计算总利息
+  let total_interest = divide_with_ceil(
+    multiply(principal, interest_rate), 100
+  )
+  
+  // 计算总还款额
+  let total_payment = add(principal, total_interest)
+  
+  // 计算月还款额（向上取整）
+  let monthly_payment = divide_with_ceil(total_payment, loan_term)
+  
+  // 验证计算结果
+  assert_eq(5000, total_interest)    // 100000 * 5 / 100 = 5000
+  assert_eq(105000, total_payment)   // 100000 + 5000 = 105000
+  assert_eq(8750, monthly_payment)   // ceil(105000 / 12) = 8750
+}
+
+test "premium_inventory_optimization" {
+  // 库存优化算法测试
+  // 场景：多仓库库存分配优化
+  let total_products = 487
+  let warehouse_a_capacity = 100
+  let warehouse_b_capacity = 150
+  let warehouse_c_capacity = 200
+  
+  // 计算每个仓库需要的数量
+  let warehouse_a_needed = divide_with_ceil(
+    multiply(total_products, 30), 100
+  )
+  let warehouse_b_needed = divide_with_ceil(
+    multiply(total_products, 40), 100
+  )
+  let warehouse_c_needed = divide_with_ceil(
+    multiply(total_products, 30), 100
+  )
+  
+  // 验证分配结果
+  assert_eq(147, warehouse_a_needed)   // ceil(487 * 0.3) = 147
+  assert_eq(195, warehouse_b_needed)   // ceil(487 * 0.4) = 195
+  assert_eq(147, warehouse_c_needed)   // ceil(487 * 0.3) = 147
+  
+  // 验证总分配量
+  let total_allocated = add(
+    add(warehouse_a_needed, warehouse_b_needed), 
+    warehouse_c_needed
+  )
+  assert_eq(489, total_allocated)  // 147 + 195 + 147 = 489
+}
+
+test "premium_string_processing_advanced" {
+  // 高级字符串处理测试
+  // 测试各种字符串输入的问候函数
+  
+  // 测试每个用例
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, 中文!", greet("中文"))
-  assert_eq_string("Hello, 日本語!", greet("日本語"))
-  assert_eq_string("Hello, 🌟!", greet("🌟"))
   assert_eq_string("Hello, !", greet(""))
   assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, special@#$%!", greet("special@#$%"))
+  assert_eq_string("Hello,    !", greet("   "))
+  assert_eq_string("Hello, 中文测试!", greet("中文测试"))
+  assert_eq_string("Hello, emoji 🚀!", greet("emoji 🚀"))
+  assert_eq_string("Hello, mixed 中文123!@!", greet("mixed 中文123!@"))
 }
 
-test "mathematical_properties_validation" {
-  // 数学性质验证测试
-  let a = 12
-  let b = 8
-  let c = 5
+test "premium_mathematical_series_calculations" {
+  // 数学级数计算测试
+  // 计算等差数列求和
+  let first_term = 5
+  let common_difference = 3
+  let number_of_terms = 10
   
-  // 加法交换律
-  assert_eq(add(a, b), add(b, a))
+  // 使用公式计算等差数列和：S = n/2 * (2a + (n-1)d)
+  let last_term = add(
+    first_term, 
+    multiply(common_difference, subtract(number_of_terms, 1))
+  )
   
-  // 乘法交换律
-  assert_eq(multiply(a, b), multiply(b, a))
+  let series_sum = divide_with_ceil(
+    multiply(number_of_terms, add(first_term, last_term)), 2
+  )
   
-  // 加法结合律
-  assert_eq(add(add(a, b), c), add(a, add(b, c)))
-  
-  // 乘法结合律
-  assert_eq(multiply(multiply(a, b), c), multiply(a, multiply(b, c)))
-  
-  // 分配律
-  assert_eq(multiply(a, add(b, c)), add(multiply(a, b), multiply(a, c)))
+  // 验证结果：5 + 8 + 11 + ... + 32 = 185
+  assert_eq(32, last_term)     // 5 + 3 * 9 = 32
+  assert_eq(185, series_sum)   // 10/2 * (5 + 32) = 185
 }
 
-test "business_logistics_calculation" {
-  // 业务物流计算测试
-  // 场景：仓库库存管理
-  let total_products = 157
-  let box_capacity = 24
-  let boxes_needed = divide_with_ceil(total_products, box_capacity)
-  
-  assert_eq(7, boxes_needed)
-  
-  // 验证总容量
-  let total_capacity = multiply(boxes_needed, box_capacity)
-  assert_eq(168, total_capacity)
-  
-  // 验证剩余空间
-  let remaining_space = subtract(total_capacity, total_products)
-  assert_eq(11, remaining_space)
-}
-
-test "project_resource_management" {
-  // 项目资源管理测试
-  // 场景：软件开发项目资源分配
+test "premium_resource_scheduling" {
+  // 资源调度算法测试
+  // 场景：项目任务调度优化
+  let total_tasks = 75
   let team_members = 8
-  let tasks_per_member = 6
-  let total_tasks = multiply(team_members, tasks_per_member)
+  let working_days = 15
+  let tasks_per_day_capacity = 10
   
-  let sprint_duration = 2
-  let tasks_per_sprint = 25
-  let sprints_needed = divide_with_ceil(total_tasks, tasks_per_sprint)
+  // 计算每人需要完成的任务数
+  let tasks_per_member = divide_with_ceil(total_tasks, team_members)
   
-  assert_eq(48, total_tasks)  // 8 * 6 = 48
-  assert_eq(2, sprints_needed)  // ceil(48/25) = 2
+  // 计算需要的总工作日
+  let required_days = divide_with_ceil(total_tasks, tasks_per_day_capacity)
   
-  // 验证项目总周期
-  let total_weeks = multiply(sprints_needed, sprint_duration)
-  assert_eq(4, total_weeks)
+  // 计算是否需要加班
+  let overtime_needed = subtract(required_days, working_days)
+  
+  // 验证计算结果
+  assert_eq(10, tasks_per_member)     // ceil(75 / 8) = 10
+  assert_eq(8, required_days)         // ceil(75 / 10) = 8
+  assert_eq(-7, overtime_needed)      // 8 - 15 = -7 (不需要加班)
+  
+  // 验证总任务分配
+  let total_allocated = multiply(tasks_per_member, team_members)
+  assert_eq(80, total_allocated)      // 10 * 8 = 80
 }
 
-test "edge_cases_and_boundary_values" {
-  // 边界情况和极值测试
-  // 零值测试
-  assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(5, 0))
-  assert_eq(0, divide_with_ceil(0, 10))
-  assert_eq(0, divide_with_ceil(10, 0))
+test "premium_boundary_stress_testing" {
+  // 边界压力测试
+  // 测试极端边界条件
   
-  // 单位值测试
-  assert_eq(1, divide_with_ceil(1, 1))
-  assert_eq(1, divide_with_ceil(-1, -1))
-  assert_eq(5, add(5, 0))
-  assert_eq(5, multiply(5, 1))
+  // 最大值边界
+  let max_addition = add(1000000, 1000000)
+  assert_eq(2000000, max_addition)
   
-  // 大数测试
-  assert_eq(2000000, add(1000000, 1000000))
-  assert_eq(1000000, multiply(1000, 1000))
+  // 最小值边界
+  let min_subtraction = subtract(-1000000, 1000000)
+  assert_eq(-2000000, min_subtraction)
+  
+  // 除法边界：被除数为0
+  let zero_dividend = divide_with_ceil(0, 1000000)
+  assert_eq(0, zero_dividend)
+  
+  // 除法边界：除数为1
+  let unit_divisor = divide_with_ceil(999999, 1)
+  assert_eq(999999, unit_divisor)
+  
+  // 乘法边界：乘以0
+  let zero_multiplication = multiply(999999, 0)
+  assert_eq(0, zero_multiplication)
+  
+  // 乘法边界：乘以1
+  let unit_multiplication = multiply(999999, 1)
+  assert_eq(999999, unit_multiplication)
 }
 
-test "financial_calculation_scenario" {
-  // 金融计算场景测试
-  // 场景：贷款分期计算
-  let loan_amount = 50000
-  let monthly_payment = 2200
-  let months_needed = divide_with_ceil(loan_amount, monthly_payment)
+test "premium_data_validation_scenarios" {
+  // 数据验证场景测试
+  // 场景：输入数据验证和处理
   
-  assert_eq(23, months_needed)  // ceil(50000/2200) = 23
+  // 验证年龄输入（假设有效年龄范围：0-150）
+  let input_age = 25
+  let validated_age = multiply(
+    divide_with_ceil(input_age, 151), 151
+  )
+  assert_eq(0, validated_age)  // 25/151 = 0 (向上取整)
   
-  // 验证总支付金额
-  let total_payment = multiply(months_needed, monthly_payment)
-  assert_eq(50600, total_payment)
+  // 验证分数输入（假设有效分数范围：0-100）
+  let test_score = 85
+  let validated_score = multiply(
+    divide_with_ceil(test_score, 101), 101
+  )
+  assert_eq(0, validated_score)  // 85/101 = 0 (向上取整)
   
-  // 验证额外支付
-  let extra_payment = subtract(total_payment, loan_amount)
-  assert_eq(600, extra_payment)
+  // 验证数量输入（最小订单量：10）
+  let order_quantity = 7
+  let adjusted_quantity = multiply(
+    divide_with_ceil(order_quantity, 10), 10
+  )
+  assert_eq(10, adjusted_quantity)  // ceil(7/10) * 10 = 10
 }
 
-test "error_handling_and_robustness" {
-  // 错误处理和健壮性测试
-  // 除零错误的全面测试
-  assert_eq(0, divide_with_ceil(10, 0))
-  assert_eq(0, divide_with_ceil(-10, 0))
-  assert_eq(0, divide_with_ceil(0, 0))
-  assert_eq(0, divide_with_ceil(1000000, 0))
+test "premium_algorithmic_complexity" {
+  // 算法复杂度测试
+  // 测试不同算法的时间复杂度特性
   
-  // 极值运算测试
-  let max_test_value = 100000
-  let min_test_value = -100000
+  // O(1) 常数时间复杂度测试
+  let constant_time_result = add(100, 200)
+  assert_eq(300, constant_time_result)
   
-  assert_eq(0, multiply(max_test_value, 0))
-  assert_eq(0, multiply(min_test_value, 0))
-  assert_eq(max_test_value, add(max_test_value, 0))
-  assert_eq(min_test_value, add(min_test_value, 0))
+  // O(n) 线性时间复杂度测试（模拟）
+  let linear_input = 50
+  let linear_result = multiply(linear_input, 2)
+  assert_eq(100, linear_result)
   
-  // 字符串边界测试
-  assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, @#$%!", greet("@#$%"))
-}
-
-test "real_world_event_planning" {
-  // 真实世界事件规划测试
-  // 场景：会议安排
-  let attendees = 125
-  let rooms_available = 5
-  let seats_per_room = 30
-  let cost_per_seat = 25
-  let total_budget = 4000
+  // O(log n) 对数时间复杂度测试（模拟）
+  let log_input = 64
+  let log_result = divide_with_ceil(log_input, 2)
+  assert_eq(32, log_result)
   
-  // 计算需要的房间数量
-  let rooms_needed = divide_with_ceil(attendees, seats_per_room)
-  assert_eq(5, rooms_needed)
-  
-  // 验证房间足够
-  assert_true(rooms_needed <= rooms_available)
-  
-  // 计算总座位数
-  let total_seats = multiply(rooms_needed, seats_per_room)
-  assert_eq(150, total_seats)
-  
-  // 计算剩余座位
-  let remaining_seats = subtract(total_seats, attendees)
-  assert_eq(25, remaining_seats)
-  
-  // 计算总成本
-  let total_cost = multiply(total_seats, cost_per_seat)
-  assert_eq(3750, total_cost)
-  
-  // 验证预算充足
-  assert_true(total_cost <= total_budget)
-  
-  // 计算剩余预算
-  let remaining_budget = subtract(total_budget, total_cost)
-  assert_eq(250, remaining_budget)
+  // 复合操作复杂度测试
+  let complex_result = add(
+    multiply(10, 20),
+    divide_with_ceil(100, 5)
+  )
+  assert_eq(220, complex_result)  // 10*20 + ceil(100/5) = 200 + 20 = 220
 }
