@@ -419,7 +419,8 @@
     "azimuth_supplementary_tests.mbt",
     "simple_azimuth_test.mbt",
     "azimuth_comprehensive_standard_tests.mbt",
-    "azimuth_simple_standard_tests.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],  "files": [
+    "azimuth_simple_standard_tests.mbt",
+    "../azimuth_standard_test_suite.mbt"  ],  "export": ["add", "multiply", "greet", "assert_eq", "assert_eq_string", "divide_with_ceil", "subtract"],  "files": [
     "new_enhanced_test_suite.mbt",
     "self_contained_test.mbt",
     "comprehensive_enhanced_tests.mbt",
