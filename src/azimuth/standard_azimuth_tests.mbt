@@ -2,13 +2,12 @@
 // 使用标准 MoonBit 测试语法编写
 // 包含 10 个高质量测试用例
 
-test "arithmetic_addition_comprehensive" {
-  // 综合加法测试
-  assert_eq(7, add(3, 4))
+test "basic_addition" {
+  assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
-  assert_eq(-2, add(-5, 3))
-  assert_eq(1000, add(500, 500))
-  assert_eq(-100, add(-60, -40))
+  assert_eq(-1, add(-2, 1))
+  assert_eq(100, add(50, 50))
+  assert_eq(-100, add(-50, -50))
 }
 
 test "arithmetic_multiplication_comprehensive" {
