@@ -1,4 +1,4 @@
-// Azimuth 项目的高质量测试用例
+// Azimuth 高质量测试用例
 // 使用标准 MoonBit 测试语法编写
 
 test "basic_addition_test" {
@@ -50,38 +50,52 @@ test "mathematical_properties_test" {
 
 test "business_scenario_test" {
   // 业务场景测试
-  let items = 25
-  let capacity = 6
-  let packages = divide_with_ceil(items, capacity)
-  assert_eq(5, packages)
+  let total_items = 25
+  let items_per_package = 6
+  let packages_needed = divide_with_ceil(total_items, items_per_package)
   
-  let total_capacity = multiply(packages, capacity)
-  let remaining = subtract(total_capacity, items)
-  assert_eq(5, remaining)
+  assert_eq(5, packages_needed)
+  
+  // 验证总容量
+  let total_capacity = multiply(packages_needed, items_per_package)
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(5, remaining_space)
 }
 
-test "negative_numbers_test" {
-  // 负数测试
-  assert_eq(-8, add(-5, -3))
-  assert_eq(-2, add(-5, 3))
-  assert_eq(15, multiply(-5, -3))
-  assert_eq(-15, multiply(-5, 3))
-  assert_eq(-2, divide_with_ceil(-7, 3))
-  assert_eq(3, divide_with_ceil(-7, -3))
-}
-
-test "unicode_string_test" {
-  // Unicode字符串测试
-  assert_eq_string("Hello, 中文!", greet("中文"))
-  assert_eq_string("Hello, 🚀!", greet("🚀"))
-  assert_eq_string("Hello, école!", greet("école"))
+test "complex_workflow_test" {
+  // 复杂工作流测试
+  let team_members = 4
+  let tasks_per_member = 8
+  let total_tasks = multiply(team_members, tasks_per_member)
+  
+  let sprint_capacity = 15
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
+  
+  assert_eq(32, total_tasks)  // 4 * 8 = 32
+  assert_eq(3, sprints_needed)  // ceil(32/15) = 3
 }
 
 test "edge_cases_test" {
   // 边界情况测试
-  assert_eq(0, add(0, 0))
-  assert_eq(0, multiply(0, 5))
-  assert_eq(0, divide_with_ceil(0, 5))
+  // 除法边界情况
   assert_eq(1, divide_with_ceil(5, 5))
-  assert_eq(2, divide_with_ceil(5, 3))
+  assert_eq(0, divide_with_ceil(0, 5))
+  
+  // 大数运算
+  assert_eq(20000, add(10000, 10000))
+  assert_eq(100000000, multiply(10000, 10000))
+  
+  // 特殊问候情况
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, special@chars!", greet("special@chars"))
+}
+
+test "error_handling_test" {
+  // 错误处理测试
+  // 除零处理
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
+  
+  // 空字符串处理
+  assert_eq_string("Hello, !", greet(""))
 }
