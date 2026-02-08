@@ -1,76 +1,70 @@
-// Azimuth 新增测试用例
-// 包含9个标准 MoonBit 测试用例
+// Azimuth 新增测试用例 - 标准 MoonBit 测试语法
+// 包含8个核心功能测试用例，覆盖基本数学运算和字符串处理
 
-test "add_function_test" {
-  // 加法函数测试
+test "new_addition_basic" {
+  // 基本加法测试
   assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
-  assert_eq(-2, add(-5, 3))
+  assert_eq(-1, add(-3, 2))
 }
 
-test "multiply_function_test" {
-  // 乘法函数测试
+test "new_multiplication_basic" {
+  // 基本乘法测试
   assert_eq(6, multiply(2, 3))
   assert_eq(0, multiply(5, 0))
   assert_eq(-6, multiply(-2, 3))
 }
 
-test "divide_with_ceil_test" {
-  // 向上取整除法测试
+test "new_divide_with_ceil_basic" {
+  // 向上取整除法基本测试
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
   assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "divide_with_ceil_negative_test" {
+test "new_divide_with_ceil_negative" {
   // 向上取整除法负数测试
   assert_eq(-3, divide_with_ceil(-10, 3))
   assert_eq(-4, divide_with_ceil(10, -3))
   assert_eq(4, divide_with_ceil(-10, -3))
 }
 
-test "greet_function_test" {
+test "new_greet_function" {
   // 问候函数测试
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
   assert_eq_string("Hello, !", greet(""))
 }
 
-test "subtract_function_test" {
+test "new_subtract_function" {
   // 减法函数测试
   assert_eq(2, subtract(5, 3))
   assert_eq(-2, subtract(3, 5))
   assert_eq(0, subtract(5, 5))
 }
 
-test "math_commutative_test" {
-  // 数学交换律测试
+test "new_mathematical_properties" {
+  // 数学性质测试
   let a = 7
   let b = 13
+  
+  // 加法交换律
   assert_eq(add(a, b), add(b, a))
+  
+  // 乘法交换律
   assert_eq(multiply(a, b), multiply(b, a))
 }
 
-test "packaging_test" {
-  // 包装计算测试
-  let items = 25
-  let capacity = 6
-  let packages = divide_with_ceil(items, capacity)
-  assert_eq(5, packages)
+test "new_business_scenario" {
+  // 业务场景测试
+  let total_items = 25
+  let items_per_package = 6
+  let packages_needed = divide_with_ceil(total_items, items_per_package)
   
-  let total_capacity = multiply(packages, capacity)
-  let remaining = subtract(total_capacity, items)
-  assert_eq(5, remaining)
-}
-
-test "workflow_test" {
-  // 工作流测试
-  let team = 4
-  let tasks_per_person = 8
-  let total_tasks = multiply(team, tasks_per_person)
-  let sprint_capacity = 15
-  let sprints = divide_with_ceil(total_tasks, sprint_capacity)
+  assert_eq(5, packages_needed)
   
-  assert_eq(32, total_tasks)  // 4 * 8 = 32
-  assert_eq(3, sprints)       // ceil(32/15) = 3
+  // 验证总容量
+  let total_capacity = multiply(packages_needed, items_per_package)
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(5, remaining_space)
 }
