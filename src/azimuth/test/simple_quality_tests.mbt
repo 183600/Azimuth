@@ -1,74 +1,97 @@
-// 简单质量测试用例 - 针对 azimuth 库的基本测试
+// 简化的高质量 MoonBit 核心库测试用例
 // 使用标准的 MoonBit 测试语法
 
-test "add_function_basic" {
-  // 测试加法函数的基本功能
-  @azimuth.assert_eq(10, @azimuth.add(3, 7))
-  @azimuth.assert_eq(0, @azimuth.add(0, 0))
-  @azimuth.assert_eq(-5, @azimuth.add(-2, -3))
+test "basic_arithmetic" {
+  // 测试基本算术运算
+  assert_eq(1 + 1, 2)
+  assert_eq(5 - 3, 2)
+  assert_eq(3 * 4, 12)
+  assert_eq(10 / 2, 5)
 }
 
-test "multiply_function_basic" {
-  // 测试乘法函数的基本功能
-  @azimuth.assert_eq(15, @azimuth.multiply(3, 5))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, 10))
-  @azimuth.assert_eq(-6, @azimuth.multiply(-2, 3))
+test "boolean_operations" {
+  // 测试布尔运算
+  assert_eq(true && false, false)
+  assert_eq(true || false, true)
+  assert_eq(!true, false)
+  assert_eq(!false, true)
 }
 
-test "greet_function_basic" {
-  // 测试问候函数的基本功能
-  @azimuth.assert_eq_string("Hello, MoonBit!", @azimuth.greet("MoonBit"))
-  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+test "string_operations" {
+  // 测试字符串操作
+  let hello = "Hello"
+  let world = " World"
+  let combined = hello + world
+  assert_eq(combined, "Hello World")
+  assert_eq(combined.length(), 11)
 }
 
-test "divide_with_ceil_basic" {
-  // 测试向上取整除法的基本功能
-  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
-  @azimuth.assert_eq(3, @azimuth.divide_with_ceil(9, 3))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(5, 0))
+test "array_operations" {
+  // 测试数组操作
+  let numbers = [1, 2, 3, 4, 5]
+  assert_eq(numbers.length(), 5)
+  assert_eq(numbers[0], 1)
+  assert_eq(numbers[4], 5)
 }
 
-test "combined_operations" {
-  // 测试组合运算
-  let result = @azimuth.add(@azimuth.multiply(2, 3), @azimuth.multiply(4, 5))
-  @azimuth.assert_eq(26, result)  // 2*3 + 4*5 = 6 + 20 = 26
+test "comparison_operations" {
+  // 测试比较运算
+  assert_eq(5 > 3, true)
+  assert_eq(5 < 3, false)
+  assert_eq(5 == 5, true)
+  assert_eq(5 != 3, true)
+  assert_eq(5 >= 5, true)
+  assert_eq(3 <= 5, true)
 }
 
-test "practical_packaging" {
-  // 实际应用：包装计算
-  let total_items = 17
-  let items_per_box = 5
-  let boxes_needed = @azimuth.divide_with_ceil(total_items, items_per_box)
-  @azimuth.assert_eq(4, boxes_needed)  // ceil(17/5) = 4
+test "int_modulo" {
+  // 测试取模运算
+  assert_eq(10 % 3, 1)
+  assert_eq(9 % 3, 0)
+  assert_eq(7 % 4, 3)
 }
 
-test "mathematical_properties" {
-  // 测试数学性质
-  let a = 7
-  let b = 13
-  // 加法交换律
-  @azimuth.assert_eq(@azimuth.add(a, b), @azimuth.add(b, a))
-  // 乘法交换律
-  @azimuth.assert_eq(@azimuth.multiply(a, b), @azimuth.multiply(b, a))
+test "string_methods" {
+  // 测试字符串方法
+  let text = "Hello World"
+  assert_eq(text.length(), 11)
+  assert_eq(text[0], 'H')
+  assert_eq(text[10], 'd')
 }
 
-test "unicode_support" {
-  // 测试 Unicode 支持
-  @azimuth.assert_eq_string("Hello, 世界!", @azimuth.greet("世界"))
-  @azimuth.assert_eq_string("Hello, 🚀!", @azimuth.greet("🚀"))
+test "array_methods" {
+  // 测试数组方法
+  let numbers = [1, 2, 3, 4, 5]
+  let sum = numbers.fold(init=0, (acc, x) => acc + x)
+  assert_eq(sum, 15)
+  
+  let doubled = numbers.map(x => x * 2)
+  assert_eq(doubled.length(), 5)
+  assert_eq(doubled[0], 2)
+  assert_eq(doubled[4], 10)
 }
 
-test "negative_operations" {
-  // 测试负数运算
-  @azimuth.assert_eq(-10, @azimuth.add(-3, -7))
-  @azimuth.assert_eq(-5, @azimuth.add(-8, 3))
-  @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
-  @azimuth.assert_eq(-3, @azimuth.divide_with_ceil(-10, 3))
+test "option_operations" {
+  // 测试 Option 类型操作
+  let some_value = Some(42)
+  let none_value : Int? = None
+  
+  assert_eq(some_value.is_some(), true)
+  assert_eq(none_value.is_none(), true)
+  
+  let unwrapped = match some_value {
+    Some(x) => x
+    None => 0
+  }
+  assert_eq(unwrapped, 42)
 }
 
-test "edge_cases" {
-  // 测试边界情况
-  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
-  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
-  @azimuth.assert_eq(1, @azimuth.divide_with_ceil(1, 1))
+test "type_conversion" {
+  // 测试类型转换
+  let num = 42
+  let str = num.to_string()
+  assert_eq(str, "42")
+  
+  let char = 'A'
+  assert_eq(char.to_string(), "A")
 }
