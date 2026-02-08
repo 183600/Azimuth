@@ -104,3 +104,37 @@ test "complex_expressions" {
   assert_eq(4, divide_with_ceil(add(a, b), c))
   assert_eq(9, add(divide_with_ceil(multiply(a, b), c), 5))
 }
+
+test "sequential_calculation_test" {
+  // 连续计算测试
+  let start = 5
+  let step1 = add(start, 3)        // 8
+  let step2 = multiply(step1, 2)   // 16
+  let step3 = subtract(step2, 6)    // 10
+  let step4 = divide_with_ceil(step3, 4)  // 3
+  
+  assert_eq(8, step1)
+  assert_eq(16, step2)
+  assert_eq(10, step3)
+  assert_eq(3, step4)
+}
+
+test "azimuth_comprehensive_integration_test" {
+  // Azimuth 综合集成测试
+  // 测试字符串和数学运算的集成
+  let name = "Test"
+  let greeting = greet(name)
+  assert_eq_string("Hello, Test!", greeting)
+  
+  // 计算问候语的总字符数
+  let hello_len = 5  // "Hello"
+  let comma_space_len = 2  // ", "
+  let name_len = 4  // "Test"
+  let exclamation_len = 1  // "!"
+  let total_len = add(hello_len, add(comma_space_len, add(name_len, exclamation_len)))
+  assert_eq(12, total_len)
+  
+  // 使用数学运算验证字符数
+  let avg_part_len = divide_with_ceil(total_len, 3)
+  assert_eq(4, avg_part_len)
+}

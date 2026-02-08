@@ -193,3 +193,28 @@ test "exponential_growth_simulation" {
   assert_eq(96, period5)
   @unused(growth_periods)
 }
+
+test "azimuth_additional_moonbit_test" {
+  // Azimuth 额外 MoonBit 测试
+  // 测试数学运算的高级应用
+  let base = 15
+  let factor = 6
+  let offset = 9
+  let divisor = 7
+  
+  // 复合运算
+  let step1 = multiply(base, factor)     // 90
+  let step2 = add(step1, offset)         // 99
+  let step3 = divide_with_ceil(step2, divisor)  // 15
+  let step4 = subtract(step3, base)      // 0
+  
+  assert_eq(90, step1)
+  assert_eq(99, step2)
+  assert_eq(15, step3)
+  assert_eq(0, step4)
+  
+  // 测试字符串处理
+  let entity = "World"
+  let message = greet(entity)
+  assert_eq_string("Hello, World!", message)
+}

@@ -110,3 +110,50 @@ test "large_number_operations" {
   assert_eq(1000, divide_with_ceil(1000000, 1000))
   assert_eq(1001, divide_with_ceil(1001000, 1000))
 }
+
+test "azimuth_enhanced_quality_test" {
+  // Azimuth 增强质量测试 - 新增的测试用例
+  // 测试加法函数的多种情况
+  assert_eq(10, add(3, 7))
+  assert_eq(0, add(0, 0))
+  assert_eq(-5, add(-2, -3))
+  assert_eq(1, add(-5, 6))
+  assert_eq(1000, add(500, 500))
+  
+  // 测试乘法函数的边界情况
+  assert_eq(25, multiply(5, 5))
+  assert_eq(0, multiply(100, 0))
+  assert_eq(-30, multiply(-6, 5))
+  assert_eq(30, multiply(-6, -5))
+  assert_eq(10000, multiply(100, 100))
+  
+  // 测试向上取整除法的综合情况
+  assert_eq(5, divide_with_ceil(20, 4))
+  assert_eq(3, divide_with_ceil(10, 4))
+  assert_eq(1, divide_with_ceil(1, 10))
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(8, 0))
+  
+  // 测试向上取整除法的负数情况
+  assert_eq(-2, divide_with_ceil(-8, 4))
+  assert_eq(-3, divide_with_ceil(8, -3))
+  assert_eq(3, divide_with_ceil(-8, -3))
+  assert_eq(-1, divide_with_ceil(-1, 2))
+  assert_eq(1, divide_with_ceil(-1, -2))
+}
+
+test "azimuth_string_and_math_integration" {
+  // 字符串和数学运算集成测试
+  let greeting_result = greet("MoonBit")
+  assert_eq_string("Hello, MoonBit!", greeting_result)
+  
+  // 使用数学运算计算字符串长度相关的值
+  let base_length = 5  // "Hello" 的长度
+  let name_length = 7  // "MoonBit" 的长度
+  let total_length = add(base_length, add(name_length, 2))  // 2 for ", "
+  assert_eq(14, total_length)
+  
+  // 使用除法计算平均长度
+  let avg_length = divide_with_ceil(total_length, 2)
+  assert_eq(7, avg_length)
+}

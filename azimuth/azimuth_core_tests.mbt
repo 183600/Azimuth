@@ -74,3 +74,24 @@ test "business_packaging_scenario" {
   let remaining_space = subtract(total_capacity, total_items)
   assert_eq(5, remaining_space)
 }
+
+test "azimuth_core_business_logic_test" {
+  // Azimuth 核心业务逻辑测试
+  // 场景：计算项目预算分配
+  let total_budget = 10000
+  let team_members = 5
+  let base_salary = 1500
+  
+  // 计算基本工资总额
+  let total_salaries = multiply(team_members, base_salary)
+  
+  // 计算剩余预算
+  let remaining_budget = subtract(total_budget, total_salaries)
+  
+  // 计算每个团队成员的奖金
+  let bonus_per_person = divide_with_ceil(remaining_budget, team_members)
+  
+  assert_eq(7500, total_salaries)
+  assert_eq(2500, remaining_budget)
+  assert_eq(500, bonus_per_person)
+}

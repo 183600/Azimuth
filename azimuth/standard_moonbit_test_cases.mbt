@@ -205,3 +205,26 @@ test "error_division_by_zero_handling" {
   assert_eq(-4, negative_divisor)
   assert_eq(4, both_negative)
 }
+
+test "azimuth_advanced_mathematical_test" {
+  // Azimuth 高级数学测试
+  // 测试数学运算的结合律
+  let x = 4
+  let y = 6
+  let z = 8
+  
+  // 加法结合律: (x + y) + z = x + (y + z)
+  let left_assoc = add(add(x, y), z)
+  let right_assoc = add(x, add(y, z))
+  assert_eq(left_assoc, right_assoc)
+  
+  // 乘法结合律: (x * y) * z = x * (y * z)
+  let left_mul_assoc = multiply(multiply(x, y), z)
+  let right_mul_assoc = multiply(x, multiply(y, z))
+  assert_eq(left_mul_assoc, right_mul_assoc)
+  
+  // 分配律: x * (y + z) = x * y + x * z
+  let distrib_left = multiply(x, add(y, z))
+  let distrib_right = add(multiply(x, y), multiply(x, z))
+  assert_eq(distrib_left, distrib_right)
+}

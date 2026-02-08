@@ -210,3 +210,38 @@ test "real_world_application_scenario_tests" {
   
   // 验证座位充足性 - 通过剩余座位数量验证
 }
+
+test "azimuth_additional_comprehensive_test" {
+  // Azimuth 额外综合测试
+  // 测试财务计算场景
+  let principal = 10000
+  let annual_rate = 5
+  let years = 3
+  let monthly_payment = 300
+  
+  // 计算总支付
+  let total_payments = multiply(monthly_payment, multiply(years, 12))
+  
+  // 计算总利息
+  let total_interest = multiply(principal, annual_rate)
+  let interest_per_year = divide_with_ceil(total_interest, 100)
+  let total_interest_over_years = multiply(interest_per_year, years)
+  
+  // 计算总还款额
+  let total_repayment = add(principal, total_interest_over_years)
+  
+  // 计算剩余金额
+  let remaining = subtract(total_payments, total_repayment)
+  
+  assert_eq(10800, total_payments)
+  assert_eq(500, total_interest)
+  assert_eq(167, interest_per_year)
+  assert_eq(501, total_interest_over_years)
+  assert_eq(10501, total_repayment)
+  assert_eq(299, remaining)
+  
+  // 测试字符串处理
+  let account_type = "Savings"
+  let greeting_message = greet(account_type)
+  assert_eq_string("Hello, Savings!", greeting_message)
+}

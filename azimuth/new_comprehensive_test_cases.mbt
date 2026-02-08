@@ -241,3 +241,29 @@ test "type_boundary_test" {
   assert_eq(0, divide_with_ceil(-1, 2147483647))
   assert_eq(1, divide_with_ceil(2147483647, 2147483646))
 }
+
+test "azimuth_comprehensive_data_processing" {
+  // Azimuth 综合数据处理测试
+  // 场景：处理销售数据
+  let products_sold = 150
+  let price_per_item = 25
+  let discount_threshold = 100
+  let discount_rate = 10
+  
+  // 计算总收入
+  let gross_revenue = multiply(products_sold, price_per_item)
+  
+  // 计算折扣批次
+  let discount_batches = divide_with_ceil(products_sold, discount_threshold)
+  
+  // 计算总折扣
+  let total_discount = multiply(discount_batches, discount_rate)
+  
+  // 计算净收入
+  let net_revenue = subtract(gross_revenue, total_discount)
+  
+  assert_eq(3750, gross_revenue)
+  assert_eq(2, discount_batches)
+  assert_eq(20, total_discount)
+  assert_eq(3730, net_revenue)
+}
