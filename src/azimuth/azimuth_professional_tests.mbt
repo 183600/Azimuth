@@ -1,289 +1,220 @@
-// 专业级 MoonBit 测试用例
-// 为 Azimuth 项目核心函数编写的高质量测试套件
+// Azimuth 项目专业级 MoonBit 测试用例
+// 使用标准 MoonBit 测试语法，包含8个高质量测试用例
+// 测试覆盖：数值运算、字符串处理、数学算法、边界条件、实际应用场景
 
-test "core_arithmetic_operations_validation" {
-  // 核心算术运算验证测试
-  // 测试基本算术函数的各种情况
+test "arithmetic_sequence_calculation" {
+  // 等差数列计算测试
+  // 首项 a1 = 3，公差 d = 4，项数 n = 6
+  // 求第 n 项：an = a1 + (n-1)d
+  // 求前 n 项和：Sn = n(a1 + an)/2
   
-  // 加法运算测试
-  assert_eq(5 + 3, 8)
-  assert_eq((-3) + 7, 4)
-  assert_eq((-8) + (-2), -10)
-  assert_eq(0 + 0, 0)
+  let a1 = 3
+  let d = 4
+  let n = 6
   
-  // 乘法运算测试
-  assert_eq(4 * 5, 20)
-  assert_eq((-3) * 6, -18)
-  assert_eq((-4) * (-5), 20)
-  assert_eq(7 * 0, 0)
+  // 计算第6项
+  let an = add(a1, multiply(n - 1, d))
   
-  // 减法运算测试
-  assert_eq(15 - 8, 7)
-  assert_eq(5 - 12, -7)
-  assert_eq((-8) - (-3), -5)
-  assert_eq(0 - 0, 0)
+  // 计算前6项和
+  let sum = divide_with_ceil(multiply(n, add(a1, an)), 2)
+  
+  assert_eq(an, 23)
+  assert_eq(sum, 78)
 }
 
-test "division_ceiling_function_testing" {
-  // 向上取整除法函数测试
-  // 模拟 divide_with_ceil 函数的行为
+test "percentage_calculations" {
+  // 百分比计算测试 - 商业应用场景
+  let original_price = 200
+  let discount_rate = 15
+  let tax_rate = 8
   
-  // 正数除法测试
-  assert_eq(10 / 3, 3)  // 基础除法
-  assert_eq(9 / 3, 3)
-  assert_eq(1 / 5, 0)
-  assert_eq(100 / 25, 4)
+  // 计算折扣金额
+  let discount_amount = divide_with_ceil(multiply(original_price, discount_rate), 100)
+  let discounted_price = subtract(original_price, discount_amount)
   
-  // 边界情况测试
-  assert_eq(0 / 5, 0)
-  assert_eq(0 / 1, 0)
-  assert_eq(5 / 1, 5)
+  // 计算税费
+  let tax_amount = divide_with_ceil(multiply(discounted_price, tax_rate), 100)
+  let final_price = add(discounted_price, tax_amount)
   
-  // 负数除法测试
-  assert_eq((-10) / 3, -3)
-  assert_eq(10 / (-3), -3)
-  assert_eq((-10) / (-3), 3)
+  // 计算总折扣百分比
+  let total_discount = divide_with_ceil(multiply(subtract(original_price, final_price), 100), original_price)
+  
+  assert_eq(discount_amount, 30)
+  assert_eq(discounted_price, 170)
+  assert_eq(tax_amount, 14)
+  assert_eq(final_price, 184)
+  assert_eq(total_discount, 8)
 }
 
-test "string_greeting_functionality" {
-  // 字符串问候功能测试
-  // 模拟 greet 函数的行为
+test "time_zone_conversion" {
+  // 时区转换测试 - 实际应用场景
+  let local_hour = 14  // 下午2点
+  let local_minute = 30
+  let offset_hours = -8  // 东八区到UTC的时差
   
-  // 英文问候测试
-  assert_eq("Hello, World!", "Hello, World!")
-  assert_eq("Hello, MoonBit!", "Hello, MoonBit!")
+  // 转换为UTC时间
+  let utc_hour = add(local_hour, offset_hours)
+  let utc_minute = local_minute
   
-  // 中文问候测试
-  assert_eq("Hello, 世界!", "Hello, 世界!")
-  assert_eq("Hello, 明月!", "Hello, 明月!")
+  // 处理跨日情况（简化处理）
+  let adjusted_utc_hour = if utc_hour < 0 { add(utc_hour, 24) } else { utc_hour }
   
-  // 边界情况测试
-  assert_eq("Hello, !", "Hello, !")
-  assert_eq("Hello,  !", "Hello,  !")
+  // 转换为12小时制
+  let hour_12 = if adjusted_utc_hour > 12 { subtract(adjusted_utc_hour, 12) } else { adjusted_utc_hour }
+  let period = if adjusted_utc_hour >= 12 { "PM" } else { "AM" }
   
-  // 数字和特殊字符测试
-  assert_eq("Hello, 2024!", "Hello, 2024!")
-  assert_eq("Hello, @#$%!", "Hello, @#$%!")
+  assert_eq(utc_hour, 6)
+  assert_eq(adjusted_utc_hour, 6)
+  assert_eq(hour_12, 6)
+  assert_eq_string(period, "AM")
 }
 
-test "mathematical_properties_verification" {
-  // 数学性质验证测试
-  // 验证基本算术运算的数学性质
+test "inventory_optimization" {
+  // 库存优化算法测试
+  let demand_forecast = 1000
+  let holding_cost_per_unit = 5
+  let ordering_cost = 100
+  let days_per_period = 30
   
-  let x = 12
-  let y = 8
-  let z = 5
+  // 经济订货量 (EOQ) 简化计算
+  let sqrt_component = divide_with_ceil(multiply(demand_forecast, multiply(ordering_cost, 2)), holding_cost_per_unit)
+  let eoq = divide_with_ceil(sqrt_component, 10)  // 简化的平方根计算
   
-  // 加法交换律验证
-  assert_eq(x + y, y + x)
-  assert_eq(x + z, z + x)
+  // 年订货次数
+  let orders_per_year = divide_with_ceil(demand_forecast, eoq)
   
-  // 乘法交换律验证
-  assert_eq(x * y, y * x)
-  assert_eq(x * z, z * x)
+  // 订货间隔天数
+  let days_between_orders = divide_with_ceil(days_per_period, divide_with_ceil(orders_per_year, 12))
   
-  // 加法结合律验证
-  assert_eq((x + y) + z, x + (y + z))
-  
-  // 乘法结合律验证
-  assert_eq((x * y) * z, x * (y * z))
-  
-  // 分配律验证
-  assert_eq(x * (y + z), (x * y) + (x * z))
-  
-  // 单位元性质验证
-  assert_eq(x + 0, x)
-  assert_eq(x * 1, x)
+  assert_eq(eoq, 200)
+  assert_eq(orders_per_year, 5)
+  assert_eq(days_between_orders, 6)
 }
 
-test "financial_calculation_scenario" {
-  // 金融计算场景测试
-  // 模拟实际金融计算场景
+test "data_validation_rules" {
+  // 数据验证规则测试
+  let min_value = 10
+  let max_value = 100
+  let step = 5
   
-  let principal = 10000  // 本金
-  let rate = 5           // 年利率百分比
+  // 测试有效值
+  let valid1 = 25
+  let valid2 = 50
+  let valid3 = 95
   
-  // 第一年计算
-  let year1_interest = (principal * rate) / 100
-  let year1_total = principal + year1_interest
+  // 测试无效值
+  let invalid1 = 5   // 小于最小值
+  let invalid2 = 105 // 大于最大值
+  let invalid3 = 27  // 不符合步长
   
-  // 第二年计算（复利）
-  let year2_interest = (year1_total * rate) / 100
-  let year2_total = year1_total + year2_interest
+  // 验证函数（简化）
+  let is_valid1 = valid1 >= min_value && valid1 <= max_value && (valid1 - min_value) % step == 0
+  let is_valid2 = valid2 >= min_value && valid2 <= max_value && (valid2 - min_value) % step == 0
+  let is_valid3 = valid3 >= min_value && valid3 <= max_value && (valid3 - min_value) % step == 0
   
-  // 第三年计算（复利）
-  let year3_interest = (year2_total * rate) / 100
-  let year3_total = year2_total + year3_interest
+  let is_invalid1 = invalid1 >= min_value
+  let is_invalid2 = invalid2 <= max_value
+  let is_invalid3 = (invalid3 - min_value) % step == 0
   
-  // 计算总收益
-  let total_profit = year3_total - principal
-  
-  // 验证计算结果
-  assert_eq(year1_total, 10500)
-  assert_eq(year2_total, 11025)
-  assert_eq(year3_total, 11576)
-  assert_eq(total_profit, 1576)
+  assert_eq(is_valid1, true)
+  assert_eq(is_valid2, true)
+  assert_eq(is_valid3, true)
+  assert_eq(is_invalid1, false)
+  assert_eq(is_invalid2, false)
+  assert_eq(is_invalid3, false)
 }
 
-test "resource_allocation_optimization" {
-  // 资源分配优化测试
-  // 模拟资源分配和优化问题
+test "signal_processing_simulation" {
+  // 信号处理模拟测试
+  let signal_amplitude = 100
+  let noise_level = 15
+  let samples = 8
   
-  let total_budget = 1000
+  // 计算信噪比 (SNR)
+  let snr_db = divide_with_ceil(multiply(20, 10), 1)  // 简化的SNR计算
   
-  // 计算前三个项目的总成本
-  let combo1_cost = 300 + 250 + 180
+  // 移动平均滤波
+  let sample1 = 95
+  let sample2 = 105
+  let sample3 = 90
+  let sample4 = 110
+  let sample5 = 98
+  let sample6 = 102
+  let sample7 = 92
+  let sample8 = 108
   
-  // 计算剩余预算
-  let remaining_budget = total_budget - combo1_cost
+  let window_size = 3
+  let avg1 = divide_with_ceil(add(add(sample1, sample2), sample3), window_size)
+  let avg2 = divide_with_ceil(add(add(sample2, sample3), sample4), window_size)
+  let avg3 = divide_with_ceil(add(add(sample3, sample4), sample5), window_size)
   
-  // 计算可以启动的项目数量（假设每个项目平均成本150）
-  let avg_project_cost = 150
-  let additional_projects = remaining_budget / avg_project_cost
+  // 计算方差（简化）
+  let variance = divide_with_ceil(add(add(multiply(subtract(avg1, 100), subtract(avg1, 100)), 
+                                       multiply(subtract(avg2, 100), subtract(avg2, 100))),
+                                       multiply(subtract(avg3, 100), subtract(avg3, 100))), 3)
   
-  // 计算预算利用率
-  let utilization = (combo1_cost * 100) / total_budget
-  
-  // 验证计算结果
-  assert_eq(combo1_cost, 730)
-  assert_eq(remaining_budget, 270)
-  assert_eq(additional_projects, 1)
-  assert_eq(utilization, 73)
+  assert_eq(snr_db, 200)
+  assert_eq(avg1, 97)
+  assert_eq(avg2, 102)
+  assert_eq(avg3, 99)
+  assert_eq(variance, 14)
 }
 
-test "algorithm_complexity_analysis" {
-  // 算法复杂度分析测试
-  // 模拟不同算法复杂度的计算特征
+test "resource_scheduling" {
+  // 资源调度算法测试
+  let tasks = [30, 20, 50, 10, 40]  // 任务持续时间
+  let processors = 2
   
-  let n = 10
+  // 最短作业优先 (SJF) 调度
+  let task1 = 10  // 最短任务
+  let task2 = 20
+  let task3 = 30
+  let task4 = 40
+  let task5 = 50  // 最长任务
   
-  // O(1) 常数时间操作
-  let constant_time = 5 + 3
-  assert_eq(constant_time, 8)
+  // 双处理器并行执行
+  let processor1_time = add(add(task1, task3), task5)  // 10 + 30 + 50 = 90
+  let processor2_time = add(task2, task4)              // 20 + 40 = 60
   
-  // O(n) 线性时间操作模拟
-  let sum_step10 = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10
+  // 总执行时间（取最大值）
+  let total_time = if processor1_time > processor2_time { processor1_time } else { processor2_time }
   
-  // 验证线性求和结果 (1+2+...+10 = 55)
-  assert_eq(sum_step10, 55)
+  // 处理器利用率
+  let utilization = divide_with_ceil(multiply(total_time, 100), multiply(processor1_time, 2))
   
-  // O(n²) 二次时间操作模拟
-  let quadratic_result = n * n
-  assert_eq(quadratic_result, 100)
-  
-  // O(log n) 对数时间操作模拟（二分查找步骤）
-  let log_steps = n / 2
-  assert_eq(log_steps, 5)
+  assert_eq(processor1_time, 90)
+  assert_eq(processor2_time, 60)
+  assert_eq(total_time, 90)
+  assert_eq(utilization, 50)
 }
 
-test "data_structure_operations_simulation" {
-  // 数据结构操作模拟测试
-  // 模拟栈和队列等数据结构的基本操作
+test "compression_ratio_analysis" {
+  // 压缩比分析测试
+  let original_data = [100, 200, 150, 300, 250, 180, 220, 160]
+  let compressed_data = [50, 80, 60, 100]  // 压缩后的代表性值
   
-  // 栈操作模拟
-  let push1 = 10
-  let push2 = 20
-  let stack_size2 = 2
-  let stack_top2 = push2
+  // 计算原始数据大小
+  let original_size = add(add(add(add(add(add(add(original_data[0], original_data[1]), original_data[2]), 
+                                    original_data[3]), original_data[4]), original_data[5]), 
+                                    original_data[6]), original_data[7])
   
-  // pop操作模拟
-  let popped_value = stack_top2
-  let stack_size3 = 1
-  let stack_top3 = push1
+  // 计算压缩后大小
+  let compressed_size = add(add(add(compressed_data[0], compressed_data[1]), compressed_data[2]), compressed_data[3])
   
-  // 验证栈操作
-  assert_eq(popped_value, 20)
-  assert_eq(stack_size3, 1)
-  assert_eq(stack_top3, 10)
+  // 计算压缩比
+  let compression_ratio = divide_with_ceil(multiply(original_size, 100), compressed_size)
   
-  // 队列操作模拟
-  let enqueue1 = 30
-  let enqueue2 = 40
-  let queue_size2 = 2
-  let queue_front1 = enqueue1
+  // 计算空间节省
+  let space_saved = subtract(original_size, compressed_size)
+  let savings_percentage = divide_with_ceil(multiply(space_saved, 100), original_size)
   
-  // dequeue操作模拟
-  let dequeued_value = queue_front1
-  let queue_size3 = 1
-  let queue_front3 = enqueue2
+  // 计算压缩效率（每单位压缩数据节省的空间）
+  let efficiency = divide_with_ceil(space_saved, compressed_size)
   
-  // 验证队列操作
-  assert_eq(dequeued_value, 30)
-  assert_eq(queue_size3, 1)
-  assert_eq(queue_front3, 40)
-}
-
-test "error_handling_boundary_conditions" {
-  // 错误处理边界条件测试
-  // 测试各种边界条件和错误情况的处理
-  
-  // 极值测试
-  let large_number = 100000
-  let small_number = 1
-  
-  // 大数运算测试
-  assert_eq(large_number + large_number, 200000)
-  assert_eq(large_number * small_number, 100000)
-  assert_eq(large_number - small_number, 99999)
-  assert_eq(large_number / small_number, 100000)
-  
-  // 边界值测试
-  assert_eq(0 + 0, 0)
-  assert_eq(0 * 0, 0)
-  assert_eq(0 - 0, 0)
-  assert_eq(0 / 1, 0)
-  
-  // 负数边界测试
-  assert_eq((-1) + 1, 0)
-  assert_eq((-1) * 1, -1)
-  assert_eq(0 - (-1), 1)
-  assert_eq((-1) / 1, -1)
-  
-  // 精度测试
-  assert_eq(1 / 2, 0)
-  assert_eq(2 / 3, 0)
-  assert_eq(3 / 4, 0)
-  assert_eq(100 / 99, 1)
-}
-
-test "real_world_application_integration" {
-  // 真实世界应用集成测试
-  // 模拟完整的实际应用场景
-  
-  // 电商购物车场景
-  let item1_price = 25
-  let item1_quantity = 3
-  let item2_price = 15
-  let item2_quantity = 2
-  let item3_price = 8
-  let item3_quantity = 5
-  
-  // 计算各商品小计
-  let item1_subtotal = item1_price * item1_quantity
-  let item2_subtotal = item2_price * item2_quantity
-  let item3_subtotal = item3_price * item3_quantity
-  
-  // 计算商品总计
-  let items_total = item1_subtotal + item2_subtotal + item3_subtotal
-  
-  // 计算税费（假设税率10%）
-  let tax_rate = 10
-  let tax_amount = (items_total * tax_rate) / 100
-  
-  // 计算总价
-  let grand_total = items_total + tax_amount
-  
-  // 计算每箱包装数量（假设每箱最多装12个商品）
-  let total_items = item1_quantity + item2_quantity + item3_quantity
-  let boxes_needed = (total_items + 12 - 1) / 12  // 向上取整的另一种方式
-  
-  // 验证计算结果
-  assert_eq(item1_subtotal, 75)
-  assert_eq(item2_subtotal, 30)
-  assert_eq(item3_subtotal, 40)
-  assert_eq(items_total, 145)
-  assert_eq(tax_amount, 14)  // 145 * 10 / 100 = 14.5，整数除法为14
-  assert_eq(grand_total, 159)
-  assert_eq(total_items, 10)
-  assert_eq(boxes_needed, 1)
+  assert_eq(original_size, 1560)
+  assert_eq(compressed_size, 290)
+  assert_eq(compression_ratio, 538)
+  assert_eq(space_saved, 1270)
+  assert_eq(savings_percentage, 81)
+  assert_eq(efficiency, 4)
 }
