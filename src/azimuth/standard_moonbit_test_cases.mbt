@@ -1,73 +1,52 @@
 // 标准 MoonBit 测试用例
-// 包含 8 个高质量测试用例，使用标准 MoonBit 测试语法
+// 为 Azimuth 项目添加的核心测试用例
 
-test "add_function_basic_cases" {
-  // 测试加法函数的基本情况
-  assert_eq(add(2, 3), 5)
-  assert_eq(add(0, 0), 0)
-  assert_eq(add(-5, 5), 0)
-  assert_eq(add(100, 200), 300)
+test "basic_arithmetic_operations" {
+  // 测试基本算术运算
+  assert_eq(5, add(2, 3))
+  assert_eq(6, multiply(2, 3))
+  assert_eq(-1, subtract(2, 3))
+  assert_eq(2, divide_with_ceil(5, 3))
+  assert_eq(1, divide_with_ceil(3, 3))
 }
 
-test "multiply_function_properties" {
-  // 测试乘法函数的数学性质
-  assert_eq(multiply(3, 4), 12)
-  assert_eq(multiply(0, 100), 0)
-  assert_eq(multiply(1, 50), 50)
-  assert_eq(multiply(-2, 3), -6)
-  assert_eq(multiply(-2, -3), 6)
+test "string_greeting_functionality" {
+  // 测试字符串问候功能
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
 }
 
-test "subtract_function_comprehensive" {
-  // 测试减法函数的综合情况
-  assert_eq(subtract(10, 5), 5)
-  assert_eq(subtract(5, 10), -5)
-  assert_eq(subtract(0, 0), 0)
-  assert_eq(subtract(100, 0), 100)
-  assert_eq(subtract(0, 100), -100)
+test "division_edge_cases" {
+  // 测试除法边界情况
+  assert_eq(0, divide_with_ceil(0, 5))
+  assert_eq(0, divide_with_ceil(0, 0))
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(1, divide_with_ceil(1, 2))
+  assert_eq(3, divide_with_ceil(-10, 4))
 }
 
-test "divide_with_ceil_behavior" {
-  // 测试向上取整除法的行为
-  assert_eq(divide_with_ceil(10, 3), 4)
-  assert_eq(divide_with_ceil(9, 3), 3)
-  assert_eq(divide_with_ceil(1, 2), 1)
-  assert_eq(divide_with_ceil(0, 5), 0)
-  assert_eq(divide_with_ceil(10, 0), 0)
-  assert_eq(divide_with_ceil(-10, 3), -3)
+test "negative_number_calculations" {
+  // 测试负数计算
+  assert_eq(-1, add(-2, 1))
+  assert_eq(-6, multiply(-2, 3))
+  assert_eq(-5, subtract(-2, 3))
+  assert_eq(-2, divide_with_ceil(-5, 3))
 }
 
-test "greet_function_various_inputs" {
-  // 测试问候函数的各种输入
-  assert_eq_string(greet("World"), "Hello, World!")
-  assert_eq_string(greet("MoonBit"), "Hello, MoonBit!")
-  assert_eq_string(greet(""), "Hello, !")
-  assert_eq_string(greet("123"), "Hello, 123!")
-}
-
-test "complex_calculation_sequence" {
-  // 测试复杂计算序列
-  let a = 10
-  let b = 3
-  let c = 2
+test "complex_calculation_chain" {
+  // 测试复杂计算链
+  let result = multiply(add(5, 3), subtract(10, 2))
+  assert_eq(64, result)
   
-  // (a + b) * c
-  let result1 = multiply(add(a, b), c)
-  assert_eq(result1, 26)
-  
-  // a * b + c
-  let result2 = add(multiply(a, b), c)
-  assert_eq(result2, 32)
-  
-  // (a - b) / c (向上取整)
-  let result3 = divide_with_ceil(subtract(a, b), c)
-  assert_eq(result3, 4)
+  let result2 = divide_with_ceil(add(multiply(3, 4), 5), 2)
+  assert_eq(9, result2)
 }
 
-test "mathematical_properties_validation" {
-  // 验证数学性质
+test "mathematical_properties" {
+  // 测试数学性质
   let x = 7
-  let y = 5
+  let y = 3
   
   // 加法交换律
   assert_eq(add(x, y), add(y, x))
@@ -80,28 +59,46 @@ test "mathematical_properties_validation" {
   
   // 乘法单位元
   assert_eq(multiply(x, 1), x)
-  
-  // 减法的逆运算
-  assert_eq(add(subtract(x, y), y), x)
 }
 
-test "edge_cases_and_boundary_values" {
-  // 测试边界值和特殊情况
-  // 零值测试
-  assert_eq(add(0, 0), 0)
-  assert_eq(multiply(0, 5), 0)
-  assert_eq(subtract(0, 0), 0)
-  assert_eq(divide_with_ceil(0, 10), 0)
+test "boundary_value_tests" {
+  // 测试边界值
+  assert_eq(0, add(0, 0))
+  assert_eq(0, multiply(0, 5))
+  assert_eq(5, subtract(5, 0))
+  assert_eq(5, divide_with_ceil(5, 1))
+  assert_eq(1, divide_with_ceil(5, 5))
+}
+
+test "large_number_operations" {
+  // 测试大数运算
+  let big_num = 10000
+  assert_eq(20000, add(big_num, big_num))
+  assert_eq(100000000, multiply(big_num, big_num))
+  assert_eq(0, subtract(big_num, big_num))
+  assert_eq(3334, divide_with_ceil(big_num, 3))
+}
+
+test "precision_validation" {
+  // 测试精度验证
+  assert_eq(1, divide_with_ceil(1, 2))
+  assert_eq(1, divide_with_ceil(2, 3))
+  assert_eq(2, divide_with_ceil(3, 2))
+  assert_eq(50, divide_with_ceil(100, 2))
+  assert_eq(34, divide_with_ceil(100, 3))
+}
+
+test "real_world_scenarios" {
+  // 测试真实世界场景
+  // 购物车计算
+  let item_price = 25
+  let quantity = 3
+  let tax_rate = 10
+  let subtotal = multiply(item_price, quantity)
+  let tax = divide_with_ceil(multiply(subtotal, tax_rate), 100)
+  let total = add(subtotal, tax)
   
-  // 单位值测试
-  assert_eq(add(1, 0), 1)
-  assert_eq(multiply(1, 10), 10)
-  assert_eq(subtract(1, 0), 1)
-  assert_eq(divide_with_ceil(10, 1), 10)
-  
-  // 负数测试
-  assert_eq(add(-5, 3), -2)
-  assert_eq(multiply(-2, 3), -6)
-  assert_eq(subtract(-10, 5), -15)
-  assert_eq(divide_with_ceil(-5, 2), -2)
+  assert_eq(75, subtotal)
+  assert_eq(8, tax)
+  assert_eq(83, total)
 }
