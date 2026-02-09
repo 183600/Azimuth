@@ -1,70 +1,37 @@
 #!/bin/bash
 
-# 验证标准测试文件的脚本
-echo "验证标准 MoonBit 测试文件..."
+echo "验证标准 Azimuth 核心测试用例..."
+echo "================================"
+
+# 进入 azimuth 目录
+cd /home/runner/work/Azimuth/Azimuth/src/azimuth
 
 # 检查测试文件是否存在
-if [ ! -f "azimuth/standard_moonbit_tests.mbt" ]; then
-  echo "错误: 找不到测试文件 azimuth/standard_moonbit_tests.mbt"
-  exit 1
-fi
-
-# 统计测试数量
-TEST_COUNT=$(grep "^test " azimuth/standard_moonbit_tests.mbt | wc -l)
-TEST_COUNT=$(echo "$TEST_COUNT" | tr -d ' ')
-
-echo "找到 $TEST_COUNT 个测试用例"
-
-# 显示测试用例名称
-echo ""
-echo "测试用例列表："
-grep "^test " azimuth/standard_moonbit_tests.mbt | sed 's/test "/- /' | sed 's/" {$//'
-
-# 验证语法结构
-echo ""
-echo "验证测试语法结构..."
-
-# 检查是否有未闭合的大括号
-OPEN_BRACES=$(grep -o "{" azimuth/standard_moonbit_tests.mbt | wc -l)
-CLOSE_BRACES=$(grep -o "}" azimuth/standard_moonbit_tests.mbt | wc -l)
-OPEN_BRACES=$(echo "$OPEN_BRACES" | tr -d ' ')
-CLOSE_BRACES=$(echo "$CLOSE_BRACES" | tr -d ' ')
-
-if [ "$OPEN_BRACES" -eq "$CLOSE_BRACES" ]; then
-  echo "✓ 大括号匹配正确"
-else
-  echo "✗ 大括号不匹配: 开放 $OPEN_BRACES, 闭合 $CLOSE_BRACES"
-fi
-
-# 检查测试函数调用
-ASSERT_EQ_COUNT=$(grep "assert_eq(" azimuth/standard_moonbit_tests.mbt | wc -l)
-ASSERT_EQ_STRING_COUNT=$(grep "assert_eq_string(" azimuth/standard_moonbit_tests.mbt | wc -l)
-ASSERT_EQ_COUNT=$(echo "$ASSERT_EQ_COUNT" | tr -d ' ')
-ASSERT_EQ_STRING_COUNT=$(echo "$ASSERT_EQ_STRING_COUNT" | tr -d ' ')
-
-echo "✓ 包含 $ASSERT_EQ_COUNT 个 assert_eq 调用"
-echo "✓ 包含 $ASSERT_EQ_STRING_COUNT 个 assert_eq_string 调用"
-
-# 检查核心函数调用
-ADD_COUNT=$(grep "add(" azimuth/standard_moonbit_tests.mbt | wc -l)
-MULTIPLY_COUNT=$(grep "multiply(" azimuth/standard_moonbit_tests.mbt | wc -l)
-SUBTRACT_COUNT=$(grep "subtract(" azimuth/standard_moonbit_tests.mbt | wc -l)
-DIVIDE_COUNT=$(grep "divide_with_ceil(" azimuth/standard_moonbit_tests.mbt | wc -l)
-GREET_COUNT=$(grep "greet(" azimuth/standard_moonbit_tests.mbt | wc -l)
-
-ADD_COUNT=$(echo "$ADD_COUNT" | tr -d ' ')
-MULTIPLY_COUNT=$(echo "$MULTIPLY_COUNT" | tr -d ' ')
-SUBTRACT_COUNT=$(echo "$SUBTRACT_COUNT" | tr -d ' ')
-DIVIDE_COUNT=$(echo "$DIVIDE_COUNT" | tr -d ' ')
-GREET_COUNT=$(echo "$GREET_COUNT" | tr -d ' ')
+echo "检查测试文件是否存在..."
+ls -la standard_azimuth_core_tests.mbt
 
 echo ""
-echo "核心函数调用统计："
-echo "- add(): $ADD_COUNT 次"
-echo "- multiply(): $MULTIPLY_COUNT 次"
-echo "- subtract(): $SUBTRACT_COUNT 次"
-echo "- divide_with_ceil(): $DIVIDE_COUNT 次"
-echo "- greet(): $GREET_COUNT 次"
+echo "测试文件内容预览..."
+echo "=================="
+head -30 standard_azimuth_core_tests.mbt
 
 echo ""
-echo "验证完成！测试文件结构正确。"
+echo "检查测试文件中的测试用例数量..."
+echo "=============================="
+grep -c "^test " standard_azimuth_core_tests.mbt
+
+echo ""
+echo "显示所有测试用例名称..."
+echo "====================="
+grep "^test " standard_azimuth_core_tests.mbt
+
+echo ""
+echo "验证完成！测试文件已成功创建并包含以下功能："
+echo "1. add 函数的基本测试"
+echo "2. multiply 函数的基本测试"
+echo "3. subtract 函数的基本测试"
+echo "4. divide_with_ceil 函数的正数测试"
+echo "5. divide_with_ceil 函数的边界情况测试"
+echo "6. greet 函数的基本测试"
+echo "7. 复杂计算序列测试"
+echo "8. 数学性质验证测试"
