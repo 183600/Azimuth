@@ -229,6 +229,7 @@
     "standard_core_functionality_tests.mbt",
     "test/azimuth_standard_new_tests.mbt",
     "simple_test.mbt",
+    "simple_azimuth_test_new.mbt",
     "standard_test.mbt",
     "standard_moonbit_tests.mbt",
     "standard_azimuth_enhanced_tests.mbt",
