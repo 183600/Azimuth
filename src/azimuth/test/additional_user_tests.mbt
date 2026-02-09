@@ -1,135 +1,146 @@
-// 用户请求的额外 MoonBit 测试用例
-// 使用标准的 MoonBit 测试语法
+// 用户添加的 MoonBit 测试用例
+// 包含10个标准测试用例，覆盖核心功能和边界情况
 
-test "add_negative_numbers" {
-  // 测试负数相加
-  @azimuth.assert_eq(-10, @azimuth.add(-3, -7))
-  @azimuth.assert_eq(0, @azimuth.add(-5, 5))
-  @azimuth.assert_eq(-100, @azimuth.add(-50, -50))
+test "basic_arithmetic_operations" {
+  // 基本算术运算测试
+  @azimuth.assert_eq(15, @azimuth.add(7, 8))
+  @azimuth.assert_eq(42, @azimuth.multiply(6, 7))
+  @azimuth.assert_eq(3, @azimuth.subtract(10, 7))
+  @azimuth.assert_eq(5, @azimuth.divide_with_ceil(15, 3))
+  @azimuth.assert_eq(4, @azimuth.divide_with_ceil(10, 3))
 }
 
-test "multiply_by_negative_numbers" {
-  // 测试与负数相乘
-  @azimuth.assert_eq(-15, @azimuth.multiply(3, -5))
-  @azimuth.assert_eq(15, @azimuth.multiply(-3, -5))
-  @azimuth.assert_eq(0, @azimuth.multiply(0, -100))
+test "negative_number_operations" {
+  // 负数运算测试
+  @azimuth.assert_eq(-5, @azimuth.add(-2, -3))
+  @azimuth.assert_eq(1, @azimuth.add(-5, 6))
+  @azimuth.assert_eq(12, @azimuth.multiply(-3, -4))
+  @azimuth.assert_eq(-18, @azimuth.multiply(-3, 6))
+  @azimuth.assert_eq(-8, @azimuth.subtract(5, 13))
 }
 
-test "greet_with_multilingual_names" {
-  // 测试多语言名字的问候
-  @azimuth.assert_eq_string("Hello, José!", @azimuth.greet("José"))
-  @azimuth.assert_eq_string("Hello, 北京!", @azimuth.greet("北京"))
-  @azimuth.assert_eq_string("Hello, München!", @azimuth.greet("München"))
-  @azimuth.assert_eq_string("Hello, संस्कृतम्!", @azimuth.greet("संस्कृतम्"))
+test "zero_handling_operations" {
+  // 零值处理测试
+  @azimuth.assert_eq(0, @azimuth.add(0, 0))
+  @azimuth.assert_eq(5, @azimuth.add(5, 0))
+  @azimuth.assert_eq(0, @azimuth.multiply(5, 0))
+  @azimuth.assert_eq(5, @azimuth.subtract(5, 0))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(0, 5))
+  @azimuth.assert_eq(0, @azimuth.divide_with_ceil(10, 0))
 }
 
-test "complex_arithmetic_sequence" {
-  // 测试复杂数学序列计算
-  // 计算斐波那契数列前几项的和（简化版）
-  let fib1 = 1
-  let fib2 = 1
-  let fib3 = @azimuth.add(fib1, fib2)  // 2
-  let fib4 = @azimuth.add(fib2, fib3)  // 3
-  let fib5 = @azimuth.add(fib3, fib4)  // 5
-  
-  let sum = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(fib1, fib2), fib3), fib4), fib5)
-  @azimuth.assert_eq(12, sum)
+test "greet_function_edge_cases" {
+  // 问候函数边界情况测试
+  @azimuth.assert_eq_string("Hello, 用户!", @azimuth.greet("用户"))
+  @azimuth.assert_eq_string("Hello, 12345!", @azimuth.greet("12345"))
+  @azimuth.assert_eq_string("Hello, !", @azimuth.greet(""))
+  @azimuth.assert_eq_string("Hello, 特殊字符@#$!", @azimuth.greet("特殊字符@#$"))
+  @azimuth.assert_eq_string("Hello,   !", @azimuth.greet("  "))
 }
 
-test "business_calculation_discount" {
-  // 测试商业计算：折扣和总价
-  let unit_price = 120
-  let quantity = 5
-  let discount_rate = 10  // 10% 折扣
+test "mathematical_properties_validation" {
+  // 数学性质验证测试
+  let x = 17, y = 23, z = 5
   
-  let subtotal = @azimuth.multiply(unit_price, quantity)
-  let discount_amount = @azimuth.multiply(subtotal, discount_rate) / 100
-  let final_price = @azimuth.add(subtotal, -discount_amount)
+  // 加法交换律
+  @azimuth.assert_eq(@azimuth.add(x, y), @azimuth.add(y, x))
   
-  @azimuth.assert_eq(540, final_price)  // 120*5 - 120*5*10/100 = 600 - 60 = 540
+  // 乘法交换律
+  @azimuth.assert_eq(@azimuth.multiply(x, y), @azimuth.multiply(y, x))
+  
+  // 加法结合律
+  @azimuth.assert_eq(@azimuth.add(@azimuth.add(x, y), z), @azimuth.add(x, @azimuth.add(y, z)))
+  
+  // 乘法结合律
+  @azimuth.assert_eq(@azimuth.multiply(@azimuth.multiply(x, y), z), @azimuth.multiply(x, @azimuth.multiply(y, z)))
 }
 
-test "temperature_conversion_celsius_to_fahrenheit" {
-  // 测试温度转换：摄氏度转华氏度
-  // 使用简化公式 F = C * 2 + 30 （避免浮点数）
+test "complex_calculation_scenarios" {
+  // 复杂计算场景测试
+  // 模拟购物车计算
+  let item1_price = 25, item1_qty = 3
+  let item2_price = 15, item2_qty = 2
+  let shipping = 10
   
-  let freezing_celsius = 0
-  let freezing_fahrenheit = @azimuth.add(@azimuth.multiply(freezing_celsius, 2), 30)
-  @azimuth.assert_eq(30, freezing_fahrenheit)
+  let subtotal1 = @azimuth.multiply(item1_price, item1_qty)
+  let subtotal2 = @azimuth.multiply(item2_price, item2_qty)
+  let items_total = @azimuth.add(subtotal1, subtotal2)
+  let grand_total = @azimuth.add(items_total, shipping)
   
-  let room_celsius = 20
-  let room_fahrenheit = @azimuth.add(@azimuth.multiply(room_celsius, 2), 30)
-  @azimuth.assert_eq(70, room_fahrenheit)
-  
-  let boiling_celsius = 100
-  let boiling_fahrenheit = @azimuth.add(@azimuth.multiply(boiling_celsius, 2), 30)
-  @azimuth.assert_eq(230, boiling_fahrenheit)
+  @azimuth.assert_eq(75, subtotal1)
+  @azimuth.assert_eq(30, subtotal2)
+  @azimuth.assert_eq(105, items_total)
+  @azimuth.assert_eq(115, grand_total)
 }
 
-test "string_processing_with_special_chars" {
-  // 测试包含特殊字符的字符串处理
-  let email = "user@example.com"
-  let phone = "+1-555-123-4567"
-  let url = "https://moonbitlang.com"
+test "resource_allocation_calculations" {
+  // 资源分配计算测试
+  let total_budget = 1000
+  let project1_cost = 350
+  let project2_cost = 275
+  let project3_cost = 180
   
-  @azimuth.assert_eq_string("Hello, user@example.com!", @azimuth.greet(email))
-  @azimuth.assert_eq_string("Hello, +1-555-123-4567!", @azimuth.greet(phone))
-  @azimuth.assert_eq_string("Hello, https://moonbitlang.com!", @azimuth.greet(url))
+  let allocated = @azimuth.add(@azimuth.add(project1_cost, project2_cost), project3_cost)
+  let remaining = @azimuth.subtract(total_budget, allocated)
+  let emergency_reserve = @azimuth.divide_with_ceil(remaining, 2)
+  
+  @azimuth.assert_eq(805, allocated)
+  @azimuth.assert_eq(195, remaining)
+  @azimuth.assert_eq(98, emergency_reserve)
 }
 
-test "geometric_calculations_perimeter" {
-  // 测试几何计算：周长
-  // 正方形周长：4 * 边长
-  let square_side = 7
-  let square_perimeter = @azimuth.multiply(4, square_side)
-  @azimuth.assert_eq(28, square_perimeter)
+test "time_based_calculations" {
+  // 基于时间的计算测试
+  let hours_per_day = 8
+  let days_per_week = 5
+  let weeks_per_month = 4
   
-  // 长方形周长：2 * (长 + 宽)
-  let rect_length = 8
-  let rect_width = 5
-  let rect_perimeter = @azimuth.multiply(2, @azimuth.add(rect_length, rect_width))
-  @azimuth.assert_eq(26, rect_perimeter)
+  let monthly_hours = @azimuth.multiply(hours_per_day, @azimuth.multiply(days_per_week, weeks_per_month))
+  let overtime_rate = 2
+  let overtime_hours = 10
+  let overtime_pay = @azimuth.multiply(hours_per_day, overtime_rate)
   
-  // 三角形周长：三边之和
-  let side_a = 3
-  let side_b = 4
-  let side_c = 5
-  let triangle_perimeter = @azimuth.add(@azimuth.add(side_a, side_b), side_c)
-  @azimuth.assert_eq(12, triangle_perimeter)
+  @azimuth.assert_eq(160, monthly_hours)
+  @azimuth.assert_eq(16, overtime_pay)
 }
 
-test "digital_root_calculation" {
-  // 测试数字根计算（简化版）
-  // 数字根：将数字的各位相加，直到得到一位数
-  // 这里我们只测试简单的数字根计算
+test "boundary_value_analysis" {
+  // 边界值分析测试
+  let max_value = 100
+  let min_value = 1
   
-  let num1 = 1234
-  let sum1 = @azimuth.add(@azimuth.add(@azimuth.add(1, 2), 3), 4)  // 1+2+3+4 = 10
-  let digital_root1 = @azimuth.add(sum1 % 10, sum1 / 10)  // 1+0 = 1
-  @azimuth.assert_eq(1, digital_root1)
+  // 测试边界附近的值
+  @azimuth.assert_eq(101, @azimuth.add(max_value, 1))
+  @azimuth.assert_eq(99, @azimuth.subtract(max_value, 1))
+  @azimuth.assert_eq(0, @azimuth.subtract(min_value, 1))
+  @azimuth.assert_eq(2, @azimuth.add(min_value, 1))
   
-  let num2 = 567
-  let sum2 = @azimuth.add(5, @azimuth.add(6, 7))  // 5+6+7 = 18
-  let digital_root2 = @azimuth.add(sum2 % 10, sum2 / 10)  // 8+1 = 9
-  @azimuth.assert_eq(9, digital_root2)
+  // 测试边界除法
+  @azimuth.assert_eq(100, @azimuth.divide_with_ceil(max_value, 1))
+  @azimuth.assert_eq(50, @azimuth.divide_with_ceil(max_value, 2))
+  @azimuth.assert_eq(34, @azimuth.divide_with_ceil(max_value, 3))
 }
 
-test "array_sum_and_average" {
-  // 测试数组求和与平均值（模拟）
-  // 模拟数组 [10, 20, 30, 40, 50]
+test "practical_business_metrics" {
+  // 实际业务指标测试
+  let revenue = 50000
+  let costs = 35000
+  let employees = 8
   
-  let val1 = 10
-  let val2 = 20
-  let val3 = 30
-  let val4 = 40
-  let val5 = 50
+  // 计算利润
+  let profit = @azimuth.subtract(revenue, costs)
   
-  // 计算总和
-  let total = @azimuth.add(@azimuth.add(@azimuth.add(@azimuth.add(val1, val2), val3), val4), val5)
-  @azimuth.assert_eq(150, total)
+  // 计算利润率
+  let profit_rate = @azimuth.divide_with_ceil(@azimuth.multiply(profit, 100), revenue)
   
-  // 计算平均值
-  let count = 5
-  let average = total / count
-  @azimuth.assert_eq(30, average)
+  // 计算人均产值
+  let revenue_per_employee = @azimuth.divide_with_ceil(revenue, employees)
+  
+  // 计算人均利润
+  let profit_per_employee = @azimuth.divide_with_ceil(profit, employees)
+  
+  @azimuth.assert_eq(15000, profit)
+  @azimuth.assert_eq(30, profit_rate)
+  @azimuth.assert_eq(6250, revenue_per_employee)
+  @azimuth.assert_eq(1875, profit_per_employee)
 }
