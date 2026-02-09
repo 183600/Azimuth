@@ -1,108 +1,142 @@
-// 10个高质量 MoonBit 测试用例
+// Azimuth 新测试套件 - 标准 MoonBit 测试语法
+// 包含8个高质量测试用例，覆盖不同场景和边界情况
 
-test "add_function_comprehensive" {
-  // 全面测试加法函数
-  assert_eq(10, add(7, 3))
-  assert_eq(0, add(0, 0))
-  assert_eq(-10, add(-7, -3))
-  assert_eq(4, add(-7, 11))
-  assert_eq(1000000, add(500000, 500000))
-}
-
-test "multiply_function_edge_cases" {
-  // 测试乘法函数的边缘情况
-  assert_eq(0, multiply(0, 12345))
-  assert_eq(12345, multiply(1, 12345))
-  assert_eq(-12345, multiply(-1, 12345))
-  assert_eq(12345, multiply(-1, -12345))
-  assert_eq(1000000, multiply(1000, 1000))
-}
-
-test "greet_function_unicode" {
-  // 测试问候函数的 Unicode 支持
-  assert_eq_string("Hello, World!", greet("World"))
-  assert_eq_string("Hello, 张三!", greet("张三"))
-  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
-  assert_eq_string("Hello, !", greet(""))
-  assert_eq_string("Hello, 🌙!", greet("🌙"))
-}
-
-test "divide_with_ceil_comprehensive" {
-  // 全面测试向上取整除法函数
-  assert_eq(4, divide_with_ceil(10, 3))
-  assert_eq(3, divide_with_ceil(9, 3))
-  assert_eq(1, divide_with_ceil(1, 2))
-  assert_eq(0, divide_with_ceil(0, 5))
-  assert_eq(0, divide_with_ceil(5, 0))
-}
-
-test "mathematical_properties_addition" {
-  // 加法交换律
-  assert_eq(add(5, 7), add(7, 5))
-  assert_eq(add(-3, 8), add(8, -3))
-  assert_eq(add(0, 10), add(10, 0))
-}
-
-test "mathematical_properties_multiplication" {
-  // 乘法交换律
-  assert_eq(multiply(4, 6), multiply(6, 4))
-  assert_eq(multiply(-2, 5), multiply(5, -2))
-  assert_eq(multiply(1, 15), multiply(15, 1))
-}
-
-test "complex_calculation_scenario" {
-  // 复杂计算场景
-  let base = 100
-  let multiplier = 3
-  let addition = 25
+test "enhanced_error_handling_division" {
+  // 增强错误处理除法测试
+  // 测试除数为零的边界情况
+  assert_eq(0, divide_with_ceil(10, 0))
+  assert_eq(0, divide_with_ceil(-10, 0))
+  assert_eq(0, divide_with_ceil(0, 0))
   
-  let step1 = multiply(base, multiplier)
-  let step2 = add(step1, addition)
-  let result = divide_with_ceil(step2, 7)
-  
-  assert_eq(65, result)
+  // 测试极值情况
+  assert_eq(1, divide_with_ceil(1, 1))
+  assert_eq(-1, divide_with_ceil(-1, 1))
+  assert_eq(1, divide_with_ceil(-1, -1))
 }
 
-test "real_world_application_packaging" {
-  // 现实应用：包装计算
+test "enhanced_string_processing_edge_cases" {
+  // 增强字符串处理边界情况测试
+  // 测试各种特殊字符串输入
+  assert_eq_string("Hello, \n\t\r!", greet("\n\t\r"))
+  assert_eq_string("Hello, \"quoted\"!", greet("\"quoted\""))
+  assert_eq_string("Hello, 'single'!", greet("'single'"))
+  assert_eq_string("Hello, mixed'quote\"test!", greet("mixed'quote\"test"))
+  assert_eq_string("Hello, 🎉🚀🌟!", greet("🎉🚀🌟"))
+}
+
+test "enhanced_mathematical_distributive_law" {
+  // 增强数学分配律测试
+  let a = 7
+  let b = 5
+  let c = 3
+  
+  // 测试分配律: a * (b + c) = a * b + a * c
+  let left_side = multiply(a, add(b, c))
+  let right_side = add(multiply(a, b), multiply(a, c))
+  assert_eq(left_side, right_side)
+  
+  // 测试另一个数值组合
+  let x = 12
+  let y = 8
+  let z = 4
+  assert_eq(multiply(x, add(y, z)), add(multiply(x, y), multiply(x, z)))
+}
+
+test "enhanced_complex_business_workflow" {
+  // 增强复杂业务工作流测试
+  // 场景：电商订单处理和物流计算
+  let order_items = 47
   let items_per_box = 12
-  let total_items = 47
-  let boxes_needed = divide_with_ceil(total_items, items_per_box)
+  let boxes_needed = divide_with_ceil(order_items, items_per_box)
   
-  assert_eq(4, boxes_needed)
+  // 计算总重量（假设每个物品1.5kg，向上取整）
+  let total_weight = multiply(order_items, 1500)  // 以克为单位
+  let weight_per_box_limit = 20000  // 每箱最大20kg
+  let boxes_by_weight = divide_with_ceil(total_weight, weight_per_box_limit)
   
-  let total_weight_per_item = 2
-  let total_weight = multiply(total_items, total_weight_per_item)
-  assert_eq(94, total_weight)
+  assert_eq(4, boxes_needed)  // 按数量需要4箱
+  assert_eq(4, boxes_by_weight)  // 按重量需要4箱
 }
 
-test "real_world_application_transportation" {
-  // 现实应用：运输计算
-  let distance = 150
-  let fuel_efficiency = 12
-  let fuel_needed = divide_with_ceil(distance, fuel_efficiency)
+test "enhanced_performance_large_numbers" {
+  // 增强性能大数测试
+  // 测试大数运算的性能和正确性
+  let large_num1 = 1000
+  let large_num2 = 999
   
-  assert_eq(13, fuel_needed)
-  
-  let fuel_price = 5
-  let total_cost = multiply(fuel_needed, fuel_price)
-  assert_eq(65, total_cost)
+  assert_eq(1999, add(large_num1, large_num2))
+  assert_eq(999000, multiply(large_num1, large_num2))
+  assert_eq(1, divide_with_ceil(large_num1, large_num2))
+  assert_eq(2, divide_with_ceil(large_num2, large_num1))
+  assert_eq(1, subtract(large_num1, large_num2))
 }
 
-test "real_world_application_event_planning" {
-  // 现实应用：活动规划
-  let guests = 85
-  let seats_per_table = 8
-  let tables_needed = divide_with_ceil(guests, seats_per_table)
+test "enhanced_negative_number_comprehensive" {
+  // 增强负数综合测试
+  // 全面测试负数运算的各种情况
+  let positive = 15
+  let negative = -8
+  let zero = 0
   
-  assert_eq(11, tables_needed)
+  // 加法测试
+  assert_eq(7, add(positive, negative))
+  assert_eq(-23, add(negative, positive))
+  assert_eq(-16, add(negative, negative))
+  assert_eq(15, add(positive, zero))
+  assert_eq(-8, add(negative, zero))
   
-  let additional_guests = 15
-  let total_guests = add(guests, additional_guests)
-  let total_tables = divide_with_ceil(total_guests, seats_per_table)
+  // 乘法测试
+  assert_eq(-120, multiply(positive, negative))
+  assert_eq(-120, multiply(negative, positive))
+  assert_eq(64, multiply(negative, negative))
+  assert_eq(0, multiply(positive, zero))
+  assert_eq(0, multiply(negative, zero))
   
-  assert_eq(13, total_tables)
+  // 除法测试
+  assert_eq(-2, divide_with_ceil(negative, positive))
+  assert_eq(-1, divide_with_ceil(positive, negative))
+  assert_eq(2, divide_with_ceil(negative, negative))
+  assert_eq(0, divide_with_ceil(zero, positive))
+  assert_eq(0, divide_with_ceil(zero, negative))
+}
+
+test "enhanced_sequential_complex_operations" {
+  // 增强连续复杂操作测试
+  // 测试多步骤复杂计算的准确性
+  let initial_value = 10
   
-  let greeting_message = greet("活动参与者")
-  assert_eq_string("Hello, 活动参与者!", greeting_message)
+  // 第一阶段：基础运算
+  let stage1 = add(initial_value, multiply(3, 4))  // 10 + 3*4 = 22
+  let stage2 = divide_with_ceil(stage1, 5)          // ceil(22/5) = 5
+  let stage3 = multiply(stage2, subtract(8, 3))    // 5 * (8-3) = 25
+  let stage4 = add(stage3, divide_with_ceil(7, 3))  // 25 + ceil(7/3) = 28
+  let final_result = divide_with_ceil(stage4, 6)    // ceil(28/6) = 5
+  
+  assert_eq(22, stage1)
+  assert_eq(5, stage2)
+  assert_eq(25, stage3)
+  assert_eq(28, stage4)
+  assert_eq(5, final_result)
+}
+
+test "enhanced_resource_allocation_optimization" {
+  // 增强资源分配优化测试
+  // 场景：计算最优资源分配方案
+  let total_tasks = 73
+  let team_members = 8
+  let tasks_per_person_base = divide_with_ceil(total_tasks, team_members)
+  
+  // 计算实际分配
+  let assigned_tasks = multiply(tasks_per_person_base, team_members)
+  let remaining_tasks = subtract(total_tasks, subtract(assigned_tasks, team_members))
+  
+  // 优化分配：一些成员可以少做一个任务
+  let optimized_members = subtract(assigned_tasks, total_tasks)
+  let final_distribution = subtract(team_members, optimized_members)
+  
+  assert_eq(10, tasks_per_person_base)  // 每人基础任务数
+  assert_eq(80, assigned_tasks)         // 总分配任务数
+  assert_eq(1, remaining_tasks)         // 剩余任务数
+  assert_eq(7, optimized_members)       // 需要优化的成员数
+  assert_eq(1, final_distribution)      // 最终分配方案
 }
