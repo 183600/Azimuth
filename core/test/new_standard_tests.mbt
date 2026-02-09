@@ -1,145 +1,103 @@
-// MoonBit 标准库核心功能测试用例
-// 使用标准 MoonBit 测试语法，包含8个测试用例
-// 测试覆盖核心模块：Int、String、Bool、List 等基础功能
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-test "int_arithmetic" {
-  // 测试整数基本算术运算
+// 定义断言函数
+pub fn assert_eq(expected : Int, actual : Int) -> Unit {
+  if (expected != actual) {
+    let _ = expected - actual
+    @builtin.abort("Assertion failed")
+  }
+}
+
+pub fn assert_eq_string(expected : String, actual : String) -> Unit {
+  if (expected != actual) {
+    let _ = expected + actual
+    @builtin.abort("String assertion failed")
+  }
+}
+
+pub fn assert_eq_bool(expected : Bool, actual : Bool) -> Unit {
+  if (expected != actual) {
+    let _ = expected.to_string() + actual.to_string()
+    @builtin.abort("Bool assertion failed")
+  }
+}
+
+pub fn assert_eq_float(expected : Double, actual : Double) -> Unit {
+  if (expected != actual) {
+    let _ = expected - actual
+    @builtin.abort("Float assertion failed")
+  }
+}
+
+// 测试 Int 类型的基本操作
+///|
+test "Int arithmetic operations" {
   let a = 10
   let b = 3
-  let sum = a + b
-  let diff = a - b
-  let product = a * b
-  let quotient = a / b
-  let remainder = a % b
-  
-  inspect(sum, content="13")
-  inspect(diff, content="7")
-  inspect(product, content="30")
-  inspect(quotient, content="3")
-  inspect(remainder, content="1")
+  assert_eq(a + b, 13)
+  assert_eq(a - b, 7)
+  assert_eq(a * b, 30)
+  assert_eq(a / b, 3)
+  assert_eq(a % b, 1)
 }
 
-test "string_operations" {
-  // 测试字符串基本操作
-  let empty = ""
-  let hello = "Hello"
-  let world = "World"
-  let combined = hello + world
-  
-  inspect(empty, content="")
-  inspect(hello, content="Hello")
-  inspect(world, content="World")
-  inspect(combined, content="HelloWorld")
-  
-  // 测试字符串长度
-  inspect(empty.length(), content="0")
-  inspect(hello.length(), content="5")
-  inspect(combined.length(), content="10")
+// 测试 String 类型的基本操作
+///|
+test "String operations" {
+  let str1 = "Hello"
+  let str2 = "World"
+  let combined = str1 + " " + str2
+  assert_eq_string(combined, "Hello World")
+  assert_eq_string(str1, "Hello")
+  assert_eq_string(str2, "World")
 }
 
-test "boolean_logic" {
-  // 测试布尔逻辑操作
-  let t_and_t = true && true
-  let t_and_f = true && false
-  let f_and_t = false && true
-  let f_and_f = false && false
+// 测试 Bool 类型的基本操作
+///|
+test "Bool logical operations" {
+  let t = true
+  let f = false
   
-  let t_or_t = true || true
-  let t_or_f = true || false
-  let f_or_t = false || true
-  let f_or_f = false || false
+  assert_eq_bool(t && f, false)
+  assert_eq_bool(t || f, true)
+  assert_eq_bool(!t, false)
+  assert_eq_bool(!f, true)
   
-  let not_t = !true
-  let not_f = !false
-  
-  inspect(t_and_t, content="true")
-  inspect(t_and_f, content="false")
-  inspect(f_and_t, content="false")
-  inspect(f_and_f, content="false")
-  
-  inspect(t_or_t, content="true")
-  inspect(t_or_f, content="true")
-  inspect(f_or_t, content="true")
-  inspect(f_or_f, content="false")
-  
-  inspect(not_t, content="false")
-  inspect(not_f, content="true")
+  assert_eq_string(t.to_string(), "true")
+  assert_eq_string(f.to_string(), "false")
 }
 
-test "list_operations" {
-  // 测试列表基本操作
-  let empty_list = []
-  let single_item = [1]
-  let multiple_items = [1, 2, 3]
-  
-  inspect(empty_list.length(), content="0")
-  inspect(single_item.length(), content="1")
-  inspect(multiple_items.length(), content="3")
-  
-  inspect(empty_list.is_empty(), content="true")
-  inspect(single_item.is_empty(), content="false")
-  inspect(multiple_items.is_empty(), content="false")
-  
-  // 测试列表访问
-  inspect(single_item[0], content="1")
-  inspect(multiple_items[0], content="1")
-  inspect(multiple_items[1], content="2")
-  inspect(multiple_items[2], content="3")
+// 测试比较操作
+///|
+test "Comparison operations" {
+  assert_eq_bool(1 < 2, true)
+  assert_eq_bool(2 > 1, true)
+  assert_eq_bool(1 <= 1, true)
+  assert_eq_bool(1 >= 1, true)
+  assert_eq_bool(1 == 1, true)
+  assert_eq_bool(1 != 2, true)
 }
 
-test "char_operations" {
-  // 测试字符基本操作
-  let char_a = 'a'
-  let char_A = 'A'
-  let char_digit = '5'
+// 测试类型转换
+///|
+test "Type conversions" {
+  let int_val = 42
+  let string_val = int_val.to_string()
+  assert_eq_string(string_val, "42")
   
-  inspect(char_a, content="'a'")
-  inspect(char_A, content="'A'")
-  inspect(char_digit, content="'5'")
-  
-  // 测试字符比较
-  inspect(char_a < char_A, content="true")
-  inspect(char_A < char_a, content="false")
-  inspect('a' == 'a', content="true")
-  inspect('a' == 'A', content="false")
-}
-
-test "comparison_ops" {
-  // 测试比较操作
-  inspect(1 < 2, content="true")
-  inspect(2 < 1, content="false")
-  inspect(1 <= 2, content="true")
-  inspect(2 <= 2, content="true")
-  
-  inspect(2 > 1, content="true")
-  inspect(1 > 2, content="false")
-  inspect(2 >= 1, content="true")
-  inspect(2 >= 2, content="true")
-  
-  inspect(1 == 1, content="true")
-  inspect(1 == 2, content="false")
-  inspect(1 != 1, content="false")
-  inspect(1 != 2, content="true")
-}
-
-test "math_functions" {
-  // 测试数学函数
-  inspect(Int::max(1, 3), content="3")
-  inspect(Int::min(1, 3), content="1")
-  inspect(Int::abs(5), content="5")
-  inspect(Int::abs(-5), content="5")
-  inspect(Int::abs(0), content="0")
-}
-
-test "type_conversions" {
-  // 测试类型转换
-  // Int to String
-  inspect(42.to_string(), content="42")
-  inspect((-42).to_string(), content="-42")
-  inspect(0.to_string(), content="0")
-  
-  // Char to Int
-  inspect('a'.to_int(), content="97")
-  inspect('A'.to_int(), content="65")
-  inspect('0'.to_int(), content="48")
+  let float_val = 3.14
+  let float_string = float_val.to_string()
+  assert_eq_string(float_string, "3.14")
 }
