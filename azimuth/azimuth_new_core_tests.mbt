@@ -1,7 +1,7 @@
-// Azimuth 核心标准测试用例
+// Azimuth 新核心标准测试用例
 // 使用标准 MoonBit 测试语法，包含10个核心功能测试用例
 
-test "core_addition_basic" {
+test "new_core_addition_basic" {
   // 基本加法功能测试
   assert_eq(5, add(2, 3))
   assert_eq(0, add(0, 0))
@@ -9,7 +9,7 @@ test "core_addition_basic" {
   assert_eq(100, add(50, 50))
 }
 
-test "core_multiplication_basic" {
+test "new_core_multiplication_basic" {
   // 基本乘法功能测试
   assert_eq(6, multiply(2, 3))
   assert_eq(0, multiply(5, 0))
@@ -17,7 +17,7 @@ test "core_multiplication_basic" {
   assert_eq(15, multiply(-3, -5))
 }
 
-test "core_divide_with_ceil_positive" {
+test "new_core_divide_with_ceil_positive" {
   // 向上取整除法正数测试
   assert_eq(4, divide_with_ceil(10, 3))
   assert_eq(3, divide_with_ceil(9, 3))
@@ -25,7 +25,7 @@ test "core_divide_with_ceil_positive" {
   assert_eq(0, divide_with_ceil(5, 0))
 }
 
-test "core_divide_with_ceil_negative" {
+test "new_core_divide_with_ceil_negative" {
   // 向上取整除法负数测试
   assert_eq(-3, divide_with_ceil(-10, 3))
   assert_eq(-4, divide_with_ceil(10, -3))
@@ -33,7 +33,7 @@ test "core_divide_with_ceil_negative" {
   assert_eq(-1, divide_with_ceil(-1, 2))
 }
 
-test "core_greet_function" {
+test "new_core_greet_function" {
   // 问候函数测试
   assert_eq_string("Hello, World!", greet("World"))
   assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
@@ -41,7 +41,7 @@ test "core_greet_function" {
   assert_eq_string("Hello, 123!", greet("123"))
 }
 
-test "core_subtract_function" {
+test "new_core_subtract_function" {
   // 减法函数测试
   assert_eq(2, subtract(5, 3))
   assert_eq(-2, subtract(3, 5))
@@ -49,7 +49,7 @@ test "core_subtract_function" {
   assert_eq(10, subtract(0, -10))
 }
 
-test "core_mathematical_properties" {
+test "new_core_mathematical_properties" {
   // 数学性质测试
   let a = 7
   let b = 13
@@ -61,7 +61,7 @@ test "core_mathematical_properties" {
   assert_eq(multiply(a, b), multiply(b, a))
 }
 
-test "core_business_packaging" {
+test "new_core_business_packaging" {
   // 业务包装场景测试
   let total_items = 25
   let items_per_package = 6
@@ -75,7 +75,7 @@ test "core_business_packaging" {
   assert_eq(5, remaining_space)
 }
 
-test "core_complex_workflow" {
+test "new_core_complex_workflow" {
   // 复杂工作流测试
   let team_members = 4
   let tasks_per_member = 8
@@ -88,7 +88,7 @@ test "core_complex_workflow" {
   assert_eq(3, sprints_needed)  // ceil(32/15) = 3
 }
 
-test "core_boundary_values" {
+test "new_core_boundary_values" {
   // 边界值测试
   // 除法边界情况
   assert_eq(1, divide_with_ceil(5, 5))
