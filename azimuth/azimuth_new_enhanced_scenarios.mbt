@@ -124,7 +124,9 @@ test "string_formatting_edge_cases" {
   // 空字符串和特殊字符
   assert_eq_string("Hello, !", greet(""))
   assert_eq_string("Hello,   !", greet("  "))
-  assert_eq_string("Hello, \t\n\r!", greet("\t\n\r"))
+  assert_eq_string("Hello, 	
+\r!", greet("	
+\r"))
   assert_eq_string("Hello, @#$%^&*()_+-=[]{}|;':\",./<>?!", greet("@#$%^&*()_+-=[]{}|;':\",./<>?"))
   
   // 数字和字母混合
