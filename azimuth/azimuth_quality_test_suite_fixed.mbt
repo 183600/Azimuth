@@ -96,7 +96,9 @@ test "internationalization_and_unicode_handling" {
   // 特殊字符和空格处理
   assert_eq_string("Hello,   !", greet("   "))
   assert_eq_string("Hello, @#$%!", greet("@#$%"))
-  assert_eq_string("Hello, \n\t!", greet("\n\t"))
+  assert_eq_string("Hello, 
+	!", greet("
+	"))
 }
 
 test "complex_workflow_calculation" {
@@ -219,8 +221,10 @@ test "comprehensive_integration_test" {
   let boxes_by_quantity = divide_with_ceil(order_quantity, max_items_per_box)
   assert_eq(16, boxes_by_quantity)
   
-  // 简化选择逻辑：直接使用较大的值
-  let final_boxes = 24  // boxes_by_weight > boxes_by_quantity，所以使用boxes_by_weight
+  // 使用简单的条件判断来选择最终箱子数量
+  let final_boxes = 0
+  let temp_compare = subtract(boxes_by_weight, boxes_by_quantity)
+  let final_boxes = if temp_compare >= 0 { boxes_by_weight } else { boxes_by_quantity }
   assert_eq(24, final_boxes)
   
   // 计算运输成本（每个箱子15元）
@@ -232,11 +236,10 @@ test "comprehensive_integration_test" {
   let total_capacity_by_weight = multiply(final_boxes, max_weight_per_box)
   let total_capacity_by_quantity = multiply(final_boxes, max_items_per_box)
   
-  // 验证容量是否足够的简单检查
-  let weight_diff = subtract(total_capacity_by_weight, total_weight)
-  let quantity_diff = subtract(total_capacity_by_quantity, order_quantity)
+  // 使用断言验证容量是否足够
+  let weight_check = subtract(total_capacity_by_weight, total_weight)
+  let quantity_check = subtract(total_capacity_by_quantity, order_quantity)
   
-  // 使用断言函数验证差异值非负
-  assert_true(weight_diff >= 0)
-  assert_true(quantity_diff >= 0)
+  assert_true(weight_check >= 0)
+  assert_true(quantity_check >= 0)
 }
