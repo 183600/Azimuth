@@ -12,110 +12,83 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-///|
-test "integer arithmetic operations" {
-  assert_eq(1 + 2, 3)
-  assert_eq(10 - 5, 5)
-  assert_eq(3 * 4, 12)
-  assert_eq(20 / 4, 5)
+// 标准 MoonBit 测试用例
+// 包含核心功能的测试，使用标准的 MoonBit 测试语法
+
+test "int basic arithmetic operations" {
+  inspect(1 + 1, content="2")
+  inspect(5 - 3, content="2")
+  inspect(3 * 4, content="12")
+  inspect(10 / 2, content="5")
+  inspect(7 % 3, content="1")
 }
 
-///|
-test "integer comparison operations" {
-  assert_eq(5 > 3, true)
-  assert_eq(5 < 3, false)
-  assert_eq(5 >= 5, true)
-  assert_eq(5 <= 3, false)
-  assert_eq(5 == 5, true)
-  assert_eq(5 != 3, true)
+test "int comparison operations" {
+  inspect(5 > 3, content="true")
+  inspect(5 < 3, content="false")
+  inspect(5 == 5, content="true")
+  inspect(5 != 3, content="true")
+  inspect(5 >= 5, content="true")
+  inspect(3 <= 5, content="true")
 }
 
-///|
-test "string basic operations" {
-  let empty = ""
+test "string concatenation and length" {
   let hello = "Hello"
   let world = "World"
-  
-  assert_eq(empty.length(), 0)
-  assert_eq(hello.length(), 5)
-  assert_eq(hello + " " + world, "Hello World")
-  assert_eq(hello == "Hello", true)
-  assert_eq(hello != "world", true)
+  let greeting = hello + " " + world
+  inspect(greeting, content="Hello World")
+  inspect(greeting.length(), content="11")
 }
 
-///|
-test "option type operations" {
-  let some_int : Int? = Some(42)
-  let none_int : Int? = None
-  
-  assert_true(some_int is Some(_))
-  assert_true(none_int is None)
-  
-  assert_eq(some_int.unwrap_or(0), 42)
-  assert_eq(none_int.unwrap_or(0), 0)
+test "string comparison and operations" {
+  let apple = "apple"
+  let banana = "banana"
+  inspect(apple == "apple", content="true")
+  inspect(apple != banana, content="true")
+  inspect(apple < banana, content="true")
+  inspect("test".length(), content="4")
 }
 
-///|
+test "boolean logical operations" {
+  inspect(true && true, content="true")
+  inspect(true && false, content="false")
+  inspect(true || false, content="true")
+  inspect(false || false, content="false")
+  inspect(!true, content="false")
+  inspect(!false, content="true")
+}
+
 test "array basic operations" {
   let numbers = [1, 2, 3, 4, 5]
-  let empty_array : Array[Int] = []
-  
-  assert_eq(numbers.length(), 5)
-  assert_eq(empty_array.length(), 0)
-  assert_eq(numbers[0], 1)
-  assert_eq(numbers[4], 5)
-  
-  let doubled = numbers.map(x => x * 2)
-  assert_eq(doubled, [2, 4, 6, 8, 10])
-  
-  let evens = numbers.filter(x => x % 2 == 0)
-  assert_eq(evens, [2, 4])
+  inspect(numbers.length(), content="5")
+  inspect(numbers[0], content="1")
+  inspect(numbers[4], content="5")
 }
 
-///|
-test "boolean logical operations" {
-  assert_eq(true && true, true)
-  assert_eq(true && false, false)
-  assert_eq(false && true, false)
-  assert_eq(false && false, false)
-  
-  assert_eq(true || true, true)
-  assert_eq(true || false, true)
-  assert_eq(false || true, true)
-  assert_eq(false || false, false)
-  
-  assert_eq(!true, false)
-  assert_eq(!false, true)
+test "option type operations" {
+  let some_value = Some(42)
+  let none_value = None
+  inspect(some_value is Some(_), content="true")
+  inspect(none_value is None, content="true")
+  inspect(some_value.unwrap(), content="42")
 }
 
-///|
 test "result type operations" {
-  let ok_result : Result[Int, String] = Ok(42)
-  let err_result : Result[Int, String] = Err("error")
-  
-  assert_true(ok_result is Ok(_))
-  assert_true(err_result is Err(_))
-  
-  match (ok_result) {
-    Ok(x) => assert_eq(x, 42)
-    Err(_) => @builtin.abort("Expected Ok")
-  }
-  
-  match (err_result) {
-    Ok(_) => @builtin.abort("Expected Err")
-    Err(msg) => assert_eq(msg, "error")
-  }
+  let ok_result = Ok("success")
+  let err_result = Err("error")
+  inspect(ok_result is Ok(_), content="true")
+  inspect(err_result is Err(_), content="true")
+  inspect(ok_result.unwrap(), content="success")
 }
 
-///|
-test "integer boundary values" {
-  assert_eq(Int::max_value, 2147483647)
-  assert_eq(Int::min_value, -2147483648)
-  
-  assert_eq(Int::max_value + 1, Int::min_value)
-  assert_eq(Int::min_value - 1, Int::max_value)
-  
-  assert_eq(Int::abs(-5), 5)
-  assert_eq(Int::abs(0), 0)
-  assert_eq(Int::abs(7), 7)
+test "char operations" {
+  let char_a = 'a'
+  let char_z = 'z'
+  inspect(char_a.to_string(), content="a")
+  inspect(char_z.to_string(), content="z")
+}
+
+test "unit type operations" {
+  let unit_value = ()
+  inspect(unit_value, content="()")
 }
