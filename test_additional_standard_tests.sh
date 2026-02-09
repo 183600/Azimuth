@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# 测试新添加的标准测试用例
+# 测试新创建的附加标准测试文件
 
-echo "Testing azimuth_additional_standard_tests.mbt..."
+echo "Testing additional standard tests..."
 
 # 设置路径
 PROJECT_ROOT="/home/runner/work/Azimuth/Azimuth"
@@ -13,15 +13,25 @@ AZIMUTH_PATH="$PROJECT_ROOT/src/azimuth"
 echo "Testing azimuth_additional_standard_tests.mbt..."
 cd "$PROJECT_ROOT"
 
-# 尝试编译新添加的测试文件
-echo "Compiling azimuth_additional_standard_tests.mbt..."
-node "$PROJECT_ROOT/moonc.js" check -pkg azimuth_test -std-path "$CORE_PATH" -i "$AZIMUTH_PATH/azimuth.mi" azimuth/azimuth_additional_standard_tests.mbt
+# 编译 azimuth 包
+echo "Compiling azimuth package..."
+cd "$AZIMUTH_PATH"
+node "$PROJECT_ROOT/moonc.js" check -pkg azimuth -std-path "$CORE_PATH" lib.mbt
+if [ $? -ne 0 ]; then
+  echo "Error: azimuth/lib.mbt compilation failed"
+  exit 1
+fi
 
+# 编译新的测试文件
+echo "Compiling azimuth_additional_standard_tests.mbt..."
+cd "$AZIMUTH_PATH"
+node "$PROJECT_ROOT/moonc.js" check -pkg azimuth -std-path "$CORE_PATH" -include-doctests azimuth_additional_standard_tests.mbt
 if [ $? -eq 0 ]; then
   echo "azimuth_additional_standard_tests.mbt compiled successfully!"
+  echo "All tests in azimuth_additional_standard_tests.mbt are syntactically correct."
 else
   echo "Failed to compile azimuth_additional_standard_tests.mbt"
   exit 1
 fi
 
-echo "Test completed successfully!"
+echo "Additional standard tests completed successfully."
