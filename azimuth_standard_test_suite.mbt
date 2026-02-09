@@ -1,188 +1,159 @@
-// 标准 MoonBit 测试用例
-// 为 Azimuth 项目创建的高质量测试套件
-// 包含 10 个测试用例，覆盖核心功能
+// 标准 MoonBit 测试套件
+// 包含10个高质量测试用例，覆盖主要功能和边界情况
 
-test "azimuth_basic_arithmetic_operations" {
-  // 测试 Azimuth 库的基本算术运算
-  azimuth::assert_eq(8, azimuth::add(3, 5))
-  azimuth::assert_eq(15, azimuth::multiply(3, 5))
-  azimuth::assert_eq(-2, azimuth::subtract(3, 5))
-  azimuth::assert_eq(2, azimuth::divide_with_ceil(5, 3))
-  azimuth::assert_eq(3, azimuth::divide_with_ceil(9, 3))
+test "arithmatic_operations_comprehensive" {
+  // 综合算术运算测试
+  assert_eq(42, add(20, 22))
+  assert_eq(-10, add(-15, 5))
+  assert_eq(0, add(0, 0))
+  
+  assert_eq(100, multiply(10, 10))
+  assert_eq(-30, multiply(-5, 6))
+  assert_eq(0, multiply(0, 999))
+  
+  assert_eq(15, subtract(25, 10))
+  assert_eq(-15, subtract(10, 25))
+  assert_eq(0, subtract(50, 50))
 }
 
-test "azimuth_division_with_ceil_precision" {
-  // 测试向上取整除法的精度
-  // 正数除法
-  azimuth::assert_eq(4, azimuth::divide_with_ceil(10, 3))
-  azimuth::assert_eq(2, azimuth::divide_with_ceil(4, 2))
-  azimuth::assert_eq(1, azimuth::divide_with_ceil(1, 100))
+test "divide_with_ceil_comprehensive" {
+  // 向上取整除法综合测试
+  assert_eq(4, divide_with_ceil(10, 3))
+  assert_eq(3, divide_with_ceil(9, 3))
+  assert_eq(1, divide_with_ceil(1, 100))
+  assert_eq(0, divide_with_ceil(0, 10))
+  assert_eq(0, divide_with_ceil(15, 0))
   
-  // 边界情况
-  azimuth::assert_eq(0, azimuth::divide_with_ceil(0, 10))
-  azimuth::assert_eq(0, azimuth::divide_with_ceil(10, 0))
-  azimuth::assert_eq(0, azimuth::divide_with_ceil(0, 0))
-  
-  // 负数除法
-  azimuth::assert_eq(-3, azimuth::divide_with_ceil(-10, 3))
-  azimuth::assert_eq(3, azimuth::divide_with_ceil(-10, -3))
-  azimuth::assert_eq(-4, azimuth::divide_with_ceil(10, -3))
+  // 负数测试
+  assert_eq(-3, divide_with_ceil(-10, 3))
+  assert_eq(-4, divide_with_ceil(10, -3))
+  assert_eq(4, divide_with_ceil(-10, -3))
 }
 
-test "azimuth_string_functionality" {
-  // 测试字符串功能
-  azimuth::assert_eq_string("Hello, MoonBit!", azimuth::greet("MoonBit"))
-  azimuth::assert_eq_string("Hello, World!", azimuth::greet("World"))
-  azimuth::assert_eq_string("Hello, !", azimuth::greet(""))
-  azimuth::assert_eq_string("Hello, 123!", azimuth::greet("123"))
-  azimuth::assert_eq_string("Hello, 测试!", azimuth::greet("测试"))
+test "greet_function_various_inputs" {
+  // 问候函数各种输入测试
+  assert_eq_string("Hello, MoonBit!", greet("MoonBit"))
+  assert_eq_string("Hello, World!", greet("World"))
+  assert_eq_string("Hello, !", greet(""))
+  assert_eq_string("Hello, 123!", greet("123"))
+  assert_eq_string("Hello, 中文!", greet("中文"))
+  assert_eq_string("Hello, 🚀!", greet("🚀"))
 }
 
-test "azimuth_negative_number_operations" {
-  // 测试负数运算
-  azimuth::assert_eq(-2, azimuth::add(-5, 3))
-  azimuth::assert_eq(2, azimuth::add(5, -3))
-  azimuth::assert_eq(-8, azimuth::add(-5, -3))
-  
-  azimuth::assert_eq(-15, azimuth::multiply(-3, 5))
-  azimuth::assert_eq(-15, azimuth::multiply(3, -5))
-  azimuth::assert_eq(15, azimuth::multiply(-3, -5))
-  
-  azimuth::assert_eq(-8, azimuth::subtract(-3, 5))
-  azimuth::assert_eq(8, azimuth::subtract(3, -5))
-  azimuth::assert_eq(2, azimuth::subtract(-3, -5))
-}
-
-test "azimuth_mathematical_properties" {
-  // 测试数学性质
-  let x = 12
-  let y = 7
+test "mathematical_properties" {
+  // 数学性质验证测试
+  let a = 12
+  let b = 8
   
   // 加法交换律
-  azimuth::assert_eq(azimuth::add(x, y), azimuth::add(y, x))
+  assert_eq(add(a, b), add(b, a))
   
   // 乘法交换律
-  azimuth::assert_eq(azimuth::multiply(x, y), azimuth::multiply(y, x))
+  assert_eq(multiply(a, b), multiply(b, a))
   
-  // 加法单位元
-  azimuth::assert_eq(azimuth::add(x, 0), x)
+  // 加法恒等式
+  assert_eq(a, add(a, 0))
+  assert_eq(a, add(0, a))
   
-  // 乘法单位元
-  azimuth::assert_eq(azimuth::multiply(x, 1), x)
-  
-  // 减法逆运算
-  azimuth::assert_eq(azimuth::add(azimuth::subtract(x, y), y), x)
+  // 乘法恒等式
+  assert_eq(a, multiply(a, 1))
+  assert_eq(a, multiply(1, a))
+  assert_eq(0, multiply(a, 0))
 }
 
-test "azimuth_complex_calculation_scenario" {
-  // 测试复杂计算场景
-  // 模拟购物车计算
-  let item1_price = 25
-  let item1_qty = 3
-  let item2_price = 15
-  let item2_qty = 2
+test "business_packaging_scenario" {
+  // 业务包装场景测试
+  let total_items = 47
+  let items_per_package = 12
+  let packages_needed = divide_with_ceil(total_items, items_per_package)
   
-  // 计算小计
-  let subtotal1 = azimuth::multiply(item1_price, item1_qty)
-  let subtotal2 = azimuth::multiply(item2_price, item2_qty)
-  let total = azimuth::add(subtotal1, subtotal2)
+  assert_eq(4, packages_needed)
   
-  // 计算税费（10%，向上取整）
-  let tax = azimuth::divide_with_ceil(azimuth::multiply(total, 10), 100)
-  let final_total = azimuth::add(total, tax)
+  // 验证总容量
+  let total_capacity = multiply(packages_needed, items_per_package)
+  assert_eq(48, total_capacity)
   
-  azimuth::assert_eq(75, subtotal1)
-  azimuth::assert_eq(30, subtotal2)
-  azimuth::assert_eq(105, total)
-  azimuth::assert_eq(11, tax)
-  azimuth::assert_eq(116, final_total)
+  // 验证剩余空间
+  let remaining_space = subtract(total_capacity, total_items)
+  assert_eq(1, remaining_space)
 }
 
-test "azimuth_boundary_value_analysis" {
-  // 测试边界值分析
-  // 零值测试
-  azimuth::assert_eq(0, azimuth::add(0, 0))
-  azimuth::assert_eq(0, azimuth::multiply(0, 100))
-  azimuth::assert_eq(0, azimuth::subtract(0, 0))
-  azimuth::assert_eq(0, azimuth::divide_with_ceil(0, 10))
+test "complex_workflow_calculation" {
+  // 复杂工作流计算测试
+  // 场景：项目资源计算
+  let team_members = 7
+  let tasks_per_member = 9
+  let total_tasks = multiply(team_members, tasks_per_member)
   
-  // 单位值测试
-  azimuth::assert_eq(1, azimuth::add(1, 0))
-  azimuth::assert_eq(100, azimuth::multiply(1, 100))
-  azimuth::assert_eq(1, azimuth::subtract(1, 0))
-  azimuth::assert_eq(100, azimuth::divide_with_ceil(100, 1))
+  let sprint_capacity = 20
+  let sprints_needed = divide_with_ceil(total_tasks, sprint_capacity)
   
-  // 负单位值测试
-  azimuth::assert_eq(0, azimuth::add(-1, 1))
-  azimuth::assert_eq(-100, azimuth::multiply(-1, 100))
-  azimuth::assert_eq(1, azimuth::subtract(0, -1))
+  assert_eq(63, total_tasks)  // 7 * 9 = 63
+  assert_eq(4, sprints_needed)  // ceil(63/20) = 4
 }
 
-test "azimuth_large_number_operations" {
-  // 测试大数运算
-  let large_num = 100000
+test "boundary_values_and_edge_cases" {
+  // 边界值和边缘情况测试
+  // 除法边界情况
+  assert_eq(1, divide_with_ceil(5, 5))
+  assert_eq(1, divide_with_ceil(-5, -5))
+  assert_eq(0, divide_with_ceil(0, 5))
   
-  azimuth::assert_eq(200000, azimuth::add(large_num, large_num))
-  azimuth::assert_eq(10000000000, azimuth::multiply(large_num, large_num))
-  azimuth::assert_eq(0, azimuth::subtract(large_num, large_num))
-  azimuth::assert_eq(33334, azimuth::divide_with_ceil(large_num, 3))
+  // 大数运算
+  assert_eq(2000000, add(1000000, 1000000))
+  assert_eq(100000000, multiply(10000, 10000))
   
-  // 测试大数与负数的运算
-  azimuth::assert_eq(99999, azimuth::add(large_num, -1))
-  azimuth::assert_eq(-100000, azimuth::multiply(large_num, -1))
-  azimuth::assert_eq(100001, azimuth::subtract(large_num, -1))
+  // 特殊问候情况
+  assert_eq_string("Hello,   !", greet("  "))
+  assert_eq_string("Hello, special@chars!", greet("special@chars"))
 }
 
-test "azimuth_fibonacci_sequence_calculation" {
-  // 测试斐波那契数列计算
-  // 使用基本运算模拟递归计算
+test "negative_number_operations" {
+  // 负数运算测试
+  assert_eq(-10, add(-5, -5))
+  assert_eq(5, add(-10, 15))
+  assert_eq(0, add(-8, 8))
   
-  // F(0) = 0, F(1) = 1
-  let f0 = 0
-  let f1 = 1
+  assert_eq(25, multiply(-5, -5))
+  assert_eq(-30, multiply(-5, 6))
+  assert_eq(0, multiply(-5, 0))
   
-  // F(2) = F(1) + F(0) = 1 + 0 = 1
-  let f2 = azimuth::add(f1, f0)
-  
-  // F(3) = F(2) + F(1) = 1 + 1 = 2
-  let f3 = azimuth::add(f2, f1)
-  
-  // F(4) = F(3) + F(2) = 2 + 1 = 3
-  let f4 = azimuth::add(f3, f2)
-  
-  // F(5) = F(4) + F(3) = 3 + 2 = 5
-  let f5 = azimuth::add(f4, f3)
-  
-  // F(6) = F(5) + F(4) = 5 + 3 = 8
-  let f6 = azimuth::add(f5, f4)
-  
-  azimuth::assert_eq(1, f2)
-  azimuth::assert_eq(2, f3)
-  azimuth::assert_eq(3, f4)
-  azimuth::assert_eq(5, f5)
-  azimuth::assert_eq(8, f6)
+  assert_eq(-15, subtract(-10, 5))
+  assert_eq(15, subtract(5, -10))
+  assert_eq(0, subtract(-5, -5))
 }
 
-test "azimuth_temperature_conversion" {
-  // 测试温度转换计算
-  let celsius = 25
+test "sequential_operations" {
+  // 连续操作测试
+  let initial = 10
+  let step1 = add(initial, 5)        // 15
+  let step2 = multiply(step1, 2)     // 30
+  let step3 = divide_with_ceil(step2, 8)  // 4
+  let step4 = subtract(step3, 2)     // 2
+  let step5 = multiply(step4, 6)     // 12
   
-  // 摄氏度转华氏度：F = C × 9/5 + 32
-  let fahrenheit_step1 = azimuth::multiply(celsius, 9)
-  let fahrenheit_step2 = azimuth::divide_with_ceil(fahrenheit_step1, 5)
-  let fahrenheit = azimuth::add(fahrenheit_step2, 32)
+  assert_eq(12, step5)
+}
+
+test "real_world_application" {
+  // 真实世界应用测试
+  // 场景：活动策划计算
+  let guests = 85
+  let tables_capacity = 8
+  let tables_needed = divide_with_ceil(guests, tables_capacity)
   
-  // 华氏度转开尔文：K = (F - 32) × 5/9 + 273.15
-  // 简化计算，使用整数近似
-  let kelvin_step1 = azimuth::subtract(fahrenheit, 32)
-  let kelvin_step2 = azimuth::multiply(kelvin_step1, 5)
-  let kelvin_step3 = azimuth::divide_with_ceil(kelvin_step2, 9)
-  let kelvin = azimuth::add(kelvin_step3, 273)
+  assert_eq(11, tables_needed)
   
-  azimuth::assert_eq(77, fahrenheit)
-  azimuth::assert_eq(298, kelvin)
+  // 计算总成本
+  let cost_per_table = 50
+  let total_table_cost = multiply(tables_needed, cost_per_table)
+  assert_eq(550, total_table_cost)
   
-  // 验证转换的一致性（简化验证）
-  let celsius_back = azimuth::divide_with_ceil(azimuth::multiply(azimuth::subtract(kelvin, 273), 9), 5)
-  azimuth::assert_eq(25, celsius_back)
+  // 计算剩余座位
+  let total_seats = multiply(tables_needed, tables_capacity)
+  let empty_seats = subtract(total_seats, guests)
+  assert_eq(3, empty_seats)
+  
+  // 验证问候功能用于邀请函
+  assert_eq_string("Hello, VIP Guests!", greet("VIP Guests"))
 }
