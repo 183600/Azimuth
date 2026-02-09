@@ -18,20 +18,20 @@ test "string concatenation and length" {
   let str2 = " MoonBit"
   let combined = str1 + str2
   
-  assert_eq(combined, "Hello MoonBit")
-  assert_eq(combined.length(), 11)
+  inspect(combined, content="Hello MoonBit")
+  inspect(combined.length(), content="11")
 }
 
 ///|
 test "array basic operations" {
   let numbers = [1, 2, 3, 4, 5]
   
-  assert_eq(numbers.length(), 5)
-  assert_eq(numbers[0], 1)
-  assert_eq(numbers[4], 5)
+  inspect(numbers.length(), content="5")
+  inspect(numbers[0], content="1")
+  inspect(numbers[4], content="5")
   
   let doubled = numbers.map(x => x * 2)
-  assert_eq(doubled, [2, 4, 6, 8, 10])
+  inspect(doubled, content="[2, 4, 6, 8, 10]")
 }
 
 ///|
@@ -39,19 +39,19 @@ test "option basic operations" {
   let some_value : Int? = Some(42)
   let none_value : Int? = None
   
-  assert_eq(some_value.is_some(), true)
-  assert_eq(some_value.is_none(), false)
-  assert_eq(none_value.is_some(), false)
-  assert_eq(none_value.is_none(), true)
+  inspect(some_value.is_some(), content="true")
+  inspect(some_value.is_none(), content="false")
+  inspect(none_value.is_some(), content="false")
+  inspect(none_value.is_none(), content="true")
   
-  assert_eq(some_value.unwrap_or(0), 42)
-  assert_eq(none_value.unwrap_or(0), 0)
+  inspect(some_value.unwrap_or(0), content="42")
+  inspect(none_value.unwrap_or(0), content="0")
   
   let doubled = some_value.map(x => x * 2)
-  assert_eq(doubled, Some(84))
+  inspect(doubled, content="Some(84)")
   
   let doubled_none = none_value.map(x => x * 2)
-  assert_eq(doubled_none, None)
+  inspect(doubled_none, content="None")
 }
 
 ///|
@@ -59,16 +59,16 @@ test "int arithmetic operations" {
   let a = 15
   let b = 4
   
-  assert_eq(a + b, 19)
-  assert_eq(a - b, 11)
-  assert_eq(a * b, 60)
-  assert_eq(a / b, 3)
-  assert_eq(a % b, 3)
+  inspect(a + b, content="19")
+  inspect(a - b, content="11")
+  inspect(a * b, content="60")
+  inspect(a / b, content="3")
+  inspect(a % b, content="3")
   
-  assert_eq(a > b, true)
-  assert_eq(a < b, false)
-  assert_eq(a == b, false)
-  assert_eq(a != b, true)
+  inspect(a > b, content="true")
+  inspect(a < b, content="false")
+  inspect(a == b, content="false")
+  inspect(a != b, content="true")
 }
 
 ///|
@@ -76,10 +76,10 @@ test "bool logical operations" {
   let t = true
   let f = false
   
-  assert_eq(t && f, false)
-  assert_eq(t || f, true)
-  assert_eq(!t, false)
-  assert_eq(!f, true)
+  inspect(t && f, content="false")
+  inspect(t || f, content="true")
+  inspect(!t, content="false")
+  inspect(!f, content="true")
 }
 
 ///|
@@ -88,11 +88,17 @@ test "string manipulation methods" {
   
   // Use string slicing
   let substring = text[0:7]
-  assert_eq(substring, "MoonBit")
+  inspect(substring, content="MoonBit")
   
   // Check if string contains substring
-  assert_eq(text.contains("Moon"), true)
-  assert_eq(text.contains("Python"), false)
+  inspect(text.contains("Moon"), content="true")
+  inspect(text.contains("Python"), content="false")
+  
+  // Convert string to array of characters
+  let chars = text.to_array()
+  inspect(chars.length(), content="18")
+  inspect(chars[0], content="'M'")
+  inspect(chars[17], content="'g'")
 }
 
 ///|
@@ -100,10 +106,10 @@ test "array filtering operations" {
   let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
   
   let even_numbers = numbers.filter(x => x % 2 == 0)
-  assert_eq(even_numbers, [2, 4, 6, 8, 10])
+  inspect(even_numbers, content="[2, 4, 6, 8, 10]")
   
   let greater_than_five = numbers.filter(x => x > 5)
-  assert_eq(greater_than_five, [6, 7, 8, 9, 10])
+  inspect(greater_than_five, content="[6, 7, 8, 9, 10]")
 }
 
 ///|
@@ -112,22 +118,22 @@ test "option chaining operations" {
   
   let input1 : Int? = Some(5)
   let result1 = input1.bind(process_value)
-  assert_eq(result1, Some(10))
+  inspect(result1, content="Some(10)")
   
   let input2 : Int? = Some(-3)
   let result2 = input2.bind(process_value)
-  assert_eq(result2, None)
+  inspect(result2, content="None")
   
   let input3 : Int? = None
   let result3 = input3.bind(process_value)
-  assert_eq(result3, None)
+  inspect(result3, content="None")
   
   // Test unwrap_or_else
   let fallback1 = input1.unwrap_or_else(() => 99)
-  assert_eq(fallback1, 5)
+  inspect(fallback1, content="5")
   
   let fallback2 = input3.unwrap_or_else(() => 99)
-  assert_eq(fallback2, 99)
+  inspect(fallback2, content="99")
 }
 
 ///|
@@ -140,13 +146,13 @@ test "complex data structure operations" {
   
   // Simple array operations
   let first_row = matrix[0]
-  assert_eq(first_row, [1, 2, 3])
+  inspect(first_row, content="[1, 2, 3]")
   
   let last_row = matrix[2]
-  assert_eq(last_row, [7, 8, 9])
+  inspect(last_row, content="[7, 8, 9]")
   
   let center_element = matrix[1][1]
-  assert_eq(center_element, 5)
+  inspect(center_element, content="5")
 }
 
 ///|
@@ -160,15 +166,15 @@ test "error handling with result type" {
   }
   
   let success = safe_divide(10, 2)
-  assert_eq(success, Ok(5))
+  inspect(success, content="Ok(5)")
   
   let failure = safe_divide(10, 0)
-  assert_eq(failure, Error("Division by zero"))
+  inspect(failure, content="Error(\"Division by zero\")")
   
   // Test result mapping
   let mapped_success = success.map(x => x * 2)
-  assert_eq(mapped_success, Ok(10))
+  inspect(mapped_success, content="Ok(10)")
   
   let mapped_failure = failure.map(x => x * 2)
-  assert_eq(mapped_failure, Error("Division by zero"))
+  inspect(mapped_failure, content="Error(\"Division by zero\")")
 }

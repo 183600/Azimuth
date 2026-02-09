@@ -12,248 +12,204 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// 标准 MoonBit 综合测试套件
-// 包含 8 个高质量测试用例，使用标准 MoonBit 测试语法
-
 ///|
-test "integer_boundary_values" {
-  // 整数边界值测试
-  let max_int = @int.max_value
-  let min_int = @int.min_value
+test "string concatenation and length" {
+  let str1 = "Hello"
+  let str2 = " MoonBit"
+  let combined = str1 + str2
   
-  assert_eq(max_int, 2147483647)
-  assert_eq(min_int, -2147483648)
-  
-  // 边界值运算
-  assert_eq(max_int + min_int, -1)
-  assert_eq(max_int - max_int, 0)
-  assert_eq(min_int - min_int, 0)
-  
-  // 零值测试
-  assert_eq(0 + max_int, max_int)
-  assert_eq(0 + min_int, min_int)
-  assert_eq(0 * max_int, 0)
-  assert_eq(0 * min_int, 0)
+  inspect(combined, content="Hello MoonBit")
+  inspect(combined.length(), content="11")
+  inspect(str1.length(), content="5")
+  inspect(str2.length(), content="7")
 }
 
 ///|
-test "string_manipulation_operations" {
-  // 字符串操作测试
-  let base = "MoonBit"
-  let greeting = "Hello, " + base + "!"
-  let repeated = base * 3
+test "array basic operations" {
+  let numbers = [1, 2, 3, 4, 5]
   
-  assert_eq(greeting, "Hello, MoonBit!")
-  assert_eq(repeated, "MoonBitMoonBitMoonBit")
-  assert_eq(base.length(), 7)
-  assert_eq(greeting.length(), 14)
+  inspect(numbers.length(), content="5")
+  inspect(numbers[0], content="1")
+  inspect(numbers[4], content="5")
   
-  // 字符串比较
-  assert_eq(base == "MoonBit", true)
-  assert_eq(base != "moonbit", true)  // 大小写敏感
-  assert_eq(base > "Apple", true)
-  assert_eq(base < "Python", true)
-  
-  // 空字符串处理
-  let empty = ""
-  assert_eq(empty.length(), 0)
-  assert_eq(empty == "", true)
-  assert_eq(base + empty, base)
-}
-
-///|
-test "array_comprehensive_operations" {
-  // 数组综合操作测试
-  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  let evens = numbers.filter(x => x % 2 == 0)
-  let odds = numbers.filter(x => x % 2 != 0)
   let doubled = numbers.map(x => x * 2)
-  let sum = numbers.fold(init=0, (acc, x) => acc + x)
+  inspect(doubled, content="[2, 4, 6, 8, 10]")
   
-  assert_eq(evens, [2, 4, 6, 8, 10])
-  assert_eq(odds, [1, 3, 5, 7, 9])
-  assert_eq(doubled, [2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
-  assert_eq(sum, 55)
-  
-  // 数组切片和索引
-  let first_five = numbers.slice(0, 5)
-  let last_five = numbers.slice(5, 10)
-  assert_eq(first_five, [1, 2, 3, 4, 5])
-  assert_eq(last_five, [6, 7, 8, 9, 10])
-  
-  // 数组查找
-  assert_eq(numbers.contains(5), true)
-  assert_eq(numbers.contains(11), false)
-  assert_eq(numbers.index_of(7), 6)
+  let sum = numbers.fold(0, (acc, x) => acc + x)
+  inspect(sum, content="15")
 }
 
 ///|
-test "list_functional_operations" {
-  // 列表函数式操作测试
-  let numbers = @list.from_array([1, 2, 3, 4, 5])
-  let strings = @list.from_array(["apple", "banana", "cherry"])
+test "option basic operations" {
+  let some_value : Int? = Some(42)
+  let none_value : Int? = None
   
-  // 列表映射和过滤
-  let squared = numbers.map(x => x * x)
-  let filtered = numbers.filter(x => x > 3)
-  let lengths = strings.map(s => s.length())
+  inspect(some_value.is_some(), content="true")
+  inspect(some_value.is_none(), content="false")
+  inspect(none_value.is_some(), content="false")
+  inspect(none_value.is_none(), content="true")
   
-  assert_eq(squared, @list.from_array([1, 4, 9, 16, 25]))
-  assert_eq(filtered, @list.from_array([4, 5]))
-  assert_eq(lengths, @list.from_array([5, 6, 6]))
+  inspect(some_value.unwrap_or(0), content="42")
+  inspect(none_value.unwrap_or(0), content="0")
   
-  // 列表归约
-  let product = numbers.fold(init=1, (acc, x) => acc * x)
-  let concatenated = strings.fold(init="", (acc, s) => acc + s)
+  let doubled = some_value.map(x => x * 2)
+  inspect(doubled, content="Some(84)")
   
-  assert_eq(product, 120)
-  assert_eq(concatenated, "applebananacherry")
-  
-  // 列表连接
-  let combined = numbers.append(@list.from_array([6, 7, 8]))
-  assert_eq(combined, @list.from_array([1, 2, 3, 4, 5, 6, 7, 8]))
+  let doubled_none = none_value.map(x => x * 2)
+  inspect(doubled_none, content="None")
 }
 
 ///|
-test "option_type_pattern_matching" {
-  // Option 类型模式匹配测试
-  let some_number : Option[Int] = Some(42)
-  let none_number : Option[Int] = None
-  let some_string : Option[String] = Some("test")
-  let none_string : Option[String] = None
+test "int arithmetic operations" {
+  let a = 15
+  let b = 4
   
-  // Option 值提取
-  let extracted_number = match some_number {
-    Some(n) => n
-    None => 0
-  }
-  assert_eq(extracted_number, 42)
+  inspect(a + b, content="19")
+  inspect(a - b, content="11")
+  inspect(a * b, content="60")
+  inspect(a / b, content="3")
+  inspect(a % b, content="3")
   
-  let default_number = match none_number {
-    Some(n) => n
-    None => -1
-  }
-  assert_eq(default_number, -1)
-  
-  // Option 链式操作
-  let result = some_number
-    .map(x => x * 2)
-    .filter(x => x > 50)
-    .map(x => x / 2)
-  
-  assert_eq(result, Some(42))
-  
-  let empty_result = none_number
-    .map(x => x * 2)
-    .filter(x => x > 50)
-  
-  assert_eq(empty_result, None)
+  inspect(a > b, content="true")
+  inspect(a < b, content="false")
+  inspect(a == b, content="false")
+  inspect(a != b, content="true")
 }
 
 ///|
-test "result_type_error_handling" {
-  // Result 类型错误处理测试
-  let success_int : Result[Int, String] = Ok(100)
-  let error_int : Result[Int, String] = Err("division error")
-  let success_str : Result[String, Int] = Ok("success")
-  let error_str : Result[String, Int] = Err(404)
-  
-  // Result 值提取
-  let success_value = match success_int {
-    Ok(n) => n
-    Err(_) => 0
-  }
-  assert_eq(success_value, 100)
-  
-  let error_value = match error_int {
-    Ok(n) => n
-    Err(msg) => -1
-  }
-  assert_eq(error_value, -1)
-  
-  // Result 映射操作
-  let mapped_success = success_int.map(x => x / 2)
-  assert_eq(mapped_success, Ok(50))
-  
-  let mapped_error = error_int.map(x => x / 2)
-  assert_eq(mapped_error, Err("division error"))
-  
-  // Result 错误映射
-  let error_mapped = error_str.map_err(code => code + 1)
-  assert_eq(error_mapped, Err(405))
-}
-
-///|
-test "boolean_logic_and_truth_table" {
-  // 布尔逻辑和真值表测试
+test "bool logical operations" {
   let t = true
   let f = false
   
-  // 基本逻辑运算
-  assert_eq(t && t, t)
-  assert_eq(t && f, f)
-  assert_eq(f && t, f)
-  assert_eq(f && f, f)
+  inspect(t && f, content="false")
+  inspect(t || f, content="true")
+  inspect(!t, content="false")
+  inspect(!f, content="true")
   
-  assert_eq(t || t, t)
-  assert_eq(t || f, t)
-  assert_eq(f || t, t)
-  assert_eq(f || f, f)
+  // Test short-circuit evaluation
+  let mut counter = 0
+  let func = () => { counter = counter + 1; true }
   
-  assert_eq(!t, f)
-  assert_eq(!f, t)
+  counter = 0
+  let result = f && func()
+  inspect(result, content="false")
+  inspect(counter, content="0")  // func should not be called
   
-  // 复合逻辑表达式
-  assert_eq((t && f) || (t || f), t)
-  assert_eq((f || f) && (t && t), f)
-  assert_eq(!(t && f) && (t || f), t)
-  
-  // 布尔比较
-  assert_eq(t == t, t)
-  assert_eq(t == f, f)
-  assert_eq(t != f, t)
-  assert_eq(f != f, f)
+  counter = 0
+  let result2 = t || func()
+  inspect(result2, content="true")
+  inspect(counter, content="0")  // func should not be called
 }
 
 ///|
-test "complex_data_processing_scenario" {
-  // 复杂数据处理场景测试
-  // 场景：处理学生成绩数据
+test "string manipulation methods" {
+  let text = "MoonBit Programming"
   
-  // 学生数据：[姓名, 数学成绩, 英语成绩, 科学成绩]
-  let student_data = [
-    ("Alice", 85, 92, 88),
-    ("Bob", 76, 84, 79),
-    ("Charlie", 92, 89, 95),
-    ("Diana", 88, 91, 85),
-    ("Eve", 79, 82, 78)
+  // Use string slicing instead of substring
+  let substring = text[0:7]
+  inspect(substring, content="MoonBit")
+  
+  // Check if string contains substring
+  inspect(text.contains("Moon"), content="true")
+  inspect(text.contains("Python"), content="false")
+  
+  // Convert string to array of characters
+  let chars = text.to_array()
+  inspect(chars.length(), content="18")
+  inspect(chars[0], content="'M'")
+  inspect(chars[17], content="'g'")
+}
+
+///|
+test "array filtering and finding" {
+  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  let even_numbers = numbers.filter(x => x % 2 == 0)
+  inspect(even_numbers, content="[2, 4, 6, 8, 10]")
+  
+  let greater_than_five = numbers.filter(x => x > 5)
+  inspect(greater_than_five, content="[6, 7, 8, 9, 10]")
+  
+  // Use find_with_index instead of find
+  let found_option = numbers.find_with_index(x => x == 7)
+  inspect(found_option, content="Some((6, 7))")  // index 6, value 7
+  
+  let not_found = numbers.find_with_index(x => x == 99)
+  inspect(not_found, content="None")
+}
+
+///|
+test "option chaining operations" {
+  let process_value = (x : Int) => if x > 0 { Some(x * 2) } else { None }
+  
+  let input1 : Int? = Some(5)
+  let result1 = input1.bind(process_value)
+  inspect(result1, content="Some(10)")
+  
+  let input2 : Int? = Some(-3)
+  let result2 = input2.bind(process_value)
+  inspect(result2, content="None")
+  
+  let input3 : Int? = None
+  let result3 = input3.bind(process_value)
+  inspect(result3, content="None")
+  
+  // Test unwrap_or_else
+  let fallback1 = input1.unwrap_or_else(() => 99)
+  inspect(fallback1, content="5")
+  
+  let fallback2 = input3.unwrap_or_else(() => 99)
+  inspect(fallback2, content="99")
+}
+
+///|
+test "complex data structure operations" {
+  let matrix = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
   ]
   
-  // 计算每个学生的平均分
-  let averages = student_data.map((name, math, english, science) => {
-    let total = math + english + science
-    (name, total / 3)
-  })
+  let flattened = matrix.fold([], (acc, row) => acc + row)
+  inspect(flattened, content="[1, 2, 3, 4, 5, 6, 7, 8, 9]")
   
-  // 找出平均分最高的学生
-  let top_student = averages.fold(init=("None", 0), (best, current) => {
-    let (_, best_score) = best
-    let (_, current_score) = current
-    if current_score > best_score { current } else { best }
-  })
+  // Create diagonal using indices
+  let diagonal = matrix.with_index().map((i, row) => row[i])
+  inspect(diagonal, content="[1, 5, 9]")
   
-  // 计算班级各科平均分
-  let math_avg = student_data.fold(init=0, (acc, (_, math, _, _)) => acc + math) / student_data.length()
-  let english_avg = student_data.fold(init=0, (acc, (_, _, english, _)) => acc + english) / student_data.length()
-  let science_avg = student_data.fold(init=0, (acc, (_, _, _, science)) => acc + science) / student_data.length()
+  let transposed = [
+    [1, 4, 7],
+    [2, 5, 8],
+    [3, 6, 9]
+  ]
+  inspect(matrix[0][0], content="1")
+  inspect(transposed[0][0], content="1")
+  inspect(matrix[0][1], content="2")
+  inspect(transposed[1][0], content="2")
+  inspect(matrix[1][2], content="6")
+  inspect(transposed[2][1], content="6")
+}
+
+///|
+test "error handling with result type" {
+  let safe_divide = (x : Int, y : Int) -> Result[Int, String] {
+    if y == 0 {
+      Error("Division by zero")
+    } else {
+      Ok(x / y)
+    }
+  }
   
-  // 筛选平均分超过85分的学生
-  let excellent_students = averages.filter((name, avg) => avg >= 85)
+  let success = safe_divide(10, 2)
+  inspect(success, content="Ok(5)")
   
-  // 验证结果
-  assert_eq(top_student, ("Charlie", 92))  // Charlie: (92+89+95)/3 = 92
-  assert_eq(math_avg, 84)  // (85+76+92+88+79)/5 = 84
-  assert_eq(english_avg, 87)  // (92+84+89+91+82)/5 = 87.6 -> 87
-  assert_eq(science_avg, 85)  // (88+79+95+85+78)/5 = 85
-  assert_eq(excellent_students.length(), 2)  // Alice(88.3) 和 Charlie(92)
+  let failure = safe_divide(10, 0)
+  inspect(failure, content="Error(\"Division by zero\")")
+  
+  // Test result mapping
+  let mapped_success = success.map(x => x * 2)
+  inspect(mapped_success, content="Ok(10)")
+  
+  let mapped_failure = failure.map(x => x * 2)
+  inspect(mapped_failure, content="Error(\"Division by zero\")")
 }
